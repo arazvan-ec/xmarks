@@ -1,0 +1,18 @@
+{
+  "name": "flywheel",
+  "description": "Nested spec→plan→work→verify→review→compound loop for disciplined AI-assisted development. Adds an autonomous metric-driven loop, parallel multi-specialist review, and spec↔code sync.",
+  "version": "0.1.0",
+  "author": {
+    "name": "arazvan"
+  },
+  "homepage": "https://github.com/arazvan-ec/xmarks",
+  "keywords": [
+    "ai-development",
+    "workflow",
+    "loop",
+    "tdd",
+    "spec-driven-development",
+    "code-review",
+    "compound-engineering"
+  ]
+}
