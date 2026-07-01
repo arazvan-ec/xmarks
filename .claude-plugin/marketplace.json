@@ -1,0 +1,24 @@
+{
+  "name": "xmarks",
+  "owner": {
+    "name": "arazvan"
+  },
+  "description": "Plugins de Claude Code de arazvan. Incluye flywheel: un bucle spec→plan→work→verify→review→compound para desarrollo asistido por IA.",
+  "plugins": [
+    {
+      "name": "flywheel",
+      "source": "./plugins/flywheel",
+      "description": "Nested spec→plan→work→verify→review→compound loop for disciplined AI-assisted development. Adds an autonomous metric-driven loop, parallel multi-specialist review, and spec↔code sync.",
+      "category": "workflow",
+      "keywords": [
+        "ai-development",
+        "workflow",
+        "loop",
+        "tdd",
+        "spec-driven-development",
+        "code-review",
+        "compound-engineering"
+      ]
+    }
+  ]
+}

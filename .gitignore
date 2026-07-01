@@ -1,0 +1,9 @@
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# flywheel runtime state (created inside consuming projects, never shipped)
+.claude/flywheel/.gate-state

@@ -1,0 +1,40 @@
+name: Validate plugins
+
+# Validates the marketplace catalog and every plugin manifest (plus skill/agent/
+# hook frontmatter) with the Claude Code CLI. Runs in --strict mode so that
+# unrecognized fields and missing metadata fail the build.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".claude-plugin/**"
+      - "plugins/**"
+      - ".github/workflows/validate-plugins.yml"
+  pull_request:
+    paths:
+      - ".claude-plugin/**"
+      - "plugins/**"
+      - ".github/workflows/validate-plugins.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      # Keep CI runs offline-friendly: no auto-update or telemetry traffic.
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validate marketplace catalog
+        run: claude plugin validate . --strict
+
+      - name: Validate flywheel plugin
+        run: claude plugin validate ./plugins/flywheel --strict
