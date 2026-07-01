@@ -1,5 +1,5 @@
 {
-  "description": "flywheel: at session start, load the compounded learnings ledger into context and surface the loop commands.",
+  "description": "flywheel: at session start, load the learnings ledger and surface the loop commands; at stop, run the project's opt-in verification gate.",
   "hooks": {
     "SessionStart": [
       {
@@ -8,6 +8,17 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/session-start.sh",
             "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/gate.sh",
+            "timeout": 300
           }
         ]
       }
