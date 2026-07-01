@@ -1,0 +1,7 @@
+node_modules/
+
+# Your X session — NEVER commit this. It grants access to your account.
+auth.json
+
+# Raw API dumps can be large / verbose; keep them local.
+data/*.raw.json
