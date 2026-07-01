@@ -54,8 +54,15 @@ npm test && npm run lint
 
 While that file exists, flywheel's `Stop` hook runs it whenever Claude tries to finish a turn and **blocks** finishing if it fails — so nothing is declared "done" with checks red. It is a no-op when the file is absent, bounded to a few consecutive blocks (so you are never trapped), and fails open on internal errors. Add `.claude/flywheel/.gate-state` to your `.gitignore`.
 
-## How it is installed here
+## Installation
 
-This plugin lives at `.claude/skills/flywheel/` and loads automatically as **`flywheel@skills-dir`** on the next session once you trust the workspace folder — no marketplace and no install step. Run `/reload-plugins` to pick it up in an already-running session, or `/plugin` to inspect it. Because it is checked into the repo, every collaborator who clones and trusts the folder gets it.
+flywheel is distributed through the [`xmarks`](https://github.com/arazvan-ec/xmarks) plugin marketplace. Add the marketplace and install it from any Claude Code session:
 
-**Distributing it elsewhere (optional).** To share flywheel with other repos, publish this directory as its own git repo and add a `.claude-plugin/marketplace.json` that points at it, then install with `/plugin marketplace add <repo>` + `/plugin install flywheel@<marketplace>`.
+```
+/plugin marketplace add arazvan-ec/xmarks
+/plugin install flywheel@xmarks
+```
+
+Run `/reload-plugins` to pick it up in a running session, or `/plugin` to inspect it.
+
+**Working inside the xmarks repo.** The repo's `.claude/settings.json` registers the marketplace and enables `flywheel@xmarks`, so collaborators who clone and trust the folder are prompted to install it. To test local changes to the plugin without committing, load it directly with `claude --plugin-dir ./plugins/flywheel`.
