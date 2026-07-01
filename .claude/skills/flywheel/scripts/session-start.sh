@@ -10,8 +10,8 @@ MAX_LINES=50
 
 echo "🎡 flywheel loaded — a nested loop for disciplined AI development."
 echo "   Full cycle:  /flywheel:loop <feature>"
-echo "   Step by step: spec → plan → work → verify → review → compound"
-echo "   Power tools:  /flywheel:autoloop (autonomous metric loop) · /flywheel:sync (spec↔code)"
+echo "   Phases:      brainstorm → spec → plan → work → verify → review → compound → ship"
+echo "   Anytime:     /flywheel:debug (systematic) · /flywheel:autoloop (autonomous) · /flywheel:sync (spec↔code)"
 echo ""
 
 if [ -f "${LEDGER}" ]; then
