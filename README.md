@@ -22,9 +22,10 @@ Add this marketplace and install the plugin from any Claude Code session:
 /plugin install flywheel@xmarks
 ```
 
-Then try it:
+New to flywheel? Start with the built-in onboarding, then run the loop:
 
 ```
+/flywheel:help
 /flywheel:loop <your feature or task>
 ```
 
