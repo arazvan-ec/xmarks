@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "flywheel",
-      "source": "./plugins/flywheel",
+      "source": "./",
       "description": "Nested spec→plan→work→verify→review→compound loop for disciplined AI-assisted development. Adds an autonomous metric-driven loop, parallel multi-specialist review, and spec↔code sync.",
       "category": "workflow",
       "keywords": [

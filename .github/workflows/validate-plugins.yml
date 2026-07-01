@@ -9,12 +9,18 @@ on:
     branches: [main]
     paths:
       - ".claude-plugin/**"
-      - "plugins/**"
+      - "skills/**"
+      - "agents/**"
+      - "hooks/**"
+      - "scripts/**"
       - ".github/workflows/validate-plugins.yml"
   pull_request:
     paths:
       - ".claude-plugin/**"
-      - "plugins/**"
+      - "skills/**"
+      - "agents/**"
+      - "hooks/**"
+      - "scripts/**"
       - ".github/workflows/validate-plugins.yml"
 
 jobs:
@@ -33,8 +39,5 @@ jobs:
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
 
-      - name: Validate marketplace catalog
+      - name: Validate marketplace and plugin
         run: claude plugin validate . --strict
-
-      - name: Validate flywheel plugin
-        run: claude plugin validate ./plugins/flywheel --strict
