@@ -1,5 +1,7 @@
 # xmarks
 
+[![Validate plugins](https://github.com/arazvan-ec/xmarks/actions/workflows/validate-plugins.yml/badge.svg)](https://github.com/arazvan-ec/xmarks/actions/workflows/validate-plugins.yml)
+
 A [Claude Code](https://code.claude.com/docs) **plugin marketplace**. It currently ships one plugin:
 
 ## 🎡 flywheel
