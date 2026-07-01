@@ -1,0 +1,14 @@
+{
+  "name": "arazvan-plugins",
+  "description": "AI-development plugins by arazvan — starting with flywheel, a disciplined nested-loop system for building with AI.",
+  "owner": {
+    "name": "arazvan"
+  },
+  "plugins": [
+    {
+      "name": "flywheel",
+      "source": "./flywheel",
+      "description": "Nested spec→plan→work→verify→review→compound loop for disciplined AI-assisted development, with an autonomous metric loop, parallel multi-specialist review, and spec↔code sync."
+    }
+  ]
+}

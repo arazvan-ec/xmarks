@@ -54,8 +54,15 @@ npm test && npm run lint
 
 While that file exists, flywheel's `Stop` hook runs it whenever Claude tries to finish a turn and **blocks** finishing if it fails — so nothing is declared "done" with checks red. It is a no-op when the file is absent, bounded to a few consecutive blocks (so you are never trapped), and fails open on internal errors. Add `.claude/flywheel/.gate-state` to your `.gitignore`.
 
-## How it is installed here
+## How to install it
 
-This plugin lives at `.claude/skills/flywheel/` and loads automatically as **`flywheel@skills-dir`** on the next session once you trust the workspace folder — no marketplace and no install step. Run `/reload-plugins` to pick it up in an already-running session, or `/plugin` to inspect it. Because it is checked into the repo, every collaborator who clones and trusts the folder gets it.
+flywheel is distributed through the marketplace defined at the repo root (`.claude-plugin/marketplace.json`, marketplace name `arazvan-plugins`). Install it into your Claude Code — user scope, so it's available in every project:
 
-**Distributing it elsewhere (optional).** To share flywheel with other repos, publish this directory as its own git repo and add a `.claude-plugin/marketplace.json` that points at it, then install with `/plugin marketplace add <repo>` + `/plugin install flywheel@<marketplace>`.
+```
+/plugin marketplace add arazvan-ec/xmarks
+/plugin install flywheel@arazvan-plugins
+```
+
+Then run `/reload-plugins` (or restart) and use `/flywheel:loop <feature>`. Inspect it anytime with `/plugin`; update later with `/plugin marketplace update`.
+
+**Developing the plugin itself:** run `claude --plugin-dir ./flywheel` and `/reload-plugins` to iterate on the skills/agents without reinstalling.
