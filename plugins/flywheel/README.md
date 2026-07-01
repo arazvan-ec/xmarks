@@ -20,6 +20,7 @@ Nothing advances on "seems right." Verification is a real gate (the `verifier` a
 
 | Command | What it does |
 | --- | --- |
+| `/flywheel:help` | **New here? Start with this** — guided onboarding + the full command map. |
 | `/flywheel:loop <feature>` | Run the whole cycle end to end, gating between phases. |
 | `/flywheel:brainstorm <idea>` | Sharpen a fuzzy idea into agreed requirements before the spec. |
 | `/flywheel:spec <feature>` | Write a REASONS spec-contract + a machine-checkable success metric. |
