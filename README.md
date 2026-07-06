@@ -1,45 +1,64 @@
-# xmarks
+# flywheel 🎡
 
-Export your **X (Twitter) bookmarks** to local files (`data/bookmarks.json` + `data/bookmarks.md`) using your own logged-in browser session — no API keys, no paid tier, no database.
+A **Claude Code plugin** that turns ad-hoc "vibe coding" into a disciplined, self-verifying **loop** for AI-assisted development. It distills the best practices from [obra/superpowers](https://github.com/obra/superpowers), [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin), [karpathy/autoresearch](https://github.com/karpathy/autoresearch), [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills), and [gszhangwei/open-spdd](https://github.com/gszhangwei/open-spdd) into one coherent system.
 
-It drives a real browser with Playwright, opens your bookmarks, and captures X's internal GraphQL responses as the page loads (robust to HTML/CSS changes). You run it on **your** machine, so your session and IP are yours — nothing is pasted into a cloud service.
+This repository **is** the plugin, served through the `xmarks` marketplace (`.claude-plugin/marketplace.json`).
 
-## Setup
+## Install (Claude Code)
 
-Requires Node 18+.
-
-```bash
-npm install
-npx playwright install chromium
+```
+/plugin marketplace add arazvan-ec/xmarks
+/plugin install flywheel@xmarks
 ```
 
-## Use
+Then `/reload-plugins` and run `/flywheel:help`. To make flywheel **auto-activate** in a repo, see [docs/add-flywheel-to-a-repo.md](docs/add-flywheel-to-a-repo.md).
 
-```bash
-npm run login     # opens a browser — log in to X, then press Enter to save the session
-npm run scrape    # extracts all your bookmarks
+> **Claude Code only** — the claude.ai chat app uses a different Skills system and does not run Claude Code plugins.
+
+## The idea: two nested loops
+
+**Outer loop (development cycle)** — one unit of work flows through six gated phases:
+
+```
+spec → plan → work → verify → review → compound
 ```
 
-Outputs (in `data/`):
-- `bookmarks.json` — clean records: `id`, `author_handle`, `author_name`, `text`, `url`, `created_at`, `media`, `urls`.
-- `bookmarks.md` — a readable list to skim.
-- `bookmarks.raw.json` — the raw API payloads (gitignored), so the parser can be fixed without re-scraping.
+**Inner loop (inside `work`)** — a tight *write failing test → implement → run → observe → fix* cycle that never declares "done" until an objective check is green.
 
-Re-run `npm run scrape` anytime to refresh. If it says you're not logged in, your session expired — just `npm run login` again.
+Nothing advances on "seems right": `verify` runs the real app/tests, and every finished cycle deposits reusable knowledge into a ledger that primes the next one.
 
-### Options (env vars)
-- `PW_HEADFUL=1` — watch the browser while it scrapes (default is headless).
-- `PW_CHANNEL=chrome` — use your installed Google Chrome instead of Playwright's Chromium.
-- `PW_EXECUTABLE_PATH=/path/to/chrome` — point at a specific browser binary.
+## Commands
 
-## Security
+| Command | What it does |
+| --- | --- |
+| `/flywheel:help` | Onboarding + command map. |
+| `/flywheel:loop <feature>` | Run the whole cycle end to end, gating between phases. |
+| `/flywheel:brainstorm <idea>` | Sharpen a fuzzy idea into agreed requirements before the spec. |
+| `/flywheel:spec <feature>` | Write a REASONS spec-contract + a machine-checkable success metric. |
+| `/flywheel:plan <spec-slug>` | Turn the spec into ordered tasks, each with its own check. |
+| `/flywheel:work <task>` | Implement with the inner iterate-until-green loop. |
+| `/flywheel:debug <symptom>` | Systematic debugging: reproduce → hypothesis → isolate → fix → regression test. |
+| `/flywheel:verify` | Objective PASS/FAIL gate — runs the real app/tests (via the `verifier` agent). |
+| `/flywheel:review <ref>` | Parallel correctness / security / performance review, synthesized. |
+| `/flywheel:compound` | Append this cycle's decisions, gotchas, and patterns to the ledger. |
+| `/flywheel:ship <title>` | Clean commit + push + PR to close out the cycle. |
+| `/flywheel:autoloop <goal>` ⚡ | Autonomous metric-driven loop — iterate hands-off until a metric is met or a budget is spent. |
+| `/flywheel:sync <spec-slug>` ⚡ | Reconcile drift between a spec and the code (bidirectional). |
 
-`auth.json` holds your X session and is **gitignored** — never commit it. It grants access to your account; if you want to invalidate it, log out of that session on X. `data/bookmarks.json`/`.md` contain your own bookmark contents — this is a private repo, but decide for yourself whether to commit them.
+## Agents
 
-## Notes
+- `verifier` — runs the app/tests and returns an objective PASS/FAIL with evidence.
+- `reviewer-correctness`, `reviewer-security`, `reviewer-performance` — adversarial specialist reviewers dispatched in parallel by `/flywheel:review`.
 
-Scraping your own bookmarks is a personal, non-commercial use of your own data, but it relies on X's private endpoints and is against X's ToS in the strict sense — keep it personal and don't hammer it. If X changes its GraphQL shape and parsing breaks, the raw payloads in `data/bookmarks.raw.json` let you fix `src/scrape.mjs` without re-fetching.
+## State it keeps (in the project you use it on)
 
----
+- `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.
+- `.claude/flywheel/LEARNINGS.md` — the compounding ledger. The `SessionStart` hook loads its most recent entries into context every session, so past lessons carry forward. Created by `/flywheel:compound`.
 
-This repo also hosts **flywheel**, a Claude Code plugin for disciplined AI-assisted development (see `.claude-plugin/`, `agents/`, `hooks/`, `scripts/`, and `skills/`).
+## Deterministic completion gate (opt-in)
+
+Drop an executable `.claude/flywheel/gate.sh` in your project with your verification command (e.g. `npm test && npm run lint`). While it exists, flywheel's `Stop` hook runs it whenever Claude tries to finish and **blocks** finishing if it fails — so nothing is declared "done" with checks red. It is a no-op when absent, bounded to a few consecutive blocks (so you're never trapped), and fails open on internal errors.
+
+## Repo layout
+
+The plugin lives at the repo root: `.claude-plugin/` (manifest + marketplace), `skills/`, `agents/`, `hooks/`, `scripts/`. Setup guides are in [`docs/`](docs/).

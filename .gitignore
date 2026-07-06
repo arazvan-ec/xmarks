@@ -1,11 +1,5 @@
-# Dependencies
+# Stray Node installs (this repo ships no Node project)
 node_modules/
-
-# Local auth/session files
-auth.json
-
-# Raw API dumps can be large / verbose; keep them local.
-data/*.raw.json
 
 # OS / editor noise
 .DS_Store
