@@ -91,3 +91,18 @@ jobs:
           commit-message: "Update vendored flywheel to ${{ steps.check.outputs.remote }}"
           title: "Update vendored flywheel to ${{ steps.check.outputs.remote }}"
           body-path: ${{ runner.temp }}/pr-body.md
+
+      - name: Explain how to enable PR creation (on failure)
+        if: failure()
+        run: |
+          {
+            echo "## ⚠️ flywheel update could not open the PR"
+            echo ""
+            echo "The most common cause: this repo does not allow GitHub Actions to create pull requests."
+            echo "Fix it here (one-time, needs repo admin):"
+            echo ""
+            echo "**https://github.com/${GITHUB_REPOSITORY}/settings/actions**"
+            echo ""
+            echo "→ **Workflow permissions** → check **\"Allow GitHub Actions to create and approve pull requests\"** → Save,"
+            echo "then re-run this workflow from the Actions tab."
+          } >> "$GITHUB_STEP_SUMMARY"

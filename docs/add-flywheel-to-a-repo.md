@@ -63,14 +63,14 @@ Open a Claude Code web session **on the target repo** and paste:
 
 ```
 Add the repo arazvan-ec/xmarks to this session, then run its
-scripts/install-vendored.sh --auto-update against this repo's root. If adding
-the repo isn't possible, clone https://github.com/arazvan-ec/xmarks into the
-scratchpad and run the script from there. Review the resulting .claude/ and
-.github/ changes, commit, and push.
+scripts/install-vendored.sh against this repo's root. If adding the repo isn't
+possible, clone https://github.com/arazvan-ec/xmarks into the scratchpad and run
+the script from there. Review the resulting .claude/ changes, commit, and push.
 ```
 
-(Drop `--auto-update` if you don't want the weekly update-PR workflow — see
-"Keeping it up to date" below.)
+(Add `--auto-update` to the script command if you also want weekly update PRs —
+see "Keeping it up to date" below; updating on demand with `/flywheel-update`
+needs nothing extra.)
 
 From the **next** session on that repo — web, CLI, or IDE — you'll see `🎡 flywheel loaded`
 and can run `/flywheel-help`, `/flywheel-loop <feature>`, etc.
@@ -83,19 +83,23 @@ with a warning.
 
 ### Keeping it up to date
 
-Three layers, from most to least automatic:
+The default path is manual and needs no extra setup:
 
-- **Auto-update PRs** — install with `--auto-update` (add the flag to the script command or
-  the copy-paste prompt) and the repo gets `.github/workflows/flywheel-update.yml`: a weekly
-  job (also runnable on demand from the Actions tab) that opens a PR whenever a new flywheel
-  version lands on `main` — no new version, no noise. Requires the repo setting
-  *Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"*.
-- **Session-start notice** — vendored repos check (2s, fail-silent) for a newer version when
-  a session starts and print `⬆️ flywheel X.Y.Z is available — run /flywheel-update`.
-  Disable with the env var `FLYWHEEL_NO_UPDATE_CHECK=1`.
 - **On demand** — `/flywheel-update` in a session on the repo (autodetects the vendored
   install, refreshes from latest `main`, shows the VERSION diff and commits), or re-run the
   script by hand.
+- **Session-start notice** — vendored repos check (2s, fail-silent) for a newer version when
+  a session starts and print `⬆️ flywheel X.Y.Z is available — run /flywheel-update`, so you
+  know when running it is worth it. Disable with the env var `FLYWHEEL_NO_UPDATE_CHECK=1`.
+
+Optionally, for repos you'd rather not think about:
+
+- **Auto-update PRs** (opt-in) — install with `--auto-update` and the repo gets
+  `.github/workflows/flywheel-update.yml`: a weekly job (also runnable on demand from the
+  Actions tab) that opens a PR whenever a new flywheel version lands on `main` — no new
+  version, no noise. Requires a one-time repo setting the installer prints the exact URL
+  for: *Settings → Actions → General → "Allow GitHub Actions to create and approve pull
+  requests"*.
 
 Updates are more than a file refresh: every release ships an AI-authored note in
 [`upgrades/`](../upgrades/) describing whether the version **requires action** in installed

@@ -220,6 +220,19 @@ jobs:
 YAML
     echo "wrote ${UPDATE_WORKFLOW_REL} (weekly auto-update PRs)"
   fi
+  # Point the user at the exact toggle the workflow needs, deriving the
+  # settings URL from the repo's origin (handles git@, https:// and proxied
+  # remotes by taking the last two path segments).
+  ORIGIN="$(git -C "${TARGET}" remote get-url origin 2>/dev/null || true)"
+  REPO_PATH="$(printf '%s\n' "${ORIGIN}" | sed -E 's#\.git$##; s#.*[:/]([^/]+/[^/]+)$#\1#')"
+  echo ""
+  echo "⚠️  auto-update PRs need a one-time repo setting (admin, GitHub UI only):"
+  if [ -n "${REPO_PATH}" ] && [ "${REPO_PATH}" != "${ORIGIN}" ]; then
+    echo "   https://github.com/${REPO_PATH}/settings/actions"
+  else
+    echo "   your repo's Settings → Actions → General"
+  fi
+  echo "   → Workflow permissions → check 'Allow GitHub Actions to create and approve pull requests' → Save"
 fi
 
 # Record what was vendored, so repos know which version they carry.
