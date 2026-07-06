@@ -29,5 +29,17 @@ for f in "${SRC}"/agents/*.md; do
     || fail "agent '${agent}' is not mentioned in the README"
 done
 
+# Every release ships its upgrade analysis: the current plugin version must
+# have a matching upgrades/v<version>.md with valid frontmatter.
+VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "${SRC}/.claude-plugin/plugin.json")"
+NOTE="${SRC}/upgrades/v${VERSION}.md"
+if [ ! -f "${NOTE}" ]; then
+  fail "plugin version ${VERSION} has no upgrade note (upgrades/v${VERSION}.md) — analyze the diff and write one (see upgrades/README.md)"
+else
+  grep -q "^version: ${VERSION}\$" "${NOTE}" || fail "upgrades/v${VERSION}.md frontmatter version does not match plugin.json"
+  grep -Eq '^requires-action: (true|false)$' "${NOTE}" || fail "upgrades/v${VERSION}.md is missing 'requires-action: true|false'"
+  grep -q '^summary: ' "${NOTE}" || fail "upgrades/v${VERSION}.md is missing 'summary:'"
+fi
+
 [ "${STATUS}" -eq 0 ] && pass "all $(ls -d "${SRC}"/skills/*/ | wc -l | tr -d ' ') skills and $(ls "${SRC}"/agents/*.md | wc -l | tr -d ' ') agents are documented"
 exit "${STATUS}"
