@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "flywheel",
   "description": "Nested spec\u2192plan\u2192work\u2192verify\u2192review\u2192compound loop for disciplined AI-assisted development. Adds an autonomous metric-driven loop, parallel multi-specialist review, and spec\u2194code sync.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": {
     "name": "arazvan"
   },

@@ -74,7 +74,9 @@ and can run `/flywheel-help`, `/flywheel-loop <feature>`, etc.
 The vendored version is recorded in `.claude/flywheel/VERSION` (plugin version + source
 commit), so you can always check what a repo carries.
 
-**Update:** re-run the script against the repo — it refreshes the vendored copies in place.
+**Update:** run `/flywheel-update` in a session on the repo (it autodetects the vendored
+install, refreshes it from latest `main`, shows the VERSION diff and commits), or re-run the
+script by hand — it refreshes the vendored copies in place.
 
 **Uninstall:** `bash /tmp/xmarks/scripts/install-vendored.sh --uninstall /path/to/your-repo`
 removes everything the install added (skills, agents, hook scripts, hook entries in
@@ -102,5 +104,6 @@ Note: this never persists in ephemeral web sessions — prefer §2 for web, §1 
 - **Claude Code** — CLI/IDE for the marketplace install (§1/§3); any surface including web
   for the vendored install (§2).
 - The `arazvan-ec/xmarks` repo must be reachable at install time (it's public).
-- To pick up a newer plugin version later: `/plugin update flywheel@xmarks` (local) or re-run
-  `install-vendored.sh` (vendored).
+- To pick up a newer plugin version later: `/flywheel:update` (local) or `/flywheel-update`
+  (vendored) — it autodetects the install mode, or takes it as an argument
+  (`vendored`/`marketplace`).

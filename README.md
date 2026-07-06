@@ -46,6 +46,7 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 | `/flywheel:ship <title>` | Clean commit + push + PR to close out the cycle. |
 | `/flywheel:autoloop <goal>` ⚡ | Autonomous metric-driven loop — iterate hands-off until a metric is met or a budget is spent. |
 | `/flywheel:sync <spec-slug>` ⚡ | Reconcile drift between a spec and the code (bidirectional). |
+| `/flywheel:update [vendored\|marketplace]` | Update flywheel itself — autodetects marketplace vs vendored install, or takes the mode as an argument. |
 
 ## Agents
 
