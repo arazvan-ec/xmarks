@@ -1,14 +1,17 @@
 # Add flywheel to a repo
 
-flywheel (from the `xmarks` marketplace) auto-activates in any **Claude Code** session —
-local, IDE, or web — that opens a repo containing the config below. This is the reliable way
-to have it everywhere, because plugins installed by hand may not persist across ephemeral web
-sessions.
+There are two ways to get flywheel into a repo, and which one you need depends on
+**where you run Claude Code**:
+
+| Surface | What works |
+| --- | --- |
+| Claude Code **CLI / IDE** (local) | Marketplace install via `.claude/settings.json` (§1) or `/plugin install` (§3) |
+| Claude Code **web** (claude.ai/code, remote sessions) | **Vendoring only** (§2) — marketplace plugins do not auto-install in web sessions |
 
 > **Claude Code only.** The claude.ai chat app uses a different "Skills" system and does not run
 > Claude Code plugins.
 
-## 1. Add `.claude/settings.json`
+## 1. Local CLI / IDE — `.claude/settings.json`
 
 Create (or **merge into**) `.claude/settings.json` at the repo root, then commit and push:
 
@@ -24,46 +27,72 @@ Create (or **merge into**) `.claude/settings.json` at the repo root, then commit
 If the file already exists, merge just these two keys (`extraKnownMarketplaces`,
 `enabledPlugins`) — keep any existing settings.
 
-Next time you open the repo in Claude Code and **trust the folder**, flywheel registers and
-activates automatically: you'll see `🎡 flywheel loaded` at session start and the `/flywheel:*`
-commands become available.
+Next time you open the repo in Claude Code locally and **trust the folder**, flywheel registers
+and activates automatically: you'll see `🎡 flywheel loaded` at session start and the
+`/flywheel:*` commands become available.
 
-## 2. Copy-paste prompt (let Claude Code set it up)
+**Known limitation — this does NOT work on Claude Code web.** Web sessions don't run the
+marketplace clone/install step at container start, so the plugin never registers and
+`/flywheel:*` never appears there. For web, use §2.
 
-Paste this into a Claude Code session opened on the target repo:
+## 2. Claude Code web — vendor the plugin into the repo
+
+Web sessions always load what's committed in the repo itself: `.claude/skills/`,
+`.claude/agents/` and the hooks in `.claude/settings.json` are part of the clone. So the
+reliable way is to **vendor** flywheel into the target repo once, with
+[`scripts/install-vendored.sh`](../scripts/install-vendored.sh). It copies:
+
+- every skill → `.claude/skills/flywheel-<name>/` (commands become `/flywheel-spec`,
+  `/flywheel-loop`, … — the `-` instead of `:` avoids colliding with built-ins),
+- the agents → `.claude/agents/`,
+- the SessionStart/Stop hook scripts → `.claude/flywheel/bin/`, wired into
+  `.claude/settings.json` (existing settings are preserved; re-running is safe).
+
+### Option A — run it locally
+
+```bash
+git clone https://github.com/arazvan-ec/xmarks /tmp/xmarks
+cd /path/to/your-repo
+bash /tmp/xmarks/scripts/install-vendored.sh
+git add .claude && git commit -m "Vendor flywheel for Claude Code web" && git push
+```
+
+### Option B — let a web session do it (copy-paste prompt)
+
+Open a Claude Code web session **on the target repo** and paste:
 
 ```
-Set up the flywheel plugin in this repo so it auto-activates in Claude Code.
-Create or merge `.claude/settings.json` at the repo root with these keys, keeping any
-existing settings intact:
-
-{
-  "extraKnownMarketplaces": { "xmarks": { "source": { "source": "github", "repo": "arazvan-ec/xmarks" } } },
-  "enabledPlugins": { "flywheel@xmarks": true }
-}
-
-Then validate the JSON, commit, and push. Remind me to trust the folder so it loads.
+Add the repo arazvan-ec/xmarks to this session, then run its
+scripts/install-vendored.sh against this repo's root. If adding the repo isn't
+possible, clone https://github.com/arazvan-ec/xmarks into the scratchpad and run
+the script from there. Review the resulting .claude/ changes, commit, and push.
 ```
 
-## Manual alternative (per session, no repo change)
+From the **next** session on that repo — web, CLI, or IDE — you'll see `🎡 flywheel loaded`
+and can run `/flywheel-help`, `/flywheel-loop <feature>`, etc.
+
+To update later, re-run the script against the repo: it refreshes the vendored copies in place.
+
+## 3. Manual alternative (local, per session, no repo change)
 
 ```
 /plugin marketplace add arazvan-ec/xmarks
 /plugin install flywheel@xmarks
 ```
 
-Note: in ephemeral web sessions this may not survive a new container — prefer the
-`.claude/settings.json` method above for anything you want to persist.
+Note: this never persists in ephemeral web sessions — prefer §2 for web, §1 for local.
 
 ## Using it
 
-- `/flywheel:help` — onboarding + command map
-- `/flywheel:loop <task>` — the full spec → plan → work → verify → review → compound cycle
-- `/flywheel:spec`, `/flywheel:plan`, `/flywheel:work`, `/flywheel:debug`, `/flywheel:review`,
-  `/flywheel:ship`, `/flywheel:autoloop`, `/flywheel:sync`
+- `/flywheel:help` (local plugin) or `/flywheel-help` (vendored) — onboarding + command map
+- `/flywheel:loop <task>` / `/flywheel-loop <task>` — the full
+  spec → plan → work → verify → review → compound cycle
+- Same pattern for `spec`, `plan`, `work`, `debug`, `review`, `ship`, `autoloop`, `sync`
 
 ## Requirements
 
-- **Claude Code** (CLI, IDE, or web) — not the claude.ai chat app.
-- The `arazvan-ec/xmarks` marketplace repo must be reachable (it's public).
-- To pick up a newer plugin version later: `/plugin update flywheel@xmarks`.
+- **Claude Code** — CLI/IDE for the marketplace install (§1/§3); any surface including web
+  for the vendored install (§2).
+- The `arazvan-ec/xmarks` repo must be reachable at install time (it's public).
+- To pick up a newer plugin version later: `/plugin update flywheel@xmarks` (local) or re-run
+  `install-vendored.sh` (vendored).
