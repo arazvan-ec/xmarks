@@ -97,6 +97,12 @@ Three layers, from most to least automatic:
   install, refreshes from latest `main`, shows the VERSION diff and commits), or re-run the
   script by hand.
 
+Updates are more than a file refresh: every release ships an AI-authored note in
+[`upgrades/`](../upgrades/) describing whether the version **requires action** in installed
+repos. `/flywheel-update` reads the notes in the update range, executes their strategies
+(idempotent, logged to `.claude/flywheel/UPGRADES.md`), and the auto-update PR includes the
+same notes in its body so you see them at review time.
+
 Released versions are tagged `vX.Y.Z` in this repo, so the version in a repo's `VERSION`
 file always maps to a browsable tag.
 

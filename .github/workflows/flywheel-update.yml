@@ -45,6 +45,41 @@ jobs:
         if: steps.check.outputs.needs == 'true'
         run: bash "$RUNNER_TEMP/xmarks/scripts/install-vendored.sh" "$GITHUB_WORKSPACE"
 
+      - name: Build PR body with upgrade notes
+        if: steps.check.outputs.needs == 'true'
+        run: |
+          LOCAL="${{ steps.check.outputs.local }}"
+          REMOTE="${{ steps.check.outputs.remote }}"
+          {
+            echo "Automated refresh of the vendored flywheel copy from"
+            echo "[arazvan-ec/xmarks](https://github.com/arazvan-ec/xmarks) \`main\`:"
+            echo "\`${LOCAL}\` → \`${REMOTE}\`."
+            echo ""
+            ACTION=false
+            for f in $(ls "$RUNNER_TEMP"/xmarks/upgrades/v*.md 2>/dev/null | sort -V); do
+              v="$(basename "$f" .md)"; v="${v#v}"
+              # keep notes in the range (LOCAL, REMOTE]
+              if [ "${LOCAL}" != "none" ]; then
+                [ "$v" != "${LOCAL}" ] || continue
+                [ "$(printf '%s\n%s\n' "${LOCAL}" "$v" | sort -V | head -1)" = "${LOCAL}" ] || continue
+              fi
+              [ "$(printf '%s\n%s\n' "$v" "${REMOTE}" | sort -V | head -1)" = "$v" ] || continue
+              echo "### Upgrade note v${v}"
+              echo ""
+              cat "$f"
+              echo ""
+              grep -q '^requires-action: true$' "$f" && ACTION=true
+            done
+            if [ "${ACTION}" = true ]; then
+              echo "> ⚠️ At least one note above **requires action** beyond this file refresh."
+              echo "> Open a Claude Code session on this branch and run \`/flywheel-update\` —"
+              echo "> it executes the strategies and logs them to \`.claude/flywheel/UPGRADES.md\`."
+            fi
+            echo ""
+            echo "Review the \`.claude/\` diff — any \`*.pre-flywheel\` backups in it mean"
+            echo "local edits were overwritten by the refresh."
+          } > "$RUNNER_TEMP/pr-body.md"
+
       - name: Open update PR
         if: steps.check.outputs.needs == 'true'
         uses: peter-evans/create-pull-request@v7
@@ -55,10 +90,4 @@ jobs:
           delete-branch: true
           commit-message: "Update vendored flywheel to ${{ steps.check.outputs.remote }}"
           title: "Update vendored flywheel to ${{ steps.check.outputs.remote }}"
-          body: |
-            Automated refresh of the vendored flywheel copy from
-            [arazvan-ec/xmarks](https://github.com/arazvan-ec/xmarks) `main`:
-            `${{ steps.check.outputs.local }}` → `${{ steps.check.outputs.remote }}`.
-
-            Review the `.claude/` diff — any `*.pre-flywheel` backups in it mean
-            local edits were overwritten by the refresh.
+          body-path: ${{ runner.temp }}/pr-body.md
