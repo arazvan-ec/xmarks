@@ -42,4 +42,4 @@ Scraping your own bookmarks is a personal, non-commercial use of your own data, 
 
 ---
 
-This repo also hosts **flywheel**, a Claude Code plugin for disciplined AI-assisted development (see `flywheel/` and the marketplace at `.claude-plugin/marketplace.json`).
+This repo also hosts **flywheel**, a Claude Code plugin for disciplined AI-assisted development (see `.claude-plugin/`, `agents/`, `hooks/`, `scripts/`, and `skills/`).

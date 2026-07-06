@@ -1,7 +1,18 @@
+# Dependencies
 node_modules/
 
-# Your X session — NEVER commit this. It grants access to your account.
+# Local auth/session files
 auth.json
 
 # Raw API dumps can be large / verbose; keep them local.
 data/*.raw.json
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# flywheel runtime state (created inside consuming projects, never shipped)
+.claude/flywheel/.gate-state

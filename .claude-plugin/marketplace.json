@@ -1,14 +1,24 @@
 {
-  "name": "arazvan-plugins",
-  "description": "AI-development plugins by arazvan — starting with flywheel, a disciplined nested-loop system for building with AI.",
+  "name": "xmarks",
   "owner": {
     "name": "arazvan"
   },
+  "description": "Plugins de Claude Code de arazvan. Incluye flywheel: un bucle spec→plan→work→verify→review→compound para desarrollo asistido por IA.",
   "plugins": [
     {
       "name": "flywheel",
-      "source": "./flywheel",
-      "description": "Nested spec→plan→work→verify→review→compound loop for disciplined AI-assisted development, with an autonomous metric loop, parallel multi-specialist review, and spec↔code sync."
+      "source": "./",
+      "description": "Nested spec→plan→work→verify→review→compound loop for disciplined AI-assisted development. Adds an autonomous metric-driven loop, parallel multi-specialist review, and spec↔code sync.",
+      "category": "workflow",
+      "keywords": [
+        "ai-development",
+        "workflow",
+        "loop",
+        "tdd",
+        "spec-driven-development",
+        "code-review",
+        "compound-engineering"
+      ]
     }
   ]
 }
