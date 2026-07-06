@@ -26,6 +26,8 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       # Keep CI runs offline-friendly: no auto-update or telemetry traffic.
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"

@@ -1,0 +1,15 @@
+{
+  "name": "xmarks",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Scrape your own X (Twitter) bookmarks to local JSON + Markdown, using your own logged-in browser session.",
+  "scripts": {
+    "login": "node src/login.mjs",
+    "scrape": "node src/scrape.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "playwright": "1.56.1"
+  }
+}
