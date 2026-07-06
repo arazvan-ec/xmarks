@@ -71,7 +71,15 @@ the script from there. Review the resulting .claude/ changes, commit, and push.
 From the **next** session on that repo — web, CLI, or IDE — you'll see `🎡 flywheel loaded`
 and can run `/flywheel-help`, `/flywheel-loop <feature>`, etc.
 
-To update later, re-run the script against the repo: it refreshes the vendored copies in place.
+The vendored version is recorded in `.claude/flywheel/VERSION` (plugin version + source
+commit), so you can always check what a repo carries.
+
+**Update:** re-run the script against the repo — it refreshes the vendored copies in place.
+
+**Uninstall:** `bash /tmp/xmarks/scripts/install-vendored.sh --uninstall /path/to/your-repo`
+removes everything the install added (skills, agents, hook scripts, hook entries in
+`.claude/settings.json`, `VERSION`) but keeps flywheel's project state
+(`.claude/flywheel/LEARNINGS.md`, `specs/`, `gate.sh`).
 
 ## 3. Manual alternative (local, per session, no repo change)
 
