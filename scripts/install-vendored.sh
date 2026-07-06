@@ -10,13 +10,25 @@
 # (so /flywheel:spec becomes /flywheel-spec) to avoid colliding with built-in
 # commands like /loop, /review and /verify.
 #
-# Usage (from the target repo root, with an xmarks checkout available):
+# Usage (with an xmarks checkout available):
 #   bash /path/to/xmarks/scripts/install-vendored.sh [target-repo-dir]
+#   bash /path/to/xmarks/scripts/install-vendored.sh --uninstall [target-repo-dir]
 #
 # target-repo-dir defaults to the current directory. Re-running is safe: the
 # script is idempotent and refreshes previously vendored copies in place.
+# The vendored version is recorded in .claude/flywheel/VERSION.
+#
+# --uninstall removes everything the install put there (vendored skills,
+# agents, hook scripts, hook entries in settings.json, VERSION) but preserves
+# flywheel's project state: .claude/flywheel/LEARNINGS.md, specs/ and gate.sh.
 
 set -euo pipefail
+
+MODE=install
+if [ "${1:-}" = "--uninstall" ]; then
+  MODE=uninstall
+  shift
+fi
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET="${1:-$(pwd)}"
@@ -30,13 +42,72 @@ if [ "${SRC}" = "${TARGET}" ]; then
   echo "error: target is the flywheel repo itself — run this against another repo" >&2
   exit 1
 fi
+
+SKILLS_DST="${TARGET}/.claude/skills"
+AGENTS_DST="${TARGET}/.claude/agents"
+FLYWHEEL_DST="${TARGET}/.claude/flywheel"
+BIN_DST="${FLYWHEEL_DST}/bin"
+SETTINGS="${TARGET}/.claude/settings.json"
+
+# De-merge our hook entries from settings.json (shared by uninstall, and kept
+# in one place so the command strings below stay the single source of truth).
+SESSION_START_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/session-start.sh'
+GATE_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh'
+
+if [ "${MODE}" = "uninstall" ]; then
+  rm -rf "${SKILLS_DST}"/flywheel-*
+  for f in "${SRC}"/agents/*.md; do
+    rm -f "${AGENTS_DST}/$(basename "${f}")"
+  done
+  rm -rf "${BIN_DST}" "${FLYWHEEL_DST}/VERSION"
+
+  if [ -f "${SETTINGS}" ]; then
+    FW_SESSION_START="${SESSION_START_CMD}" FW_GATE="${GATE_CMD}" \
+    python3 - "${SETTINGS}" <<'PY'
+import json, os, sys
+
+path = sys.argv[1]
+with open(path) as f:
+    settings = json.load(f)
+
+ours = {os.environ["FW_SESSION_START"], os.environ["FW_GATE"]}
+hooks = settings.get("hooks", {})
+for event in list(hooks):
+    groups = []
+    for g in hooks[event]:
+        g["hooks"] = [h for h in g.get("hooks", []) if h.get("command") not in ours]
+        if g["hooks"]:
+            groups.append(g)
+    if groups:
+        hooks[event] = groups
+    else:
+        del hooks[event]
+if not hooks:
+    settings.pop("hooks", None)
+
+if settings:
+    with open(path, "w") as f:
+        json.dump(settings, f, indent=2)
+        f.write("\n")
+else:
+    os.remove(path)
+print("removed flywheel hooks from .claude/settings.json")
+PY
+  fi
+
+  # Clean up directories we may have created, if now empty. Project state
+  # (.claude/flywheel/LEARNINGS.md, specs/, gate.sh) is deliberately kept.
+  rmdir "${SKILLS_DST}" "${AGENTS_DST}" "${FLYWHEEL_DST}" "${TARGET}/.claude" 2>/dev/null || true
+
+  echo "flywheel uninstalled from ${TARGET}"
+  [ -d "${FLYWHEEL_DST}" ] && echo "(kept project state under .claude/flywheel/ — delete it manually if unwanted)"
+  exit 0
+fi
+
 if [ ! -e "${TARGET}/.git" ]; then
   echo "warning: ${TARGET} is not a git repo root — vendoring anyway" >&2
 fi
 
-SKILLS_DST="${TARGET}/.claude/skills"
-AGENTS_DST="${TARGET}/.claude/agents"
-BIN_DST="${TARGET}/.claude/flywheel/bin"
 mkdir -p "${SKILLS_DST}" "${AGENTS_DST}" "${BIN_DST}"
 
 # Rewrite plugin-namespaced command references (/flywheel:spec) to the
@@ -66,10 +137,21 @@ for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/gate.sh; do
 done
 echo "vendored hook scripts into .claude/flywheel/bin/"
 
+# Record what was vendored, so repos know which version they carry.
+PLUGIN_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "${SRC}/.claude-plugin/plugin.json")"
+SRC_COMMIT="$(git -C "${SRC}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+{
+  echo "flywheel ${PLUGIN_VERSION}"
+  echo "source-commit: ${SRC_COMMIT}"
+  echo "installed: $(date +%F)"
+} > "${FLYWHEEL_DST}/VERSION"
+echo "recorded flywheel ${PLUGIN_VERSION} (${SRC_COMMIT}) in .claude/flywheel/VERSION"
+
 # Merge the SessionStart/Stop hooks into the target's .claude/settings.json,
 # keeping everything already there. Idempotent: entries are matched by their
 # command string.
-python3 - "${TARGET}/.claude/settings.json" <<'PY'
+FW_SESSION_START="${SESSION_START_CMD}" FW_GATE="${GATE_CMD}" \
+python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
 path = sys.argv[1]
@@ -81,12 +163,12 @@ if os.path.exists(path):
 wanted = {
     "SessionStart": {
         "type": "command",
-        "command": '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/session-start.sh',
+        "command": os.environ["FW_SESSION_START"],
         "timeout": 15,
     },
     "Stop": {
         "type": "command",
-        "command": '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh',
+        "command": os.environ["FW_GATE"],
         "timeout": 300,
     },
 }

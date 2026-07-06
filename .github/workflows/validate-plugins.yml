@@ -43,3 +43,15 @@ jobs:
 
       - name: Validate marketplace and plugin
         run: claude plugin validate . --strict
+
+  test-installer:
+    # End-to-end test of the vendored install path used for Claude Code web:
+    # install twice (idempotence), assert the vendored result, then uninstall.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test install-vendored.sh
+        run: bash scripts/test-install-vendored.sh
