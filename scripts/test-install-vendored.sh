@@ -23,10 +23,14 @@ cat > "${TARGET}/.claude/settings.json" <<'EOF'
   "hooks": { "SessionStart": [ { "hooks": [ { "type": "command", "command": "echo existing" } ] } ] }
 }
 EOF
+# A pre-flywheel agent with the same name as one of ours: the install must
+# back it up, and the uninstall must restore it.
+mkdir -p "${TARGET}/.claude/agents"
+echo "my own verifier" > "${TARGET}/.claude/agents/verifier.md"
 
 echo "== install (twice, must be idempotent) =="
-bash "${INSTALLER}" "${TARGET}" > /dev/null
-bash "${INSTALLER}" "${TARGET}" > /dev/null
+bash "${INSTALLER}" --auto-update "${TARGET}" > /dev/null 2>"${WORK}/warnings.txt"
+bash "${INSTALLER}" --auto-update "${TARGET}" > /dev/null
 
 SKILL_COUNT="$(ls -d "${TARGET}"/.claude/skills/flywheel-*/ | wc -l | tr -d ' ')"
 EXPECTED="$(ls -d "${SRC}"/skills/*/ | wc -l | tr -d ' ')"
@@ -50,12 +54,26 @@ pass "${AGENT_COUNT} agents vendored"
 
 [ -x "${TARGET}/.claude/flywheel/bin/session-start.sh" ] || fail "session-start.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/gate.sh" ] || fail "gate.sh missing or not executable"
-CLAUDE_PROJECT_DIR="${TARGET}" bash "${TARGET}/.claude/flywheel/bin/session-start.sh" | grep -q 'flywheel loaded' \
-  || fail "session-start.sh does not run"
+CLAUDE_PROJECT_DIR="${TARGET}" FLYWHEEL_NO_UPDATE_CHECK=1 \
+  bash "${TARGET}/.claude/flywheel/bin/session-start.sh" > "${WORK}/hook-out.txt"
+grep -q 'flywheel loaded' "${WORK}/hook-out.txt" || fail "session-start.sh does not run"
 pass "hook scripts vendored, executable and runnable"
 
 grep -q '^flywheel ' "${TARGET}/.claude/flywheel/VERSION" || fail "VERSION marker missing"
 pass "VERSION marker written: $(head -1 "${TARGET}/.claude/flywheel/VERSION")"
+
+grep -q 'agents/verifier.md' "${TARGET}/.claude/flywheel/.manifest" || fail "manifest missing or incomplete"
+pass "manifest written"
+
+[ "$(cat "${TARGET}/.claude/agents/verifier.md.pre-flywheel")" = "my own verifier" ] \
+  || fail "pre-existing verifier.md was not backed up"
+grep -q 'existed before flywheel' "${WORK}/warnings.txt" || fail "no backup warning emitted"
+grep -q 'objective gate' "${TARGET}/.claude/agents/verifier.md" || fail "verifier.md not overwritten with ours"
+pass "pre-existing agent backed up (with warning) before overwrite"
+
+grep -q 'flywheel-update.yml@main' "${TARGET}/.github/workflows/flywheel-update.yml" \
+  || fail "--auto-update did not write the caller workflow"
+pass "--auto-update wrote .github/workflows/flywheel-update.yml"
 
 python3 - "${TARGET}/.claude/settings.json" <<'PY'
 import json, sys
@@ -79,11 +97,18 @@ bash "${INSTALLER}" --uninstall "${TARGET}" > /dev/null
 
 ls -d "${TARGET}"/.claude/skills/flywheel-*/ 2>/dev/null && fail "vendored skills survived uninstall"
 pass "vendored skills removed"
-[ ! -e "${TARGET}/.claude/agents/verifier.md" ] || fail "vendored agents survived uninstall"
+[ ! -e "${TARGET}/.claude/agents/reviewer-security.md" ] || fail "vendored agents survived uninstall"
 pass "vendored agents removed"
+[ "$(cat "${TARGET}/.claude/agents/verifier.md")" = "my own verifier" ] \
+  || fail "pre-existing verifier.md was not restored on uninstall"
+[ ! -e "${TARGET}/.claude/agents/verifier.md.pre-flywheel" ] || fail "backup file left behind"
+pass "pre-existing agent restored from backup"
+[ ! -e "${TARGET}/.github/workflows/flywheel-update.yml" ] || fail "auto-update workflow survived uninstall"
+pass "auto-update workflow removed"
 [ ! -e "${TARGET}/.claude/flywheel/bin" ] || fail "hook scripts survived uninstall"
 [ ! -e "${TARGET}/.claude/flywheel/VERSION" ] || fail "VERSION survived uninstall"
-pass "hook scripts and VERSION removed"
+[ ! -e "${TARGET}/.claude/flywheel/.manifest" ] || fail "manifest survived uninstall"
+pass "hook scripts, VERSION and manifest removed"
 [ -f "${TARGET}/.claude/flywheel/LEARNINGS.md" ] || fail "LEARNINGS.md was deleted by uninstall"
 pass "project state (LEARNINGS.md) preserved"
 

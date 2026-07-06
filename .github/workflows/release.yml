@@ -1,0 +1,38 @@
+name: Release
+
+# When the plugin version in .claude-plugin/plugin.json changes on main,
+# create the matching vX.Y.Z tag and a GitHub release with auto-generated
+# notes. Vendored repos record this version in .claude/flywheel/VERSION, so
+# tags give every deployed copy a traceable, browsable source point.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".claude-plugin/plugin.json"
+
+permissions:
+  contents: write
+
+jobs:
+  tag-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read plugin version
+        id: v
+        run: |
+          echo "version=$(python3 -c 'import json; print(json.load(open(".claude-plugin/plugin.json"))["version"])')" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag and release if new
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v${{ steps.v.outputs.version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "tag ${TAG} already exists — nothing to do"
+          else
+            gh release create "${TAG}" --title "flywheel ${TAG}" --generate-notes
+            echo "created release ${TAG}"
+          fi
