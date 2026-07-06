@@ -1,0 +1,64 @@
+name: flywheel update (reusable)
+
+# Reusable workflow for repos that carry a VENDORED flywheel copy (installed
+# with scripts/install-vendored.sh). The caller — written into target repos by
+# `install-vendored.sh --auto-update` — runs this weekly: it compares the
+# repo's .claude/flywheel/VERSION against the latest version on this repo's
+# main, and when they differ re-runs the installer and opens a PR with the
+# refreshed copy. No new version → no PR, so there is no weekly noise.
+#
+# Caller repos must allow GitHub Actions to create pull requests
+# (Settings → Actions → General → "Allow GitHub Actions to create and
+# approve pull requests").
+
+on:
+  workflow_call: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch latest flywheel
+        run: git clone --depth 1 https://github.com/arazvan-ec/xmarks "$RUNNER_TEMP/xmarks"
+
+      - name: Compare versions
+        id: check
+        run: |
+          LOCAL="$(sed -n 's/^flywheel //p' .claude/flywheel/VERSION 2>/dev/null | head -1)"
+          REMOTE="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' \
+            "$RUNNER_TEMP/xmarks/.claude-plugin/plugin.json")"
+          echo "local=${LOCAL:-none}" >> "$GITHUB_OUTPUT"
+          echo "remote=${REMOTE}" >> "$GITHUB_OUTPUT"
+          if [ "${LOCAL}" = "${REMOTE}" ]; then
+            echo "needs=false" >> "$GITHUB_OUTPUT"
+            echo "already on flywheel ${REMOTE} — nothing to do"
+          else
+            echo "needs=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Refresh vendored copy
+        if: steps.check.outputs.needs == 'true'
+        run: bash "$RUNNER_TEMP/xmarks/scripts/install-vendored.sh" "$GITHUB_WORKSPACE"
+
+      - name: Open update PR
+        if: steps.check.outputs.needs == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: |
+            .claude/
+          branch: flywheel/update
+          delete-branch: true
+          commit-message: "Update vendored flywheel to ${{ steps.check.outputs.remote }}"
+          title: "Update vendored flywheel to ${{ steps.check.outputs.remote }}"
+          body: |
+            Automated refresh of the vendored flywheel copy from
+            [arazvan-ec/xmarks](https://github.com/arazvan-ec/xmarks) `main`:
+            `${{ steps.check.outputs.local }}` → `${{ steps.check.outputs.remote }}`.
+
+            Review the `.claude/` diff — any `*.pre-flywheel` backups in it mean
+            local edits were overwritten by the refresh.

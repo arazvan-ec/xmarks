@@ -63,24 +63,47 @@ Open a Claude Code web session **on the target repo** and paste:
 
 ```
 Add the repo arazvan-ec/xmarks to this session, then run its
-scripts/install-vendored.sh against this repo's root. If adding the repo isn't
-possible, clone https://github.com/arazvan-ec/xmarks into the scratchpad and run
-the script from there. Review the resulting .claude/ changes, commit, and push.
+scripts/install-vendored.sh --auto-update against this repo's root. If adding
+the repo isn't possible, clone https://github.com/arazvan-ec/xmarks into the
+scratchpad and run the script from there. Review the resulting .claude/ and
+.github/ changes, commit, and push.
 ```
+
+(Drop `--auto-update` if you don't want the weekly update-PR workflow — see
+"Keeping it up to date" below.)
 
 From the **next** session on that repo — web, CLI, or IDE — you'll see `🎡 flywheel loaded`
 and can run `/flywheel-help`, `/flywheel-loop <feature>`, etc.
 
 The vendored version is recorded in `.claude/flywheel/VERSION` (plugin version + source
-commit), so you can always check what a repo carries.
+commit), so you can always check what a repo carries. Every file the install writes is listed
+in `.claude/flywheel/.manifest`; anything that existed before flywheel (say, your own
+`.claude/agents/verifier.md`) is backed up as `<file>.pre-flywheel` before being overwritten,
+with a warning.
 
-**Update:** run `/flywheel-update` in a session on the repo (it autodetects the vendored
-install, refreshes it from latest `main`, shows the VERSION diff and commits), or re-run the
-script by hand — it refreshes the vendored copies in place.
+### Keeping it up to date
+
+Three layers, from most to least automatic:
+
+- **Auto-update PRs** — install with `--auto-update` (add the flag to the script command or
+  the copy-paste prompt) and the repo gets `.github/workflows/flywheel-update.yml`: a weekly
+  job (also runnable on demand from the Actions tab) that opens a PR whenever a new flywheel
+  version lands on `main` — no new version, no noise. Requires the repo setting
+  *Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"*.
+- **Session-start notice** — vendored repos check (2s, fail-silent) for a newer version when
+  a session starts and print `⬆️ flywheel X.Y.Z is available — run /flywheel-update`.
+  Disable with the env var `FLYWHEEL_NO_UPDATE_CHECK=1`.
+- **On demand** — `/flywheel-update` in a session on the repo (autodetects the vendored
+  install, refreshes from latest `main`, shows the VERSION diff and commits), or re-run the
+  script by hand.
+
+Released versions are tagged `vX.Y.Z` in this repo, so the version in a repo's `VERSION`
+file always maps to a browsable tag.
 
 **Uninstall:** `bash /tmp/xmarks/scripts/install-vendored.sh --uninstall /path/to/your-repo`
 removes everything the install added (skills, agents, hook scripts, hook entries in
-`.claude/settings.json`, `VERSION`) but keeps flywheel's project state
+`.claude/settings.json`, `VERSION`, manifest, the auto-update workflow), restores any
+`.pre-flywheel` backups, and keeps flywheel's project state
 (`.claude/flywheel/LEARNINGS.md`, `specs/`, `gate.sh`).
 
 ## 3. Manual alternative (local, per session, no repo change)

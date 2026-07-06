@@ -13,6 +13,8 @@ on:
       - "agents/**"
       - "hooks/**"
       - "scripts/**"
+      - "README.md"
+      - "docs/**"
       - ".github/workflows/validate-plugins.yml"
   pull_request:
     paths:
@@ -21,6 +23,8 @@ on:
       - "agents/**"
       - "hooks/**"
       - "scripts/**"
+      - "README.md"
+      - "docs/**"
       - ".github/workflows/validate-plugins.yml"
 
 jobs:
@@ -47,6 +51,8 @@ jobs:
   test-installer:
     # End-to-end test of the vendored install path used for Claude Code web:
     # install twice (idempotence), assert the vendored result, then uninstall.
+    # Also checks docs consistency: every skill/agent documented in README and
+    # the /flywheel:help command map.
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -55,3 +61,6 @@ jobs:
 
       - name: Test install-vendored.sh
         run: bash scripts/test-install-vendored.sh
+
+      - name: Check docs consistency
+        run: bash scripts/test-docs-consistency.sh
