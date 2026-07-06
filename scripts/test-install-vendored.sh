@@ -27,9 +27,10 @@ EOF
 # back it up, and the uninstall must restore it.
 mkdir -p "${TARGET}/.claude/agents"
 echo "my own verifier" > "${TARGET}/.claude/agents/verifier.md"
+git -C "${TARGET}" remote add origin git@github.com:acme/demo.git
 
 echo "== install (twice, must be idempotent) =="
-bash "${INSTALLER}" --auto-update "${TARGET}" > /dev/null 2>"${WORK}/warnings.txt"
+bash "${INSTALLER}" --auto-update "${TARGET}" > "${WORK}/install-out.txt" 2>"${WORK}/warnings.txt"
 bash "${INSTALLER}" --auto-update "${TARGET}" > /dev/null
 
 SKILL_COUNT="$(ls -d "${TARGET}"/.claude/skills/flywheel-*/ | wc -l | tr -d ' ')"
@@ -74,6 +75,10 @@ pass "pre-existing agent backed up (with warning) before overwrite"
 grep -q 'flywheel-update.yml@main' "${TARGET}/.github/workflows/flywheel-update.yml" \
   || fail "--auto-update did not write the caller workflow"
 pass "--auto-update wrote .github/workflows/flywheel-update.yml"
+
+grep -q 'https://github.com/acme/demo/settings/actions' "${WORK}/install-out.txt" \
+  || fail "--auto-update did not print the repo's Actions settings URL"
+pass "--auto-update printed the exact Actions settings URL"
 
 python3 - "${TARGET}/.claude/settings.json" <<'PY'
 import json, sys
