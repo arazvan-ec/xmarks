@@ -3,7 +3,7 @@
   "owner": {
     "name": "arazvan"
   },
-  "description": "Plugins de Claude Code de arazvan. Incluye flywheel: un bucle spec→plan→work→verify→review→compound para desarrollo asistido por IA.",
+  "description": "Claude Code plugins by arazvan. Includes flywheel: a spec→plan→work→verify→review→compound loop for disciplined AI-assisted development.",
   "plugins": [
     {
       "name": "flywheel",
