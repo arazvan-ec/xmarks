@@ -55,6 +55,8 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 - `verifier` — runs the app/tests and returns an objective PASS/FAIL with evidence.
 - `reviewer-correctness`, `reviewer-security`, `reviewer-performance` — adversarial specialist reviewers dispatched in parallel by `/flywheel:review`.
 
+**Model routing by role** (v0.9.0): the mechanical `verifier` runs on **Haiku** (it runs commands and reports evidence); the judgment-heavy `reviewer-*` run on **Sonnet**. Override any agent via its `model:` frontmatter (e.g. a reviewer → `opus` for high-stakes reviews), or all at once with `CLAUDE_CODE_SUBAGENT_MODEL`.
+
 ## State it keeps (in the project you use it on)
 
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.

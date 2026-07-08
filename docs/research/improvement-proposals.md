@@ -20,7 +20,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 
 | # | Proposal | Status | Next action |
 | --- | --- | --- | --- |
-| P1 | Model routing by agent role | 🟡 discussing | Resolve open questions, then decide go/no-go |
+| P1 | Model routing by agent role | ✅ shipped (v0.9.0) | Done — verifier→haiku, reviewers→sonnet |
 | P2 | Smarter learnings ledger (git-native memory) | 🟢 design locked | Build the small first release: typed format + injection + `/recall` |
 | P3 | Learnings-aware file-read priming hook | 🟢 design locked | Build after P2 (needs typed `files=` metadata) |
 | P4 | Goal-based evaluator for `autoloop` | 🔵 proposed | Discuss whether it supersedes self-judging |
@@ -61,11 +61,15 @@ and resolution order are confirmed in the docs.
 **Files:** the 4 `agents/*.md`; a short "model routing" note in `skills/help/SKILL.md`
 and the README; `plugin.json` version bump + `upgrades/vX.Y.Z.md`.
 
-**Open questions:**
-- Is Haiku strong enough for the verifier's adversarial "don't rationalize a FAIL
-  into a PASS" behavior? (Pilot on a real verify run before committing.)
-- Reviewers on `sonnet` or bump the hardest to `opus`? Cost vs rigor.
-- Hard-code the models, or make them configurable via env/frontmatter override?
+**Decisions (shipped v0.9.0):**
+- **verifier → `haiku`** (mechanical run-and-report). Caveat documented: if a
+  rationalized false-green ever appears, raise it to `sonnet` (one-line change).
+  Behavioral pilot happens in real use — model routing is enforced by Claude
+  Code's runtime, not by a shell test.
+- **reviewers → `sonnet`** (judgment). `opus` left as an opt-in for high-stakes
+  reviews.
+- **No new config surface** — override via each agent's `model:` frontmatter or
+  the upstream `CLAUDE_CODE_SUBAGENT_MODEL` env var.
 
 ---
 
@@ -237,3 +241,7 @@ Append-only. Newest at the bottom.
   (git-native curated memory). Four decisions fixed: grep-live (no index yet);
   defer semi-auto staging; defer interop; branch/files/recency scoring for v1.
   P2/P3 move to 🟢 design locked. Feature saved; implementation still pending.
+- **2026-07-08** — **Shipped P1 (model routing) as v0.9.0** — first real plugin
+  code change. `verifier` → haiku (mechanical); reviewers stay sonnet (judgment),
+  opus opt-in. Added `upgrades/v0.9.0.md`; documented in README + `/flywheel:help`.
+  docs-consistency + install-vendored + `plugin validate --strict` all green.

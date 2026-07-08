@@ -20,9 +20,9 @@ narrative/discussion home; the structured backlog lives in
 
 *Snapshot — 2026-07-08.*
 
-- **Branch:** `claude/loop-analisis`. Everything so far is **docs-only** — no
-  plugin code (`skills/`/`agents/`/`hooks/`/`scripts/`) changed, no version bump,
-  CI green.
+- **Branch:** `claude/loop-analisis`. **First code change shipped: P1 model
+  routing (v0.9.0).** Prior work is the docs research corpus + this journal. All
+  checks green (docs-consistency, install-vendored, plugin validate).
 - **In the repo:**
   - [`../getting-started-with-loops.md`](../getting-started-with-loops.md) — adapted article + flywheel gap analysis.
   - The [`.`](README.md) research corpus — loop primitives, claude-mem, token efficiency, gentle-ai, comparisons, sources.
@@ -33,7 +33,8 @@ narrative/discussion home; the structured backlog lives in
 - **Decided:** Option C (git-native curated memory) accepted; the P2/P3 design is
   **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)).
   Implementation not started. Next decision: what to build first.
-- **Active focus:** choosing the first real code change to implement.
+- **Active focus:** P1 done; next up is building the git-native memory (P2) or a
+  cheap add-on (P7 delegation triggers).
 
 ## Session log
 
@@ -62,6 +63,14 @@ narrative/discussion home; the structured backlog lives in
   (Option C accepted) and T2 (design locked) resolved. Feature design saved;
   implementation pending. Deciding what to build first.
 
+### 2026-07-08 — Session 3
+- **Shipped P1 (model routing) as v0.9.0** — the first real plugin code change.
+  `verifier` → haiku (mechanical run-and-report); reviewers stay sonnet
+  (judgment), opus opt-in. Added `upgrades/v0.9.0.md`; documented in README +
+  `/flywheel:help`. docs-consistency + install-vendored + `plugin validate`
+  green. The release pipeline (bump → note → docs sync → tests) is now validated
+  end-to-end. T3 resolved.
+
 ## Open threads
 
 The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
@@ -70,7 +79,7 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | --- | --- | --- | --- |
 | T1 | Build vs integrate (Q3) | ✅ Option C accepted | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
 | T2 | Git-native memory design | ✅ design locked | [`git-native-memory-design.md`](git-native-memory-design.md) |
-| T3 | P1 model routing details (hard-code vs configurable; opus for hard reviews?) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p1--model-routing-by-agent-role-) |
+| T3 | P1 model routing | ✅ shipped v0.9.0 | [`improvement-proposals.md`](improvement-proposals.md#p1--model-routing-by-agent-role-) |
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
 | T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
 | T6 | Opt-in interop with claude-mem / Engram | 🔵 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
