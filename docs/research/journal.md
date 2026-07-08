@@ -20,9 +20,10 @@ narrative/discussion home; the structured backlog lives in
 
 *Snapshot — 2026-07-08.*
 
-- **Branch:** `claude/loop-analisis`. **First code change shipped: P1 model
-  routing (v0.9.0).** Prior work is the docs research corpus + this journal. All
-  checks green (docs-consistency, install-vendored, plugin validate).
+- **Branch:** `claude/loop-analisis`. **Shipped so far: P1 model routing (v0.9.0),
+  P2 git-native memory first release (v0.10.0).** Prior work is the docs research
+  corpus + this journal. All checks green (docs-consistency, install-vendored,
+  plugin validate).
 - **In the repo:**
   - [`../getting-started-with-loops.md`](../getting-started-with-loops.md) — adapted article + flywheel gap analysis.
   - The [`.`](README.md) research corpus — loop primitives, claude-mem, token efficiency, gentle-ai, comparisons, sources.
@@ -33,12 +34,12 @@ narrative/discussion home; the structured backlog lives in
   - This journal.
 - **Decided:** Option C (git-native curated memory) accepted; the P2/P3 design is
   **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)).
-  Implementation not started. Next decision: what to build first.
-- **Active focus:** P1 done. Remaining work (P2–P7) is packaged as **async-ready
-  briefs** ([`briefs/`](briefs/README.md)). The first routine attempt was blocked
-  by a git-write permission issue (see the Async run state postmortem) and has
-  been cleaned up; the next step is recreating the routines via the official UI
-  with the repo selected.
+  P2's first release is now **implemented and shipped** (v0.10.0); P3 is unblocked.
+- **Active focus:** P1 and P2 done. Remaining work (P3–P7) is packaged as
+  **async-ready briefs** ([`briefs/`](briefs/README.md)). The first routine
+  attempt was blocked by a git-write permission issue (see the Async run state
+  postmortem) and has been cleaned up; the next step is recreating the routines
+  via the official UI with the repo selected, or continuing to build manually.
 
 ## Async run state — postmortem (routines blocked, cleaned up)
 
@@ -123,17 +124,29 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   status: routine path blocked; next step is UI recreation by the user.
 
 ### 2026-07-08 — Session 6
+- **Shipped P2 (git-native memory, first release) as v0.10.0**, kicked off from
+  `briefs/P2-git-native-memory.md`. Typed ledger entries in `/flywheel:compound`;
+  relevance-scored, budgeted SessionStart injection (branch/files/recency,
+  default top 12, `FLYWHEEL_LEARNINGS_INJECT` to override); new
+  `/flywheel:recall <query>` skill. Backward-compatible with old free-prose
+  entries. Added `upgrades/v0.10.0.md`; documented in README + `/flywheel:help`.
+  P3 (read-priming hook) can now build on P2's `files=` metadata.
+
+### 2026-07-08 — Session 7
 - Ran the **P4-goal-evaluator.md** brief's own decide-first step for T5: is a
   separate evaluator agent worth building over autoloop's existing
   deterministic metric-command check? Decision: **no** — `/goal`'s evaluator
   compensates for having no other check, but a transcript-only evaluator can't
   verify anything autoloop's actual metric-command output hasn't already
   proven. **P4 deferred, decided against.**
-- Built **P5 (token-usage discipline)** standalone and shipped as **v0.10.0**:
-  `skills/autoloop/SKILL.md` (hard budget stop, pilot-before-scaling, `/usage`
-  pointer, `/goal`/`/loop`/workflow guidance), `skills/help/SKILL.md`, and
-  `README.md` all updated. `upgrades/v0.10.0.md` added. All three checks
-  (docs-consistency, install-vendored, `plugin validate --strict`) green.
+- Built **P5 (token-usage discipline)** standalone: `skills/autoloop/SKILL.md`
+  (hard budget stop, pilot-before-scaling, `/usage` pointer, `/goal`/`/loop`/
+  workflow guidance), `skills/help/SKILL.md`, and `README.md` all updated. Hit
+  the exact version collision `briefs/README.md` warned about — P2 (this same
+  branch's PR, after merging `main`) had already taken **v0.10.0**, so P5
+  rebased to **v0.11.0**; `upgrades/v0.10.0.md` stayed P2's note and a new
+  `upgrades/v0.11.0.md` was added for P5. All three checks (docs-consistency,
+  install-vendored, `plugin validate --strict`) green after the merge.
 - T5 resolved (decided against, not built). T7 progress: one more brief (P4+P5)
   worked directly in a fresh session per the async plan, since the MCP routine
   path is still blocked pending UI recreation.
