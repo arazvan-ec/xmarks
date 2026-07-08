@@ -24,3 +24,10 @@ Loop:
 Keep a running log of `iteration | change | score | kept?`. Never ask the human mid-loop (AskUserQuestion is disabled). When you stop, report the trajectory, the final score, whether the target was met, and — if not — the most promising next direction.
 
 **Safety:** work on a branch; only revert changes *you* made this run; never discard pre-existing uncommitted work.
+
+**Token discipline:**
+- The **budget is the stop criterion** — `max-iterations` bounds runaway spend as tightly as the metric bounds runaway drift. Refuse to run unbounded; a missing budget defaults to 10, not infinite.
+- **Pilot before scaling.** On an unfamiliar metric or codebase, start with a small budget (3–5 iterations) to see the change/score trend before committing a large one.
+- Check **`/usage`** afterward (or mid-run, between iterations) to see actual spend by skill/subagent — use it to judge whether the per-iteration cost matches the metric's value.
+- For **turn-based** loops that outlive one autoloop run (recurring checks, not "iterate now"), prefer `/goal` or `/loop` over re-invoking `autoloop` — see [`docs/research/claude-code-loops.md`](../../docs/research/claude-code-loops.md) for when each fits, and match the interval to how often the underlying state actually changes.
+- If a single iteration needs more than a handful of subagents, that's a sign to move it to a **workflow** (`/workflows` for live per-agent token totals) instead of inflating autoloop's own turn.

@@ -60,6 +60,8 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 
 **Model routing by role** (v0.9.0): the mechanical `verifier` runs on **Haiku** (it runs commands and reports evidence); the judgment-heavy `reviewer-*` run on **Sonnet**. Override any agent via its `model:` frontmatter (e.g. a reviewer → `opus` for high-stakes reviews), or all at once with `CLAUDE_CODE_SUBAGENT_MODEL`.
 
+**Token discipline** (v0.12.0): `/flywheel:autoloop` treats its iteration budget as a hard stop and recommends piloting on a small budget before scaling; `/flywheel:help` points to `/usage`, `/goal`, and `/workflows` for spend visibility. See `skills/autoloop/SKILL.md`.
+
 ## State it keeps (in the project you use it on)
 
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.
