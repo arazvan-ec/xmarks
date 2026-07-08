@@ -34,6 +34,14 @@ these files are summarized in our own words; consult the originals for full text
 - Memory search tools — <https://docs.claude-mem.ai/usage/search-tools.md>
 - Release branches (the `/branches` page — release strategy, not a memory feature) — <https://docs.claude-mem.ai/branches.md>
 
+## gentle-ai
+
+- Repo — <https://github.com/Gentleman-Programming/gentle-ai>
+- Intended usage / SDD — <https://github.com/Gentleman-Programming/gentle-ai/blob/main/docs/intended-usage.md>
+- Engram (memory) — <https://github.com/Gentleman-Programming/gentle-ai/blob/main/docs/engram.md>
+- Architecture — <https://github.com/Gentleman-Programming/gentle-ai/blob/main/docs/architecture.md>
+- Skill registry — <https://github.com/Gentleman-Programming/gentle-ai/blob/main/docs/skill-registry.md>
+
 ## Third-party (secondary, cross-reference only)
 
 - Smart Explore skill overview — <https://crossaitools.com/skills/thedotmack/claude-mem/smart-explore>

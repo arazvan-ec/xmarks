@@ -9,6 +9,11 @@ the plugin version (any change to `skills/`, `agents/`, `hooks/`, or `scripts/`
 requires a `plugin.json` bump **and** a matching `upgrades/vX.Y.Z.md` note —
 enforced by `scripts/test-docs-consistency.sh`).
 
+> **Strategic context:** whether P2/P3 (memory) should be *built*, *integrated*,
+> or *differentiated* is analyzed in [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md)
+> — current lean: a **git-native, curated** memory that borrows selectivity from
+> claude-mem / gentle-ai without their infrastructure.
+
 ## Status
 
 Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done · ⚪ deferred
@@ -21,6 +26,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P4 | Goal-based evaluator for `autoloop` | 🔵 proposed | Discuss whether it supersedes self-judging |
 | P5 | Token-usage discipline | 🔵 proposed | Could fold into P4 |
 | P6 | Time-based / proactive loop guidance | ⚪ deferred | Start as a doc later |
+| P7 | Delegation triggers (from gentle-ai) | 🔵 proposed | Discuss thresholds; where they live |
 
 ## Priority overview
 
@@ -32,6 +38,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P4 | Goal-based evaluator for `autoloop` | Medium | Medium | Medium | Yes |
 | P5 | Token-usage discipline in autoloop + help | Medium | Low | Low | Yes |
 | P6 | Time-based / proactive loop guidance (routines) | Medium | Large | Medium | Yes (+docs) |
+| P7 | Delegation triggers (when to spin up a fresh-context subagent) | Medium | Low | Low | Yes |
 
 ---
 
@@ -172,6 +179,29 @@ bump the version + upgrade note.
 
 ---
 
+## P7 — Delegation triggers
+
+**Why.** gentle-ai defines concrete thresholds for *when* to delegate to a
+fresh-context subagent ("4-file rule"; "2+ non-trivial files → fresh review";
+"~20 tool calls or ~5 reads → pause and re-plan"). flywheel tells agents to use
+subagents but gives no heuristics for *when* — so context bloats before anyone
+delegates. These are cheap, high-value guardrails.
+
+**What.** Encode the thresholds into `skills/work/SKILL.md` (surfaced in
+`skills/help`): when a task crosses a read/write/tool-call threshold, delegate
+exploration or trigger a fresh review before advancing. Aligns with flywheel's
+existing fresh-context reviewers.
+
+**Files:** `skills/work/SKILL.md`, `skills/help/SKILL.md`, README, `plugin.json`
++ `upgrades/`.
+
+**Open questions:**
+- Adopt gentle-ai's exact numbers, or tune them to flywheel's phases?
+- Advisory guidance vs a hard rule enforced by a hook?
+- Cheap enough to ride along with P1 or P5 in one release.
+
+---
+
 ## Suggested sequencing
 
 1. **P1** (clean, self-contained win; validates the release flow end-to-end).
@@ -193,3 +223,9 @@ Append-only. Newest at the bottom.
   P1–P6 drafted. Decision: **hold on implementation**; keep the proposals in the
   repo as a living backlog and continue the discussion before building. No plugin
   code changed yet; all work so far is docs-only (no version bump).
+- **2026-07-08** — Reviewed **gentle-ai**. Added **P7 (delegation triggers)** and
+  made the landscape comparison 3-way. Opened the **build-vs-integrate** strategy
+  ([`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md)); current
+  lean is **git-native curated memory** (Option C). Started the
+  [design journal](journal.md) to track threads. Still docs-only; no decision to
+  build yet.

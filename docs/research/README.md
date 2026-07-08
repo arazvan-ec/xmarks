@@ -14,8 +14,11 @@ Compiled 2026-07-08.
 | [`claude-code-loops.md`](claude-code-loops.md) | The official Claude Code loop primitives — `/goal`, `/loop`, `/schedule` (routines), parallel subagents, and dynamic workflows — with exact syntax, hard limits, and the model-routing / token-management guidance. |
 | [`claude-mem.md`](claude-mem.md) | What **claude-mem** is and how it works end-to-end: automatic memory compression, the hook lifecycle, SQLite/FTS5 storage, the File Read Gate, and 3-layer retrieval. |
 | [`token-efficiency.md`](token-efficiency.md) | The headline token-saving numbers — File Read Gate (~95%), Smart Explore (10–19×), 3-layer retrieval — and why they matter for flywheel. |
-| [`flywheel-vs-claude-mem.md`](flywheel-vs-claude-mem.md) | Side-by-side comparison of flywheel's ledger-based compounding against claude-mem's memory infrastructure, and the concrete ideas flywheel could borrow. |
-| [`improvement-proposals.md`](improvement-proposals.md) | The synthesized, prioritized roadmap of concrete flywheel improvements drawn from both bodies of research. |
+| [`gentle-ai.md`](gentle-ai.md) | How **gentle-ai** / Engram works (memory, SDD workflow, delegation triggers, per-phase model routing) and what flywheel can learn from it. |
+| [`flywheel-vs-claude-mem.md`](flywheel-vs-claude-mem.md) | Three-way comparison (flywheel vs claude-mem vs gentle-ai) and the concrete ideas flywheel could borrow. |
+| [`improvement-proposals.md`](improvement-proposals.md) | The synthesized, prioritized roadmap (P1–P7) of concrete flywheel improvements + decision log. |
+| [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) | The strategic analysis: build vs integrate memory, and the git-native curated-memory bet. |
+| [`journal.md`](journal.md) | The **design journal** — session log, open-threads queue, and parking lot for resuming without losing ideas. |
 | [`sources.md`](sources.md) | Consolidated list of every source URL, grouped by topic. |
 
 The companion narrative reference, [`../getting-started-with-loops.md`](../getting-started-with-loops.md),
@@ -23,6 +26,8 @@ is the adapted version of the ClaudeDevs article that started this work.
 
 ## How to use this corpus
 
+- **Resuming the conversation?** Start with the [design journal](journal.md) —
+  "Where we are now" + "Open threads" tell you exactly where we left off.
 - **Deciding what to build next?** Start with [`improvement-proposals.md`](improvement-proposals.md);
   it ranks the options by value / effort / risk and links back to the evidence.
 - **Implementing a loop feature?** [`claude-code-loops.md`](claude-code-loops.md)

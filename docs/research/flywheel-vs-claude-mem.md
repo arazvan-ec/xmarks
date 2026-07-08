@@ -1,66 +1,60 @@
-# flywheel vs claude-mem
+# flywheel vs claude-mem vs gentle-ai
 
-Both persist learnings across sessions and reload them at session start, but they
-sit at opposite ends of the spectrum. **flywheel** is a *disciplined-process*
-plugin (`spec → plan → work → verify → review → compound`, plus an inner
-iterate-until-green loop) whose memory is a deliberately simple, human-readable
-markdown ledger. **claude-mem** is *memory/token-efficiency infrastructure* with
-automatic capture, AI compression, and searchable storage.
+Three tools now occupy adjacent space. **flywheel** is a *disciplined-process*
+Claude Code plugin (`spec → plan → work → verify → review → compound`, plus an
+inner iterate-until-green loop) whose memory is a deliberately simple, curated
+markdown ledger. **claude-mem** is *memory/token-efficiency infrastructure*
+(automatic capture, AI compression, SQLite/FTS5 + a worker + the File Read Gate).
+**gentle-ai** is a cross-agent *ecosystem configurator* (Go CLI) bundling
+persistent memory (Engram), an SDD workflow, model routing, and delegation
+triggers across 15 agents. See [`claude-mem.md`](claude-mem.md) and
+[`gentle-ai.md`](gentle-ai.md) for the details.
 
 ## Side by side
 
-| Dimension | claude-mem | flywheel |
-| --- | --- | --- |
-| Primary purpose | Persistent memory + token-efficient retrieval infra | Disciplined dev loop; compounding via a learnings ledger |
-| Knowledge capture | **Automatic** — every tool call compressed; auto session summaries | **Manual/curated** — `/flywheel:compound` writes learnings |
-| What's stored | Structured observations (title/narrative/facts/type/concepts/files) + summaries + prompts | Plain markdown notes in `.claude/flywheel/LEARNINGS.md` |
-| Storage engine | **SQLite + FTS5** (+ optional Chroma vectors) | **Flat markdown file** in the repo |
-| Retrieval | **Semantic/keyword search**, 3-layer progressive disclosure | **Whole-file reload** at SessionStart |
-| Selectivity | Query-scoped, ranked, type/date/project filters | None — all-or-nothing whole-file load |
-| Token efficiency on reads | **File Read Gate** (~95%) + Smart Explore (10–19×) | No gate; normal full reads |
-| Compression | AI-compresses raw tool I/O (Haiku default) | None — raw human prose |
-| Scope | Global cross-project DB (filterable) | Per-repo, committed to source control |
-| Model handling | Configurable compression model/provider | Agents pinned to one model (`sonnet`) |
-| Transparency | DB + viewer UI; less human-editable | Fully human-readable, git-diffable, PR-reviewable |
-| Failure mode at scale | DB grows but retrieval stays bounded | Ledger reload cost grows linearly — a fixed per-session tax |
+| Dimension | flywheel | claude-mem | gentle-ai |
+| --- | --- | --- | --- |
+| Form factor | Claude Code plugin (markdown) | npm package + worker service | Go CLI / binary |
+| Scope | Claude Code only | Claude Code (+ some agents) | 15 agents |
+| Primary purpose | Disciplined dev loop + compounding | Memory + token-efficient retrieval | Ecosystem config: memory + SDD + routing |
+| Knowledge capture | **Manual/curated** (`/compound`) | **Automatic** (every tool call, compressed) | **Automatic** (Engram, background) |
+| What's stored | Plain markdown ledger | Structured observations + summaries | Engram observations (git-committable `.engram/`) |
+| Storage engine | Flat markdown in the repo | SQLite + FTS5 (+ optional vectors) | Indexed `.engram/` store |
+| Retrieval | Whole-file reload at SessionStart | Semantic/keyword, 3-layer disclosure | MCP `mem_context` / `mem_search` (selective) |
+| Token efficiency on reads | No gate | File Read Gate (~95%) + Smart Explore (10–19×) | Selective injection (no published gate/benchmark) |
+| Model routing | **None** (all agents `sonnet`) | Configurable compression model | **Per-phase routing** built in |
+| Delegation heuristics | None | n/a | **Delegation triggers** (4-file / long-session rules) |
+| Memory locality | Designed for **branch/PR-scoped repo content** | Global DB (project-filterable) | `.engram/` side store (git-committable) |
+| Transparency | Fully human-readable, PR-reviewable | DB + viewer UI | TUI + human-inspectable store |
+| Infra weight | **None** (no binary/service) | Worker service + DB | Go binary + MCP |
+| Failure mode at scale | Reload cost grows (fixed per-session tax) | Bounded via search | Bounded via search |
 
 ## Net trade-off
 
-flywheel's ledger is **transparent, versioned, and curated** — only vetted
-learnings land, and they're reviewable in git — but it's manual, uncompressed,
-and reloaded whole, so its per-session token cost grows with the file and it
-can't retrieve *only* what's relevant. claude-mem is **automatic, compressed, and
-searchable** with strong token savings — but it's heavier infra (worker service,
-DB, MCP), less human-auditable, and captures everything (noise included) rather
-than curated lessons.
+flywheel's ledger is **transparent, versioned, and curated** — but manual,
+uncompressed, and reloaded whole (a growing per-session tax with no relevance
+filtering). claude-mem and gentle-ai are **automatic, indexed, and selective**
+with real token savings — but heavier infra (a worker service / a Go binary),
+less human-auditable, and they capture *everything* rather than curated lessons.
 
-The interesting design space for flywheel is to **keep the curated,
-git-native ledger as the source of truth** while borrowing claude-mem's
-*retrieval selectivity* and *token discipline*.
+The productive design space for flywheel is to **keep the curated, git-native
+ledger as the source of truth** while borrowing the others' *selectivity* and
+*token discipline* — analyzed in [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md).
 
 ## Ideas flywheel could adopt
 
-1. **Retrieval over whole-file reload.** Index `LEARNINGS.md` entries (a
-   lightweight grep/FTS index, or a small SQLite/FTS5 sidecar) and have the
-   SessionStart hook inject only the top-N relevant to the current
-   branch/spec/task — capping the growing reload tax.
-2. **Progressive disclosure.** Store a one-line title per learning; load titles
-   first, expand full detail on demand via a `/flywheel:recall <query>` command
-   (analogous to `search` → `get_observations`).
-3. **Structured, typed entries.** Give each ledger entry lightweight metadata
-   (type: bugfix/decision/gotcha/pattern; files; date; spec/PR link) to enable
-   filtering without abandoning the markdown-first ethos.
-4. **A File-Read-Gate analogue keyed to learnings.** A PreToolUse hook that, when
-   about to read a file with recorded learnings, first surfaces the relevant
-   ledger entries — cheap context before an expensive read. High ROI, cheap to
-   prototype.
-5. **Semi-automatic capture.** Auto-draft candidate learnings from the
-   verify/review stages into a staging area the human promotes — claude-mem's
-   automatic capture + flywheel's curation discipline.
-6. **Compress verbose entries.** An occasional cheap-model pass to condense/merge
-   redundant ledger entries, keeping reloaded context high-signal.
-7. **Cap / rotate the injected context.** An explicit budget (inject only the N
-   most recent or most relevant), archiving older entries but keeping them
-   searchable — so compounding never silently degrades the attention budget.
+1. **Retrieval over whole-file reload** — inject only the top-N ledger entries
+   relevant to the current branch/spec (a grep/flat index; no DB required). → P2
+2. **Progressive disclosure** — load titles first; expand on demand via
+   `/flywheel:recall <query>`. → P2
+3. **Structured, typed entries** — metadata (type/files/date/spec-PR link) for
+   cheap filtering, without abandoning markdown. → P2
+4. **A File-Read-Gate analogue** keyed to learnings (advisory PreToolUse hook). → P3
+5. **Model routing by role/phase** — validated by both claude-mem (Haiku for
+   compression) and gentle-ai (per-phase routing). → P1
+6. **Delegation triggers** (from gentle-ai) — concrete thresholds for *when* to
+   spin up a fresh-context subagent (4-file rule, long-session rule). → **P7**
+7. **Semi-automatic capture** — auto-draft candidate learnings at verify/review/
+   Stop into a staging area a human promotes. → P2
 
-Full evidence: [`token-efficiency.md`](token-efficiency.md), [`claude-mem.md`](claude-mem.md).
+Full evidence: [`token-efficiency.md`](token-efficiency.md), [`claude-mem.md`](claude-mem.md), [`gentle-ai.md`](gentle-ai.md).
