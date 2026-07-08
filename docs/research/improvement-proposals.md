@@ -23,7 +23,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P1 | Model routing by agent role | ✅ shipped (v0.9.0) | Done — verifier→haiku, reviewers→sonnet |
 | P2 | Smarter learnings ledger (git-native memory) | ✅ shipped (v0.10.0) | Done — typed entries, budgeted injection, `/flywheel:recall` |
 | P3 | Learnings-aware file-read priming hook | ✅ shipped (v0.11.0) | Done — advisory `PreToolUse` hook on `Read` |
-| P4 | Goal-based evaluator for `autoloop` | ⚪ deferred (decided against) | Redundant vs. autoloop's existing deterministic metric check — see decision log |
+| P4 | Goal-based evaluator for `autoloop` | ✅ shipped (v0.13.0) | Reopened — see decision log: the v0.12.0 rejection assessed a transcript-only evaluator; v0.13.0 ships a re-execution cross-check instead |
 | P5 | Token-usage discipline | ✅ shipped (v0.12.0) | Done — autoloop + `/flywheel:help` carry the guidance |
 | P6 | Time-based / proactive loop guidance | ✅ shipped (docs) | `docs/proactive-loops.md`; a runtime skill (e.g. `/flywheel:watch`) is still open |
 | P7 | Delegation triggers (from gentle-ai) | 🔵 proposed | Discuss thresholds; where they live |
@@ -154,6 +154,23 @@ read-only evaluator judging that same transcript can't verify anything the
 metric command hasn't already proven, so it adds process without adding
 rigor. Revisit only if a concrete failure mode shows up in practice (e.g. the
 working agent fabricating a metric result instead of running the command).
+
+**Decision (2026-07-08, superseded above): reopened, shipped v0.13.0.**
+The v0.12.0 rejection is correct about the mechanism it evaluated — a
+transcript-only judge, like `/goal`'s, genuinely adds nothing on top of a
+metric command autoloop already runs. But that isn't the only way to build an
+evaluator, and the rejection named its own revisit trigger explicitly: "the
+working agent fabricating a metric result instead of running the command."
+That's exactly the failure mode a **different** mechanism closes — one that
+doesn't read the transcript at all, but **independently re-executes the
+metric command itself** and compares its own reading against what was
+claimed. This isn't asking the same question twice; it's checking whether the
+one deterministic signal autoloop relies on was actually produced honestly.
+Built as `agents/evaluator.md` (`model: haiku`, read-only tools besides the
+re-run), consulted by `skills/autoloop/SKILL.md` before an ambiguous
+keep/discard or a stop decision. Cheap (Haiku) and additive to the existing
+budget — it doesn't replace the metric-command check, it independently
+re-verifies it.
 
 ---
 
@@ -297,3 +314,19 @@ Append-only. Newest at the bottom.
   (the exact scenario `briefs/README.md` warned about): P2 then P3 each merged
   into `main` first and claimed 0.10.0 then 0.11.0, so P5 lands as **v0.12.0**.
   docs-consistency + install-vendored + `plugin validate --strict` all green.
+- **2026-07-08** — **Reopened P4 and shipped it as v0.13.0.** A second,
+  independent session had reached a different conclusion on the same open
+  question and built an evaluator before the P5 session's rejection merged;
+  its PR lost the merge race and was closed as a duplicate. On review, the
+  v0.12.0 decision is right about a **transcript-only** evaluator (redundant,
+  as reasoned) but doesn't rule out every evaluator design — and it names its
+  own revisit trigger ("the working agent fabricating a metric result instead
+  of running the command"). Built exactly that check instead of a transcript
+  judge: `agents/evaluator.md` (`model: haiku`) **independently re-executes
+  the metric command** rather than reading what the working agent reported,
+  closing the self-grading-bias gap without re-litigating the parts of the
+  v0.12.0 reasoning that hold up. `skills/autoloop/SKILL.md` consults it
+  before an ambiguous keep/discard or a stop decision; README + `/flywheel:help`
+  document the new agent. Version bumped to v0.13.0 (main had moved to v0.12.0
+  since the closed PR). docs-consistency + install-vendored +
+  `plugin validate --strict` all green.

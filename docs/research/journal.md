@@ -22,9 +22,10 @@ narrative/discussion home; the structured backlog lives in
 
 - **Shipped so far (on `main`): P1 model routing (v0.9.0), P2 git-native memory
   (v0.10.0), P3 read-priming hook (v0.11.0), P6 proactive loop guidance (docs,
-  no version bump).** P5 token-usage discipline (v0.12.0) is open as PR #17,
-  pending merge, with P4 (goal evaluator) recorded as deferred/decided against
-  in the same brief. The P2 → P3 git-native memory sequence is complete. Prior
+  no version bump), P5 token-usage discipline (v0.12.0), P4 goal evaluator
+  (v0.13.0).** P4 was briefly deferred/decided against in the P5 release, then
+  **reopened** in Session 10 with a different mechanism than the one that was
+  rejected (see T5). The P2 → P3 git-native memory sequence is complete. Prior
   work is the docs research corpus + this journal. All checks green
   (docs-consistency, install-vendored, read-prime, plugin validate).
 - **In the repo:**
@@ -40,12 +41,12 @@ narrative/discussion home; the structured backlog lives in
   **implemented** (§1–§4 in v0.10.0, §6 in v0.11.0). §5/§7/§8 (flat index,
   rotation/archival, claude-mem/Engram interop) remain deliberate follow-ups,
   only if a measured need arises.
-- **Active focus:** P1–P3 and P6 done; P4 decided against; P5 open as PR #17.
-  Only **P7** remains from the original async-briefs backlog
+- **Active focus:** P1–P3, P5, P6 done; P4 reopened and shipped (v0.13.0). Only
+  **P7** remains from the original async-briefs backlog
   ([`briefs/`](briefs/README.md)). The first routine attempt was blocked by a
   git-write permission issue (see the Async run state postmortem); several
   parallel sessions since then have built P2/P3/P4/P5/P6 directly (some
-  duplicating each other — see Session 6–9 notes), and PRs are being reviewed
+  duplicating each other — see Session 6–10 notes), and PRs are being reviewed
   and merged one at a time.
 
 ## Async run state — postmortem (routines blocked, cleaned up)
@@ -182,6 +183,29 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   worked directly in a fresh session per the async plan, since the MCP routine
   path is still blocked pending UI recreation.
 
+### 2026-07-08 — Session 10
+- A parallel P4+P5 attempt from this same period (branch
+  `claude/exciting-ritchie-ei67f0`, PR #16) had independently built the
+  evaluator agent and reached the **opposite** conclusion on T5 — before the
+  Session 9 rejection had merged. Since PR #17 (Session 9's P5-only release,
+  with P4 deferred) merged first, PR #16 was closed as a duplicate per the
+  parallel-briefs collision rule.
+- On review, **reopened T5**: the v0.12.0 rejection is right that a
+  transcript-only evaluator (reading what the working agent reported, like
+  `/goal`'s) is redundant with autoloop's own metric-command output — nothing
+  new there. But it isn't the only possible evaluator, and the rejection named
+  its own revisit condition explicitly: "the working agent fabricating a
+  metric result instead of running the command." Built exactly that instead:
+  `agents/evaluator.md` (`model: haiku`) **independently re-runs the metric
+  command** rather than reading the working agent's self-report, closing the
+  self-grading-bias gap the transcript-only design couldn't touch.
+  `skills/autoloop/SKILL.md` consults it before an ambiguous keep/discard or a
+  stop decision, on top of (not instead of) the existing metric-command check
+  and the v0.12.0 token-discipline guidance. Restarted the branch from the
+  current `main` (the old PR #16 commits predated P3/P5/P6 and were stale) and
+  shipped as **v0.13.0**. docs-consistency + install-vendored +
+  `plugin validate --strict` all green.
+
 ## Open threads
 
 The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
@@ -192,9 +216,9 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | T2 | Git-native memory design | ✅ design locked | [`git-native-memory-design.md`](git-native-memory-design.md) |
 | T3 | P1 model routing | ✅ shipped v0.9.0 | [`improvement-proposals.md`](improvement-proposals.md#p1--model-routing-by-agent-role-) |
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
-| T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | ✅ decided against (deferred) | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
+| T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | ✅ reopened; shipped v0.13.0 as a re-execution cross-check | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
 | T6 | Opt-in interop with claude-mem / Engram | 🔵 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
-| T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress (P2, P3 shipped; P4/P6 have open PRs pending review; P7 remains) | [`briefs/README.md`](briefs/README.md) |
+| T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress (P2–P6 shipped; only P7 remains) | [`briefs/README.md`](briefs/README.md) |
 
 ## Parking lot
 
