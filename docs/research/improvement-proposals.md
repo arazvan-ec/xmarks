@@ -23,8 +23,8 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P1 | Model routing by agent role | ✅ shipped (v0.9.0) | Done — verifier→haiku, reviewers→sonnet |
 | P2 | Smarter learnings ledger (git-native memory) | 🟢 design locked | Build the small first release: typed format + injection + `/recall` |
 | P3 | Learnings-aware file-read priming hook | 🟢 design locked | Build after P2 (needs typed `files=` metadata) |
-| P4 | Goal-based evaluator for `autoloop` | 🔵 proposed | Discuss whether it supersedes self-judging |
-| P5 | Token-usage discipline | 🔵 proposed | Could fold into P4 |
+| P4 | Goal-based evaluator for `autoloop` | ✅ shipped (v0.10.0) | Done — `evaluator` agent (Haiku) re-runs the metric command as a cross-check |
+| P5 | Token-usage discipline | ✅ shipped (v0.10.0) | Done — folded into the P4 release |
 | P6 | Time-based / proactive loop guidance | ⚪ deferred | Start as a doc later |
 | P7 | Delegation triggers (from gentle-ai) | 🔵 proposed | Discuss thresholds; where they live |
 
@@ -139,12 +139,23 @@ body to consult it. Bound by the existing max-iterations budget.
 **Files:** new `agents/evaluator.md`, `skills/autoloop/SKILL.md`, README/help,
 `plugin.json` + `upgrades/`.
 
-**Open questions:**
+**Open questions (resolved — see Decision log):**
 - Does an evaluator that judges only from the transcript fit autoloop, whose stop
   condition is a **metric command's output** (the agent runs the command; the
   evaluator would judge the reported number)?
 - Or is flywheel's existing deterministic metric-command check already stronger
   than `/goal`'s transcript-only evaluator, making this redundant?
+
+**Decision (shipped v0.10.0):** not redundant — built as a **cross-check**, not
+a `/goal`-style transcript judge. `/goal`'s evaluator is weaker than autoloop's
+metric-command check (it never runs anything, only reads the transcript), but
+the real gap it exposed is different: in autoloop, the **same agent that made
+the change also grades it**, which is exactly the setup self-grading bias lives
+in. So `agents/evaluator.md` (`model: haiku`, read-only tools) **re-runs the
+metric command itself** rather than trusting the working agent's self-report,
+and autoloop consults it before keeping/discarding an ambiguous iteration or
+declaring the target met. Cheap (Haiku) and additive to the existing budget —
+it doesn't replace the metric-command check, it independently re-verifies it.
 
 ---
 
@@ -160,8 +171,11 @@ advice; make the autoloop budget/stop-criteria discipline explicit.
 **Files:** `skills/autoloop/SKILL.md`, `skills/help/SKILL.md`, README,
 `plugin.json` + `upgrades/`.
 
-**Open questions:**
+**Open questions (resolved):**
 - Fold into P4 (both touch autoloop) as one release, or keep separate?
+
+**Decision (shipped v0.10.0):** folded into the P4 release, as suggested — both
+touch `skills/autoloop/SKILL.md` and one version bump covers both cleanly.
 
 ---
 
@@ -248,4 +262,16 @@ Append-only. Newest at the bottom.
 - **2026-07-08** — **Shipped P1 (model routing) as v0.9.0** — first real plugin
   code change. `verifier` → haiku (mechanical); reviewers stay sonnet (judgment),
   opus opt-in. Added `upgrades/v0.9.0.md`; documented in README + `/flywheel:help`.
+  docs-consistency + install-vendored + `plugin validate --strict` all green.
+- **2026-07-08** — **Shipped P4 + P5 as v0.10.0** (brief:
+  [`briefs/P4-goal-evaluator.md`](briefs/P4-goal-evaluator.md)). T5 resolved:
+  the evaluator is **not redundant** with autoloop's metric-command check — the
+  gap it closes is self-grading bias (the same agent that makes the change also
+  judges it), not evaluator quality. Built `agents/evaluator.md` (`model: haiku`)
+  as a **cross-check** that independently re-runs the metric command, consulted
+  by `skills/autoloop/SKILL.md` before keeping/discarding an ambiguous iteration
+  or declaring the target met. P5's token-discipline guidance (pilot-before-
+  scaling, interval-matching, explicit stall criteria, `/usage`/`/goal`/
+  `/workflows` for visibility) folded into the same release. Added
+  `upgrades/v0.10.0.md`; documented in README + `/flywheel:help`.
   docs-consistency + install-vendored + `plugin validate --strict` all green.
