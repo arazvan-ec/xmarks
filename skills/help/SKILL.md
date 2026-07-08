@@ -23,6 +23,7 @@ A disciplined, self-verifying development loop. One unit of work flows through s
 | `/flywheel:verify` | Objective PASS/FAIL gate; runs the real app/tests. |
 | `/flywheel:review <ref>` | Parallel correctness / security / performance review. |
 | `/flywheel:compound` | Capture this cycle's decisions and gotchas into the ledger. |
+| `/flywheel:recall <query>` | Look up a past decision/gotcha/pattern the ledger has, on demand. |
 | `/flywheel:ship <title>` | Clean commit + push + PR. |
 | `/flywheel:autoloop <goal>` | Hands-off: iterate autonomously until a metric is met or a budget runs out. |
 | `/flywheel:sync <spec>` | Reconcile drift between a spec and the code. |
@@ -35,7 +36,7 @@ A disciplined, self-verifying development loop. One unit of work flows through s
 - Want it fully autonomous → `/flywheel:autoloop <goal>` (define a measurable goal first).
 
 ## 4. Good to know
-- **State lives in this project** under `.claude/flywheel/`: specs in `specs/`, plus the compounding ledger `LEARNINGS.md`. The `SessionStart` hook reloads recent lessons each session, so knowledge carries forward.
+- **State lives in this project** under `.claude/flywheel/`: specs in `specs/`, plus the compounding ledger `LEARNINGS.md`. The `SessionStart` hook injects a relevance-scored, budgeted subset of recent lessons each session (matched to the current branch/files); anything it skips is one `/flywheel:recall <query>` away.
 - **Optional hard gate**: drop an executable `.claude/flywheel/gate.sh` (for example `npm test && npm run lint`). While it exists, the `Stop` hook blocks finishing a turn whenever it fails — so nothing is called "done" with checks red.
 - Commands are namespaced `/flywheel:…` and also show up in `/help`.
 - **Model routing by role**: the mechanical `verifier` runs on a fast/cheap model (Haiku); the judgment-heavy `reviewer-*` run on Sonnet. Change an agent's `model:` frontmatter to adjust, or `CLAUDE_CODE_SUBAGENT_MODEL` to override all.

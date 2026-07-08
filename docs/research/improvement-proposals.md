@@ -21,7 +21,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | # | Proposal | Status | Next action |
 | --- | --- | --- | --- |
 | P1 | Model routing by agent role | ✅ shipped (v0.9.0) | Done — verifier→haiku, reviewers→sonnet |
-| P2 | Smarter learnings ledger (git-native memory) | 🟢 design locked | Build the small first release: typed format + injection + `/recall` |
+| P2 | Smarter learnings ledger (git-native memory) | ✅ shipped (v0.10.0) | Done — typed entries, budgeted injection, `/flywheel:recall` |
 | P3 | Learnings-aware file-read priming hook | 🟢 design locked | Build after P2 (needs typed `files=` metadata) |
 | P4 | Goal-based evaluator for `autoloop` | 🔵 proposed | Discuss whether it supersedes self-judging |
 | P5 | Token-usage discipline | 🔵 proposed | Could fold into P4 |
@@ -249,3 +249,12 @@ Append-only. Newest at the bottom.
   code change. `verifier` → haiku (mechanical); reviewers stay sonnet (judgment),
   opus opt-in. Added `upgrades/v0.9.0.md`; documented in README + `/flywheel:help`.
   docs-consistency + install-vendored + `plugin validate --strict` all green.
+- **2026-07-08** — **Shipped P2 (git-native memory, first release) as v0.10.0**,
+  from the async brief in `briefs/P2-git-native-memory.md`. Typed ledger entries
+  in `/flywheel:compound`, relevance-scored budgeted injection in
+  `scripts/session-start.sh` (branch/files/recency, default top 12), and a new
+  `/flywheel:recall <query>` skill for on-demand lookup. Backward-compatible
+  with old free-prose entries; no index/staging/interop yet (deferred per the
+  locked design). Added `upgrades/v0.10.0.md`; documented in README +
+  `/flywheel:help`. P3 (read-priming hook) can now build on P2's `files=`
+  metadata.
