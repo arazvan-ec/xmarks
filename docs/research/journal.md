@@ -20,8 +20,9 @@ narrative/discussion home; the structured backlog lives in
 
 *Snapshot — 2026-07-08.*
 
-- **Branch:** `claude/loop-analisis`. **Shipped: P1 model routing (v0.9.0), P4
-  evaluator + P5 token discipline (v0.10.0).** Prior work is the docs research
+- **Branch:** `claude/loop-analisis`. **Shipped: P1 model routing (v0.9.0), P2
+  git-native memory first release (v0.10.0), P4 evaluator + P5 token discipline
+  (v0.11.0).** Prior work is the docs research
   corpus + this journal. All checks green (docs-consistency, install-vendored,
   plugin validate).
 - **In the repo:**
@@ -34,12 +35,13 @@ narrative/discussion home; the structured backlog lives in
   - This journal.
 - **Decided:** Option C (git-native curated memory) accepted; the P2/P3 design is
   **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)).
-  Implementation not started. Next decision: what to build first.
-- **Active focus:** P1 done. Remaining work (P2–P7) is packaged as **async-ready
-  briefs** ([`briefs/`](briefs/README.md)). The first routine attempt was blocked
-  by a git-write permission issue (see the Async run state postmortem) and has
-  been cleaned up; the next step is recreating the routines via the official UI
-  with the repo selected.
+  P2's first release is now **implemented and shipped** (v0.10.0); P3 is unblocked.
+- **Active focus:** P1, P2, P4, and P5 done. Remaining work (P3, P6, P7) is
+  packaged as **async-ready briefs** ([`briefs/`](briefs/README.md)). The first
+  routine attempt was blocked by a git-write permission issue (see the Async
+  run state postmortem) and has been cleaned up; the next step is recreating
+  the routines via the official UI with the repo selected, or continuing to
+  build manually.
 
 ## Async run state — postmortem (routines blocked, cleaned up)
 
@@ -124,16 +126,26 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   status: routine path blocked; next step is UI recreation by the user.
 
 ### 2026-07-08 — Session 6
-- **Shipped P4 + P5 as v0.10.0**, run from the P4 brief in a fresh bounded
-  session. Resolved T5: an evaluator that only re-reads the transcript (like
-  `/goal`'s) would indeed be weaker than autoloop's existing metric-command
-  check — but the actual gap is that the **same agent both makes and grades**
-  the change. Built `agents/evaluator.md` (Haiku, read-only) to independently
-  **re-run the metric command** as a cross-check, consulted by
+- **Shipped P2 (git-native memory, first release) as v0.10.0**, kicked off from
+  `briefs/P2-git-native-memory.md`. Typed ledger entries in `/flywheel:compound`;
+  relevance-scored, budgeted SessionStart injection (branch/files/recency,
+  default top 12, `FLYWHEEL_LEARNINGS_INJECT` to override); new
+  `/flywheel:recall <query>` skill. Backward-compatible with old free-prose
+  entries. Added `upgrades/v0.10.0.md`; documented in README + `/flywheel:help`.
+  P3 (read-priming hook) can now build on P2's `files=` metadata.
+
+### 2026-07-08 — Session 7
+- **Shipped P4 + P5 as v0.11.0** (bumped from v0.10.0 at merge time — P2 landed
+  on main first and claimed that version), run from the P4 brief in a fresh
+  bounded session. Resolved T5: an evaluator that only re-reads the transcript
+  (like `/goal`'s) would indeed be weaker than autoloop's existing
+  metric-command check — but the actual gap is that the **same agent both
+  makes and grades** the change. Built `agents/evaluator.md` (Haiku, read-only)
+  to independently **re-run the metric command** as a cross-check, consulted by
   `skills/autoloop/SKILL.md` before an ambiguous keep/discard or a stop
   decision. Folded in P5's token-discipline guidance (pilot small, match check
   interval to work, explicit stall criteria, `/usage`/`/goal`/`/workflows` for
-  visibility). README + `/flywheel:help` updated; `upgrades/v0.10.0.md` added;
+  visibility). README + `/flywheel:help` updated; `upgrades/v0.11.0.md` added;
   all three release checks green.
 
 ## Open threads
@@ -146,7 +158,7 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | T2 | Git-native memory design | ✅ design locked | [`git-native-memory-design.md`](git-native-memory-design.md) |
 | T3 | P1 model routing | ✅ shipped v0.9.0 | [`improvement-proposals.md`](improvement-proposals.md#p1--model-routing-by-agent-role-) |
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
-| T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | ✅ not redundant; shipped v0.10.0 as a cross-check | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
+| T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | ✅ not redundant; shipped v0.11.0 as a cross-check | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
 | T6 | Opt-in interop with claude-mem / Engram | 🔵 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
 | T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress | [`briefs/README.md`](briefs/README.md) |
 

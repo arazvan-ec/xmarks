@@ -21,10 +21,10 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | # | Proposal | Status | Next action |
 | --- | --- | --- | --- |
 | P1 | Model routing by agent role | ✅ shipped (v0.9.0) | Done — verifier→haiku, reviewers→sonnet |
-| P2 | Smarter learnings ledger (git-native memory) | 🟢 design locked | Build the small first release: typed format + injection + `/recall` |
+| P2 | Smarter learnings ledger (git-native memory) | ✅ shipped (v0.10.0) | Done — typed entries, budgeted injection, `/flywheel:recall` |
 | P3 | Learnings-aware file-read priming hook | 🟢 design locked | Build after P2 (needs typed `files=` metadata) |
-| P4 | Goal-based evaluator for `autoloop` | ✅ shipped (v0.10.0) | Done — `evaluator` agent (Haiku) re-runs the metric command as a cross-check |
-| P5 | Token-usage discipline | ✅ shipped (v0.10.0) | Done — folded into the P4 release |
+| P4 | Goal-based evaluator for `autoloop` | ✅ shipped (v0.11.0) | Done — `evaluator` agent (Haiku) re-runs the metric command as a cross-check |
+| P5 | Token-usage discipline | ✅ shipped (v0.11.0) | Done — folded into the P4 release |
 | P6 | Time-based / proactive loop guidance | ⚪ deferred | Start as a doc later |
 | P7 | Delegation triggers (from gentle-ai) | 🔵 proposed | Discuss thresholds; where they live |
 
@@ -146,7 +146,7 @@ body to consult it. Bound by the existing max-iterations budget.
 - Or is flywheel's existing deterministic metric-command check already stronger
   than `/goal`'s transcript-only evaluator, making this redundant?
 
-**Decision (shipped v0.10.0):** not redundant — built as a **cross-check**, not
+**Decision (shipped v0.11.0):** not redundant — built as a **cross-check**, not
 a `/goal`-style transcript judge. `/goal`'s evaluator is weaker than autoloop's
 metric-command check (it never runs anything, only reads the transcript), but
 the real gap it exposed is different: in autoloop, the **same agent that made
@@ -174,7 +174,7 @@ advice; make the autoloop budget/stop-criteria discipline explicit.
 **Open questions (resolved):**
 - Fold into P4 (both touch autoloop) as one release, or keep separate?
 
-**Decision (shipped v0.10.0):** folded into the P4 release, as suggested — both
+**Decision (shipped v0.11.0):** folded into the P4 release, as suggested — both
 touch `skills/autoloop/SKILL.md` and one version bump covers both cleanly.
 
 ---
@@ -263,8 +263,18 @@ Append-only. Newest at the bottom.
   code change. `verifier` → haiku (mechanical); reviewers stay sonnet (judgment),
   opus opt-in. Added `upgrades/v0.9.0.md`; documented in README + `/flywheel:help`.
   docs-consistency + install-vendored + `plugin validate --strict` all green.
-- **2026-07-08** — **Shipped P4 + P5 as v0.10.0** (brief:
-  [`briefs/P4-goal-evaluator.md`](briefs/P4-goal-evaluator.md)). T5 resolved:
+- **2026-07-08** — **Shipped P2 (git-native memory, first release) as v0.10.0**,
+  from the async brief in `briefs/P2-git-native-memory.md`. Typed ledger entries
+  in `/flywheel:compound`, relevance-scored budgeted injection in
+  `scripts/session-start.sh` (branch/files/recency, default top 12), and a new
+  `/flywheel:recall <query>` skill for on-demand lookup. Backward-compatible
+  with old free-prose entries; no index/staging/interop yet (deferred per the
+  locked design). Added `upgrades/v0.10.0.md`; documented in README +
+  `/flywheel:help`. P3 (read-priming hook) can now build on P2's `files=`
+  metadata.
+- **2026-07-08** — **Shipped P4 + P5 as v0.11.0** (brief:
+  [`briefs/P4-goal-evaluator.md`](briefs/P4-goal-evaluator.md); bumped from
+  v0.10.0 to v0.11.0 at merge since P2 claimed v0.10.0 first). T5 resolved:
   the evaluator is **not redundant** with autoloop's metric-command check — the
   gap it closes is self-grading bias (the same agent that makes the change also
   judges it), not evaluator quality. Built `agents/evaluator.md` (`model: haiku`)
@@ -273,5 +283,5 @@ Append-only. Newest at the bottom.
   or declaring the target met. P5's token-discipline guidance (pilot-before-
   scaling, interval-matching, explicit stall criteria, `/usage`/`/goal`/
   `/workflows` for visibility) folded into the same release. Added
-  `upgrades/v0.10.0.md`; documented in README + `/flywheel:help`.
+  `upgrades/v0.11.0.md`; documented in README + `/flywheel:help`.
   docs-consistency + install-vendored + `plugin validate --strict` all green.
