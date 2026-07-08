@@ -1,10 +1,11 @@
 # Git-native memory — concrete design
 
 The "how" behind [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md)
-Option C. This is a **design draft (🟡)** for backlog items P2 (smarter ledger)
-and P3 (read-priming hook) — **no plugin code has been changed**. It specifies a
-memory layer that gives claude-mem-style *selectivity* while staying pure
-markdown, committed to git, and dependency-free (works in web/vendored installs).
+Option C. This is an **accepted design (✅ — decisions locked 2026-07-08)** for
+backlog items P2 (smarter ledger) and P3 (read-priming hook). **Implementation is
+still pending — no plugin code has been changed yet.** It specifies a memory layer
+that gives claude-mem-style *selectivity* while staying pure markdown, committed
+to git, and dependency-free (works in web/vendored installs).
 
 Goal: kill the "reload the whole ledger every session" tax without a database,
 worker, or binary.
@@ -145,12 +146,16 @@ them.
 Suggested split into releases: **P2** (§1–§4, the ledger) first; **P3** (§6) next;
 §5/§7/§8 as follow-ups once the core is proven.
 
-## Open questions (see journal T2)
+## Decisions (locked 2026-07-08)
 
-- Grep-live vs the optional index (§5) — ship index from day one or wait for a
-  measured need? *(Lean: wait.)*
-- Semi-auto staging (§4) — include in the first P2 release or defer? *(Lean:
-  defer; ship the format + selective injection first.)*
-- Relevance scoring (§2) — are branch/files/recency enough, or do we need
-  fuzzy/semantic matching later via an optional add-on?
-- Interop (§8) — build now or after the standalone core lands? *(Lean: after.)*
+- **Index (§5):** grep the ledger live; **no `.tsv` index** until a measured need.
+- **Semi-auto staging (§4):** **deferred** — the first P2 release ships the typed
+  format + selective injection + `/recall` only.
+- **Relevance scoring (§2):** branch/files/recency is enough for v1; embeddings
+  stay a possible **optional** future add-on, kept out of the default.
+- **Interop (§8):** **deferred** — land the standalone git-native core first.
+
+Net: the first **P2 release is deliberately small** — typed entries in
+`/flywheel:compound`, budgeted relevance injection in `session-start.sh`, and the
+`/flywheel:recall` skill. **P3** (read-priming) follows (it needs the `files=`
+metadata); §5/§7/§8 are later follow-ups only if measured need arises.

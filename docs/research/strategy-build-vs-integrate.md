@@ -1,9 +1,10 @@
 # Strategy: build vs integrate — and the git-native memory bet
 
 The central strategic question for flywheel's memory/token-efficiency work
-(backlog P2/P3). Started 2026-07-08; **status 🟡 in progress** — this is a
-discussion document, not a decision yet. See the [journal](journal.md) threads
-T1/T2.
+(backlog P2/P3). **Status ✅ decided 2026-07-08 — Option C (git-native curated
+memory) accepted.** The concrete, locked design is in
+[`git-native-memory-design.md`](git-native-memory-design.md). See the
+[journal](journal.md) threads T1/T2 (both resolved).
 
 ## The question (Q3)
 
@@ -108,6 +109,10 @@ git-native, and curated; offer opt-in interop with claude-mem/Engram for teams
 that already run them.
 
 ## Open questions to resolve together
+
+> **Resolved 2026-07-08** — locked in the design doc's
+> [Decisions](git-native-memory-design.md#decisions-locked-2026-07-08). Kept below
+> for the record.
 
 - Is keyword/grep selectivity enough, or do we ever want an **optional** embeddings
   add-on (kept out of the default, to preserve zero-infra)?

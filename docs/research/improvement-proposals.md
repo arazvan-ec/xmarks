@@ -21,8 +21,8 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | # | Proposal | Status | Next action |
 | --- | --- | --- | --- |
 | P1 | Model routing by agent role | 🟡 discussing | Resolve open questions, then decide go/no-go |
-| P2 | Smarter learnings ledger | 🔵 proposed | Discuss scope (recall command vs injection-only) |
-| P3 | Learnings-aware file-read priming hook | 🔵 proposed | Discuss advisory-vs-blocking; installer/test impact |
+| P2 | Smarter learnings ledger (git-native memory) | 🟢 design locked | Build the small first release: typed format + injection + `/recall` |
+| P3 | Learnings-aware file-read priming hook | 🟢 design locked | Build after P2 (needs typed `files=` metadata) |
 | P4 | Goal-based evaluator for `autoloop` | 🔵 proposed | Discuss whether it supersedes self-judging |
 | P5 | Token-usage discipline | 🔵 proposed | Could fold into P4 |
 | P6 | Time-based / proactive loop guidance | ⚪ deferred | Start as a doc later |
@@ -233,3 +233,7 @@ Append-only. Newest at the bottom.
   ([`git-native-memory-design.md`](git-native-memory-design.md)) for P2/P3 —
   typed entries, budgeted SessionStart injection, `/flywheel:recall`, advisory
   read-priming hook, rotation, opt-in interop. Design draft; awaiting go/no-go.
+- **2026-07-08** — **Design locked & accepted.** Q3 closed as Option C
+  (git-native curated memory). Four decisions fixed: grep-live (no index yet);
+  defer semi-auto staging; defer interop; branch/files/recency scoring for v1.
+  P2/P3 move to 🟢 design locked. Feature saved; implementation still pending.

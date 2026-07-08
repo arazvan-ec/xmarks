@@ -30,9 +30,10 @@ narrative/discussion home; the structured backlog lives in
   - [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) — the build-vs-integrate + git-native memory analysis.
   - [`git-native-memory-design.md`](git-native-memory-design.md) — the concrete design spec for that memory (P2/P3).
   - This journal.
-- **Decided:** hold implementation; keep discussing before touching plugin code.
-- **Active focus:** Strategy Q3 (build vs integrate) and the **git-native memory**
-  differentiation.
+- **Decided:** Option C (git-native curated memory) accepted; the P2/P3 design is
+  **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)).
+  Implementation not started. Next decision: what to build first.
+- **Active focus:** choosing the first real code change to implement.
 
 ## Session log
 
@@ -54,14 +55,21 @@ narrative/discussion home; the structured backlog lives in
   SessionStart relevance/injection, `/recall`, read-priming hook, rotation,
   opt-in interop. Design draft only; no code changed.
 
+### 2026-07-08 — Session 2
+- **Locked the git-native memory feature.** Accepted the 4 design decisions:
+  grep-live (no `.tsv` index yet); defer semi-auto staging; defer
+  claude-mem/Engram interop; branch/files/recency scoring for v1. Marked T1
+  (Option C accepted) and T2 (design locked) resolved. Feature design saved;
+  implementation pending. Deciding what to build first.
+
 ## Open threads
 
 The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 
 | ID | Thread | Status | Where |
 | --- | --- | --- | --- |
-| T1 | Build vs integrate (Q3) | 🟡 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
-| T2 | Git-native memory design | 🟡 | [`git-native-memory-design.md`](git-native-memory-design.md) |
+| T1 | Build vs integrate (Q3) | ✅ Option C accepted | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
+| T2 | Git-native memory design | ✅ design locked | [`git-native-memory-design.md`](git-native-memory-design.md) |
 | T3 | P1 model routing details (hard-code vs configurable; opus for hard reviews?) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p1--model-routing-by-agent-role-) |
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
 | T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
