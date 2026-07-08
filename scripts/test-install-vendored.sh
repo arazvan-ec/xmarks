@@ -54,10 +54,14 @@ AGENT_COUNT="$(ls "${TARGET}"/.claude/agents/*.md | wc -l | tr -d ' ')"
 pass "${AGENT_COUNT} agents vendored"
 
 [ -x "${TARGET}/.claude/flywheel/bin/session-start.sh" ] || fail "session-start.sh missing or not executable"
+[ -x "${TARGET}/.claude/flywheel/bin/read-prime.sh" ] || fail "read-prime.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/gate.sh" ] || fail "gate.sh missing or not executable"
 CLAUDE_PROJECT_DIR="${TARGET}" FLYWHEEL_NO_UPDATE_CHECK=1 \
   bash "${TARGET}/.claude/flywheel/bin/session-start.sh" > "${WORK}/hook-out.txt"
 grep -q 'flywheel loaded' "${WORK}/hook-out.txt" || fail "session-start.sh does not run"
+echo '{"tool_input": {"file_path": "nope.ts"}}' | CLAUDE_PROJECT_DIR="${TARGET}" \
+  bash "${TARGET}/.claude/flywheel/bin/read-prime.sh" > "${WORK}/read-prime-out.txt"
+[ ! -s "${WORK}/read-prime-out.txt" ] || fail "read-prime.sh printed output for a file with no ledger entry"
 pass "hook scripts vendored, executable and runnable"
 
 grep -q '^flywheel ' "${TARGET}/.claude/flywheel/VERSION" || fail "VERSION marker missing"
@@ -86,10 +90,13 @@ import json, sys
 s = json.load(open(sys.argv[1]))
 assert s["permissions"]["allow"] == ["Bash(npm test)"], "pre-existing permissions lost"
 ss = [h["command"] for g in s["hooks"]["SessionStart"] for h in g["hooks"]]
+pre = [(g.get("matcher"), h["command"]) for g in s["hooks"]["PreToolUse"] for h in g["hooks"]]
 stop = [h["command"] for g in s["hooks"]["Stop"] for h in g["hooks"]]
 assert "echo existing" in ss, "pre-existing hook lost"
 assert ss.count('"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/session-start.sh') == 1, \
     "flywheel SessionStart hook missing or duplicated"
+assert pre.count(("Read", '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/read-prime.sh')) == 1, \
+    "flywheel PreToolUse read-prime hook missing, duplicated, or missing its Read matcher"
 assert stop.count('"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh') == 1, \
     "flywheel Stop hook missing or duplicated"
 PY

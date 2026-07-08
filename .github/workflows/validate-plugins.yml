@@ -64,5 +64,8 @@ jobs:
       - name: Test install-vendored.sh
         run: bash scripts/test-install-vendored.sh
 
+      - name: Test read-prime.sh hook
+        run: bash scripts/test-read-prime.sh
+
       - name: Check docs consistency
         run: bash scripts/test-docs-consistency.sh

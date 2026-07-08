@@ -67,6 +67,7 @@ MANIFEST="${FLYWHEEL_DST}/.manifest"
 UPDATE_WORKFLOW_REL=".github/workflows/flywheel-update.yml"
 
 SESSION_START_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/session-start.sh'
+READ_PRIME_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/read-prime.sh'
 GATE_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh'
 
 # True if a previous install wrote this repo-relative path (so it is ours to
@@ -102,7 +103,7 @@ if [ "${MODE}" = "uninstall" ]; then
   rm -rf "${BIN_DST}" "${FLYWHEEL_DST}/VERSION" "${MANIFEST}"
 
   if [ -f "${SETTINGS}" ]; then
-    FW_SESSION_START="${SESSION_START_CMD}" FW_GATE="${GATE_CMD}" \
+    FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" FW_GATE="${GATE_CMD}" \
     python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
@@ -110,7 +111,7 @@ path = sys.argv[1]
 with open(path) as f:
     settings = json.load(f)
 
-ours = {os.environ["FW_SESSION_START"], os.environ["FW_GATE"]}
+ours = {os.environ["FW_SESSION_START"], os.environ["FW_READ_PRIME"], os.environ["FW_GATE"]}
 hooks = settings.get("hooks", {})
 for event in list(hooks):
     groups = []
@@ -187,7 +188,7 @@ for f in "${SRC}"/agents/*.md; do
 done
 echo "vendored $(ls "${SRC}"/agents/*.md | wc -l | tr -d ' ') agents into .claude/agents/"
 
-for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/gate.sh; do
+for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/gate.sh; do
   rewrite "${f}" | vendor_file ".claude/flywheel/bin/$(basename "${f}")"
   chmod +x "${BIN_DST}/$(basename "${f}")"
 done
@@ -249,10 +250,10 @@ echo "recorded flywheel ${PLUGIN_VERSION} (${SRC_COMMIT}) in .claude/flywheel/VE
 sort -u "${NEW_MANIFEST}" > "${MANIFEST}"
 rm -f "${NEW_MANIFEST}"
 
-# Merge the SessionStart/Stop hooks into the target's .claude/settings.json,
-# keeping everything already there. Idempotent: entries are matched by their
-# command string.
-FW_SESSION_START="${SESSION_START_CMD}" FW_GATE="${GATE_CMD}" \
+# Merge the SessionStart/PreToolUse/Stop hooks into the target's
+# .claude/settings.json, keeping everything already there. Idempotent: entries
+# are matched by their command string.
+FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" FW_GATE="${GATE_CMD}" \
 python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
@@ -262,21 +263,26 @@ if os.path.exists(path):
     with open(path) as f:
         settings = json.load(f)
 
-wanted = {
-    "SessionStart": {
+wanted = [
+    ("SessionStart", None, {
         "type": "command",
         "command": os.environ["FW_SESSION_START"],
         "timeout": 15,
-    },
-    "Stop": {
+    }),
+    ("PreToolUse", "Read", {
+        "type": "command",
+        "command": os.environ["FW_READ_PRIME"],
+        "timeout": 5,
+    }),
+    ("Stop", None, {
         "type": "command",
         "command": os.environ["FW_GATE"],
         "timeout": 300,
-    },
-}
+    }),
+]
 
 hooks = settings.setdefault("hooks", {})
-for event, hook in wanted.items():
+for event, matcher, hook in wanted:
     groups = hooks.setdefault(event, [])
     present = any(
         h.get("command") == hook["command"]
@@ -284,7 +290,10 @@ for event, hook in wanted.items():
         for h in g.get("hooks", [])
     )
     if not present:
-        groups.append({"hooks": [hook]})
+        group = {"hooks": [hook]}
+        if matcher is not None:
+            group["matcher"] = matcher
+        groups.append(group)
 
 with open(path, "w") as f:
     json.dump(settings, f, indent=2)
