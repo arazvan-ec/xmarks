@@ -42,6 +42,7 @@ A disciplined, self-verifying development loop. One unit of work flows through s
 - **Model routing by role**: the mechanical `verifier` runs on a fast/cheap model (Haiku); the judgment-heavy `reviewer-*` run on Sonnet. Change an agent's `model:` frontmatter to adjust, or `CLAUDE_CODE_SUBAGENT_MODEL` to override all.
 - **Token-usage visibility**: check `/usage` for spend by skill/subagent, `/goal` (no args) for turns/tokens on an active goal, and `/workflows` for live per-agent totals on a dynamic workflow. Pilot autonomous work (`/flywheel:autoloop`, workflows) on a small budget before scaling up, and match `/loop`/routine intervals to how often the underlying state actually changes.
 - **Read-priming**: before reading a file, an advisory hook surfaces any ledger entries whose `files=` metadata names it — it never blocks the read, and stays silent when there's no match.
+- **When to delegate**: in `work`, reading 4+ files → hand exploration to a subagent; touching 2+ non-trivial files → get a fresh-context review; ~20 tool calls deep without converging → pause and re-plan. Advisory guardrails against context bloat.
 
 ## 5. Offer to start
 Finish by asking one question: **"What do you want to build, fix, or explore right now?"** Based on the answer, recommend the exact command. If the user says go, invoke it for them (for example, run `/flywheel:loop <task>`). Never launch a `loop`, `autoloop`, or `ship` command without explicit confirmation.
