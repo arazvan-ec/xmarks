@@ -26,7 +26,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P4 | Goal-based evaluator for `autoloop` | ⚪ deferred (decided against) | Redundant vs. autoloop's existing deterministic metric check — see decision log |
 | P5 | Token-usage discipline | ✅ shipped (v0.12.0) | Done — autoloop + `/flywheel:help` carry the guidance |
 | P6 | Time-based / proactive loop guidance | ✅ shipped (docs) | `docs/proactive-loops.md`; a runtime skill (e.g. `/flywheel:watch`) is still open |
-| P7 | Delegation triggers (from gentle-ai) | 🔵 proposed | Discuss thresholds; where they live |
+| P7 | Delegation triggers (from gentle-ai) | ✅ shipped (v0.13.0) | Done — advisory thresholds in `/flywheel:work` |
 
 ## Priority overview
 
