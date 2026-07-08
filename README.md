@@ -45,6 +45,7 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 | `/flywheel:verify` | Objective PASS/FAIL gate — runs the real app/tests (via the `verifier` agent). |
 | `/flywheel:review <ref>` | Parallel correctness / security / performance review, synthesized. |
 | `/flywheel:compound` | Append this cycle's decisions, gotchas, and patterns to the ledger. |
+| `/flywheel:recall <query>` | Cheaply search the learnings ledger and expand a matching entry on demand. |
 | `/flywheel:ship <title>` | Clean commit + push + PR to close out the cycle. |
 | `/flywheel:autoloop <goal>` ⚡ | Autonomous metric-driven loop — iterate hands-off until a metric is met or a budget is spent. |
 | `/flywheel:sync <spec-slug>` ⚡ | Reconcile drift between a spec and the code (bidirectional). |
@@ -60,7 +61,7 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 ## State it keeps (in the project you use it on)
 
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.
-- `.claude/flywheel/LEARNINGS.md` — the compounding ledger. The `SessionStart` hook loads its most recent entries into context every session, so past lessons carry forward. Created by `/flywheel:compound`.
+- `.claude/flywheel/LEARNINGS.md` — the compounding ledger of typed entries (`## <type>: <title>` + a greppable `<!-- fw: ... -->` metadata line). The `SessionStart` hook injects a relevance-scored, budgeted subset each session (branch/files/recency), plus a pointer to the rest; `/flywheel:recall <query>` pulls anything not auto-injected. Created by `/flywheel:compound`.
 
 ## Deterministic completion gate (opt-in)
 

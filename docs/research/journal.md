@@ -20,9 +20,11 @@ narrative/discussion home; the structured backlog lives in
 
 *Snapshot — 2026-07-08.*
 
-- **Branch:** `claude/loop-analisis`. **First code change shipped: P1 model
-  routing (v0.9.0).** Prior work is the docs research corpus + this journal. All
-  checks green (docs-consistency, install-vendored, plugin validate).
+- **Branch:** `claude/loop-analisis` (P1, v0.9.0) then this session's branch for
+  P2 (v0.10.0) — see Session 6. **Shipped: P1 model routing (v0.9.0), P2
+  git-native memory (v0.10.0).** Prior work is the docs research corpus + this
+  journal. All checks green (docs-consistency, install-vendored, plugin
+  validate) on both.
 - **In the repo:**
   - [`../getting-started-with-loops.md`](../getting-started-with-loops.md) — adapted article + flywheel gap analysis.
   - The [`.`](README.md) research corpus — loop primitives, claude-mem, token efficiency, gentle-ai, comparisons, sources.
@@ -34,11 +36,13 @@ narrative/discussion home; the structured backlog lives in
 - **Decided:** Option C (git-native curated memory) accepted; the P2/P3 design is
   **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)).
   Implementation not started. Next decision: what to build first.
-- **Active focus:** P1 done. Remaining work (P2–P7) is packaged as **async-ready
-  briefs** ([`briefs/`](briefs/README.md)). The first routine attempt was blocked
-  by a git-write permission issue (see the Async run state postmortem) and has
-  been cleaned up; the next step is recreating the routines via the official UI
-  with the repo selected.
+- **Active focus:** P1 and P2 done. Remaining work (P3–P7) is packaged as
+  **async-ready briefs** ([`briefs/`](briefs/README.md)). The routine attempt
+  was blocked by a git-write permission issue (see the Async run state
+  postmortem) and has been cleaned up; P2 was instead built directly in a
+  write-capable interactive session (the documented fallback). P3 is now
+  unblocked (it needs P2's typed `files=` metadata) and is the next candidate,
+  either via a recreated routine or the same fallback.
 
 ## Async run state — postmortem (routines blocked, cleaned up)
 
@@ -67,11 +71,12 @@ fine, so it is **not** an account/admin permission gap — it was the creation p
 
 ### Fallback
 This interactive session *can* push — if the UI routines don't pan out, build the
-briefs here directly (one branch per brief, then push).
+briefs here directly (one branch per brief, then push). **Used for P2** (see
+Session 6): built and pushed directly, shipped as v0.10.0.
 
 **Merge guidance (once branches land):** each brief is its own release — merge in
 **ascending version order**, resolving small README/help/version conflicts at
-merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
+merge. P3 needs P2's typed `files=` metadata — now available (v0.10.0 shipped).
 
 ## Session log
 
@@ -122,6 +127,18 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   state), and confirmed the fallback (build in this write-capable session). T7
   status: routine path blocked; next step is UI recreation by the user.
 
+### 2026-07-08 — Session 6
+- Used the documented fallback: **shipped P2 (git-native memory) as v0.10.0**
+  directly in this write-capable session, per
+  [`briefs/P2-git-native-memory.md`](briefs/P2-git-native-memory.md). Typed
+  entry format in `skills/compound/SKILL.md`; a relevance pass (branch/files/
+  spec/recency scoring, budgeted top-N injection + pointer line) in
+  `scripts/session-start.sh`, backward-compatible with old free-prose entries
+  and fail-open with no ledger / not a git repo; the new `/flywheel:recall`
+  skill (README + `/flywheel:help` updated). Added `upgrades/v0.10.0.md`.
+  docs-consistency + install-vendored + `plugin validate --strict` all green.
+  T7 (P2 slice) resolved; **P3 is unblocked**.
+
 ## Open threads
 
 The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
@@ -134,7 +151,7 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
 | T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
 | T6 | Opt-in interop with claude-mem / Engram | 🔵 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
-| T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress | [`briefs/README.md`](briefs/README.md) |
+| T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress (P2 ✅ shipped v0.10.0) | [`briefs/README.md`](briefs/README.md) |
 
 ## Parking lot
 
