@@ -185,8 +185,15 @@ bottleneck, and ask which piece you could hand off: can you write the
 verification check? Is the goal clear enough? Does the work arrive on a schedule?
 Then run the loop, observe where it stalls or over-reaches, and iterate.
 
-For more, see the Claude Code docs on running agents in parallel, and the loop,
-schedule, goal, and dynamic-workflows pages.
+For more, see the Claude Code docs:
+[running agents in parallel](https://code.claude.com/docs/en/agents),
+[`/goal`](https://code.claude.com/docs/en/goal),
+[`/loop`](https://code.claude.com/docs/en/scheduled-tasks) (the article's "loop"
+link mis-points to `/goal`; the real page is `scheduled-tasks`),
+[`/schedule` routines](https://code.claude.com/docs/en/routines), and
+[dynamic workflows](https://code.claude.com/docs/en/workflows).
+Detailed notes distilled from these pages live in
+[`research/claude-code-loops.md`](research/claude-code-loops.md).
 
 *Source: "Getting started with loops" by [@delba_oliveira](https://x.com/delba_oliveira),
 [@ClaudeDevs](https://x.com/ClaudeDevs) (6 Jul 2026).*
