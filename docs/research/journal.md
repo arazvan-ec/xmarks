@@ -35,29 +35,43 @@ narrative/discussion home; the structured backlog lives in
   **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)).
   Implementation not started. Next decision: what to build first.
 - **Active focus:** P1 done. Remaining work (P2–P7) is packaged as **async-ready
-  briefs** ([`briefs/`](briefs/README.md)) so each can be built in its own
-  bounded, fresh session. **P2, P4, P6, P7 are now running as autonomous
-  routines** (see Async run state); P3 is held until P2's branch exists.
+  briefs** ([`briefs/`](briefs/README.md)). The first routine attempt was blocked
+  by a git-write permission issue (see the Async run state postmortem) and has
+  been cleaned up; the next step is recreating the routines via the official UI
+  with the repo selected.
 
-## Async run state
+## Async run state — postmortem (routines blocked, cleaned up)
 
-Launched 2026-07-08 as Claude Code routines (one fresh session per brief). Each
-branches off `origin/claude/loop-analisis`, implements its brief, runs the
-release checks, and pushes its own branch. Status: 🏃 running · ⏸ held · ✅ pushed.
+The first attempt (2026-07-08) launched P2/P4/P6/P7 as routines via the
+`create_trigger` MCP tool. **All were blocked:** the routine sessions could clone +
+implement but hit `403 "Not authorized to access repository"` on `git push`, so no
+branch reached origin. P2's work (committed as `2fdf65c` inside its container)
+stayed trapped and is lost. The 5 MCP-created triggers were **deleted** on
+2026-07-08 — they only burned run allowance.
 
-| Brief | Trigger ID | Branch | Status |
-| --- | --- | --- | --- |
-| P2 memory | `trig_01BZvXK9MBQRJwAarTq3nKQD` | `claude/flywheel-p2-memory` | 🏃 running |
-| P4 evaluator+P5 | `trig_01AJzDycZuAdceXG1RrTHkip` | `claude/flywheel-p4-evaluator` | 🏃 running |
-| P6 proactive (docs) | `trig_01XQRWSVyCyFSnc4YwF1hyqb` | `claude/flywheel-p6-proactive` | 🏃 running |
-| P7 delegation | `trig_01HgZxq7Cf2jqAbu6uZiEYgm` | `claude/flywheel-p7-delegation` | 🏃 running |
-| P3 read-priming | `trig_01RwNKkCh57isna6XDASegFv` | `claude/flywheel-p3-read-priming` | ⏸ held (needs P2) |
+### Root cause
+The low-level `create_trigger` MCP tool has **no "Select repositories" step**, so
+the spawned sessions had no write-authorized repo. This interactive session pushes
+fine, so it is **not** an account/admin permission gap — it was the creation path.
 
-**Merge guidance:** each branch is its own release and will bump `plugin.json` /
-add an `upgrades/` note independently — merge them **in ascending version order**
-and resolve the small README/help/version conflicts at merge (see
-[`briefs/README.md`](briefs/README.md)). Fire P3 once P2's branch is on origin.
-Clean up the triggers (delete) once all branches are pushed.
+### Fix — recreate via the official Routines UI
+1. **claude.ai/code/routines → New routine.**
+2. **Select repositories → `arazvan-ec/xmarks`** (this wires `claude/*` push auth).
+3. Environment: **Default** (Trusted) is enough — git goes through the internal proxy.
+4. Prompt: paste the brief's **Starter prompt** (in [`briefs/`](briefs/README.md));
+   it already `git fetch`es `origin/claude/loop-analisis`, so it finds the briefs
+   even though a routine clones `main`.
+5. Leave **"Allow unrestricted branch pushes" OFF** (branches are `claude/*`).
+6. **Run now.** If it still 403s, check GitHub auth (`/web-setup`, or the Claude
+   GitHub App installed with write on the repo).
+
+### Fallback
+This interactive session *can* push — if the UI routines don't pan out, build the
+briefs here directly (one branch per brief, then push).
+
+**Merge guidance (once branches land):** each brief is its own release — merge in
+**ascending version order**, resolving small README/help/version conflicts at
+merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
 
 ## Session log
 
@@ -100,6 +114,13 @@ Clean up the triggers (delete) once all branches are pushed.
   (P2, P3, P4+P5, P6, P7), each with a copy-paste starter prompt, exact files,
   acceptance criteria, and the release checklist — plus a guide on avoiding
   version/docs collisions when running in parallel. Opened thread T7.
+
+### 2026-07-08 — Session 5
+- The routine attempt **failed**: MCP-created routines hit `403` on push (no repo
+  write scope — the `create_trigger` tool has no repo-selection step). Deleted all
+  5 broken triggers, wrote the postmortem + UI recreation checklist (see Async run
+  state), and confirmed the fallback (build in this write-capable session). T7
+  status: routine path blocked; next step is UI recreation by the user.
 
 ## Open threads
 
