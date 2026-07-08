@@ -67,3 +67,5 @@ Drop an executable `.claude/flywheel/gate.sh` in your project with your verifica
 ## Repo layout
 
 The plugin lives at the repo root: `.claude-plugin/` (manifest + marketplace), `skills/`, `agents/`, `hooks/`, `scripts/`. Setup guides are in [`docs/`](docs/), and [`upgrades/`](upgrades/) holds the per-version, AI-authored migration notes that `/flywheel:update` executes in installed repos (CI requires one per release).
+
+Design research and the improvement backlog live in [`docs/research/`](docs/research/) — see [`improvement-proposals.md`](docs/research/improvement-proposals.md) for the living roadmap (P1–P6).
