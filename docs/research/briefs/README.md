@@ -16,7 +16,7 @@ own workflow.
 | [`P2-git-native-memory.md`](P2-git-native-memory.md) | Smarter learnings ledger (memory) | Medium | — | `claude/flywheel-p2-memory` | ✅ shipped (v0.10.0) |
 | [`P3-read-priming-hook.md`](P3-read-priming-hook.md) | Learnings-aware read priming | Medium | **P2** | `claude/flywheel-p3-read-priming` | ✅ shipped (v0.11.0) |
 | [`P4-goal-evaluator.md`](P4-goal-evaluator.md) | Goal-based evaluator (+ P5 token discipline) | Medium | — | `claude/flywheel-p4-evaluator` | 🟡 open PR(s) pending review |
-| [`P6-proactive-loops.md`](P6-proactive-loops.md) | Time-based / proactive loop guidance | Small (docs) | — | `claude/flywheel-p6-proactive` | 🟡 open PR pending review |
+| [`P6-proactive-loops.md`](P6-proactive-loops.md) | Time-based / proactive loop guidance | Small (docs) | — | `claude/flywheel-p6-proactive` | ✅ shipped (docs) |
 | [`P7-delegation-triggers.md`](P7-delegation-triggers.md) | Delegation triggers | Small | — | `claude/flywheel-p7-delegation` | 🔵 not started |
 
 Order note: **P3 needs P2** (it relies on P2's typed `files=` metadata) — both
@@ -25,10 +25,9 @@ parallel. P1 (model routing) already shipped in v0.9.0.
 
 > **Collision note (2026-07-08):** several parallel automated sessions built
 > P2 independently at the same time (at least two full implementations reached
-> open PRs); only one was merged. Before merging any P4/P5/P6 PR, check
-> whether another session already opened a competing one for the same
-> proposal — the "avoiding collisions" section below was written for exactly
-> this.
+> open PRs); only one was merged. Before merging any P4/P5 PR, check whether
+> another session already opened a competing one for the same proposal — the
+> "avoiding collisions" section below was written for exactly this.
 
 ## How to run one async (the workflow)
 
