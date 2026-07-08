@@ -20,10 +20,13 @@ narrative/discussion home; the structured backlog lives in
 
 *Snapshot — 2026-07-08.*
 
-- **Branch:** `claude/loop-analisis`. **Shipped so far: P1 model routing (v0.9.0),
-  P2 git-native memory first release (v0.10.0).** Prior work is the docs research
-  corpus + this journal. All checks green (docs-consistency, install-vendored,
-  plugin validate).
+- **Shipped so far (on `main`): P1 model routing (v0.9.0), P2 git-native memory
+  (v0.10.0), P3 read-priming hook (v0.11.0), P6 proactive loop guidance (docs,
+  no version bump).** P5 token-usage discipline (v0.12.0) is open as PR #17,
+  pending merge, with P4 (goal evaluator) recorded as deferred/decided against
+  in the same brief. The P2 → P3 git-native memory sequence is complete. Prior
+  work is the docs research corpus + this journal. All checks green
+  (docs-consistency, install-vendored, read-prime, plugin validate).
 - **In the repo:**
   - [`../getting-started-with-loops.md`](../getting-started-with-loops.md) — adapted article + flywheel gap analysis.
   - The [`.`](README.md) research corpus — loop primitives, claude-mem, token efficiency, gentle-ai, comparisons, sources.
@@ -33,13 +36,17 @@ narrative/discussion home; the structured backlog lives in
   - [`briefs/`](briefs/README.md) — async-ready, self-contained task briefs for P2–P7.
   - This journal.
 - **Decided:** Option C (git-native curated memory) accepted; the P2/P3 design is
-  **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)).
-  P2's first release is now **implemented and shipped** (v0.10.0); P3 is unblocked.
-- **Active focus:** P1 and P2 done. Remaining work (P3–P7) is packaged as
-  **async-ready briefs** ([`briefs/`](briefs/README.md)). The first routine
-  attempt was blocked by a git-write permission issue (see the Async run state
-  postmortem) and has been cleaned up; the next step is recreating the routines
-  via the official UI with the repo selected, or continuing to build manually.
+  **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)) and
+  **implemented** (§1–§4 in v0.10.0, §6 in v0.11.0). §5/§7/§8 (flat index,
+  rotation/archival, claude-mem/Engram interop) remain deliberate follow-ups,
+  only if a measured need arises.
+- **Active focus:** P1–P3 and P6 done; P4 decided against; P5 open as PR #17.
+  Only **P7** remains from the original async-briefs backlog
+  ([`briefs/`](briefs/README.md)). The first routine attempt was blocked by a
+  git-write permission issue (see the Async run state postmortem); several
+  parallel sessions since then have built P2/P3/P4/P5/P6 directly (some
+  duplicating each other — see Session 6–9 notes), and PRs are being reviewed
+  and merged one at a time.
 
 ## Async run state — postmortem (routines blocked, cleaned up)
 
@@ -131,8 +138,30 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   `/flywheel:recall <query>` skill. Backward-compatible with old free-prose
   entries. Added `upgrades/v0.10.0.md`; documented in README + `/flywheel:help`.
   P3 (read-priming hook) can now build on P2's `files=` metadata.
+  (Note: a second, independent P2 attempt was also built and pushed in
+  parallel by another session on `claude/beautiful-mendel-2wk69j` — this one,
+  from `claude/tender-bardeen-xfa5vz`/PR #19, is the one that was merged.)
 
 ### 2026-07-08 — Session 7
+- **Shipped P3 (read-priming hook) as v0.11.0**, on branch
+  `claude/beautiful-mendel-2wk69j`, built directly on top of the merged P2
+  (v0.10.0 on `main`) rather than the session's own now-superseded P2 attempt
+  — that duplicate P2 commit was dropped by resetting the branch onto `main`
+  before building P3 fresh. New `scripts/read-prime.sh` as an advisory
+  `PreToolUse`/`Read` hook that surfaces ledger entries whose `files=` metadata
+  names the file about to be read; wired into `hooks/hooks.json`, vendored by
+  `install-vendored.sh`, covered by `scripts/test-read-prime.sh` (wired into
+  CI). All checks green. T7's ledger thread (P2 → P3) is now fully shipped.
+
+### 2026-07-08 — Session 8
+- **Shipped P6 (proactive loop guidance)** from its brief, docs-only. Added
+  `docs/proactive-loops.md` (babysitting a PR with `/loop`, scheduling
+  flywheel checks with `/schedule`, bounding a stream with `/goal`, fanning out
+  with workflows, plus the caps table) and linked it from the README. No
+  version bump (docs-only, not vendored/checked by docs-consistency). A
+  runtime skill (e.g. `/flywheel:watch`) remains open per the brief.
+
+### 2026-07-08 — Session 9
 - Ran the **P4-goal-evaluator.md** brief's own decide-first step for T5: is a
   separate evaluator agent worth building over autoloop's existing
   deterministic metric-command check? Decision: **no** — `/goal`'s evaluator
@@ -142,11 +171,13 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
 - Built **P5 (token-usage discipline)** standalone: `skills/autoloop/SKILL.md`
   (hard budget stop, pilot-before-scaling, `/usage` pointer, `/goal`/`/loop`/
   workflow guidance), `skills/help/SKILL.md`, and `README.md` all updated. Hit
-  the exact version collision `briefs/README.md` warned about — P2 (this same
-  branch's PR, after merging `main`) had already taken **v0.10.0**, so P5
-  rebased to **v0.11.0**; `upgrades/v0.10.0.md` stayed P2's note and a new
-  `upgrades/v0.11.0.md` was added for P5. All three checks (docs-consistency,
-  install-vendored, `plugin validate --strict`) green after the merge.
+  the exact version collision `briefs/README.md` warned about — twice: this
+  branch's own PR first bumped to v0.10.0, but P2 merged into `main` first and
+  claimed it, so this rebased to v0.11.0; then P3 also merged first and
+  claimed *that* number, so this landed as **v0.12.0**. `upgrades/v0.10.0.md`
+  and `upgrades/v0.11.0.md` stayed P2's and P3's notes respectively; a new
+  `upgrades/v0.12.0.md` was added for P5. All three checks (docs-consistency,
+  install-vendored, `plugin validate --strict`) green after both merges.
 - T5 resolved (decided against, not built). T7 progress: one more brief (P4+P5)
   worked directly in a fresh session per the async plan, since the MCP routine
   path is still blocked pending UI recreation.
@@ -163,7 +194,7 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
 | T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | ✅ decided against (deferred) | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
 | T6 | Opt-in interop with claude-mem / Engram | 🔵 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
-| T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress | [`briefs/README.md`](briefs/README.md) |
+| T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress (P2, P3 shipped; P4/P6 have open PRs pending review; P7 remains) | [`briefs/README.md`](briefs/README.md) |
 
 ## Parking lot
 

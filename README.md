@@ -30,6 +30,8 @@ spec → plan → work → verify → review → compound
 Nothing advances on "seems right": `verify` runs the real app/tests, and every finished cycle deposits reusable knowledge into a ledger that primes the next one.
 
 > 📚 New to loops as a concept? See [docs/getting-started-with-loops.md](docs/getting-started-with-loops.md) — the four loop types (turn-based, goal-based, time-based, proactive) and how flywheel maps onto them.
+>
+> ⏱️ Want to run flywheel on a schedule or unattended? See [docs/proactive-loops.md](docs/proactive-loops.md) — composing `/flywheel:verify`/`review` with `/loop`, `/schedule` routines, `/goal`, and workflows.
 
 ## Commands
 
@@ -58,12 +60,16 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 
 **Model routing by role** (v0.9.0): the mechanical `verifier` runs on **Haiku** (it runs commands and reports evidence); the judgment-heavy `reviewer-*` run on **Sonnet**. Override any agent via its `model:` frontmatter (e.g. a reviewer → `opus` for high-stakes reviews), or all at once with `CLAUDE_CODE_SUBAGENT_MODEL`.
 
-**Token discipline** (v0.11.0): `/flywheel:autoloop` treats its iteration budget as a hard stop and recommends piloting on a small budget before scaling; `/flywheel:help` points to `/usage`, `/goal`, and `/workflows` for spend visibility. See `skills/autoloop/SKILL.md`.
+**Token discipline** (v0.12.0): `/flywheel:autoloop` treats its iteration budget as a hard stop and recommends piloting on a small budget before scaling; `/flywheel:help` points to `/usage`, `/goal`, and `/workflows` for spend visibility. See `skills/autoloop/SKILL.md`.
 
 ## State it keeps (in the project you use it on)
 
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.
 - `.claude/flywheel/LEARNINGS.md` — the compounding ledger. Typed entries (`## <type>: <title>` + a greppable `<!-- fw: … -->` metadata line) let the `SessionStart` hook inject only a relevance-scored, budgeted subset (branch/files/recency, default top 12, `FLYWHEEL_LEARNINGS_INJECT` to override) instead of a blind reload; `/flywheel:recall <query>` reaches the rest on demand. Created by `/flywheel:compound`. Older free-prose entries still load, as always-eligible low-priority entries.
+
+## Read-priming hook (advisory)
+
+Before reading a file, a `PreToolUse` hook greps the ledger's `files=` metadata for that path and, if any typed entry names it, prints a short "prior learnings touch this file" note first — cheap context ahead of an expensive read. It never blocks the read (unlike claude-mem's File Read Gate) and fails silently (no ledger, no match, or no `python3`) so it can never slow down or break a read.
 
 ## Deterministic completion gate (opt-in)
 
