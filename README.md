@@ -29,6 +29,8 @@ spec → plan → work → verify → review → compound
 
 Nothing advances on "seems right": `verify` runs the real app/tests, and every finished cycle deposits reusable knowledge into a ledger that primes the next one.
 
+> 📚 New to loops as a concept? See [docs/getting-started-with-loops.md](docs/getting-started-with-loops.md) — the four loop types (turn-based, goal-based, time-based, proactive) and how flywheel maps onto them.
+
 ## Commands
 
 | Command | What it does |
