@@ -28,6 +28,7 @@ narrative/discussion home; the structured backlog lives in
   - The [`.`](README.md) research corpus — loop primitives, claude-mem, token efficiency, gentle-ai, comparisons, sources.
   - [`improvement-proposals.md`](improvement-proposals.md) — the living backlog (P1–P7).
   - [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) — the build-vs-integrate + git-native memory analysis.
+  - [`git-native-memory-design.md`](git-native-memory-design.md) — the concrete design spec for that memory (P2/P3).
   - This journal.
 - **Decided:** hold implementation; keep discussing before touching plugin code.
 - **Active focus:** Strategy Q3 (build vs integrate) and the **git-native memory**
@@ -48,6 +49,10 @@ narrative/discussion home; the structured backlog lives in
   the **build-vs-integrate** strategic question; started the git-native memory
   strategy doc.
 - Created this journal so we can resume and branch topics without losing ideas.
+- Wrote the concrete **git-native memory design spec**
+  ([`git-native-memory-design.md`](git-native-memory-design.md)) — entry format,
+  SessionStart relevance/injection, `/recall`, read-priming hook, rotation,
+  opt-in interop. Design draft only; no code changed.
 
 ## Open threads
 
@@ -56,7 +61,7 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | ID | Thread | Status | Where |
 | --- | --- | --- | --- |
 | T1 | Build vs integrate (Q3) | 🟡 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
-| T2 | Git-native memory design | 🟡 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md#concrete-design-git-native-dependency-free) |
+| T2 | Git-native memory design | 🟡 | [`git-native-memory-design.md`](git-native-memory-design.md) |
 | T3 | P1 model routing details (hard-code vs configurable; opus for hard reviews?) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p1--model-routing-by-agent-role-) |
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
 | T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
@@ -80,5 +85,6 @@ Raw, un-triaged ideas. Anything lands here first; we triage into threads/proposa
 | [`flywheel-vs-claude-mem.md`](flywheel-vs-claude-mem.md) | 3-way comparison + adoptable ideas |
 | [`improvement-proposals.md`](improvement-proposals.md) | Living backlog P1–P7 + decision log |
 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) | The strategic memory analysis |
+| [`git-native-memory-design.md`](git-native-memory-design.md) | Concrete git-native memory design spec (P2/P3) |
 | [`journal.md`](journal.md) | This journal |
 | [`sources.md`](sources.md) | All source URLs |

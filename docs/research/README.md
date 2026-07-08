@@ -18,6 +18,7 @@ Compiled 2026-07-08.
 | [`flywheel-vs-claude-mem.md`](flywheel-vs-claude-mem.md) | Three-way comparison (flywheel vs claude-mem vs gentle-ai) and the concrete ideas flywheel could borrow. |
 | [`improvement-proposals.md`](improvement-proposals.md) | The synthesized, prioritized roadmap (P1–P7) of concrete flywheel improvements + decision log. |
 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) | The strategic analysis: build vs integrate memory, and the git-native curated-memory bet. |
+| [`git-native-memory-design.md`](git-native-memory-design.md) | The concrete design spec for git-native memory (entry format, hook indexing, `/recall`, read-priming) — P2/P3. |
 | [`journal.md`](journal.md) | The **design journal** — session log, open-threads queue, and parking lot for resuming without losing ideas. |
 | [`sources.md`](sources.md) | Consolidated list of every source URL, grouped by topic. |
 

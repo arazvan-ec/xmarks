@@ -65,6 +65,10 @@ knowledge that compounds **in the repo**, reviewed like code, is the whole idea.
 
 ## Concrete design (git-native, dependency-free)
 
+> **Full spec:** the file-by-file design (entry format, hook indexing, `/recall`,
+> read-priming, rotation, interop) is in
+> [`git-native-memory-design.md`](git-native-memory-design.md). Summary below.
+
 How to get claude-mem's *selectivity* while staying markdown-only:
 
 1. **Storage** — stays plain markdown, committed: `.claude/flywheel/LEARNINGS.md`

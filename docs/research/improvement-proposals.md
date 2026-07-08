@@ -229,3 +229,7 @@ Append-only. Newest at the bottom.
   lean is **git-native curated memory** (Option C). Started the
   [design journal](journal.md) to track threads. Still docs-only; no decision to
   build yet.
+- **2026-07-08** — Wrote the concrete **git-native memory design spec**
+  ([`git-native-memory-design.md`](git-native-memory-design.md)) for P2/P3 —
+  typed entries, budgeted SessionStart injection, `/flywheel:recall`, advisory
+  read-priming hook, rotation, opt-in interop. Design draft; awaiting go/no-go.
