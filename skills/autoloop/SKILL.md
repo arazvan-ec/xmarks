@@ -21,7 +21,9 @@ Loop:
 4. **Keep or discard** — if the score improved, keep the change; if it regressed or stalled, revert it (`git checkout` / `git stash`) and try a different change.
 5. Repeat until the metric hits target or the budget is exhausted.
 
-Keep a running log of `iteration | change | score | kept?`. Never ask the human mid-loop (AskUserQuestion is disabled). When you stop, report the trajectory, the final score, whether the target was met, and — if not — the most promising next direction.
+**Independent stop check.** Before keeping/discarding an ambiguous result (step 4) or declaring the target met (step 5), dispatch the `evaluator` agent with the metric command, the target, your claimed score, and the prior score. This is not a `/goal`-style transcript judge — a read-only re-read of your own output would indeed be redundant with the metric command you already ran. Instead the evaluator **re-runs the metric command itself**, independently of you, which is a genuine cross-check against a different failure mode: the same agent that makes a change also grading it (self-report drift, a stale/no-op metric command, or an honest-but-wrong reading of the output). On a `CONTINUE` verdict, keep looping even if you believed you were done; log the evaluator's reason alongside the iteration.
+
+Keep a running log of `iteration | change | score | evaluator verdict | kept?`. Never ask the human mid-loop (AskUserQuestion is disabled). When you stop, report the trajectory, the final score, whether the target was met, and — if not — the most promising next direction.
 
 **Safety:** work on a branch; only revert changes *you* made this run; never discard pre-existing uncommitted work.
 
