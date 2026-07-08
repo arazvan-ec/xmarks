@@ -15,20 +15,21 @@ own workflow.
 | --- | --- | --- | --- | --- | --- |
 | [`P2-git-native-memory.md`](P2-git-native-memory.md) | Smarter learnings ledger (memory) | Medium | — | `claude/flywheel-p2-memory` | ✅ shipped (v0.10.0) |
 | [`P3-read-priming-hook.md`](P3-read-priming-hook.md) | Learnings-aware read priming | Medium | **P2** | `claude/flywheel-p3-read-priming` | ✅ shipped (v0.11.0) |
-| [`P4-goal-evaluator.md`](P4-goal-evaluator.md) | Goal-based evaluator (+ P5 token discipline) | Medium | — | `claude/flywheel-p4-evaluator` | 🟡 open PR(s) pending review |
-| [`P6-proactive-loops.md`](P6-proactive-loops.md) | Time-based / proactive loop guidance | Small (docs) | — | `claude/flywheel-p6-proactive` | 🟡 open PR pending review |
-| [`P7-delegation-triggers.md`](P7-delegation-triggers.md) | Delegation triggers | Small | — | `claude/flywheel-p7-delegation` | 🔵 not started |
+| [`P4-goal-evaluator.md`](P4-goal-evaluator.md) | Goal-based evaluator (+ P5 token discipline) | Medium | — | `claude/flywheel-p4-evaluator` | ✅ shipped (P5 v0.12.0, P4 evaluator v0.14.0) |
+| [`P6-proactive-loops.md`](P6-proactive-loops.md) | Time-based / proactive loop guidance | Small (docs) | — | `claude/flywheel-p6-proactive` | ✅ shipped (docs) |
+| [`P7-delegation-triggers.md`](P7-delegation-triggers.md) | Delegation triggers | Small | — | `claude/flywheel-p7-delegation` | ✅ shipped (v0.13.0) |
 
-Order note: **P3 needs P2** (it relies on P2's typed `files=` metadata) — both
-shipped, in that order. P4/P6/P7 are independent and can go in any order or in
-parallel. P1 (model routing) already shipped in v0.9.0.
+Order note: **the whole P1–P7 roadmap has shipped** — P1 v0.9.0, P2 v0.10.0,
+P3 v0.11.0, P5 v0.12.0, P7 v0.13.0, P4 (evaluator) v0.14.0, and P6 as docs.
+(P3 built on P2's typed `files=` metadata, in that order.) These briefs are kept
+for reference; the roadmap is complete.
 
-> **Collision note (2026-07-08):** several parallel automated sessions built
-> P2 independently at the same time (at least two full implementations reached
-> open PRs); only one was merged. Before merging any P4/P5/P6 PR, check
-> whether another session already opened a competing one for the same
-> proposal — the "avoiding collisions" section below was written for exactly
-> this.
+> **Collision note (2026-07-08, resolved):** several parallel automated sessions
+> built the same proposals independently — P2 reached two open PRs, and P4 had a
+> build-it (#16) vs defer-it (#17) pair. Duplicates were closed and one of each
+> was merged; P4 was later revived and shipped in v0.14.0. All PRs are now
+> resolved and the roadmap is complete — this note stays as the record of why the
+> "avoiding collisions" guidance below exists.
 
 ## How to run one async (the workflow)
 
