@@ -217,6 +217,10 @@ Each build step is one release: code change → `plugin.json` bump →
 `upgrades/vX.Y.Z.md` → README/help sync → `scripts/test-docs-consistency.sh` +
 `scripts/test-install-vendored.sh` green → `claude plugin validate . --strict`.
 
+**Async execution:** each remaining proposal has a self-contained kickoff in
+[`briefs/`](briefs/README.md) so it can be built in its own fresh, bounded session
+(with a copy-paste starter prompt + collision-avoidance guidance).
+
 ---
 
 ## Decision log

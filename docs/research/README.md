@@ -20,6 +20,7 @@ Compiled 2026-07-08.
 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) | The strategic analysis: build vs integrate memory, and the git-native curated-memory bet. |
 | [`git-native-memory-design.md`](git-native-memory-design.md) | The concrete design spec for git-native memory (entry format, hook indexing, `/recall`, read-priming) — P2/P3. |
 | [`journal.md`](journal.md) | The **design journal** — session log, open-threads queue, and parking lot for resuming without losing ideas. |
+| [`briefs/`](briefs/README.md) | **Async-ready task briefs** — one self-contained kickoff per remaining proposal (P2–P7) so each can be built in its own bounded session. |
 | [`sources.md`](sources.md) | Consolidated list of every source URL, grouped by topic. |
 
 The companion narrative reference, [`../getting-started-with-loops.md`](../getting-started-with-loops.md),

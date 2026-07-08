@@ -29,12 +29,14 @@ narrative/discussion home; the structured backlog lives in
   - [`improvement-proposals.md`](improvement-proposals.md) — the living backlog (P1–P7).
   - [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) — the build-vs-integrate + git-native memory analysis.
   - [`git-native-memory-design.md`](git-native-memory-design.md) — the concrete design spec for that memory (P2/P3).
+  - [`briefs/`](briefs/README.md) — async-ready, self-contained task briefs for P2–P7.
   - This journal.
 - **Decided:** Option C (git-native curated memory) accepted; the P2/P3 design is
   **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)).
   Implementation not started. Next decision: what to build first.
-- **Active focus:** P1 done; next up is building the git-native memory (P2) or a
-  cheap add-on (P7 delegation triggers).
+- **Active focus:** P1 done. Remaining work (P2–P7) is packaged as **async-ready
+  briefs** ([`briefs/`](briefs/README.md)) so each can be built in its own
+  bounded, fresh session.
 
 ## Session log
 
@@ -71,6 +73,13 @@ narrative/discussion home; the structured backlog lives in
   green. The release pipeline (bump → note → docs sync → tests) is now validated
   end-to-end. T3 resolved.
 
+### 2026-07-08 — Session 4
+- Decided to build the remaining proposals **asynchronously, one per fresh
+  bounded session**. Authored self-contained **task briefs** in [`briefs/`](briefs/README.md)
+  (P2, P3, P4+P5, P6, P7), each with a copy-paste starter prompt, exact files,
+  acceptance criteria, and the release checklist — plus a guide on avoiding
+  version/docs collisions when running in parallel. Opened thread T7.
+
 ## Open threads
 
 The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
@@ -83,6 +92,7 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
 | T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
 | T6 | Opt-in interop with claude-mem / Engram | 🔵 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
+| T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress | [`briefs/README.md`](briefs/README.md) |
 
 ## Parking lot
 
@@ -103,5 +113,6 @@ Raw, un-triaged ideas. Anything lands here first; we triage into threads/proposa
 | [`improvement-proposals.md`](improvement-proposals.md) | Living backlog P1–P7 + decision log |
 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) | The strategic memory analysis |
 | [`git-native-memory-design.md`](git-native-memory-design.md) | Concrete git-native memory design spec (P2/P3) |
+| [`briefs/`](briefs/README.md) | Async-ready task briefs (P2–P7) + how-to-run guide |
 | [`journal.md`](journal.md) | This journal |
 | [`sources.md`](sources.md) | All source URLs |
