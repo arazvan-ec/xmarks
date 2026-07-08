@@ -63,6 +63,10 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.
 - `.claude/flywheel/LEARNINGS.md` — the compounding ledger. Typed entries (`## <type>: <title>` + a greppable `<!-- fw: … -->` metadata line) let the `SessionStart` hook inject only a relevance-scored, budgeted subset (branch/files/recency, default top 12, `FLYWHEEL_LEARNINGS_INJECT` to override) instead of a blind reload; `/flywheel:recall <query>` reaches the rest on demand. Created by `/flywheel:compound`. Older free-prose entries still load, as always-eligible low-priority entries.
 
+## Read-priming hook (advisory)
+
+Before reading a file, a `PreToolUse` hook greps the ledger's `files=` metadata for that path and, if any typed entry names it, prints a short "prior learnings touch this file" note first — cheap context ahead of an expensive read. It never blocks the read (unlike claude-mem's File Read Gate) and fails silently (no ledger, no match, or no `python3`) so it can never slow down or break a read.
+
 ## Deterministic completion gate (opt-in)
 
 Drop an executable `.claude/flywheel/gate.sh` in your project with your verification command (e.g. `npm test && npm run lint`). While it exists, flywheel's `Stop` hook runs it whenever Claude tries to finish and **blocks** finishing if it fails — so nothing is declared "done" with checks red. It is a no-op when absent, bounded to a few consecutive blocks (so you're never trapped), and fails open on internal errors.

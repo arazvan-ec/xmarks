@@ -20,10 +20,11 @@ narrative/discussion home; the structured backlog lives in
 
 *Snapshot — 2026-07-08.*
 
-- **Branch:** `claude/loop-analisis`. **Shipped so far: P1 model routing (v0.9.0),
-  P2 git-native memory first release (v0.10.0).** Prior work is the docs research
-  corpus + this journal. All checks green (docs-consistency, install-vendored,
-  plugin validate).
+- **Shipped so far (on `main`): P1 model routing (v0.9.0), P2 git-native memory
+  (v0.10.0), P3 read-priming hook (v0.11.0).** The P2 → P3 git-native memory
+  sequence is complete. Prior work is the docs research corpus + this journal.
+  All checks green (docs-consistency, install-vendored, read-prime, plugin
+  validate).
 - **In the repo:**
   - [`../getting-started-with-loops.md`](../getting-started-with-loops.md) — adapted article + flywheel gap analysis.
   - The [`.`](README.md) research corpus — loop primitives, claude-mem, token efficiency, gentle-ai, comparisons, sources.
@@ -33,13 +34,16 @@ narrative/discussion home; the structured backlog lives in
   - [`briefs/`](briefs/README.md) — async-ready, self-contained task briefs for P2–P7.
   - This journal.
 - **Decided:** Option C (git-native curated memory) accepted; the P2/P3 design is
-  **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)).
-  P2's first release is now **implemented and shipped** (v0.10.0); P3 is unblocked.
-- **Active focus:** P1 and P2 done. Remaining work (P3–P7) is packaged as
+  **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)) and
+  **implemented** (§1–§4 in v0.10.0, §6 in v0.11.0). §5/§7/§8 (flat index,
+  rotation/archival, claude-mem/Engram interop) remain deliberate follow-ups,
+  only if a measured need arises.
+- **Active focus:** P1–P3 done. Remaining work (P4, P6, P7) is packaged as
   **async-ready briefs** ([`briefs/`](briefs/README.md)). The first routine
   attempt was blocked by a git-write permission issue (see the Async run state
-  postmortem) and has been cleaned up; the next step is recreating the routines
-  via the official UI with the repo selected, or continuing to build manually.
+  postmortem); several parallel sessions since then have built P2/P3/P4/P5/P6
+  directly (some duplicating each other — see Session 6/7 notes), and PRs are
+  being reviewed and merged one at a time.
 
 ## Async run state — postmortem (routines blocked, cleaned up)
 
@@ -131,6 +135,20 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   `/flywheel:recall <query>` skill. Backward-compatible with old free-prose
   entries. Added `upgrades/v0.10.0.md`; documented in README + `/flywheel:help`.
   P3 (read-priming hook) can now build on P2's `files=` metadata.
+  (Note: a second, independent P2 attempt was also built and pushed in
+  parallel by another session on `claude/beautiful-mendel-2wk69j` — this one,
+  from `claude/tender-bardeen-xfa5vz`/PR #19, is the one that was merged.)
+
+### 2026-07-08 — Session 7
+- **Shipped P3 (read-priming hook) as v0.11.0**, on branch
+  `claude/beautiful-mendel-2wk69j`, built directly on top of the merged P2
+  (v0.10.0 on `main`) rather than the session's own now-superseded P2 attempt
+  — that duplicate P2 commit was dropped by resetting the branch onto `main`
+  before building P3 fresh. New `scripts/read-prime.sh` as an advisory
+  `PreToolUse`/`Read` hook that surfaces ledger entries whose `files=` metadata
+  names the file about to be read; wired into `hooks/hooks.json`, vendored by
+  `install-vendored.sh`, covered by `scripts/test-read-prime.sh` (wired into
+  CI). All checks green. T7's ledger thread (P2 → P3) is now fully shipped.
 
 ## Open threads
 
@@ -144,7 +162,7 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
 | T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
 | T6 | Opt-in interop with claude-mem / Engram | 🔵 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
-| T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress | [`briefs/README.md`](briefs/README.md) |
+| T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress (P2, P3 shipped; P4/P6 have open PRs pending review; P7 remains) | [`briefs/README.md`](briefs/README.md) |
 
 ## Parking lot
 

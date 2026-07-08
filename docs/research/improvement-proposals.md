@@ -22,7 +22,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | --- | --- | --- | --- |
 | P1 | Model routing by agent role | ✅ shipped (v0.9.0) | Done — verifier→haiku, reviewers→sonnet |
 | P2 | Smarter learnings ledger (git-native memory) | ✅ shipped (v0.10.0) | Done — typed entries, budgeted injection, `/flywheel:recall` |
-| P3 | Learnings-aware file-read priming hook | 🟢 design locked | Build after P2 (needs typed `files=` metadata) |
+| P3 | Learnings-aware file-read priming hook | ✅ shipped (v0.11.0) | Done — advisory `PreToolUse` hook on `Read` |
 | P4 | Goal-based evaluator for `autoloop` | 🔵 proposed | Discuss whether it supersedes self-judging |
 | P5 | Token-usage discipline | 🔵 proposed | Could fold into P4 |
 | P6 | Time-based / proactive loop guidance | ⚪ deferred | Start as a doc later |
@@ -258,3 +258,13 @@ Append-only. Newest at the bottom.
   locked design). Added `upgrades/v0.10.0.md`; documented in README +
   `/flywheel:help`. P3 (read-priming hook) can now build on P2's `files=`
   metadata.
+- **2026-07-08** — **Shipped P3 (read-priming hook) as v0.11.0**, from the
+  async brief in `briefs/P3-read-priming-hook.md`, on top of the P2 release
+  that landed in `main`. New `scripts/read-prime.sh`, wired as a
+  `PreToolUse`/`Read` hook: greps the ledger's `files=` metadata for the file
+  about to be read and prints a short note on a match — advisory only, never
+  blocks the read; fails open (no ledger, no match, malformed hook input, or
+  no `python3`) with no output. `install-vendored.sh` now vendors the script
+  and merges the `PreToolUse` hook into target `settings.json`; `--uninstall`
+  reverses it. Added `scripts/test-read-prime.sh` (wired into CI). All checks
+  green. **The full P2 → P3 git-native memory sequence is now shipped.**

@@ -1,5 +1,5 @@
 {
-  "description": "flywheel: at session start, load the learnings ledger and surface the loop commands; at stop, run the project's opt-in verification gate.",
+  "description": "flywheel: at session start, load the learnings ledger and surface the loop commands; before a file read, advisorily surface any prior learnings that touch it; at stop, run the project's opt-in verification gate.",
   "hooks": {
     "SessionStart": [
       {
@@ -8,6 +8,18 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/session-start.sh",
             "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/read-prime.sh",
+            "timeout": 5
           }
         ]
       }
