@@ -36,7 +36,28 @@ narrative/discussion home; the structured backlog lives in
   Implementation not started. Next decision: what to build first.
 - **Active focus:** P1 done. Remaining work (P2–P7) is packaged as **async-ready
   briefs** ([`briefs/`](briefs/README.md)) so each can be built in its own
-  bounded, fresh session.
+  bounded, fresh session. **P2, P4, P6, P7 are now running as autonomous
+  routines** (see Async run state); P3 is held until P2's branch exists.
+
+## Async run state
+
+Launched 2026-07-08 as Claude Code routines (one fresh session per brief). Each
+branches off `origin/claude/loop-analisis`, implements its brief, runs the
+release checks, and pushes its own branch. Status: 🏃 running · ⏸ held · ✅ pushed.
+
+| Brief | Trigger ID | Branch | Status |
+| --- | --- | --- | --- |
+| P2 memory | `trig_01BZvXK9MBQRJwAarTq3nKQD` | `claude/flywheel-p2-memory` | 🏃 running |
+| P4 evaluator+P5 | `trig_01AJzDycZuAdceXG1RrTHkip` | `claude/flywheel-p4-evaluator` | 🏃 running |
+| P6 proactive (docs) | `trig_01XQRWSVyCyFSnc4YwF1hyqb` | `claude/flywheel-p6-proactive` | 🏃 running |
+| P7 delegation | `trig_01HgZxq7Cf2jqAbu6uZiEYgm` | `claude/flywheel-p7-delegation` | 🏃 running |
+| P3 read-priming | `trig_01RwNKkCh57isna6XDASegFv` | `claude/flywheel-p3-read-priming` | ⏸ held (needs P2) |
+
+**Merge guidance:** each branch is its own release and will bump `plugin.json` /
+add an `upgrades/` note independently — merge them **in ascending version order**
+and resolve the small README/help/version conflicts at merge (see
+[`briefs/README.md`](briefs/README.md)). Fire P3 once P2's branch is on origin.
+Clean up the triggers (delete) once all branches are pushed.
 
 ## Session log
 
