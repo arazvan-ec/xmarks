@@ -122,6 +122,14 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   state), and confirmed the fallback (build in this write-capable session). T7
   status: routine path blocked; next step is UI recreation by the user.
 
+### 2026-07-08 — Session 6
+- **Shipped P6 (proactive loop guidance)** from its brief, docs-only. Added
+  `docs/proactive-loops.md` (babysitting a PR with `/loop`, scheduling
+  flywheel checks with `/schedule`, bounding a stream with `/goal`, fanning out
+  with workflows, plus the caps table) and linked it from the README. No
+  version bump (docs-only, not vendored/checked by docs-consistency). A
+  runtime skill (e.g. `/flywheel:watch`) remains open per the brief.
+
 ## Open threads
 
 The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
