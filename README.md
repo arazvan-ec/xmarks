@@ -63,6 +63,8 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 
 **Token discipline** (v0.12.0): `/flywheel:autoloop` treats its iteration budget as a hard stop and recommends piloting on a small budget before scaling; `/flywheel:help` points to `/usage`, `/goal`, and `/workflows` for spend visibility. See `skills/autoloop/SKILL.md`.
 
+**Delegation triggers** (v0.13.0): `/flywheel:work` names advisory thresholds for handing off to a fresh-context subagent — reading 4+ files, touching 2+ non-trivial files, or ~20 tool calls deep without converging — to keep each turn's context lean.
+
 ## State it keeps (in the project you use it on)
 
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.

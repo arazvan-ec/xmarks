@@ -22,12 +22,15 @@ narrative/discussion home; the structured backlog lives in
 
 - **Shipped so far (on `main`): P1 model routing (v0.9.0), P2 git-native memory
   (v0.10.0), P3 read-priming hook (v0.11.0), P6 proactive loop guidance (docs,
-  no version bump), P5 token-usage discipline (v0.12.0), P4 goal evaluator
-  (v0.13.0).** P4 was briefly deferred/decided against in the P5 release, then
+  no version bump), P5 token-usage discipline (v0.12.0), P7 delegation triggers
+  (v0.13.0), P4 goal evaluator (v0.14.0).** All seven original proposals are
+  now shipped. P4 was briefly deferred/decided against in the P5 release, then
   **reopened** in Session 10 with a different mechanism than the one that was
-  rejected (see T5). The P2 → P3 git-native memory sequence is complete. Prior
-  work is the docs research corpus + this journal. All checks green
-  (docs-consistency, install-vendored, read-prime, plugin validate).
+  rejected (see T5), and rebased twice more at merge time after P7
+  independently claimed v0.13.0 (Session 11). The P2 → P3 git-native memory
+  sequence is complete. Prior work is the docs research corpus + this journal.
+  All checks green (docs-consistency, install-vendored, read-prime,
+  plugin validate).
 - **In the repo:**
   - [`../getting-started-with-loops.md`](../getting-started-with-loops.md) — adapted article + flywheel gap analysis.
   - The [`.`](README.md) research corpus — loop primitives, claude-mem, token efficiency, gentle-ai, comparisons, sources.
@@ -41,10 +44,10 @@ narrative/discussion home; the structured backlog lives in
   **implemented** (§1–§4 in v0.10.0, §6 in v0.11.0). §5/§7/§8 (flat index,
   rotation/archival, claude-mem/Engram interop) remain deliberate follow-ups,
   only if a measured need arises.
-- **Active focus:** P1–P3, P5, P6 done; P4 reopened and shipped (v0.13.0). Only
-  **P7** remains from the original async-briefs backlog
-  ([`briefs/`](briefs/README.md)). The first routine attempt was blocked by a
-  git-write permission issue (see the Async run state postmortem); several
+- **Active focus:** all of P1–P7 done — the original async-briefs backlog
+  ([`briefs/`](briefs/README.md)) is fully shipped. The first routine attempt
+  was blocked by a git-write permission issue (see the Async run state
+  postmortem); several
   parallel sessions since then have built P2/P3/P4/P5/P6 directly (some
   duplicating each other — see Session 6–10 notes), and PRs are being reviewed
   and merged one at a time.
@@ -203,8 +206,22 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   stop decision, on top of (not instead of) the existing metric-command check
   and the v0.12.0 token-discipline guidance. Restarted the branch from the
   current `main` (the old PR #16 commits predated P3/P5/P6 and were stale) and
-  shipped as **v0.13.0**. docs-consistency + install-vendored +
+  opened PR #23, versioned **v0.13.0**. docs-consistency + install-vendored +
   `plugin validate --strict` all green.
+
+### 2026-07-08 — Session 11
+- Hit the version-collision pattern **a second time on the same PR**: while
+  PR #23 (P4, v0.13.0) sat open, **P7 (delegation triggers)** merged into
+  `main` first and also claimed v0.13.0 — the exact scenario
+  `briefs/README.md` warns about, just recurring. Merged current `main` into
+  the PR branch; the only real conflict was the add/add on
+  `upgrades/v0.13.0.md` (README, `improvement-proposals.md`, and
+  `skills/help/SKILL.md` all auto-merged cleanly since P7 and P4 touch
+  different sections). Kept P7's note as `v0.13.0.md`, moved P4's to
+  **`upgrades/v0.14.0.md`**, and rebased `plugin.json` + every P4 version
+  reference to **v0.14.0**. All seven original proposals (P1–P7) are now
+  shipped on `main` (once this PR lands). docs-consistency + install-vendored
+  + `plugin validate --strict` all green after the merge.
 
 ## Open threads
 
@@ -216,9 +233,9 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | T2 | Git-native memory design | ✅ design locked | [`git-native-memory-design.md`](git-native-memory-design.md) |
 | T3 | P1 model routing | ✅ shipped v0.9.0 | [`improvement-proposals.md`](improvement-proposals.md#p1--model-routing-by-agent-role-) |
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
-| T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | ✅ reopened; shipped v0.13.0 as a re-execution cross-check | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
+| T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | ✅ reopened; shipped v0.14.0 as a re-execution cross-check | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
 | T6 | Opt-in interop with claude-mem / Engram | 🔵 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
-| T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress (P2–P6 shipped; only P7 remains) | [`briefs/README.md`](briefs/README.md) |
+| T7 | Async execution of P2–P7 via bounded briefs | ✅ all shipped (P1–P7) | [`briefs/README.md`](briefs/README.md) |
 
 ## Parking lot
 

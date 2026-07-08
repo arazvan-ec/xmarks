@@ -23,10 +23,10 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P1 | Model routing by agent role | ✅ shipped (v0.9.0) | Done — verifier→haiku, reviewers→sonnet |
 | P2 | Smarter learnings ledger (git-native memory) | ✅ shipped (v0.10.0) | Done — typed entries, budgeted injection, `/flywheel:recall` |
 | P3 | Learnings-aware file-read priming hook | ✅ shipped (v0.11.0) | Done — advisory `PreToolUse` hook on `Read` |
-| P4 | Goal-based evaluator for `autoloop` | ✅ shipped (v0.13.0) | Reopened — see decision log: the v0.12.0 rejection assessed a transcript-only evaluator; v0.13.0 ships a re-execution cross-check instead |
+| P4 | Goal-based evaluator for `autoloop` | ✅ shipped (v0.14.0) | Reopened — see decision log: the v0.12.0 rejection assessed a transcript-only evaluator; v0.14.0 ships a re-execution cross-check instead |
 | P5 | Token-usage discipline | ✅ shipped (v0.12.0) | Done — autoloop + `/flywheel:help` carry the guidance |
 | P6 | Time-based / proactive loop guidance | ✅ shipped (docs) | `docs/proactive-loops.md`; a runtime skill (e.g. `/flywheel:watch`) is still open |
-| P7 | Delegation triggers (from gentle-ai) | 🔵 proposed | Discuss thresholds; where they live |
+| P7 | Delegation triggers (from gentle-ai) | ✅ shipped (v0.13.0) | Done — advisory thresholds in `/flywheel:work` |
 
 ## Priority overview
 
@@ -155,7 +155,7 @@ metric command hasn't already proven, so it adds process without adding
 rigor. Revisit only if a concrete failure mode shows up in practice (e.g. the
 working agent fabricating a metric result instead of running the command).
 
-**Decision (2026-07-08, superseded above): reopened, shipped v0.13.0.**
+**Decision (2026-07-08, superseded above): reopened, shipped v0.14.0.**
 The v0.12.0 rejection is correct about the mechanism it evaluated — a
 transcript-only judge, like `/goal`'s, genuinely adds nothing on top of a
 metric command autoloop already runs. But that isn't the only way to build an
@@ -314,7 +314,7 @@ Append-only. Newest at the bottom.
   (the exact scenario `briefs/README.md` warned about): P2 then P3 each merged
   into `main` first and claimed 0.10.0 then 0.11.0, so P5 lands as **v0.12.0**.
   docs-consistency + install-vendored + `plugin validate --strict` all green.
-- **2026-07-08** — **Reopened P4 and shipped it as v0.13.0.** A second,
+- **2026-07-08** — **Reopened P4 and shipped it as v0.14.0.** A second,
   independent session had reached a different conclusion on the same open
   question and built an evaluator before the P5 session's rejection merged;
   its PR lost the merge race and was closed as a duplicate. On review, the
@@ -327,6 +327,8 @@ Append-only. Newest at the bottom.
   closing the self-grading-bias gap without re-litigating the parts of the
   v0.12.0 reasoning that hold up. `skills/autoloop/SKILL.md` consults it
   before an ambiguous keep/discard or a stop decision; README + `/flywheel:help`
-  document the new agent. Version bumped to v0.13.0 (main had moved to v0.12.0
-  since the closed PR). docs-consistency + install-vendored +
+  document the new agent. Version bumped twice at merge time (the exact
+  scenario `briefs/README.md` warned about): first to v0.13.0 (main had moved
+  to v0.12.0 since the closed PR), then to **v0.14.0** when P7 independently
+  claimed v0.13.0 first. docs-consistency + install-vendored +
   `plugin validate --strict` all green.

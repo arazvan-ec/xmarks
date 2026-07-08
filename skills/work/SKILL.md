@@ -27,4 +27,14 @@ Execute the plan's tasks one at a time. For **each** task, run this loop and do 
 | "It's a small change, no test needed." | Small changes break things too — add the smallest check. |
 | "It works on my reasoning." | Reasoning is a hypothesis; the run is the evidence. |
 
+## When to delegate (keep the working context lean)
+
+Long solo runs bloat context and bury signal. Hand work off to a **fresh-context subagent** at these thresholds — advisory, not hard rules; use judgment:
+
+- **Reading 4+ files** to understand an area → delegate the exploration to a subagent; it digs in its own context and returns just the summary you need, instead of loading everything into this one.
+- **About to touch 2+ non-trivial files** → get a fresh-context review before advancing (`/flywheel:review`, or the `reviewer-*` agents) — a reviewer that didn't write the code catches more.
+- **~20 tool calls or ~5 exploratory reads deep** in one task without converging → stop, re-plan, and re-scope; a bloated context is a signal the task needs splitting, not more grinding.
+
+These keep each turn high-signal, mirroring flywheel's existing use of fresh-context reviewers.
+
 When all tasks are green, hand off to `/flywheel:verify` for the objective gate against the spec's success metric. Do not self-certify the whole feature here.
