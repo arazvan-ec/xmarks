@@ -33,12 +33,15 @@ narrative/discussion home; the structured backlog lives in
   - This journal.
 - **Decided:** Option C (git-native curated memory) accepted; the P2/P3 design is
   **locked** ([`git-native-memory-design.md`](git-native-memory-design.md)).
-  Implementation not started. Next decision: what to build first.
-- **Active focus:** P1 done. Remaining work (P2–P7) is packaged as **async-ready
-  briefs** ([`briefs/`](briefs/README.md)). The first routine attempt was blocked
-  by a git-write permission issue (see the Async run state postmortem) and has
-  been cleaned up; the next step is recreating the routines via the official UI
-  with the repo selected.
+  **P2 shipped as v0.10.0** (built directly in this write-capable session, per
+  the postmortem's fallback). P3 (read-priming hook) is next; its prereq (P2's
+  typed `files=` metadata) is now in place.
+- **Active focus:** P1 and P2 done. Remaining work (P3, P4, P6, P7) is packaged as
+  **async-ready briefs** ([`briefs/`](briefs/README.md)). The first routine
+  attempt was blocked by a git-write permission issue (see the Async run state
+  postmortem) and has been cleaned up; P2 was rebuilt directly instead. The next
+  step for the rest is either recreating routines via the official UI with the
+  repo selected, or continuing the same direct-build fallback.
 
 ## Async run state — postmortem (routines blocked, cleaned up)
 
@@ -121,6 +124,15 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   5 broken triggers, wrote the postmortem + UI recreation checklist (see Async run
   state), and confirmed the fallback (build in this write-capable session). T7
   status: routine path blocked; next step is UI recreation by the user.
+
+### 2026-07-08 — Session 6
+- **Shipped P2 (git-native memory, first release) as v0.10.0**, built directly
+  in this write-capable session using the postmortem's fallback (branch
+  `claude/flywheel-p2-memory`, since the routine path is still blocked). Typed
+  entry format in `/flywheel:compound`, relevance-scored budgeted injection in
+  `scripts/session-start.sh`, and the new `/flywheel:recall` skill — all per
+  the locked design. docs-consistency + install-vendored + `plugin validate`
+  green. P2's part of T7 resolved; P3 is unblocked next.
 
 ## Open threads
 

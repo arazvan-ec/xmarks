@@ -21,8 +21,8 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | # | Proposal | Status | Next action |
 | --- | --- | --- | --- |
 | P1 | Model routing by agent role | ✅ shipped (v0.9.0) | Done — verifier→haiku, reviewers→sonnet |
-| P2 | Smarter learnings ledger (git-native memory) | 🟢 design locked | Build the small first release: typed format + injection + `/recall` |
-| P3 | Learnings-aware file-read priming hook | 🟢 design locked | Build after P2 (needs typed `files=` metadata) |
+| P2 | Smarter learnings ledger (git-native memory) | ✅ shipped (v0.10.0) | Done — typed entries + relevance injection + `/flywheel:recall` |
+| P3 | Learnings-aware file-read priming hook | 🟢 design locked | Build now — P2's typed `files=` metadata is available |
 | P4 | Goal-based evaluator for `autoloop` | 🔵 proposed | Discuss whether it supersedes self-judging |
 | P5 | Token-usage discipline | 🔵 proposed | Could fold into P4 |
 | P6 | Time-based / proactive loop guidance | ⚪ deferred | Start as a doc later |
@@ -73,31 +73,31 @@ and the README; `plugin.json` version bump + `upgrades/vX.Y.Z.md`.
 
 ---
 
-## P2 — Smarter learnings ledger
+## P2 — Smarter learnings ledger ✅ shipped (v0.10.0)
 
 **Why.** flywheel's SessionStart hook reloads `LEARNINGS.md` (capped at ~50 lines
 today) with no relevance filtering; claude-mem shows that **selective, typed,
 progressively-disclosed** memory is far more token-efficient than a whole-file
 reload that grows into a fixed per-session tax.
 
-**What (keep markdown as source of truth):**
-- **Typed entries** — lightweight metadata per `/flywheel:compound` entry (type:
-  bugfix/decision/gotcha/pattern; files; date; spec/PR link).
-- **Relevant injection** — `scripts/session-start.sh` injects the N entries most
-  relevant to the current branch/spec (match by files/branch), not just the last
-  50 lines.
-- **`/flywheel:recall <query>`** — a new skill for on-demand progressive
-  disclosure: list matching titles cheaply, expand detail on request.
+**What shipped (keeps markdown as source of truth, no DB):**
+- **Typed entries** — `/flywheel:compound` writes `## <type>: <title>` +
+  `<!-- fw: type=…; date=…; files=…; spec=…; pr=…; branch=… -->` + prose, one
+  entry per learning. Old free-prose entries still load (always-eligible,
+  low-priority).
+- **Relevant injection** — `scripts/session-start.sh` scores every entry
+  (`+3` files overlap, `+2` branch/spec match, `+1` recency ≤30d) and injects
+  the top `FLYWHEEL_LEARNINGS_INJECT` (default 12) full entries + a one-line
+  pointer for the rest, instead of the first ~50 lines.
+- **`/flywheel:recall <query>`** — new skill for on-demand progressive
+  disclosure: list matching titles cheaply, expand one entry on request.
 
-**Files:** `skills/compound/SKILL.md`, `scripts/session-start.sh`, new
-`skills/recall/` (+ README/help entry — required by the docs-consistency test),
-`plugin.json` + `upgrades/`.
+**Files changed:** `skills/compound/SKILL.md`, `scripts/session-start.sh`, new
+`skills/recall/SKILL.md` (+ README/help entries), `plugin.json` +
+`upgrades/v0.10.0.md`.
 
-**Open questions:**
-- Pure-markdown + grep index, or a small SQLite/FTS5 sidecar (heavier, but the
-  claude-mem model)? Trade-off: portability/git-diffability vs power.
-- Is relevance-by-branch/files enough, or do we need semantic matching?
-- Ship the `/recall` command and injection together, or injection first?
+**Deferred (per the locked design):** a `.tsv` metadata index, semi-auto
+Stop-hook staging, claude-mem/Engram interop — no measured need yet.
 
 ---
 
