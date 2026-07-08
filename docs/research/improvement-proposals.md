@@ -23,8 +23,8 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P1 | Model routing by agent role | ✅ shipped (v0.9.0) | Done — verifier→haiku, reviewers→sonnet |
 | P2 | Smarter learnings ledger (git-native memory) | 🟢 design locked | Build the small first release: typed format + injection + `/recall` |
 | P3 | Learnings-aware file-read priming hook | 🟢 design locked | Build after P2 (needs typed `files=` metadata) |
-| P4 | Goal-based evaluator for `autoloop` | 🔵 proposed | Discuss whether it supersedes self-judging |
-| P5 | Token-usage discipline | 🔵 proposed | Could fold into P4 |
+| P4 | Goal-based evaluator for `autoloop` | ⚪ deferred (decided against) | Redundant vs. autoloop's existing deterministic metric check — see decision log |
+| P5 | Token-usage discipline | ✅ shipped (v0.10.0) | Done — autoloop + `/flywheel:help` carry the guidance |
 | P6 | Time-based / proactive loop guidance | ⚪ deferred | Start as a doc later |
 | P7 | Delegation triggers (from gentle-ai) | 🔵 proposed | Discuss thresholds; where they live |
 
@@ -146,6 +146,15 @@ body to consult it. Bound by the existing max-iterations budget.
 - Or is flywheel's existing deterministic metric-command check already stronger
   than `/goal`'s transcript-only evaluator, making this redundant?
 
+**Decision (2026-07-08, v0.10.0 release): deferred / decided against.**
+`/goal`'s evaluator exists to compensate for having *no* deterministic check —
+it can only judge from the transcript. Autoloop already forces the actual
+metric command to run and its output to be recorded every iteration; a
+read-only evaluator judging that same transcript can't verify anything the
+metric command hasn't already proven, so it adds process without adding
+rigor. Revisit only if a concrete failure mode shows up in practice (e.g. the
+working agent fabricating a metric result instead of running the command).
+
 ---
 
 ## P5 — Token-usage discipline
@@ -162,6 +171,12 @@ advice; make the autoloop budget/stop-criteria discipline explicit.
 
 **Open questions:**
 - Fold into P4 (both touch autoloop) as one release, or keep separate?
+
+**Decision (2026-07-08): shipped as v0.10.0**, standalone (P4 was decided
+against, so nothing to fold into). `skills/autoloop/SKILL.md` gained a "Token
+discipline" section (hard budget stop, pilot-before-scaling, `/usage`
+pointer, when to prefer `/goal`/`/loop`/workflows); `skills/help/SKILL.md`
+and `README.md` got matching pointers.
 
 ---
 
@@ -249,3 +264,13 @@ Append-only. Newest at the bottom.
   code change. `verifier` → haiku (mechanical); reviewers stay sonnet (judgment),
   opus opt-in. Added `upgrades/v0.9.0.md`; documented in README + `/flywheel:help`.
   docs-consistency + install-vendored + `plugin validate --strict` all green.
+- **2026-07-08** — **Resolved T5 and shipped P5 as v0.10.0.** Per the P4 brief's
+  own decision framework: assessed P4's evaluator against autoloop's existing
+  deterministic metric-command check and decided it's **redundant** (a
+  transcript-only evaluator can't verify anything the metric command's actual
+  output hasn't already proven) — P4 marked ⚪ deferred, decided against. Built
+  **P5 (token-usage discipline)** standalone: `skills/autoloop/SKILL.md` gained
+  a "Token discipline" section (hard budget stop, pilot-before-scaling, `/usage`
+  pointer, `/goal`/`/loop`/workflow guidance); `skills/help/SKILL.md` and
+  `README.md` got matching pointers. docs-consistency + install-vendored +
+  `plugin validate --strict` all green.

@@ -122,6 +122,22 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   state), and confirmed the fallback (build in this write-capable session). T7
   status: routine path blocked; next step is UI recreation by the user.
 
+### 2026-07-08 — Session 6
+- Ran the **P4-goal-evaluator.md** brief's own decide-first step for T5: is a
+  separate evaluator agent worth building over autoloop's existing
+  deterministic metric-command check? Decision: **no** — `/goal`'s evaluator
+  compensates for having no other check, but a transcript-only evaluator can't
+  verify anything autoloop's actual metric-command output hasn't already
+  proven. **P4 deferred, decided against.**
+- Built **P5 (token-usage discipline)** standalone and shipped as **v0.10.0**:
+  `skills/autoloop/SKILL.md` (hard budget stop, pilot-before-scaling, `/usage`
+  pointer, `/goal`/`/loop`/workflow guidance), `skills/help/SKILL.md`, and
+  `README.md` all updated. `upgrades/v0.10.0.md` added. All three checks
+  (docs-consistency, install-vendored, `plugin validate --strict`) green.
+- T5 resolved (decided against, not built). T7 progress: one more brief (P4+P5)
+  worked directly in a fresh session per the async plan, since the MCP routine
+  path is still blocked pending UI recreation.
+
 ## Open threads
 
 The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
@@ -132,7 +148,7 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | T2 | Git-native memory design | ✅ design locked | [`git-native-memory-design.md`](git-native-memory-design.md) |
 | T3 | P1 model routing | ✅ shipped v0.9.0 | [`improvement-proposals.md`](improvement-proposals.md#p1--model-routing-by-agent-role-) |
 | T4 | P7 delegation triggers (adopt from gentle-ai) | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p7--delegation-triggers) |
-| T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | 🔵 | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
+| T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | ✅ decided against (deferred) | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
 | T6 | Opt-in interop with claude-mem / Engram | 🔵 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
 | T7 | Async execution of P2–P7 via bounded briefs | 🟡 in progress | [`briefs/README.md`](briefs/README.md) |
 
