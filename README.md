@@ -29,6 +29,8 @@ spec → plan → work → verify → review → compound
 
 Nothing advances on "seems right": `verify` runs the real app/tests, and every finished cycle deposits reusable knowledge into a ledger that primes the next one.
 
+> 📚 New to loops as a concept? See [docs/getting-started-with-loops.md](docs/getting-started-with-loops.md) — the four loop types (turn-based, goal-based, time-based, proactive) and how flywheel maps onto them.
+
 ## Commands
 
 | Command | What it does |
@@ -53,6 +55,8 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 - `verifier` — runs the app/tests and returns an objective PASS/FAIL with evidence.
 - `reviewer-correctness`, `reviewer-security`, `reviewer-performance` — adversarial specialist reviewers dispatched in parallel by `/flywheel:review`.
 
+**Model routing by role** (v0.9.0): the mechanical `verifier` runs on **Haiku** (it runs commands and reports evidence); the judgment-heavy `reviewer-*` run on **Sonnet**. Override any agent via its `model:` frontmatter (e.g. a reviewer → `opus` for high-stakes reviews), or all at once with `CLAUDE_CODE_SUBAGENT_MODEL`.
+
 ## State it keeps (in the project you use it on)
 
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.
@@ -65,3 +69,5 @@ Drop an executable `.claude/flywheel/gate.sh` in your project with your verifica
 ## Repo layout
 
 The plugin lives at the repo root: `.claude-plugin/` (manifest + marketplace), `skills/`, `agents/`, `hooks/`, `scripts/`. Setup guides are in [`docs/`](docs/), and [`upgrades/`](upgrades/) holds the per-version, AI-authored migration notes that `/flywheel:update` executes in installed repos (CI requires one per release).
+
+Design research and the improvement backlog live in [`docs/research/`](docs/research/) — see [`improvement-proposals.md`](docs/research/improvement-proposals.md) for the living roadmap (P1–P6).

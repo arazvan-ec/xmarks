@@ -38,6 +38,7 @@ A disciplined, self-verifying development loop. One unit of work flows through s
 - **State lives in this project** under `.claude/flywheel/`: specs in `specs/`, plus the compounding ledger `LEARNINGS.md`. The `SessionStart` hook reloads recent lessons each session, so knowledge carries forward.
 - **Optional hard gate**: drop an executable `.claude/flywheel/gate.sh` (for example `npm test && npm run lint`). While it exists, the `Stop` hook blocks finishing a turn whenever it fails — so nothing is called "done" with checks red.
 - Commands are namespaced `/flywheel:…` and also show up in `/help`.
+- **Model routing by role**: the mechanical `verifier` runs on a fast/cheap model (Haiku); the judgment-heavy `reviewer-*` run on Sonnet. Change an agent's `model:` frontmatter to adjust, or `CLAUDE_CODE_SUBAGENT_MODEL` to override all.
 
 ## 5. Offer to start
 Finish by asking one question: **"What do you want to build, fix, or explore right now?"** Based on the answer, recommend the exact command. If the user says go, invoke it for them (for example, run `/flywheel:loop <task>`). Never launch a `loop`, `autoloop`, or `ship` command without explicit confirmation.
