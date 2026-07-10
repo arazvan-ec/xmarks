@@ -3,12 +3,12 @@
   "owner": {
     "name": "arazvan"
   },
-  "description": "Claude Code plugins by arazvan. Includes flywheel: a spec→plan→work→verify→review→compound loop for disciplined AI-assisted development.",
+  "description": "Claude Code plugins by arazvan. Includes flywheel: a spec→plan→work→verify→review→compound loop for disciplined AI-assisted development, plus an agent-native runtime pillar (/flywheel:process + /flywheel:run) where Claude executes and matures recurring domain operations that persist to the repo's own datastore.",
   "plugins": [
     {
       "name": "flywheel",
       "source": "./",
-      "description": "Nested spec→plan→work→verify→review→compound loop for disciplined AI-assisted development. Adds an autonomous metric-driven loop, parallel multi-specialist review, and spec↔code sync.",
+      "description": "Nested spec→plan→work→verify→review→compound loop for disciplined AI-assisted development, plus an agent-native runtime pillar (/flywheel:process + /flywheel:run) that turns recurring domain operations into self-improving, persistence-aware process contracts Claude executes as the backend. Also an autonomous metric-driven loop, parallel multi-specialist review, and spec↔code sync.",
       "category": "workflow",
       "keywords": [
         "ai-development",

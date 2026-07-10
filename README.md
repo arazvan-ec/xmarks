@@ -33,6 +33,27 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 >
 > ⏱️ Want to run flywheel on a schedule or unattended? See [docs/proactive-loops.md](docs/proactive-loops.md) — composing `/flywheel:verify`/`review` with `/loop`, `/schedule` routines, `/goal`, and workflows.
 
+## The second pillar: an agent-native runtime (v0.15.0)
+
+The loop above **builds** software. The `process`/`run` pair lets flywheel also
+**operate** it — turning the repo [agent-native](https://every.to/go-agent-native):
+Claude is a first-class part of the runtime, not a bolt-on. Instead of writing a
+static backend function for a recurring domain operation ("analyze a car", "score
+a lead", "ingest a report"), you define a **process contract** and let Claude run it.
+
+- `/flywheel:process <desc>` scaffolds `.claude/flywheel/processes/<slug>.md`: the
+  **fixed rules** the operation always follows, its **output schema**, and where
+  results **persist** — following the repo's *own* data strategy declared once in
+  `.claude/flywheel/DATA.md` (e.g. Postgres via the repo's client), never a
+  datastore flywheel imposes.
+- `/flywheel:run <slug> [input]` executes the contract **as the backend**: follow
+  the rules, apply judgment only where the contract allows, write the result to
+  the datastore and *prove* it landed (idempotent, read-back verified), then
+  **mature** the contract — appending one evidence-based refinement so the next
+  run is sharper. Fixed rules + a self-improving prompt, exactly as asked.
+
+Full vision + the worked car example: [`docs/research/agent-native-processes.md`](docs/research/agent-native-processes.md).
+
 ## Commands
 
 | Command | What it does |
@@ -49,6 +70,8 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 | `/flywheel:compound` | Append this cycle's decisions, gotchas, and patterns to the ledger. |
 | `/flywheel:recall <query>` | On-demand ledger search — list matching learnings cheaply, expand one on request. |
 | `/flywheel:ship <title>` | Clean commit + push + PR to close out the cycle. |
+| `/flywheel:process <desc>` | Define an **agent-native process** — a reusable prompt-contract (fixed rules + output schema + persistence) for a recurring domain operation Claude runs as the backend. |
+| `/flywheel:run <slug> [input]` | Execute a defined process as the runtime — follow its rules, persist the result to the repo's datastore, then mature the contract from the run. |
 | `/flywheel:autoloop <goal>` ⚡ | Autonomous metric-driven loop — iterate hands-off until a metric is met or a budget is spent. |
 | `/flywheel:sync <spec-slug>` ⚡ | Reconcile drift between a spec and the code (bidirectional). |
 | `/flywheel:update [vendored\|marketplace]` | Update flywheel itself — autodetects marketplace vs vendored install, or takes the mode as an argument. |
@@ -68,6 +91,8 @@ Nothing advances on "seems right": `verify` runs the real app/tests, and every f
 ## State it keeps (in the project you use it on)
 
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.
+- `.claude/flywheel/processes/<slug>.md` — agent-native **process contracts** (fixed rules + output schema + persistence + an append-only improvement log), created by `/flywheel:process` and matured by `/flywheel:run`.
+- `.claude/flywheel/DATA.md` — the repo's data-persistence strategy (Store / Access / Schema / Conventions) that every `/flywheel:run` writes through, so results land the way the repo already stores them.
 - `.claude/flywheel/LEARNINGS.md` — the compounding ledger. Typed entries (`## <type>: <title>` + a greppable `<!-- fw: … -->` metadata line) let the `SessionStart` hook inject only a relevance-scored, budgeted subset (branch/files/recency, default top 12, `FLYWHEEL_LEARNINGS_INJECT` to override) instead of a blind reload; `/flywheel:recall <query>` reaches the rest on demand. Created by `/flywheel:compound`. Older free-prose entries still load, as always-eligible low-priority entries.
 
 ## Read-priming hook (advisory)
