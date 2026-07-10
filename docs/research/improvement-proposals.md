@@ -27,6 +27,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P5 | Token-usage discipline | ✅ shipped (v0.12.0) | Done — autoloop + `/flywheel:help` carry the guidance |
 | P6 | Time-based / proactive loop guidance | ✅ shipped (docs) | `docs/proactive-loops.md`; a runtime skill (e.g. `/flywheel:watch`) is still open |
 | P7 | Delegation triggers (from gentle-ai) | ✅ shipped (v0.13.0) | Done — advisory thresholds in `/flywheel:work` |
+| P8 | Agent-native runtime pillar (`process` + `run`) | ✅ shipped (v0.15.0) | Done — Claude executes + persists + matures domain operations; see [`agent-native-processes.md`](agent-native-processes.md) |
 
 ## Priority overview
 
@@ -39,6 +40,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P5 | Token-usage discipline in autoloop + help | Medium | Low | Low | Yes |
 | P6 | Time-based / proactive loop guidance (routines) | Medium | Large | Medium | Yes (+docs) |
 | P7 | Delegation triggers (when to spin up a fresh-context subagent) | Medium | Low | Low | Yes |
+| **P8** | **Agent-native runtime pillar** (Claude runs + persists + matures domain operations) ⭐ new direction | High | Medium | Medium | Yes |
 
 ---
 
@@ -240,6 +242,51 @@ existing fresh-context reviewers.
 
 ---
 
+## P8 — Agent-native runtime pillar ⭐ (new direction, 2026-07-10)
+
+**Why.** P1–P7 sharpen flywheel as a **development** loop. The repo owner's
+direction is broader: make flywheel turn the repos it's installed in
+**agent-native** (https://every.to/go-agent-native) — the agent as a first-class
+part of the *runtime*, not just the dev process. Concretely: operate the repo's
+domain the way a backend would (e.g. "analyze a car"), but with Claude as the
+execution engine rather than static code, persisting to the repo's own datastore,
+and improving each operation with every run.
+
+**What.** A second pillar of two skills (full design:
+[`agent-native-processes.md`](agent-native-processes.md)):
+- `/flywheel:process <desc>` — scaffold a **process contract** at
+  `.claude/flywheel/processes/<slug>.md`: fixed rules + output schema + persistence
+  + bounded judgment latitude + an append-only improvement log; bootstrap
+  `.claude/flywheel/DATA.md` (the repo's persistence strategy) on first use.
+- `/flywheel:run <slug> [input]` — execute the contract as the runtime, persist
+  per `DATA.md` (idempotent, verified), and mature the contract with ≤1
+  evidence-based refinement per run.
+
+**Files:** `skills/process/`, `skills/run/`, README + `/flywheel:help` +
+`scripts/session-start.sh`, `docs/research/agent-native-processes.md`, root
+`CLAUDE.md`, `plugin.json` + `marketplace.json` + `upgrades/v0.15.0.md`.
+
+**Decisions (shipped v0.15.0):**
+- **Two verbs, not one** — separate *define* (`process`) from *execute* (`run`),
+  mirroring how pillar 1 separates `spec` from `work`. Keeps each contract a
+  reviewable artifact independent of any single run.
+- **Persistence is the repo's, not flywheel's** — `DATA.md` declares the existing
+  store/access/schema; flywheel writes through it (MCP/CLI/ORM) and never imposes
+  a datastore. A run must *prove* the write (read-back / affected rows).
+- **Maturation is evidence-gated** — ≤1 refinement per run, only from that run;
+  fixed-rule changes are versioned in the contract. Cross-process lessons go to
+  the shared ledger via `/flywheel:compound`, not the process file.
+- **Reuse, don't reinvent** — a run cross-checks with the existing `evaluator`
+  agent when the process declares a `metric`; no new agent added.
+
+**Open questions (post-ship):**
+- A `/flywheel:processes` listing / discovery command, or is `help` + the
+  directory enough?
+- Should scheduled/unattended runs get a thin wrapper, or is composing
+  `/flywheel:run` with the existing proactive-loop guidance sufficient?
+- Batch runs (one invocation over many inputs) as a workflow — worth a first-class
+  affordance?
+
 ## Suggested sequencing
 
 1. **P1** (clean, self-contained win; validates the release flow end-to-end).
@@ -332,3 +379,18 @@ Append-only. Newest at the bottom.
   to v0.12.0 since the closed PR), then to **v0.14.0** when P7 independently
   claimed v0.13.0 first. docs-consistency + install-vendored +
   `plugin validate --strict` all green.
+- **2026-07-10** — **Opened and shipped P8 (agent-native runtime pillar) as
+  v0.15.0.** New direction from the repo owner: flywheel should not only *build*
+  software but make the repos it's installed in *agent-native* — Claude as the
+  runtime for recurring domain operations, persisting to the repo's own datastore
+  and improving each operation per run (see the owner's ask, captured verbatim in
+  [`agent-native-processes.md`](agent-native-processes.md)). Built two skills:
+  `/flywheel:process` (define + mature a process contract, bootstrap
+  `.claude/flywheel/DATA.md`) and `/flywheel:run` (execute as the backend, persist
+  idempotently + verified, cross-check with the `evaluator` when a metric is
+  declared, append ≤1 evidence-based refinement). Decisions: two verbs not one;
+  persistence follows the repo (never imposed); maturation evidence-gated; reuse
+  the `evaluator` agent rather than add one. Captured durably in a new root
+  `CLAUDE.md` + `agent-native-processes.md`; README/help/banner synced.
+  docs-consistency + install-vendored + read-prime + `plugin validate` all green.
+  This is the roadmap's first entry beyond the original P1–P7 dev-loop set.

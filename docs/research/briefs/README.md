@@ -18,11 +18,13 @@ own workflow.
 | [`P4-goal-evaluator.md`](P4-goal-evaluator.md) | Goal-based evaluator (+ P5 token discipline) | Medium | — | `claude/flywheel-p4-evaluator` | ✅ shipped (P5 v0.12.0, P4 evaluator v0.14.0) |
 | [`P6-proactive-loops.md`](P6-proactive-loops.md) | Time-based / proactive loop guidance | Small (docs) | — | `claude/flywheel-p6-proactive` | ✅ shipped (docs) |
 | [`P7-delegation-triggers.md`](P7-delegation-triggers.md) | Delegation triggers | Small | — | `claude/flywheel-p7-delegation` | ✅ shipped (v0.13.0) |
+| [`P8-agent-native-processes.md`](P8-agent-native-processes.md) | Agent-native runtime pillar (`process` + `run`) | Medium | — | `claude/plugin-agent-native-repo` | ✅ shipped (v0.15.0) |
 
-Order note: **the whole P1–P7 roadmap has shipped** — P1 v0.9.0, P2 v0.10.0,
-P3 v0.11.0, P5 v0.12.0, P7 v0.13.0, P4 (evaluator) v0.14.0, and P6 as docs.
-(P3 built on P2's typed `files=` metadata, in that order.) These briefs are kept
-for reference; the roadmap is complete.
+Order note: **the whole P1–P7 dev-loop roadmap has shipped** — P1 v0.9.0, P2
+v0.10.0, P3 v0.11.0, P5 v0.12.0, P7 v0.13.0, P4 (evaluator) v0.14.0, and P6 as
+docs. (P3 built on P2's typed `files=` metadata, in that order.) **P8 (v0.15.0)
+opens a new direction** beyond the original dev-loop set — the agent-native
+runtime pillar (`process` + `run`). These briefs are kept for reference.
 
 > **Collision note (2026-07-08, resolved):** several parallel automated sessions
 > built the same proposals independently — P2 reached two open PRs, and P4 had a

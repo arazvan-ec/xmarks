@@ -223,6 +223,26 @@ merge. Run P3 only after P2 is present (it needs P2's typed `files=` metadata).
   shipped on `main` (once this PR lands). docs-consistency + install-vendored
   + `plugin validate --strict` all green after the merge.
 
+### 2026-07-10 — Session 12
+- **New direction from the repo owner (P8): make flywheel agent-native.** Beyond
+  the dev loop, flywheel should let Claude *operate* the repos it's installed in —
+  run recurring domain operations ("analyze a car") as the backend, persist to the
+  repo's own datastore (e.g. Postgres), and improve each operation per run. The
+  owner's ask is captured verbatim in
+  [`agent-native-processes.md`](agent-native-processes.md) and the north-star in a
+  new root `CLAUDE.md`, per the explicit request to "leave it somewhere that helps
+  you understand what I'm asking".
+- **Shipped P8 as v0.15.0.** Two new skills: `/flywheel:process` (define + mature a
+  process contract, bootstrap `.claude/flywheel/DATA.md`) and `/flywheel:run`
+  (execute as the runtime, persist idempotently + verified, cross-check with the
+  `evaluator` when a metric is declared, append ≤1 evidence-based refinement).
+  Decisions: two verbs not one; persistence follows the repo, never imposed;
+  maturation evidence-gated; reuse the existing `evaluator` rather than add an
+  agent. README / `/flywheel:help` / SessionStart banner synced; roadmap gains P8
+  (first entry beyond P1–P7). docs-consistency + install-vendored + read-prime +
+  `plugin validate` all green. First pillar-2 (runtime) release; branch
+  `claude/plugin-agent-native-repo-gckln4`.
+
 ## Open threads
 
 The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
@@ -236,6 +256,7 @@ The discussion queue. Status: 🔵 open · 🟡 in progress · ✅ resolved.
 | T5 | P4 evaluator — possibly redundant vs flywheel's metric-command check | ✅ reopened; shipped v0.14.0 as a re-execution cross-check | [`improvement-proposals.md`](improvement-proposals.md#p4--goal-based-evaluator-for-autoloop) |
 | T6 | Opt-in interop with claude-mem / Engram | 🔵 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) |
 | T7 | Async execution of P2–P7 via bounded briefs | ✅ all shipped (P1–P7) | [`briefs/README.md`](briefs/README.md) |
+| T8 | Agent-native runtime pillar (`process` + `run`) | ✅ shipped v0.15.0 (P8) | [`agent-native-processes.md`](agent-native-processes.md) |
 
 ## Parking lot
 
@@ -253,7 +274,8 @@ Raw, un-triaged ideas. Anything lands here first; we triage into threads/proposa
 | [`token-efficiency.md`](token-efficiency.md) | The token-saving numbers |
 | [`gentle-ai.md`](gentle-ai.md) | How gentle-ai / Engram works |
 | [`flywheel-vs-claude-mem.md`](flywheel-vs-claude-mem.md) | 3-way comparison + adoptable ideas |
-| [`improvement-proposals.md`](improvement-proposals.md) | Living backlog P1–P7 + decision log |
+| [`improvement-proposals.md`](improvement-proposals.md) | Living backlog P1–P8 + decision log |
+| [`agent-native-processes.md`](agent-native-processes.md) | P8 vision + design — flywheel's agent-native runtime pillar |
 | [`strategy-build-vs-integrate.md`](strategy-build-vs-integrate.md) | The strategic memory analysis |
 | [`git-native-memory-design.md`](git-native-memory-design.md) | Concrete git-native memory design spec (P2/P3) |
 | [`briefs/`](briefs/README.md) | Async-ready task briefs (P2–P7) + how-to-run guide |
