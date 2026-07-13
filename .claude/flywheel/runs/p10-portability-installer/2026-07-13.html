@@ -72,14 +72,14 @@
     <div class="micro eyebrow">xmarks//flywheel · pilar 1 · primer ciclo bajo la ley P16 (v0.16.0)</div>
     <h1>INFORME DE CICLO</h1>
     <div class="sub num">spec <strong>p10-portability-installer</strong> · release objetivo <strong>v0.17.0</strong> · 2026-07-13 · rama reiniciada desde main tras el merge de la PR #26</div>
-    <div class="stamp">EN CURSO<small>gate actual: review</small></div>
-    <div class="issued">EMITIDO POR EL RUNTIME. MÉTRICA YA EN PASS — PERO NADA SE SHIPPEA SIN EL REVISOR. ESTE INFORME EXISTE PORQUE v0.16.0 LO EXIGE.</div>
+    <div class="stamp" style="border-color:var(--ok);color:var(--ok)">PASS<small>ciclo cerrado</small></div>
+    <div class="issued">EMITIDO POR EL RUNTIME. EL REVISOR DIJO HOLD Y TENÍA RAZÓN: EL FIX RECIÉN ESCRITO PODÍA BORRAR DATOS DEL USUARIO. CORREGIDO, RE-VERIFICADO, COMPOUNDED.</div>
   </header>
 
   <div class="livebar num">
     <span><span class="livedot"></span>EN DIRECTO</span>
-    <span>FASES 4/6 CERRADAS</span>
-    <span>MÉTRICA: PASS · REVISOR DESPLEGADO</span>
+    <span>FASES 6/6 CERRADAS</span>
+    <span>MÉTRICA: PASS · REVIEW: HOLD → FIX → VERDE</span>
     <span>REGENERACIÓN: POR TRANSICIÓN DE FASE <span class="cursor"></span></span>
   </div>
 
@@ -107,19 +107,20 @@
         <span class="rev">métrica del spec exit 0: greps de portabilidad/genericidad/frontmatter + versión 0.17.0 + upgrade note + 3 test scripts reforzados</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip doing">en curso</span>
-        <span class="rev">routing (patrón del ledger): diff de shell → revisor de corrección en contexto fresco, desplegado</span>
+        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip done">hold → fix</span>
+        <span class="rev">1 revisor adversarial (routing: diff de shell) · 62.550 tokens · 278 s · veredicto HOLD: 1 High (uninstall glob-driven podía borrar dirs del usuario — incluso uno que la poda acababa de restaurar) + 1 Medium + 2 Low · todo corregido: guard `in_manifest` + 2 escenarios adversariales como assertions permanentes (26 en total) · métrica re-verificada PASS</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip pending">pendiente</span>
-        <span class="rev">entradas tipadas al ledger · backlog P10 → shipped · commit + push</span>
+        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip done">completado</span>
+        <span class="rev">gotcha al ledger («un uninstaller confía en su manifest, nunca en su glob») · backlog P10 → ✅ shipped v0.17.0 · commit + push</span>
       </div>
     </div>
   </section>
 
-  <div class="verdict num">
-    <span class="vword">— SIN VEREDICTO —</span>
-    <span class="vdetail">la métrica no se ha ejecutado · este bloque cambiará a PASS o FAIL, nunca a una opinión</span>
+  <div class="verdict num" style="border-color:var(--ok)">
+    <span class="vword" style="color:var(--ok)">PASS</span>
+    <span class="vdetail">métrica del spec exit 0 (test del installer reforzado: 26 assertions) · review HOLD resuelto in-release · v0.17.0 completa</span>
+    <span class="vdetail">el HOLD es el sistema funcionando: verify verde ≠ revisable — el revisor se ganó su despacho</span>
   </div>
 
   <p class="colophon num">

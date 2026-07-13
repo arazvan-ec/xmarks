@@ -29,7 +29,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P7 | Delegation triggers (from gentle-ai) | ✅ shipped (v0.13.0) | Done — advisory thresholds in `/flywheel:work` |
 | P8 | Agent-native runtime pillar (`process` + `run`) | ✅ shipped (v0.15.0) | Done — Claude executes + persists + matures domain operations; see [`agent-native-processes.md`](agent-native-processes.md) |
 | P9 | Read-priming that actually reaches the model + robust session-start | 🔵 proposed | Emit `hookSpecificOutput.additionalContext`; fix awk/sort/date; add scoring tests |
-| P10 | Portability + installer correctness | 🔵 proposed | BSD-safe sed; manifest pruning; uninstall symmetry; de-bookmark agent prompts |
+| P10 | Portability + installer correctness | ✅ shipped (v0.17.0) | Done — BSD-safe sed, manifest-driven pruning + uninstall, sticky `--auto-update`, generic agents |
 | P11 | `gate.sh` hardening | 🔵 proposed | Consent for repo-controlled gate; tree-hash cache; persistent bypass |
 | P12 | Token-discipline pass over the skills | 🔵 proposed | Kill full-ledger reads; diff-based review routing; align evaluator wording |
 | P13 | Pillar-2 security-by-design | 🔵 proposed | Untrusted-data framing; parameterized writes; secret redaction; pin `@main` |
@@ -679,3 +679,17 @@ Append-only. Newest at the bottom.
   committed stale, regenerated and compounded as a gotcha. `LEARNINGS.md`
   seeded with the cycle's first three typed entries (P15's dogfooding begins).
   docs-consistency + install-vendored + read-prime all green.
+- **2026-07-13** — **Shipped P10 as v0.17.0**, first full cycle under P16's live
+  progress (ledger + live cycle report from minute one). BSD/macOS-safe sed
+  (with a real inner-loop lesson: `s//` has no previous regex on line 1 of a
+  `1,/re/` range — spell the regex out); manifest pruning on re-install with a
+  **sticky `--auto-update` choice** (improvement over plan, closes the
+  orphaned-workflow finding completely); manifest-driven uninstall; generic
+  reviewer agents; honest `allowed-tools`. Review (routed: single adversarial
+  correctness reviewer, ~63k tokens) returned **HOLD** with a High the tests
+  had missed: the rewritten uninstall loop was still glob-driven and could
+  delete user-owned `flywheel-*` dirs — including one prune had just restored.
+  Fixed with an `in_manifest` guard; both adversarial scenarios are now
+  permanent test assertions (26 total); metric re-verified PASS. Gotcha
+  compounded to the ledger. The HOLD is the system working: verify green ≠
+  reviewable — the reviewer earns its dispatch.

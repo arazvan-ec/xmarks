@@ -1,7 +1,7 @@
 # Spec: P10 — Portability + installer correctness
 
 **Slug:** `p10-portability-installer` · **Created:** 2026-07-13 · **Backlog:** P10
-**Status:** signed 2026-07-13 (owner) — full cycle approved
+**Status:** signed 2026-07-13 (owner) · shipped as v0.17.0 — metric PASS; review HOLD (1 High + 1 Medium: glob-driven uninstall) fixed in-release, re-verified green
 **Prime:** LEARNINGS.md read (3 entries; "route review by diff type" applies —
 this is a shell diff → correctness lens mandatory). Backlog P10 section +
 flow-audit run #1 findings are the source evidence.

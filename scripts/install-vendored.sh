@@ -75,15 +75,21 @@ GATE_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh'
 in_manifest() { [ -f "${MANIFEST}" ] && grep -qxF "$1" "${MANIFEST}"; }
 
 if [ "${MODE}" = "uninstall" ]; then
-  # Remove vendored skill dirs — but a dir whose SKILL.md we backed up at
-  # install time belonged to the user first: restore the backup and keep it.
+  # Remove vendored skill dirs — manifest-driven, never glob-driven: a dir is
+  # only ours to delete if the manifest says we wrote its SKILL.md. A dir whose
+  # SKILL.md we backed up at install time belonged to the user first: restore
+  # the backup and keep it. (Pre-manifest installs keep the old wholesale
+  # behavior — there is no record to consult.)
   for d in "${SKILLS_DST}"/flywheel-*/; do
     [ -d "${d}" ] || continue
+    base="$(basename "${d%/}")"
     if [ -f "${d}SKILL.md.pre-flywheel" ]; then
       mv "${d}SKILL.md.pre-flywheel" "${d}SKILL.md"
       echo "restored pre-flywheel backup of ${d#"${TARGET}"/}SKILL.md"
-    else
+    elif in_manifest ".claude/skills/${base}/SKILL.md" || [ ! -f "${MANIFEST}" ]; then
       rm -rf "${d}"
+    else
+      echo "kept ${d#"${TARGET}"/} (not vendored by flywheel)"
     fi
   done
 
@@ -276,7 +282,7 @@ if [ -f "${MANIFEST}" ]; then
       if [ -f "${stale}.pre-flywheel" ]; then
         mv "${stale}.pre-flywheel" "${stale}"
         echo "pruned ${rel} (dropped by this version; pre-flywheel backup restored)"
-      else
+      elif [ -e "${stale}" ]; then
         rm -f "${stale}"
         echo "pruned ${rel} (dropped by this version)"
       fi

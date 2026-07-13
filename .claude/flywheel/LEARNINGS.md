@@ -1,5 +1,17 @@
 # flywheel learnings
 
+## gotcha: an uninstaller must trust its manifest, never its glob
+<!-- fw: type=gotcha; date=2026-07-13; files=scripts/install-vendored.sh,scripts/test-install-vendored.sh; spec=p10-portability-installer; branch=claude/every-agent-native-config-be56a6 -->
+
+The v0.17.0 review (HOLD) caught a High in freshly rewritten code: the
+uninstall loop deleted `.claude/skills/flywheel-*` dirs by glob, so it
+destroyed user-owned dirs it never vendored — including one the new prune
+logic had just restored from backup (prune consumes the `.pre-flywheel`
+marker, leaving uninstall no evidence). Guard: only delete what the manifest
+says you wrote (`in_manifest`), keep everything else, and encode both
+adversarial scenarios (prune-then-uninstall; never-collided user dir) as
+permanent test assertions.
+
 ## decision: progress obligations live in skill prompts, not hooks
 <!-- fw: type=decision; date=2026-07-13; files=skills/run/SKILL.md,skills/loop/SKILL.md,skills/work/SKILL.md,skills/process/SKILL.md; spec=p16-live-progress; branch=claude/every-agent-native-config-be56a6 -->
 
