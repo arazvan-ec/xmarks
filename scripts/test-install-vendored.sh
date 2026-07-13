@@ -27,9 +27,17 @@ EOF
 # back it up, and the uninstall must restore it.
 mkdir -p "${TARGET}/.claude/agents"
 echo "my own verifier" > "${TARGET}/.claude/agents/verifier.md"
+# Same for a pre-flywheel skill dir colliding with a vendored name: backed up
+# on install, restored (dir kept) on uninstall.
+mkdir -p "${TARGET}/.claude/skills/flywheel-help"
+echo "my own help" > "${TARGET}/.claude/skills/flywheel-help/SKILL.md"
 git -C "${TARGET}" remote add origin git@github.com:acme/demo.git
 
 echo "== install (twice, must be idempotent) =="
+if grep -q '0,/' "${INSTALLER}"; then
+  fail "GNU-only sed '0,/re/' address in install-vendored.sh (dies on BSD/macOS sed)"
+fi
+pass "no GNU-only sed address ranges"
 bash "${INSTALLER}" --auto-update "${TARGET}" > "${WORK}/install-out.txt" 2>"${WORK}/warnings.txt"
 bash "${INSTALLER}" --auto-update "${TARGET}" > /dev/null
 
@@ -76,6 +84,10 @@ grep -q 'existed before flywheel' "${WORK}/warnings.txt" || fail "no backup warn
 grep -q 'objective gate' "${TARGET}/.claude/agents/verifier.md" || fail "verifier.md not overwritten with ours"
 pass "pre-existing agent backed up (with warning) before overwrite"
 
+[ "$(cat "${TARGET}/.claude/skills/flywheel-help/SKILL.md.pre-flywheel")" = "my own help" ] \
+  || fail "pre-existing flywheel-help skill was not backed up"
+pass "pre-existing skill backed up before overwrite"
+
 grep -q 'flywheel-update.yml@main' "${TARGET}/.github/workflows/flywheel-update.yml" \
   || fail "--auto-update did not write the caller workflow"
 pass "--auto-update wrote .github/workflows/flywheel-update.yml"
@@ -102,13 +114,37 @@ assert stop.count('"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh') == 1, \
 PY
 pass "settings.json merged once, pre-existing content preserved"
 
+echo "== upgrade pruning =="
+# Simulate a file vendored by an older version that the new version dropped.
+echo "stale content" > "${TARGET}/.claude/agents/obsolete-agent.md"
+echo ".claude/agents/obsolete-agent.md" >> "${TARGET}/.claude/flywheel/.manifest"
+sort -u -o "${TARGET}/.claude/flywheel/.manifest" "${TARGET}/.claude/flywheel/.manifest"
+bash "${INSTALLER}" "${TARGET}" > "${WORK}/prune-out.txt"
+[ ! -e "${TARGET}/.claude/agents/obsolete-agent.md" ] || fail "stale vendored file survived re-install"
+grep -q 'pruned .claude/agents/obsolete-agent.md' "${WORK}/prune-out.txt" || fail "pruning was not logged"
+if grep -qxF '.claude/agents/obsolete-agent.md' "${TARGET}/.claude/flywheel/.manifest"; then
+  fail "stale entry still listed in manifest"
+fi
+pass "stale vendored file pruned on re-install (and logged)"
+[ -f "${TARGET}/.github/workflows/flywheel-update.yml" ] \
+  || fail "auto-update workflow lost on plain re-install (choice must be sticky)"
+grep -qxF '.github/workflows/flywheel-update.yml' "${TARGET}/.claude/flywheel/.manifest" \
+  || fail "auto-update workflow dropped from manifest on plain re-install"
+pass "auto-update choice sticky across a plain re-install"
+
 echo "== uninstall =="
 mkdir -p "${TARGET}/.claude/flywheel"
 echo "# flywheel learnings" > "${TARGET}/.claude/flywheel/LEARNINGS.md"
 bash "${INSTALLER}" --uninstall "${TARGET}" > /dev/null
 
-ls -d "${TARGET}"/.claude/skills/flywheel-*/ 2>/dev/null && fail "vendored skills survived uninstall"
-pass "vendored skills removed"
+LEFT="$(ls -d "${TARGET}"/.claude/skills/flywheel-*/ 2>/dev/null || true)"
+[ "${LEFT}" = "${TARGET}/.claude/skills/flywheel-help/" ] \
+  || fail "vendored skills survived uninstall (or user skill dir was deleted): ${LEFT}"
+pass "vendored skills removed (user's own flywheel-help dir kept)"
+[ "$(cat "${TARGET}/.claude/skills/flywheel-help/SKILL.md")" = "my own help" ] \
+  || fail "pre-existing flywheel-help skill was not restored on uninstall"
+[ ! -e "${TARGET}/.claude/skills/flywheel-help/SKILL.md.pre-flywheel" ] || fail "skill backup left behind"
+pass "pre-existing skill restored from backup"
 [ ! -e "${TARGET}/.claude/agents/reviewer-security.md" ] || fail "vendored agents survived uninstall"
 pass "vendored agents removed"
 [ "$(cat "${TARGET}/.claude/agents/verifier.md")" = "my own verifier" ] \
