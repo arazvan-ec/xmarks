@@ -35,6 +35,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P13 | Pillar-2 security-by-design | 🔵 proposed | Untrusted-data framing; parameterized writes; secret redaction; pin `@main` |
 | P14 | Pillar integration + process lifecycle | 🔵 proposed | Discovery, run→spec escalation, contract sync, write-path probe + file fallback |
 | P15 | Dogfooding flywheel on flywheel | 🔵 proposed | Seed LEARNINGS.md; `processes/release.md`; fix help state list |
+| P16 | Live run progress: task ledger + telemetry report | 🔵 proposed | Generalize flow-audit v3's Progress reporting into `skills/process` + `skills/run` |
 
 ## Priority overview
 
@@ -55,6 +56,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P13 | Pillar-2 security-by-design | High | Medium | Medium | Yes |
 | P14 | Pillar integration + process lifecycle | High | Large | Medium | Yes |
 | P15 | Dogfooding flywheel on flywheel | Medium | Low | Low | Partial |
+| P16 | Live run progress (task ledger + run telemetry report) | Medium | Low | Low | Yes |
 
 ---
 
@@ -495,6 +497,34 @@ optional bookends); standardize the ledger on prepend-newest-first everywhere.
 
 ---
 
+## P16 — Live run progress: task ledger + telemetry report (owner ask, 2026-07-13)
+
+**Why.** Run #1 exposed a UX hole the owner named directly: while Claude executes
+a process, progress is opaque — reviewer results arrive as prose walls and the
+owner has no live view of what the run is doing, what remains, or where it is
+stuck. Pillar 2's whole premise is Claude-as-backend; a backend without
+observability is not operable. Piloted immediately as `flow-audit` v3 (fixed
+**Progress reporting** section) + the first machine-issued run report
+(`.claude/flywheel/runs/flow-audit/2026-07-13.html`).
+
+**What.** Generalize the pilot into the machinery:
+- `skills/run/SKILL.md` gains a fixed progress step: at run start, materialize
+  each contract Rule as a visible task in the host task system; update states at
+  every transition in real time; regenerate the run's telemetry report
+  (`.claude/flywheel/runs/<slug>/<date>.html`) at each transition and republish
+  its artifact to a stable URL; chat is reserved for gates, blockers and the
+  final synthesis ("signal, don't narrate").
+- `skills/process/SKILL.md`'s contract template gains the **Progress reporting**
+  section so every new contract inherits the obligation.
+- Report content convention: task ledger with states + timings, verify gates,
+  unit/agent telemetry (tokens, duration), findings by severity, backlog/output
+  delta, maturation events, metric verdict.
+
+**Files:** `skills/run/SKILL.md`, `skills/process/SKILL.md`, README +
+`skills/help/SKILL.md`, `plugin.json` + `upgrades/`.
+
+---
+
 ## Suggested sequencing
 
 1. **P1** (clean, self-contained win; validates the release flow end-to-end).
@@ -626,3 +656,13 @@ Append-only. Newest at the bottom.
   persisting). Clean bill (explicitly not to touch): evidence-gated maturation +
   read-back rigor, model routing, recall's progressive disclosure, work's
   delegation thresholds. Docs + `.claude/flywheel/` state only — no version bump.
+- **2026-07-13** — **Owner revision: live run progress.** After run #1 the owner
+  asked for organized, live-visible progress ("a task list of what you'll do,
+  states updated live"). `flow-audit` matured to **v3** (deliberate revision per
+  `process` §4): new fixed **Progress reporting** section — one visible task per
+  Rule updated at every transition, a per-run telemetry report at
+  `.claude/flywheel/runs/<slug>/<date>.html` regenerated per transition and
+  republished to a stable artifact URL, chat reserved for gates/blockers/synthesis.
+  First report issued for run #1. Opened **P16** to generalize into
+  `skills/process` + `skills/run` (release). DATA.md schema gained the runs/
+  location. Docs + state only — no version bump.

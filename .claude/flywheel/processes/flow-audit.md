@@ -1,7 +1,7 @@
 ---
 name: flow-audit
 kind: process
-version: 2
+version: 3
 created: 2026-07-13
 persistence: git-markdown:docs/research/improvement-proposals.md
 metric: all three scripts/test-*.sh exit 0 AND the Decision log gains exactly one new dated `flow-audit` entry for this run
@@ -96,6 +96,23 @@ sequencing among new proposals; the prose quality of each proposal's Why/What.
 - Do not mark any proposal shipped; only a merged release does that.
 - No plugin version bump from a run (docs-only).
 
+## Progress reporting (fixed)
+
+The owner must never have to ask "how is it going". Every run:
+
+1. **Task ledger, live** — at run start, materialize each Rule as a visible task
+   in the host's task system (one task per Rule, in order). Update states
+   (`pending → in_progress → completed`) **at every transition, in real time** —
+   the owner follows progress from the task panel without reading transcripts.
+2. **Telemetry report** — maintain
+   `.claude/flywheel/runs/<slug>/<YYYY-MM-DD>.html`: the machine-issued run
+   report (task ledger with states + timings, verify gates, reviewer/unit
+   telemetry, findings by severity, backlog delta, maturation events, metric
+   verdict). Regenerate it at each task-state transition and republish its
+   artifact to the same URL, so the open page always shows the latest state.
+3. **Signal, don't narrate** — chat messages are for gates (Rule 6), blockers,
+   and the final synthesis; routine progress lives in the ledger + report.
+
 ## Improvement log
 
 <!-- Append-only. /flywheel:run adds a dated entry when a run surfaces a durable
@@ -109,3 +126,13 @@ screening (Rule 5) to persisting. Added Rule 6 (present the synthesis + proposed
 backlog delta, get explicit sign-off; only the signed set persists) and
 renumbered the tail (persist 7, prove 8, mature 9). Fixed-rule change →
 version 1 → 2.
+
+### 2026-07-13 — v3: live progress reporting (deliberate owner revision)
+
+Owner request after run #1: progress was opaque — reviewer results arrived as
+prose walls, with no live view of what the run was doing. Added the fixed
+**Progress reporting** section: a live task ledger (one visible task per Rule,
+states updated at every transition), a regenerated per-run telemetry report at
+`.claude/flywheel/runs/<slug>/<date>.html` republished to a stable artifact URL,
+and a signal-don't-narrate chat discipline. Generalization to all contracts
+proposed as P16. Deliberate revision per `process` §4 → version 2 → 3.

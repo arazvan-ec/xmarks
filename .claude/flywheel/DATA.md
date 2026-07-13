@@ -31,6 +31,12 @@ the file **and staged** (`git status --short` shows it).
 
 `docs/research/journal.md`: dated `## YYYY-MM-DD — <thread>` sections, narrative prose.
 
+`.claude/flywheel/runs/<slug>/<YYYY-MM-DD>.html`: machine-issued run telemetry
+reports (task ledger + timings, gates, findings, maturation) — one per run,
+regenerated at every task-state transition and republished as a private
+artifact so the owner watches progress live (see each contract's Progress
+reporting section).
+
 ## Conventions
 
 - **Idempotency key** for a process run: `(run date, process slug, scope)` — a
