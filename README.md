@@ -100,7 +100,7 @@ Full vision + the worked car example: [`docs/research/agent-native-processes.md`
 
 ## Read-priming hook (advisory)
 
-Before reading a file, a `PreToolUse` hook greps the ledger's `files=` metadata for that path and, if any typed entry names it, prints a short "prior learnings touch this file" note first — cheap context ahead of an expensive read. It never blocks the read (unlike claude-mem's File Read Gate) and fails silently (no ledger, no match, or no `python3`) so it can never slow down or break a read.
+Before reading a file, a `PreToolUse` hook greps the ledger's `files=` metadata for that path and, if any typed entry names it, injects a short "prior learnings touch this file" note into context via the hook's `additionalContext` field (v0.18.0 — plain stdout is transcript-only and never reaches the model) — cheap context ahead of an expensive read. A bash pre-filter skips the python parser entirely for the no-match majority. It never blocks the read (unlike claude-mem's File Read Gate) and fails silently (no ledger, no match, or no `python3`) so it can never slow down or break a read.
 
 ## Deterministic completion gate (opt-in)
 

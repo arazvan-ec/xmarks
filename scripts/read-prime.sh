@@ -16,6 +16,20 @@ LEDGER="${PROJECT_DIR}/.claude/flywheel/LEARNINGS.md"
 INPUT="$(cat 2>/dev/null)"
 
 [ -f "${LEDGER}" ] || exit 0
+
+# Cheap pre-filter: this hook fires on EVERY Read and ~all of them have no
+# matching ledger entry — skip the python spawn for that majority. The sed
+# extraction is naive on purpose (exact parsing stays in python): if it yields
+# a basename the ledger never mentions, nothing can match; if it yields
+# nothing, fall through to python (correctness over speed, never the reverse).
+TARGET_PATH="$(printf '%s' "${INPUT}" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' 2>/dev/null | head -1 2>/dev/null)"
+if [ -n "${TARGET_PATH}" ]; then
+  BASE="${TARGET_PATH##*/}"
+  if [ -n "${BASE}" ] && ! grep -qF "${BASE}" "${LEDGER}" 2>/dev/null; then
+    exit 0
+  fi
+fi
+
 command -v python3 >/dev/null 2>&1 || exit 0
 
 FW_LEDGER="${LEDGER}" FW_PROJECT_DIR="${PROJECT_DIR}" FW_HOOK_INPUT="${INPUT}" python3 - <<'PY' 2>/dev/null
@@ -69,13 +83,21 @@ for entry in entries:
         date = kv.get("date", "")
         matches.append(f"- {title}" + (f" ({date})" if date else ""))
 
+# PreToolUse stdout on exit 0 is only shown in transcript mode — to actually
+# reach the model, the note must go through the hook JSON contract's
+# additionalContext field (json.dumps handles all escaping).
 if matches:
     n = len(matches)
     noun = "learning" if n == 1 else "learnings"
     verb = "touches" if n == 1 else "touch"
-    print(f"flywheel: {n} prior {noun} {verb} this file — run /flywheel:recall to see the rest:")
-    for line in matches:
-        print(line)
+    lines = [f"flywheel: {n} prior {noun} {verb} this file — run /flywheel:recall to see the rest:"]
+    lines.extend(matches)
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "additionalContext": "\n".join(lines),
+        }
+    }))
 PY
 
 exit 0

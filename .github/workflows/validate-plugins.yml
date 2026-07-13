@@ -67,5 +67,8 @@ jobs:
       - name: Test read-prime.sh hook
         run: bash scripts/test-read-prime.sh
 
+      - name: Test session-start.sh hook
+        run: bash scripts/test-session-start.sh
+
       - name: Check docs consistency
         run: bash scripts/test-docs-consistency.sh
