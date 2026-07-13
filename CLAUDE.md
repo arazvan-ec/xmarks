@@ -34,6 +34,7 @@ loop that Claude improves with each execution.
 - `.claude/flywheel/LEARNINGS.md` — the compounding, cross-cutting ledger.
 - `.claude/flywheel/processes/<slug>.md` — process contracts (pillar 2).
 - `.claude/flywheel/DATA.md` — the repo's data-persistence strategy that runs follow.
+- `.claude/flywheel/runs/<slug>/<date>.html` — per-execution live telemetry reports (pillar 1 cycles + pillar 2 runs).
 
 ## Repo conventions (do not skip — CI enforces them)
 

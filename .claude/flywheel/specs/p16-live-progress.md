@@ -1,7 +1,7 @@
 # Spec: P16 — Live run/cycle progress (task ledger + telemetry report)
 
 **Slug:** `p16-live-progress` · **Created:** 2026-07-13 · **Backlog:** P16
-**Status:** signed 2026-07-13 (owner) — full cycle approved, no intermediate gates
+**Status:** signed 2026-07-13 (owner) · shipped as v0.16.0 — metric PASS, review SHIP (0 Critical/High)
 
 ## R — Requirements
 

@@ -13,7 +13,7 @@ There is no static backend here — **you are the execution**. You follow the co
 
 ## 0. Progress ledger (spans the whole run)
 
-At run start, materialize each contract Rule as a visible task in the host task system (one task per Rule, in order) and update states (`pending → in_progress → completed`, `blocked` on gates/failures) **at every transition**. Maintain the run's telemetry report at `.claude/flywheel/runs/<slug>/<YYYY-MM-DD>.html` (ledger + timings, gates, unit telemetry, outputs, verdict — never secrets): regenerate it at each transition and republish its artifact to the same stable URL. Chat is for gates, blockers, and the final report only — routine progress lives in the ledger. If the task system or artifact publishing is unavailable, proceed anyway and say so in the final report (fail-open, never block the run).
+At run start, materialize each contract Rule as a visible task in the host task system (one task per Rule, in order) and update states (`pending → in_progress → completed`, `blocked` on gates/failures) **at every transition**. Maintain the run's telemetry report at `.claude/flywheel/runs/<slug>/<date>.html` (ledger + timings, gates, unit telemetry, outputs, verdict — never secrets): regenerate it at each transition and republish its artifact to the same stable URL. Chat is for gates, blockers, and the final report only — routine progress lives in the ledger. If the task system or artifact publishing is unavailable, proceed anyway and say so in the final report (fail-open, never block the run).
 
 ## 1. Load the contract and the data strategy
 

@@ -22,8 +22,8 @@
   .issued { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); color: var(--faint); font-size: 11px; letter-spacing: .06em; }
   .stamp {
     position: absolute; top: 18px; right: 20px; transform: rotate(4deg);
-    border: 2px solid var(--phosphor); color: var(--phosphor);
-    font-weight: 700; font-size: 16px; letter-spacing: .22em; padding: 6px 12px 6px 15px; opacity: .92;
+    border: 2px solid var(--ok); color: var(--ok);
+    font-weight: 700; font-size: 18px; letter-spacing: .24em; padding: 6px 12px 6px 16px; opacity: .92;
   }
   .stamp small { display: block; font-size: 9px; letter-spacing: .12em; font-weight: 400; }
   .livebar {
@@ -54,13 +54,11 @@
     padding: 3px 9px; border: 1px solid; white-space: nowrap; justify-self: end; align-self: center;
   }
   .chip.done { color: var(--ok); border-color: var(--ok); }
-  .chip.doing { color: var(--phosphor); border-color: var(--phosphor); }
-  .chip.pending { color: var(--dim); border-color: var(--line); }
   .verdict {
-    margin-top: 40px; border: 1px solid var(--line); background: var(--panel);
+    margin-top: 40px; border: 1px solid var(--ok); background: var(--panel);
     padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 6px 24px; align-items: baseline;
   }
-  .verdict .vword { color: var(--dim); font-weight: 700; font-size: 18px; letter-spacing: .2em; }
+  .verdict .vword { color: var(--ok); font-weight: 700; font-size: 18px; letter-spacing: .2em; }
   .verdict .vdetail { color: var(--dim); font-size: 12px; }
   .colophon { margin-top: 22px; color: var(--faint); font-size: 11px; letter-spacing: .05em; line-height: 1.8; border-top: 1px dashed var(--line); padding-top: 14px; }
   .colophon em { color: var(--dim); font-style: normal; }
@@ -71,15 +69,15 @@
   <header class="masthead">
     <div class="micro eyebrow">xmarks//flywheel · pilar 1 · claude es el desarrollador</div>
     <h1>INFORME DE CICLO</h1>
-    <div class="sub num">spec <strong>p16-live-progress</strong> · release objetivo <strong>v0.16.0</strong> · 2026-07-13 · primer ciclo con informe en vivo (piloto P16 sobre la propia P16)</div>
-    <div class="stamp">EN CURSO<small>gate actual: work</small></div>
-    <div class="issued">EMITIDO POR EL RUNTIME A MITAD DE CICLO. LO QUE VES ABAJO ES ESTADO REAL, NO UNA PROMESA.</div>
+    <div class="sub num">spec <strong>p16-live-progress</strong> · release <strong>v0.16.0</strong> · 2026-07-13 · primer ciclo con informe en vivo (P16 construida bajo su propia ley)</div>
+    <div class="stamp">PASS<small>ciclo cerrado</small></div>
+    <div class="issued">EMITIDO POR EL RUNTIME. EL REVISOR SEÑALÓ QUE ESTE INFORME IBA RETRASADO. TENÍA RAZÓN. FUE CORREGIDO — HALLAZGO M-01, YA COMPOUNDED.</div>
   </header>
 
   <div class="livebar num">
     <span><span class="livedot"></span>EN DIRECTO</span>
-    <span>FASES 2/6 CERRADAS</span>
-    <span>WORK: T1–T6 VERDES · T7 EN CURSO</span>
+    <span>FASES 6/6 CERRADAS</span>
+    <span>MÉTRICA: PASS · REVIEW: SHIP</span>
     <span>REGENERACIÓN: POR TRANSICIÓN DE FASE <span class="cursor"></span></span>
   </div>
 
@@ -92,40 +90,41 @@
     <div class="ledger num">
       <div class="lrow">
         <span class="rn">F-01</span><span class="rname">SPEC</span><span class="chip done">firmado</span>
-        <span class="rev">REASONS + métrica de un solo comando · firmado por el owner · ciclo completo aprobado</span>
+        <span class="rev">REASONS + métrica de un solo comando · firmado por el owner · ciclo completo aprobado sin gates intermedios</span>
       </div>
       <div class="lrow">
         <span class="rn">F-02</span><span class="rname">PLAN</span><span class="chip done">completado</span>
-        <span class="rev">10 tareas T1–T10, cada una con check local · riesgo señalado: interacción docs-consistency/instalador</span>
+        <span class="rev">10 tareas T1–T10, cada una con check local · riesgo señalado: interacción docs-consistency/instalador (no se materializó)</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-03</span><span class="rname">WORK</span><span class="chip doing">en curso</span>
-        <span class="rev">T1 run ✓ · T2 process ✓ · T3 loop ✓ · T4 work ✓ · T5 README+help ✓ · T6 bump+upgrade ✓ · T7 este informe ← estás aquí</span>
+        <span class="rn">F-03</span><span class="rname">WORK</span><span class="chip done">completado</span>
+        <span class="rev">T1 run ✓ · T2 process ✓ · T3 loop ✓ · T4 work ✓ · T5 README+help ✓ · T6 bump 0.16.0+upgrade ✓ · T7 este informe ✓ · +4 líneas / +7 / +1 / +2 por skill (disciplina P12)</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-04</span><span class="rname">VERIFY</span><span class="chip pending">pendiente</span>
-        <span class="rev">la métrica del spec: 3 test scripts + greps de las 4 skills + versión 0.16.0 + upgrade note</span>
+        <span class="rn">F-04</span><span class="rname">VERIFY</span><span class="chip done">pass</span>
+        <span class="rev">métrica del spec exit 0: 3 test scripts verdes + grep Progress en las 4 skills + versión 0.16.0 + upgrades/v0.16.0.md</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip pending">pendiente</span>
-        <span class="rev">routing por tipo de diff (lógica P12): prompts/docs → lente corrección+coherencia, sin fan-out perf/seguridad</span>
+        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip done">ship</span>
+        <span class="rev">1 revisor de contexto fresco (routing P12: diff de prompts → lente combinada) · 64.179 tokens · 234 s · 17 llamadas · 0 Critical/High · 1 Medium: este mismo informe committeado desactualizado → regenerado · 5 Low: 4 corregidos, 1 aceptado como compresión deliberada</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip pending">pendiente</span>
-        <span class="rev">sembrar LEARNINGS.md · backlog P16 → shipped · decision log · commit + push</span>
+        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip done">completado</span>
+        <span class="rev">LEARNINGS.md sembrado: 3 entradas tipadas (decision · gotcha · pattern) — el dogfooding de P15 empieza aquí · backlog P16 → ✅ shipped v0.16.0 · push a la rama</span>
       </div>
     </div>
   </section>
 
   <div class="verdict num">
-    <span class="vword">— SIN VEREDICTO —</span>
-    <span class="vdetail">la métrica no se ha ejecutado aún · este bloque cambiará a PASS o FAIL, nunca a una opinión</span>
+    <span class="vword">PASS · SHIP</span>
+    <span class="vdetail">métrica del spec exit 0 · review sin Critical/High · release v0.16.0 completa (requires-action: false)</span>
+    <span class="vdetail">coste del review enrutado: 64k tokens vs 380k del fan-out de la auditoría — el patrón quedó en el ledger</span>
   </div>
 
   <p class="colophon num">
     ESTE DOCUMENTO SE REGENERA EN CADA TRANSICIÓN DE FASE. LA COPIA QUE ESTÁS VIENDO ES LA ÚLTIMA.<br>
-    RUTA: <em>.claude/flywheel/runs/p16-live-progress/2026-07-13.html</em> · SPEC: <em>.claude/flywheel/specs/p16-live-progress.md</em> (firmado)<br>
-    LA FUNCIONALIDAD QUE DESCRIBE ESTE INFORME ES LA QUE LO ESTÁ GENERANDO. <em>EL LOOP SE CIERRA SOBRE SÍ MISMO.</em>
+    RUTA: <em>.claude/flywheel/runs/p16-live-progress/2026-07-13.html</em> · SPEC: <em>.claude/flywheel/specs/p16-live-progress.md</em> (shipped) · UPGRADE: <em>upgrades/v0.16.0.md</em><br>
+    LA FUNCIONALIDAD QUE DESCRIBE ESTE INFORME ES LA QUE LO HA GENERADO. DESDE v0.16.0, TODA EJECUCIÓN SE VIGILA ASÍ. <em>EL LOOP SE CIERRA SOBRE SÍ MISMO.</em>
   </p>
 
 </div>

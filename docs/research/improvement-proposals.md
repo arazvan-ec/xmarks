@@ -35,7 +35,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P13 | Pillar-2 security-by-design | 🔵 proposed | Untrusted-data framing; parameterized writes; secret redaction; pin `@main` |
 | P14 | Pillar integration + process lifecycle | 🔵 proposed | Discovery, run→spec escalation, contract sync, write-path probe + file fallback |
 | P15 | Dogfooding flywheel on flywheel | 🔵 proposed | Seed LEARNINGS.md; `processes/release.md`; fix help state list |
-| P16 | Live run progress: task ledger + telemetry report | 🔵 proposed | Generalize flow-audit v3's Progress reporting into `skills/process` + `skills/run` |
+| P16 | Live run progress: task ledger + telemetry report | ✅ shipped (v0.16.0) | Done — both pillars (run/process + loop/work); piloted by flow-audit v3 + the p16 cycle report |
 
 ## Priority overview
 
@@ -666,3 +666,16 @@ Append-only. Newest at the bottom.
   First report issued for run #1. Opened **P16** to generalize into
   `skills/process` + `skills/run` (release). DATA.md schema gained the runs/
   location. Docs + state only — no version bump.
+- **2026-07-13** — **Shipped P16 as v0.16.0**, built through the full pillar-1
+  cycle **on flywheel's own state for the first time**: signed REASONS spec +
+  plan with per-task checks live in `.claude/flywheel/specs/p16-live-progress.*`.
+  Owner's sequencing call: P16 first, so every later build (P9–P15) runs with
+  live progress from minute one — and extended to **both pillars** for exactly
+  that reason. Progress obligations added to `run`/`process`(template)/`loop`/
+  `work`; README/help synced (help's state-list gap from P15 shipped early
+  here); spec metric VERIFIED PASS. Diff review routed per P12's logic (single
+  combined-lens reviewer, ~64k tokens vs ~380k for the audit fan-out): verdict
+  SHIP, 0 Critical/High — the one Medium was the feature's own pilot report
+  committed stale, regenerated and compounded as a gotcha. `LEARNINGS.md`
+  seeded with the cycle's first three typed entries (P15's dogfooding begins).
+  docs-consistency + install-vendored + read-prime all green.
