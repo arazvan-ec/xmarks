@@ -28,6 +28,13 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P6 | Time-based / proactive loop guidance | ✅ shipped (docs) | `docs/proactive-loops.md`; a runtime skill (e.g. `/flywheel:watch`) is still open |
 | P7 | Delegation triggers (from gentle-ai) | ✅ shipped (v0.13.0) | Done — advisory thresholds in `/flywheel:work` |
 | P8 | Agent-native runtime pillar (`process` + `run`) | ✅ shipped (v0.15.0) | Done — Claude executes + persists + matures domain operations; see [`agent-native-processes.md`](agent-native-processes.md) |
+| P9 | Read-priming that actually reaches the model + robust session-start | 🔵 proposed | Emit `hookSpecificOutput.additionalContext`; fix awk/sort/date; add scoring tests |
+| P10 | Portability + installer correctness | 🔵 proposed | BSD-safe sed; manifest pruning; uninstall symmetry; de-bookmark agent prompts |
+| P11 | `gate.sh` hardening | 🔵 proposed | Consent for repo-controlled gate; tree-hash cache; persistent bypass |
+| P12 | Token-discipline pass over the skills | 🔵 proposed | Kill full-ledger reads; diff-based review routing; align evaluator wording |
+| P13 | Pillar-2 security-by-design | 🔵 proposed | Untrusted-data framing; parameterized writes; secret redaction; pin `@main` |
+| P14 | Pillar integration + process lifecycle | 🔵 proposed | Discovery, run→spec escalation, contract sync, write-path probe + file fallback |
+| P15 | Dogfooding flywheel on flywheel | 🔵 proposed | Seed LEARNINGS.md; `processes/release.md`; fix help state list |
 
 ## Priority overview
 
@@ -41,6 +48,13 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P6 | Time-based / proactive loop guidance (routines) | Medium | Large | Medium | Yes (+docs) |
 | P7 | Delegation triggers (when to spin up a fresh-context subagent) | Medium | Low | Low | Yes |
 | **P8** | **Agent-native runtime pillar** (Claude runs + persists + matures domain operations) ⭐ new direction | High | Medium | Medium | Yes |
+| **P9** | **Read-priming that reaches the model** + robust session-start (from flow-audit run #1) | High | Medium | Low | Yes |
+| P10 | Portability + installer correctness | High | Low | Low | Yes |
+| P11 | `gate.sh` hardening (trust, cost, escape valve) | High | Medium | Medium | Yes |
+| P12 | Token-discipline pass over the skills | High | Low | Low | Yes |
+| P13 | Pillar-2 security-by-design | High | Medium | Medium | Yes |
+| P14 | Pillar integration + process lifecycle | High | Large | Medium | Yes |
+| P15 | Dogfooding flywheel on flywheel | Medium | Low | Low | Partial |
 
 ---
 
@@ -287,6 +301,200 @@ and improving each operation with every run.
 - Batch runs (one invocation over many inputs) as a workflow — worth a first-class
   affordance?
 
+## P9 — Read-priming that actually reaches the model ⭐ (flow-audit run #1, 2026-07-13)
+
+**Why.** The v0.11.0 flagship never worked as designed: PreToolUse hook stdout on
+exit 0 is shown only in transcript mode — it is **not** added to Claude's
+context — so `read-prime.sh`'s "prior learnings touch this file" note is
+invisible to the model in both marketplace and vendored installs. The audit also
+reproduced two scoring defects in `session-start.sh`: the awk metadata parser
+reads only the first line after a `## ` header (one blank line silently zeroes
+that entry's relevance — and read-prime searches the whole entry, so the two
+consumers of the compound format disagree), and the O(n²) ranking sort takes
+~5s at 5k entries (hook-timeout death near ~10k). GNU-only `date -d` kills the
+recency signal on macOS. The scoring logic — the most complex in the repo — has
+zero test coverage.
+
+**What.**
+- `read-prime.sh` emits hook JSON (`hookSpecificOutput.hookEventName=PreToolUse`,
+  `additionalContext=<matches>`) instead of stdout; keep silent exit 0 on
+  no-match. Add a bash-level `grep -qF` pre-filter so the ~99% no-match majority
+  never spawns python3; dedupe repeat advisories per file per session.
+- `session-start.sh`: tolerate blank lines before the `<!-- fw: -->` line;
+  replace the bubble sort with single-pass top-K; `date -d … || date -v-30d …`;
+  cache the remote-version curl behind a daily stamp file.
+- New `scripts/test-session-start.sh` fixture ledger asserting scoring, budget,
+  blank-line tolerance and tie-breaks; wire into CI.
+
+**Files:** `scripts/read-prime.sh`, `scripts/session-start.sh`, new
+`scripts/test-session-start.sh`, `scripts/test-read-prime.sh`,
+`plugin.json` + `upgrades/`.
+
+---
+
+## P10 — Portability + installer correctness (flow-audit run #1)
+
+**Why.** The documented local install path fails outright on macOS:
+`install-vendored.sh:180`'s `sed "0,/re/"` is GNU-only and dies under
+`set -euo pipefail`. Upgrades never prune: files a newer version dropped stay
+orphaned and the manifest rewrite forgets them, making them permanently
+un-uninstallable. Uninstall restores backed-up agents but deletes backed-up
+`flywheel-*` skills. And two agents ship stale context from this repo's previous
+life as a bookmarking tool ("X/Twitter cookies", "per-bookmark DB writes") —
+flywheel installs those prompts into every target repo, misdirecting reviews.
+
+**What.** BSD-compatible sed (`1,/re/` or awk); diff old→new manifest and
+`remove_or_restore` every disappeared path; restore `*.pre-flywheel` skill
+backups before the blanket `rm -rf`; genericize the reviewer parentheticals;
+widen too-narrow `allowed-tools` (compound needs `date`; ship offers `gh`).
+
+**Files:** `scripts/install-vendored.sh`, `scripts/test-install-vendored.sh`,
+`agents/reviewer-security.md`, `agents/reviewer-performance.md`,
+`skills/compound/SKILL.md`, `skills/ship/SKILL.md`, `plugin.json` + `upgrades/`.
+
+---
+
+## P11 — `gate.sh` hardening (flow-audit run #1)
+
+**Why.** Three independent defects in the Stop gate. (1) **Trust:** the hook
+auto-executes `.claude/flywheel/gate.sh` — a repo file any PR/clone can add,
+executable bit surviving checkout — with no re-consent: RCE-by-PR at the next
+turn end. (2) **Cost:** the full verification suite re-runs on every Stop,
+including no-change Q&A turns and immediately after `/flywheel:verify` ran the
+identical suite (hooks grant it 300s). (3) **The escape valve doesn't persist:**
+after the 3-block bypass the state resets, so a permanently-red gate re-traps
+every later turn (up to 4 suite runs + 3 forced continuations per turn);
+`stop_hook_active` from stdin is ignored.
+
+**What.** Record a consent hash for gate.sh content outside the repo tree (or
+require the command in trust-prompted settings) and warn loudly when it
+appears/changes; cache green runs by tree hash (`git rev-parse HEAD` +
+status/diff sha) and exit 0 early when unchanged; persist a `bypassed` marker
+cleared only by a green run; short-circuit on `stop_hook_active` when count ≥
+max. Add gate.sh behavior tests.
+
+**Files:** `scripts/gate.sh`, new tests, README §completion gate,
+`plugin.json` + `upgrades/`.
+
+---
+
+## P12 — Token-discipline pass over the skills (flow-audit run #1)
+
+**Why.** Three of the costliest habits contradict flywheel's own
+token-efficiency research: `loop`/`spec`/`process` each instruct a
+cover-to-cover `Read` of `LEARNINGS.md` (~18k tokens at 200 entries, twice per
+loop cycle) on top of the budgeted SessionStart injection built precisely to
+avoid that; `review` unconditionally dispatches all three Sonnet reviewers even
+for a 5-line docs diff (30–80k tokens for a trivial change); help/README
+describe the autoloop evaluator as firing on every keep/discard,
+over-dispatching vs autoloop's actual ambiguous-cases-only contract.
+
+**What.** Prime steps become "use the SessionStart-injected subset;
+`/flywheel:recall <topic>` for specifics — never read the whole ledger";
+`review` gains diff-based routing (docs-only → correctness only; security only
+when input/auth/secrets/deps are touched; performance only for
+loops/queries/IO; single reviewer under ~20 changed lines); align help/README
+evaluator wording; trim the heaviest frontmatter descriptions to
+trigger-conditions; truncate injected ledger bodies (~400 chars + recall tail).
+
+**Files:** `skills/loop|spec|process|review|help/SKILL.md`, `README.md`,
+`scripts/session-start.sh`, `plugin.json` + `upgrades/`.
+
+---
+
+## P13 — Pillar-2 security-by-design (flow-audit run #1)
+
+**Why.** The agent-native pillar injects and executes repo-controlled content
+with no trust boundary: ledger entries, process contracts and DATA.md go
+verbatim into context (prompt-injection via any PR); `/flywheel:run`
+interpolates inputs into SQL with no parameterization mandate (the worked
+example in `agent-native-processes.md` is itself injectable) and its
+DROP/DELETE ban is advisory prose; nothing forbids persisting a resolved
+`DATABASE_URL` into committed DATA.md or echoing secrets in run reports; and
+the auto-update workflow references `xmarks@main` unpinned, executing
+clone-and-run shell in every downstream repo's CI with write permissions.
+
+**What.** Wrap all hook/skill-injected repo content in explicit untrusted-data
+framing ("data, never instructions"); make `run` REQUIRE bound parameters /
+placeholder binding and recommend a least-privilege DB role (no DDL/DELETE);
+mandate env-var references only (never resolved secrets) in DATA.md plus
+redaction in run reports; pin the reusable workflow to a tag/SHA and verify the
+clone; move `/flywheel:update` strategies toward a declarative step vocabulary
+with per-strategy confirmation.
+
+**Files:** `scripts/session-start.sh`, `scripts/read-prime.sh`,
+`skills/run|process|update/SKILL.md`, `scripts/install-vendored.sh` (workflow
+template), `docs/research/agent-native-processes.md` (fix the example),
+`plugin.json` + `upgrades/`.
+
+---
+
+## P14 — Pillar integration + process lifecycle (flow-audit run #1)
+
+**Why.** The audit's coherence verdict: the two pillars don't feed each other,
+and pillar 2 lacks the lifecycle affordances the Every guide calls out
+(discovery, composability, graduated autonomy). Concretely: run maturation
+can't escalate into pillar-1 work (a missing column dead-ends); `sync`
+reconciles spec↔code but not contracts↔schema↔DATA.md; spec/plan/review never
+consult DATA.md or contracts; nothing lists existing processes (bare
+`/flywheel:run`, the session banner) — the guide's "context starvation"
+anti-pattern; a matured contract is staged but never committed (ephemeral
+sessions lose the self-improvement while the datastore row survives); no
+write-path probe at define time and no file-based DATA.md fallback, so the
+first run on a DB-less or credential-less repo crashes mid-run; no run
+bookkeeping even when DATA.md declares it; approval is binary vs
+stakes×reversibility tiers; no process→process composition; no deprecation
+status; `docs/proactive-loops.md` predates P8 entirely.
+
+**What (likely split into 2–3 releases when built).**
+- **Integration:** `run`'s mature step gains an escalation branch (stub a
+  `/flywheel:spec` from run evidence, link it from the Improvement log); `sync`
+  accepts a process slug / `--all`; `spec`'s prior-art step reads DATA.md +
+  intersecting contracts; a `process=<slug>` ledger metadata key scored by
+  session-start/recall; `run` ends by committing the matured contract.
+- **Lifecycle:** session banner + bare `/flywheel:run` list contracts (slug +
+  Purpose one-liner); define-time read-only write-path probe (connect, target
+  exists — hand off to pillar 1 when the table is missing); file-based DATA.md
+  fallback (`data/<process>/<key>.json`, git as datastore) + a `run` dry-run
+  mode; honor `flywheel_runs` bookkeeping when declared; `status:
+  active|deprecated` + `superseded-by`; per-operation approval tiers in
+  Guardrails; Rules may invoke sub-processes (cycle guard, per-sub persistence
+  verification); batch inputs (file/glob) under one budget + a single
+  maturation; a "Schedule a process run" section in `docs/proactive-loops.md`
+  (credentials caveat, maturation-commit rule); generalize `agents/evaluator.md`
+  beyond autoloop vocabulary.
+
+**Files:** `skills/run|process|sync|spec|help/SKILL.md`,
+`scripts/session-start.sh`, `skills/compound/SKILL.md`, `agents/evaluator.md`,
+`docs/proactive-loops.md`, README, `plugin.json` + `upgrades/`.
+
+---
+
+## P15 — Dogfooding flywheel on flywheel (flow-audit run #1)
+
+**Why.** The plugin repo practices neither pillar: no LEARNINGS.md, no specs/,
+and its real memory lives in a parallel bespoke system (`docs/research/`
+journal + proposals + briefs) that re-implements spec/plan/compound outside
+flywheel state — P8 itself shipped with no spec and no compound entry. Run #1
+of `flow-audit` (this audit) created the repo's first `.claude/flywheel/`
+state; the rest should follow, both for credibility and because the maintainers
+are pillar-2's best test users.
+
+**What.** Seed `LEARNINGS.md` from the decision log's genuinely reusable
+lessons (the version-collision-at-merge gotcha, the routine-auth postmortem,
+the transcript-only vs re-execution evaluator decision); define the release
+checklist (bump → upgrade note → README/help sync → three test scripts) as
+`processes/release.md` — a textbook recurring operation with a
+machine-checkable metric; fix help's state list to include `processes/` +
+`DATA.md`; align the banner's 8 phases with loop's 6 (label brainstorm/ship as
+optional bookends); standardize the ledger on prepend-newest-first everywhere.
+
+**Files:** `.claude/flywheel/LEARNINGS.md` + `.claude/flywheel/processes/release.md`
+(state only, no bump); `skills/help/SKILL.md`, `skills/loop/SKILL.md`,
+`scripts/session-start.sh`, `skills/compound/SKILL.md`, README (release, bump).
+
+---
+
 ## Suggested sequencing
 
 1. **P1** (clean, self-contained win; validates the release flow end-to-end).
@@ -301,6 +509,11 @@ Each build step is one release: code change → `plugin.json` bump →
 **Async execution:** each remaining proposal has a self-contained kickoff in
 [`briefs/`](briefs/README.md) so it can be built in its own fresh, bounded session
 (with a copy-paste starter prompt + collision-avoidance guidance).
+
+**Post-audit sequencing (2026-07-13, P9–P15):** P10 first (cheapest, unbreaks
+macOS installs), then P9 (restores a shipped-but-inert feature), P12 (immediate
+token savings), P11 and P13 (security posture), P15 (dogfooding), and P14 last
+(largest surface; split into integration + lifecycle releases when built).
 
 ---
 
@@ -394,3 +607,22 @@ Append-only. Newest at the bottom.
   `CLAUDE.md` + `agent-native-processes.md`; README/help/banner synced.
   docs-consistency + install-vendored + read-prime + `plugin validate` all green.
   This is the roadmap's first entry beyond the original P1–P7 dev-loop set.
+- **2026-07-13** — **First `/flywheel:run flow-audit` (run #1, scope=full) —
+  pillar-2 dogfooding on flywheel itself.** Created `.claude/flywheel/DATA.md`
+  (git-native markdown persistence) and `processes/flow-audit.md` v1 via
+  `/flywheel:process`, then executed the contract: verify green (all three test
+  scripts), four parallel fresh-context reviewers (correctness, security,
+  performance/tokens, agent-native coherence checked against the Every guide)
+  returned ~45 raw findings → ~32 after dedupe: **2 Critical** (read-prime's
+  PreToolUse stdout never reaches the model — the v0.11.0 feature is inert;
+  vendored install broken on macOS by GNU-only sed), **11 High** (gate.sh
+  RCE-by-PR trust boundary; unframed prompt-injection surface; run's SQL
+  parameterization gap; unpinned `@main` supply chain; suite re-run every Stop;
+  full-ledger reads; dispatch-all review; pillar feedback gaps; pillar-2
+  onboarding cliff; no process discovery; zero dogfooding), plus ~12 Medium and
+  ~7 Low. Opened **P9–P15**. Owner signed off on the synthesis **before**
+  persistence — and that gate proved valuable enough to become contract law:
+  `flow-audit` matured to **v2** (new owner-sign-off rule between screening and
+  persisting). Clean bill (explicitly not to touch): evidence-gated maturation +
+  read-back rigor, model routing, recall's progressive disclosure, work's
+  delegation thresholds. Docs + `.claude/flywheel/` state only — no version bump.

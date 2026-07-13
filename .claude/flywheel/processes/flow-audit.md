@@ -1,7 +1,7 @@
 ---
 name: flow-audit
 kind: process
-version: 1
+version: 2
 created: 2026-07-13
 persistence: git-markdown:docs/research/improvement-proposals.md
 metric: all three scripts/test-*.sh exit 0 AND the Decision log gains exactly one new dated `flow-audit` entry for this run
@@ -44,13 +44,17 @@ backend function is "audit(scope) → prioritized findings + backlog delta".
 5. **Screen against the backlog** — drop findings already covered by an existing
    proposal or an explicit decision-log rejection, unless this run's evidence
    shows the decision's own revisit-trigger has fired.
-6. **Persist** per `DATA.md` — append new `## P<n> — <title>` sections, their
+6. **Owner gate** — present the synthesized findings and the proposed backlog
+   delta (packages, severities, disposition) to the owner and get explicit
+   sign-off **before** persisting anything. The owner may drop, merge or
+   re-scope proposals; only the signed set proceeds.
+7. **Persist** per `DATA.md` — append new `## P<n> — <title>` sections, their
    Status + Priority rows, and **one** decision-log entry (date, scope, finding
    counts by severity, proposals opened, verify status). Stage everything with
    `git add`.
-7. **Prove the write** — grep the new decision-log entry and each new `P<n>`
+8. **Prove the write** — grep the new decision-log entry and each new `P<n>`
    heading back out of the file; report the matches. Unproven = not persisted.
-8. **Mature** — append ≤1 evidence-based refinement from this run to the
+9. **Mature** — append ≤1 evidence-based refinement from this run to the
    Improvement log below.
 
 ## Output schema
@@ -71,7 +75,7 @@ schema). Mapping: `proposals_opened[]` → Status-table rows + Priority rows + o
 `## P<n>` section each; `decision_log_entry` → appended to `## Decision log`,
 newest at the bottom. **Idempotency key:** `(run_date, flow-audit, scope)` — a
 same-day rerun with the same scope updates its own entry rather than appending a
-second. **Proof:** Rule 7's read-back grep.
+second. **Proof:** Rule 8's read-back grep.
 
 ## Judgment latitude
 
@@ -95,4 +99,13 @@ sequencing among new proposals; the prose quality of each proposal's Why/What.
 ## Improvement log
 
 <!-- Append-only. /flywheel:run adds a dated entry when a run surfaces a durable
-     refinement. Empty at creation. -->
+     refinement. -->
+
+### 2026-07-13 — v2: owner sign-off gate before persistence (run #1)
+
+Run #1 evidence: mid-run the owner asked to consolidate all reviewer reports and
+see the synthesis before anything was written — v1's Rules went straight from
+screening (Rule 5) to persisting. Added Rule 6 (present the synthesis + proposed
+backlog delta, get explicit sign-off; only the signed set persists) and
+renumbered the tail (persist 7, prove 8, mature 9). Fixed-rule change →
+version 1 → 2.
