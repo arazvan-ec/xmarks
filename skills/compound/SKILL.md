@@ -1,7 +1,7 @@
 ---
 name: compound
 description: Capture the reusable knowledge from this cycle — decisions, gotchas, and patterns — into the versioned learnings ledger so the next cycle starts smarter. Use at the end of a unit of work, after review.
-allowed-tools: Read, Edit, Write, Bash(git *)
+allowed-tools: Read, Edit, Write, Bash(git *), Bash(date *)
 ---
 
 # /flywheel:compound — close the loop (learning capture)

@@ -75,7 +75,23 @@ GATE_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh'
 in_manifest() { [ -f "${MANIFEST}" ] && grep -qxF "$1" "${MANIFEST}"; }
 
 if [ "${MODE}" = "uninstall" ]; then
-  rm -rf "${SKILLS_DST}"/flywheel-*
+  # Remove vendored skill dirs — manifest-driven, never glob-driven: a dir is
+  # only ours to delete if the manifest says we wrote its SKILL.md. A dir whose
+  # SKILL.md we backed up at install time belonged to the user first: restore
+  # the backup and keep it. (Pre-manifest installs keep the old wholesale
+  # behavior — there is no record to consult.)
+  for d in "${SKILLS_DST}"/flywheel-*/; do
+    [ -d "${d}" ] || continue
+    base="$(basename "${d%/}")"
+    if [ -f "${d}SKILL.md.pre-flywheel" ]; then
+      mv "${d}SKILL.md.pre-flywheel" "${d}SKILL.md"
+      echo "restored pre-flywheel backup of ${d#"${TARGET}"/}SKILL.md"
+    elif in_manifest ".claude/skills/${base}/SKILL.md" || [ ! -f "${MANIFEST}" ]; then
+      rm -rf "${d}"
+    else
+      echo "kept ${d#"${TARGET}"/} (not vendored by flywheel)"
+    fi
+  done
 
   # Remove files we vendored (manifest when present, else the source listing
   # for pre-manifest installs), restoring any .pre-flywheel backups.
@@ -176,8 +192,10 @@ count=0
 for dir in "${SRC}"/skills/*/; do
   name="$(basename "${dir}")"
   mkdir -p "${SKILLS_DST}/flywheel-${name}"
+  # `1,/re/` (portable; the GNU-only zero-start address dies on BSD/macOS
+  # sed): safe because line 1 is always the frontmatter `---`, never `name:`.
   rewrite "${dir}SKILL.md" \
-    | sed "0,/^name: ${name}\$/s//name: flywheel-${name}/" \
+    | sed "1,/^name: ${name}\$/s/^name: ${name}\$/name: flywheel-${name}/" \
     | vendor_file ".claude/skills/flywheel-${name}/SKILL.md"
   count=$((count + 1))
 done
@@ -246,6 +264,33 @@ SRC_COMMIT="$(git -C "${SRC}" rev-parse --short HEAD 2>/dev/null || echo unknown
 } > "${FLYWHEEL_DST}/VERSION"
 echo ".claude/flywheel/VERSION" >> "${NEW_MANIFEST}"
 echo "recorded flywheel ${PLUGIN_VERSION} (${SRC_COMMIT}) in .claude/flywheel/VERSION"
+
+# Preserve a previously vendored auto-update workflow across plain re-installs
+# (the --auto-update choice is sticky; --uninstall still removes it).
+if [ "${AUTO_UPDATE}" = 0 ] && in_manifest "${UPDATE_WORKFLOW_REL}" && [ -f "${TARGET}/${UPDATE_WORKFLOW_REL}" ]; then
+  echo "${UPDATE_WORKFLOW_REL}" >> "${NEW_MANIFEST}"
+fi
+
+# Prune files a previous version vendored but this version no longer ships:
+# anything listed in the OLD manifest and absent from the NEW one (and only
+# that — never user files). Restore a .pre-flywheel backup when one exists.
+if [ -f "${MANIFEST}" ]; then
+  sort -u "${NEW_MANIFEST}" > "${NEW_MANIFEST}.sorted"
+  while IFS= read -r rel; do
+    if ! grep -qxF "${rel}" "${NEW_MANIFEST}.sorted"; then
+      stale="${TARGET}/${rel}"
+      if [ -f "${stale}.pre-flywheel" ]; then
+        mv "${stale}.pre-flywheel" "${stale}"
+        echo "pruned ${rel} (dropped by this version; pre-flywheel backup restored)"
+      elif [ -e "${stale}" ]; then
+        rm -f "${stale}"
+        echo "pruned ${rel} (dropped by this version)"
+      fi
+      rmdir "$(dirname "${stale}")" 2>/dev/null || true
+    fi
+  done < "${MANIFEST}"
+  rm -f "${NEW_MANIFEST}.sorted"
+fi
 
 sort -u "${NEW_MANIFEST}" > "${MANIFEST}"
 rm -f "${NEW_MANIFEST}"
