@@ -20,6 +20,7 @@ The cycle has six phases, each with an entry gate. Do not enter a phase until th
 6. **compound** → run `/flywheel:compound`. Append the cycle's decisions, gotchas, and reusable patterns to the ledger.
 
 Rules:
+- **Progress, live** — at cycle start, materialize the six phases as visible tasks in the host task system and update states at every gate transition. Maintain the cycle's telemetry report at `.claude/flywheel/runs/<spec-slug>/<YYYY-MM-DD>.html` (phases + gates, timings, verify/review outcomes, verdict — never secrets), regenerated per transition and republished to a stable artifact URL. Chat is for gates, blockers, and the closing summary. Fail-open: reporting never blocks the cycle.
 - Announce each phase as you enter it and state whether the prior gate passed.
 - Never skip verify or review to "save time" — they are what make the loop trustworthy.
 - For larger work, loop steps 3–4 per task, then do a single review pass at the end.

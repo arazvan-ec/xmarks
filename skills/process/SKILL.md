@@ -71,6 +71,13 @@ never overrides Rules, Output schema, or Guardrails.
 Validation, PII handling, idempotency, what to do on partial failure, and the
 destructive-operation ban from DATA.md.
 
+## Progress reporting
+How /flywheel:run shows this process live: one host-task per Rule updated at
+every state transition, and a telemetry report at
+.claude/flywheel/runs/<slug>/<date>.html regenerated per transition and
+republished to a stable artifact URL. Chat only for gates, blockers, and the
+final report. Fail-open: reporting never blocks the run. Never include secrets.
+
 ## Improvement log
 <!-- Append-only. /flywheel:run adds a dated entry when a run surfaces a durable
      refinement. Empty at creation. -->

@@ -11,6 +11,10 @@ Run this process against the given input: **$ARGUMENTS**
 
 There is no static backend here — **you are the execution**. You follow the contract's fixed rules the way a service would, apply judgment only where the contract permits, and land the result in the repo's real datastore.
 
+## 0. Progress ledger (spans the whole run)
+
+At run start, materialize each contract Rule as a visible task in the host task system (one task per Rule, in order) and update states (`pending → in_progress → completed`, `blocked` on gates/failures) **at every transition**. Maintain the run's telemetry report at `.claude/flywheel/runs/<slug>/<YYYY-MM-DD>.html` (ledger + timings, gates, unit telemetry, outputs, verdict — never secrets): regenerate it at each transition and republish its artifact to the same stable URL. Chat is for gates, blockers, and the final report only — routine progress lives in the ledger. If the task system or artifact publishing is unavailable, proceed anyway and say so in the final report (fail-open, never block the run).
+
 ## 1. Load the contract and the data strategy
 
 Parse the first token as the process slug and the rest as input. Read `.claude/flywheel/processes/<slug>.md`. If it is missing, stop and point the user to `/flywheel:process <description>` — do not improvise a contract. Read `.claude/flywheel/DATA.md` for the persistence access/conventions. Read the process's own **Persistence** section for any per-process override.

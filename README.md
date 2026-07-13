@@ -88,12 +88,15 @@ Full vision + the worked car example: [`docs/research/agent-native-processes.md`
 
 **Delegation triggers** (v0.13.0): `/flywheel:work` names advisory thresholds for handing off to a fresh-context subagent — reading 4+ files, touching 2+ non-trivial files, or ~20 tool calls deep without converging — to keep each turn's context lean.
 
+**Live progress** (v0.16.0): every process run (`/flywheel:run`) and dev cycle (`/flywheel:loop`/`work`) materializes its steps as visible tasks in the host task system — states updated at every transition — and maintains a per-execution telemetry report at `.claude/flywheel/runs/<slug>/<date>.html`, regenerated per transition and republished to a stable artifact URL. Chat stays reserved for gates, blockers, and the final summary. Fail-open: reporting never blocks execution.
+
 ## State it keeps (in the project you use it on)
 
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.
 - `.claude/flywheel/processes/<slug>.md` — agent-native **process contracts** (fixed rules + output schema + persistence + an append-only improvement log), created by `/flywheel:process` and matured by `/flywheel:run`.
 - `.claude/flywheel/DATA.md` — the repo's data-persistence strategy (Store / Access / Schema / Conventions) that every `/flywheel:run` writes through, so results land the way the repo already stores them.
 - `.claude/flywheel/LEARNINGS.md` — the compounding ledger. Typed entries (`## <type>: <title>` + a greppable `<!-- fw: … -->` metadata line) let the `SessionStart` hook inject only a relevance-scored, budgeted subset (branch/files/recency, default top 12, `FLYWHEEL_LEARNINGS_INJECT` to override) instead of a blind reload; `/flywheel:recall <query>` reaches the rest on demand. Created by `/flywheel:compound`. Older free-prose entries still load, as always-eligible low-priority entries.
+- `.claude/flywheel/runs/<slug>/<date>.html` — per-execution telemetry reports (task ledger + states, gates, unit telemetry, verdict) for process runs and dev cycles, regenerated at every state transition (v0.16.0).
 
 ## Read-priming hook (advisory)
 
