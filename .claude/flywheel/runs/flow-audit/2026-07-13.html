@@ -1,0 +1,514 @@
+<title>flow-audit · run #001 — informe de ejecución</title>
+<style>
+  :root {
+    --ground: #0B0E11;
+    --panel: #12161B;
+    --panel-2: #161B21;
+    --line: #232B33;
+    --line-soft: #1A2027;
+    --ink: #D8DEE3;
+    --dim: #77828E;
+    --faint: #4A545F;
+    --phosphor: #FFC15E;
+    --ok: #6FD08C;
+    --sev-critical: #E03D50;
+    --sev-high: #FF8A3D;
+    --sev-medium: #F2E29B;
+    --sev-low: #6E87A8;
+    --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  /* Documento de un solo mundo visual: consola distópica. Elección deliberada. */
+  html, body { background: var(--ground) !important; }
+  body {
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .console {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+  }
+  /* ── microtipografía ─────────────────────────── */
+  .micro {
+    font-size: 11px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  .num { font-variant-numeric: tabular-nums; }
+  a { color: var(--phosphor); }
+  /* ── masthead: formulario emitido por máquina ── */
+  .masthead {
+    border: 1px solid var(--line);
+    border-top: 3px double var(--line);
+    border-bottom: 3px double var(--line);
+    background: var(--panel);
+    padding: 22px 24px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .masthead .eyebrow { color: var(--phosphor); }
+  .masthead h1 {
+    font-family: var(--mono);
+    font-size: clamp(26px, 5vw, 40px);
+    font-weight: 700;
+    letter-spacing: .04em;
+    margin: 10px 0 6px;
+    text-wrap: balance;
+  }
+  .masthead .sub { color: var(--dim); font-size: 13px; }
+  .issued {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+    color: var(--faint);
+    font-size: 11px;
+    letter-spacing: .06em;
+  }
+  .stamp {
+    position: absolute;
+    top: 18px; right: 20px;
+    transform: rotate(4deg);
+    border: 2px solid var(--ok);
+    color: var(--ok);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: .28em;
+    padding: 6px 14px 6px 18px;
+    opacity: .92;
+  }
+  .stamp small { display: block; font-size: 9px; letter-spacing: .12em; font-weight: 400; }
+  /* ── línea de estado en directo ───────────────── */
+  .livebar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+    border: 1px solid var(--line);
+    border-top: 0;
+    background: var(--panel-2);
+    padding: 10px 24px;
+    font-size: 11px;
+    letter-spacing: .07em;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+  .livedot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--ok); margin-right: 7px;
+    box-shadow: 0 0 6px var(--ok);
+  }
+  .cursor {
+    display: inline-block; width: 8px; height: 13px;
+    background: var(--phosphor); vertical-align: -2px;
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .cursor { animation: none; }
+  }
+  /* ── secciones ────────────────────────────────── */
+  section { margin-top: 34px; }
+  .sec-head {
+    display: flex; align-items: baseline; gap: 12px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px; margin-bottom: 16px;
+  }
+  .sec-head .tag { color: var(--phosphor); font-size: 11px; letter-spacing: .1em; }
+  .sec-head h2 {
+    font-size: 15px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; margin: 0;
+  }
+  .sec-head .note { margin-left: auto; color: var(--faint); font-size: 11px; letter-spacing: .05em; }
+  /* ── tiles ────────────────────────────────────── */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+  }
+  .tile {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 14px 16px 12px;
+  }
+  .tile .v {
+    font-size: 34px; font-weight: 700; letter-spacing: .01em;
+    color: var(--ink); line-height: 1.1;
+  }
+  .tile .v .unit { font-size: 14px; color: var(--dim); font-weight: 400; }
+  .tile .k { margin-top: 4px; }
+  .tile .d { color: var(--faint); font-size: 11px; margin-top: 6px; }
+  /* ── ledger de tareas ─────────────────────────── */
+  .ledger { border: 1px solid var(--line); background: var(--panel); }
+  .lrow {
+    display: grid;
+    grid-template-columns: 46px 1fr auto;
+    gap: 8px 14px;
+    align-items: baseline;
+    padding: 11px 16px;
+    border-top: 1px dashed var(--line-soft);
+  }
+  .lrow:first-child { border-top: 0; }
+  .lrow .rn { color: var(--phosphor); font-weight: 700; }
+  .lrow .rname { font-weight: 700; letter-spacing: .03em; }
+  .lrow .rev { color: var(--dim); font-size: 12px; grid-column: 2; }
+  .chip {
+    font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    padding: 3px 9px; border: 1px solid; white-space: nowrap;
+    justify-self: end; align-self: center;
+  }
+  .chip.done { color: var(--ok); border-color: var(--ok); }
+  .chip.doing { color: var(--phosphor); border-color: var(--phosphor); }
+  .chip.pending { color: var(--dim); border-color: var(--line); }
+  .chip.blocked { color: var(--sev-critical); border-color: var(--sev-critical); }
+  .legend-strip {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 10px;
+  }
+  /* ── barras de unidades ───────────────────────── */
+  .units { display: grid; gap: 12px; }
+  .unit-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 4px 14px; align-items: center;
+  }
+  .unit-row .uname { font-weight: 700; font-size: 12px; letter-spacing: .04em; }
+  .unit-row .umeta { grid-column: 1; color: var(--faint); font-size: 11px; }
+  .bar-track { grid-column: 2; grid-row: 1 / span 2; display: flex; align-items: center; gap: 10px; }
+  .bar {
+    height: 14px;
+    background: var(--phosphor);
+    border-radius: 0 3px 3px 0;
+    min-width: 4px;
+    cursor: default;
+  }
+  .bar-label { color: var(--dim); font-size: 12px; white-space: nowrap; }
+  @media (max-width: 620px) {
+    .unit-row { grid-template-columns: 1fr; }
+    .bar-track { grid-column: 1; grid-row: auto; }
+  }
+  /* ── severidades ──────────────────────────────── */
+  .sevbar {
+    display: flex; gap: 2px;
+    height: 26px;
+    background: var(--ground);
+  }
+  .sevseg { position: relative; min-width: 14px; cursor: default; }
+  .sevseg span {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #10130A;
+  }
+  .sevseg.s-low span, .sevseg.s-critical span { color: #0B0E11; }
+  .sev-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
+  .sev-key { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--dim); }
+  .swatch { width: 10px; height: 10px; display: inline-block; }
+  /* ── tabla backlog ────────────────────────────── */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); }
+  table { border-collapse: collapse; width: 100%; background: var(--panel); font-size: 12px; }
+  th {
+    text-align: left; font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--dim); font-weight: 400;
+    padding: 9px 14px; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 9px 14px; border-bottom: 1px dashed var(--line-soft); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.pid { color: var(--phosphor); font-weight: 700; white-space: nowrap; }
+  td.dimc { color: var(--dim); }
+  /* ── evento de maduración ─────────────────────── */
+  .mature {
+    border-left: 3px solid var(--phosphor);
+    background: var(--panel);
+    border-top: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    padding: 14px 18px;
+  }
+  .mature + .mature { margin-top: 10px; }
+  .mature .mv { color: var(--phosphor); font-weight: 700; letter-spacing: .08em; font-size: 11px; }
+  .mature p { margin: 6px 0 0; color: var(--dim); font-size: 12.5px; max-width: 68ch; }
+  /* ── pie ──────────────────────────────────────── */
+  .verdict {
+    margin-top: 40px;
+    border: 1px solid var(--ok);
+    background: var(--panel);
+    padding: 16px 20px;
+    display: flex; flex-wrap: wrap; gap: 6px 24px; align-items: baseline;
+  }
+  .verdict .vword { color: var(--ok); font-weight: 700; font-size: 18px; letter-spacing: .2em; }
+  .verdict .vdetail { color: var(--dim); font-size: 12px; }
+  .colophon {
+    margin-top: 22px;
+    color: var(--faint);
+    font-size: 11px;
+    letter-spacing: .05em;
+    line-height: 1.8;
+    border-top: 1px dashed var(--line);
+    padding-top: 14px;
+  }
+  .colophon em { color: var(--dim); font-style: normal; }
+  /* ── tooltip ──────────────────────────────────── */
+  #tip {
+    position: fixed; z-index: 10; pointer-events: none;
+    background: #05070A; color: var(--ink);
+    border: 1px solid var(--phosphor);
+    font-family: var(--mono); font-size: 11px; letter-spacing: .03em;
+    padding: 6px 10px; max-width: 300px;
+    display: none;
+  }
+  [data-tip]:hover { outline: 1px solid var(--phosphor); outline-offset: 1px; }
+  [data-tip]:focus-visible { outline: 2px solid var(--phosphor); outline-offset: 2px; }
+</style>
+
+<div class="console">
+
+  <header class="masthead">
+    <div class="micro eyebrow">xmarks//flywheel · pilar 2 · el agente es el runtime</div>
+    <h1>INFORME DE EJECUCIÓN</h1>
+    <div class="sub num">proceso <strong>flow-audit</strong> · run <strong>#001</strong> · scope <strong>full</strong> · contrato v1 → v2 (madurado en vuelo) · 2026-07-13</div>
+    <div class="stamp">PASS<small>métrica del contrato</small></div>
+    <div class="issued">EMITIDO POR EL RUNTIME. NINGÚN HUMANO REDACTÓ ESTE DOCUMENTO. UNO LO FIRMÓ — VÉASE REGLA 06.</div>
+  </header>
+
+  <div class="livebar num">
+    <span><span class="livedot"></span>EN DIRECTO</span>
+    <span>LEDGER 9/9 COMPLETADO</span>
+    <span>ÚLTIMA TRANSICIÓN 17:48:07</span>
+    <span>REGENERACIÓN: EN CADA TRANSICIÓN DE ESTADO <span class="cursor"></span></span>
+  </div>
+
+  <!-- ── TELEMETRÍA RESUMEN ─────────────────────── -->
+  <section aria-label="Telemetría resumen">
+    <div class="tiles">
+      <div class="tile">
+        <div class="v num">32</div>
+        <div class="k micro">hallazgos verificados</div>
+        <div class="d num">deduplicados de 45 brutos · 4 lentes</div>
+      </div>
+      <div class="tile">
+        <div class="v num">7<span class="unit">+1</span></div>
+        <div class="k micro">propuestas abiertas</div>
+        <div class="d num">P9 – P15 del run · P16 post-run (operador)</div>
+      </div>
+      <div class="tile">
+        <div class="v num">380<span class="unit">k</span></div>
+        <div class="k micro">tokens · unidades de revisión</div>
+        <div class="d num">380.282 exactos · 4 agentes paralelos</div>
+      </div>
+      <div class="tile">
+        <div class="v num">2</div>
+        <div class="k micro">escrituras probadas</div>
+        <div class="d num">commits e59f548 · 47f321c</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── LEDGER DE TAREAS ───────────────────────── -->
+  <section aria-label="Ledger de tareas">
+    <div class="sec-head">
+      <span class="tag num">§01</span>
+      <h2>Ledger de tareas — una por regla del contrato</h2>
+      <span class="note">el operador no pregunta; el ledger responde</span>
+    </div>
+    <div class="ledger num">
+      <div class="lrow">
+        <span class="rn">R-01</span><span class="rname">RECALL</span><span class="chip done">completado</span>
+        <span class="rev">memoria cargada: backlog P1–P8 + decision log · 0 decisiones cerradas reabiertas</span>
+      </div>
+      <div class="lrow">
+        <span class="rn">R-02</span><span class="rname">VERIFY</span><span class="chip done">completado</span>
+        <span class="rev">3/3 scripts exit 0 — docs-consistency · install-vendored · read-prime</span>
+      </div>
+      <div class="lrow">
+        <span class="rn">R-03</span><span class="rname">REVIEW ×4 PARALELO</span><span class="chip done">completado</span>
+        <span class="rev">4 unidades de contexto fresco desplegadas · 380.282 tokens · telemetría en §02</span>
+      </div>
+      <div class="lrow">
+        <span class="rn">R-04</span><span class="rname">SYNTHESIZE</span><span class="chip done">completado</span>
+        <span class="rev">45 → 32 hallazgos · dedupe por (archivo, problema) · orden Critical → Low</span>
+      </div>
+      <div class="lrow">
+        <span class="rn">R-05</span><span class="rname">SCREEN vs BACKLOG</span><span class="chip done">completado</span>
+        <span class="rev">0 colisiones con decisiones registradas · ningún revisit-trigger disparado</span>
+      </div>
+      <div class="lrow">
+        <span class="rn">R-06</span><span class="rname">OWNER GATE</span><span class="chip done">firmado</span>
+        <span class="rev">humano requerido y presente · alcance firmado: persistir todo + madurar contrato · no construir aún</span>
+      </div>
+      <div class="lrow">
+        <span class="rn">R-07</span><span class="rname">PERSIST</span><span class="chip done">completado</span>
+        <span class="rev">improvement-proposals.md +251/−6 · commit 47f321c · 17:48:07</span>
+      </div>
+      <div class="lrow">
+        <span class="rn">R-08</span><span class="rname">PROVE (READ-BACK)</span><span class="chip done">completado</span>
+        <span class="rev">grep de vuelta: 7 encabezados P9–P15 ✓ · entrada del decision log ✓ · contrato v2 ✓</span>
+      </div>
+      <div class="lrow">
+        <span class="rn">R-09</span><span class="rname">MATURE</span><span class="chip done">completado</span>
+        <span class="rev">≤1 refinamiento con evidencia: regla de firma del operador → contrato v2 · detalle en §05</span>
+      </div>
+    </div>
+    <div class="legend-strip micro">
+      <span class="chip pending">pendiente</span>
+      <span class="chip doing">en curso</span>
+      <span class="chip done">completado</span>
+      <span class="chip blocked">bloqueado</span>
+      <span style="align-self:center">← estados posibles de un run en directo</span>
+    </div>
+  </section>
+
+  <!-- ── UNIDADES ───────────────────────────────── -->
+  <section aria-label="Telemetría de unidades de revisión">
+    <div class="sec-head">
+      <span class="tag num">§02</span>
+      <h2>Unidades de revisión — consumo por lente</h2>
+      <span class="note num">tokens de subagente · duración · llamadas a herramientas</span>
+    </div>
+    <div class="units num">
+      <div class="unit-row">
+        <span class="uname">CORR-04 · corrección</span>
+        <span class="umeta">620 s · 17 llamadas · 2 bugs reproducidos en vivo</span>
+        <div class="bar-track">
+          <div class="bar" style="width:100%" data-tip="reviewer-correctness — 118.654 tokens · 620 s · el hallazgo C1: read-prime nunca llega al modelo" tabindex="0"></div>
+          <span class="bar-label">118.654</span>
+        </div>
+      </div>
+      <div class="unit-row">
+        <span class="uname">COH-02 · coherencia agent-native</span>
+        <span class="umeta">324 s · 41 llamadas · contrastó la guía real de Every</span>
+        <div class="bar-track">
+          <div class="bar" style="width:89%" data-tip="reviewer agent-native — 105.727 tokens · 324 s · veredicto: los pilares no se retroalimentan" tabindex="0"></div>
+          <span class="bar-label">105.727</span>
+        </div>
+      </div>
+      <div class="unit-row">
+        <span class="uname">SEC-01 · seguridad</span>
+        <span class="umeta">231 s · 20 llamadas · 2 issues estructurales</span>
+        <div class="bar-track">
+          <div class="bar" style="width:67%" data-tip="reviewer-security — 79.988 tokens · 231 s · gate.sh = RCE-por-PR; inyección sin marco untrusted" tabindex="0"></div>
+          <span class="bar-label">79.988</span>
+        </div>
+      </div>
+      <div class="unit-row">
+        <span class="uname">PERF-03 · coste/tokens</span>
+        <span class="umeta">341 s · 39 llamadas · benchmarks con ledgers sintéticos</span>
+        <div class="bar-track">
+          <div class="bar" style="width:64%" data-tip="reviewer-performance — 75.913 tokens · 341 s · la suite se re-ejecuta en cada Stop" tabindex="0"></div>
+          <span class="bar-label">75.913</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SEVERIDADES ────────────────────────────── -->
+  <section aria-label="Hallazgos por severidad">
+    <div class="sec-head">
+      <span class="tag num">§03</span>
+      <h2>Hallazgos por severidad</h2>
+      <span class="note num">32 verificados tras dedupe</span>
+    </div>
+    <div class="sevbar num" role="img" aria-label="Distribución: 2 críticos, 11 altos, 12 medios, 7 bajos">
+      <div class="sevseg s-critical" style="flex:2; background:var(--sev-critical)" data-tip="CRÍTICO ×2 — read-prime inerte (la feature de v0.11.0 nunca llega al modelo) · install roto en macOS" tabindex="0"><span>2</span></div>
+      <div class="sevseg s-high" style="flex:11; background:var(--sev-high)" data-tip="ALTO ×11 — RCE-por-PR en gate.sh · inyección sin marco · SQLi en run · supply chain @main · suite en cada Stop · full-ledger reads · review sin routing · pilares sin feedback · onboarding pilar-2 · sin discovery · dogfooding cero" tabindex="0"><span>11</span></div>
+      <div class="sevseg s-medium" style="flex:12; background:var(--sev-medium)" data-tip="MEDIO ×12 — parser awk frágil · sort O(n²) · poda del installer · bypass del gate no persiste · contexto stale en agentes · secretos en DATA.md · aprobación binaria…" tabindex="0"><span>12</span></div>
+      <div class="sevseg s-low" style="flex:7; background:var(--sev-low)" data-tip="BAJO ×7 — prepend/append · 8 vs 6 fases · frontmatter pesado · presupuesto por entradas · revert de autoloop · ruta del plan · sin estado deprecated" tabindex="0"><span>7</span></div>
+    </div>
+    <div class="sev-legend">
+      <span class="sev-key"><span class="swatch" style="background:var(--sev-critical)"></span>CRÍTICO <strong class="num">×2</strong></span>
+      <span class="sev-key"><span class="swatch" style="background:var(--sev-high)"></span>ALTO <strong class="num">×11</strong></span>
+      <span class="sev-key"><span class="swatch" style="background:var(--sev-medium)"></span>MEDIO <strong class="num">×12</strong></span>
+      <span class="sev-key"><span class="swatch" style="background:var(--sev-low)"></span>BAJO <strong class="num">×7</strong></span>
+      <span class="sev-key" style="margin-left:auto">pasa CVD ΔE 30 · etiqueta + conteo siempre presentes</span>
+    </div>
+  </section>
+
+  <!-- ── DELTA DEL BACKLOG ──────────────────────── -->
+  <section aria-label="Delta del backlog">
+    <div class="sec-head">
+      <span class="tag num">§04</span>
+      <h2>Delta del backlog — lo que este run dejó escrito</h2>
+      <span class="note">docs/research/improvement-proposals.md</span>
+    </div>
+    <div class="tablewrap">
+      <table class="num">
+        <thead>
+          <tr><th>id</th><th>paquete</th><th>orden sugerido</th><th>release</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="pid">P10</td><td>Portabilidad + installer (desbloquea macOS, limpia contexto stale)</td><td>1º — barato, urgente</td><td class="dimc">bump</td></tr>
+          <tr><td class="pid">P9</td><td>Read-priming que llegue de verdad al modelo + session-start robusto</td><td>2º — revive v0.11.0</td><td class="dimc">bump</td></tr>
+          <tr><td class="pid">P12</td><td>Disciplina de tokens en las skills</td><td>3º — ahorro inmediato</td><td class="dimc">bump</td></tr>
+          <tr><td class="pid">P11</td><td>Endurecer gate.sh (confianza, caché, válvula de escape)</td><td>4º</td><td class="dimc">bump</td></tr>
+          <tr><td class="pid">P13</td><td>Seguridad by-design del pilar 2</td><td>5º</td><td class="dimc">bump</td></tr>
+          <tr><td class="pid">P15</td><td>Dogfooding de flywheel sobre flywheel</td><td>6º</td><td class="dimc">parcial</td></tr>
+          <tr><td class="pid">P14</td><td>Integración de pilares + ciclo de vida de procesos</td><td>7º — el más grande</td><td class="dimc">bump ×2–3</td></tr>
+          <tr><td class="pid">P16</td><td>Progreso en vivo: ledger de tareas + informe de telemetría — abierta post-run por revisión del operador; piloto ya aplicado en este contrato (v3) y en este documento</td><td>post-run</td><td class="dimc">bump</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── MADURACIÓN ─────────────────────────────── -->
+  <section aria-label="Eventos de maduración del contrato">
+    <div class="sec-head">
+      <span class="tag num">§05</span>
+      <h2>Maduración del contrato</h2>
+      <span class="note">≤1 refinamiento por run · con evidencia · versionado</span>
+    </div>
+    <div class="mature">
+      <span class="mv num">v1 → v2 · durante el run · evidencia: run #001</span>
+      <p>El operador pidió ver la síntesis consolidada antes de que se escribiera nada.
+      El contrato v1 iba directo de cribar a persistir. Nueva Regla 06: presentar
+      síntesis + delta propuesto y obtener firma explícita. Solo el conjunto firmado persiste.</p>
+    </div>
+    <div class="mature">
+      <span class="mv num">v2 → v3 · post-run · revisión deliberada del operador</span>
+      <p>El progreso era opaco. Nueva sección fija «Progress reporting»: una tarea visible
+      por regla con estados en directo, este informe regenerado en cada transición y
+      republicado en URL estable, y el chat reservado para gates, bloqueos y síntesis.
+      Este documento es su primer artefacto. Generalización propuesta como P16.</p>
+    </div>
+  </section>
+
+  <!-- ── VEREDICTO ──────────────────────────────── -->
+  <div class="verdict num">
+    <span class="vword">PASS</span>
+    <span class="vdetail">métrica del contrato: 3/3 scripts de test en verde · +1 entrada datada «flow-audit» en el decision log</span>
+    <span class="vdetail">escrituras probadas por read-back · idempotencia (2026-07-13, flow-audit, full)</span>
+  </div>
+
+  <p class="colophon num">
+    ESTE DOCUMENTO SE REGENERA EN CADA TRANSICIÓN DE ESTADO. LA COPIA QUE ESTÁS VIENDO ES LA ÚLTIMA.<br>
+    RUTA PERSISTIDA: <em>.claude/flywheel/runs/flow-audit/2026-07-13.html</em> · CONTRATO: <em>.claude/flywheel/processes/flow-audit.md</em> (v3)<br>
+    EL CONTRATO SE HA VUELTO MÁS ESTRICTO DOS VECES. <em>EL PROCESO RECUERDA.</em>
+  </p>
+
+</div>
+
+<div id="tip" role="status" aria-live="polite"></div>
+<script>
+  (function () {
+    var tip = document.getElementById('tip');
+    function show(el, x, y) {
+      tip.textContent = el.getAttribute('data-tip');
+      tip.style.display = 'block';
+      var pad = 14;
+      var w = tip.offsetWidth, h = tip.offsetHeight;
+      var left = Math.min(x + pad, window.innerWidth - w - 8);
+      var top = y + pad + h > window.innerHeight ? y - h - 10 : y + pad;
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+    }
+    function hide() { tip.style.display = 'none'; }
+    document.querySelectorAll('[data-tip]').forEach(function (el) {
+      el.addEventListener('mousemove', function (e) { show(el, e.clientX, e.clientY); });
+      el.addEventListener('mouseleave', hide);
+      el.addEventListener('focus', function () {
+        var r = el.getBoundingClientRect();
+        show(el, r.left, r.bottom);
+      });
+      el.addEventListener('blur', hide);
+    });
+  })();
+</script>

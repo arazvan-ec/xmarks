@@ -7,6 +7,8 @@ allowed-tools: Read, Edit, Write, Grep, Glob, Bash
 
 # /flywheel:work — the inner loop (iterate until green)
 
+**Progress, live:** materialize each plan task as a visible task in the host task system before starting, and flip its state the moment its local check goes green — never in bulk afterwards. Inside a `/flywheel:loop` cycle, also update the cycle's telemetry report (`.claude/flywheel/runs/<spec-slug>/<date>.html`, never secrets) at each task transition. Fail-open: reporting never blocks the work.
+
 Execute the plan's tasks one at a time. For **each** task, run this loop and do not exit it until the task's local check passes:
 
 1. **Red** — write (or identify) the smallest failing test / check that captures the task. Run it; confirm it fails for the right reason.

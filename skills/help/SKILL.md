@@ -41,7 +41,8 @@ It has a **second pillar** too: where the loop *builds* software, `/flywheel:pro
 - Want Claude to *operate* the repo (run a recurring domain operation, not build code) → `/flywheel:process <desc>` to define it, then `/flywheel:run <slug> <input>` to execute + persist.
 
 ## 4. Good to know
-- **State lives in this project** under `.claude/flywheel/`: specs in `specs/`, plus the compounding ledger `LEARNINGS.md`. The `SessionStart` hook injects a relevance-scored, budgeted subset of recent lessons each session (matched to the current branch/files); anything it skips is one `/flywheel:recall <query>` away.
+- **State lives in this project** under `.claude/flywheel/`: specs in `specs/`, process contracts in `processes/` + the data strategy `DATA.md`, run/cycle telemetry reports in `runs/`, plus the compounding ledger `LEARNINGS.md`. The `SessionStart` hook injects a relevance-scored, budgeted subset of recent lessons each session (matched to the current branch/files); anything it skips is one `/flywheel:recall <query>` away.
+- **Live progress**: process runs and dev cycles materialize their steps as visible tasks (states updated at every transition) and keep a per-execution telemetry report in `runs/`, republished to a stable artifact URL — watch the ledger move instead of asking "how is it going". Fail-open: reporting never blocks execution.
 - **Optional hard gate**: drop an executable `.claude/flywheel/gate.sh` (for example `npm test && npm run lint`). While it exists, the `Stop` hook blocks finishing a turn whenever it fails — so nothing is called "done" with checks red.
 - Commands are namespaced `/flywheel:…` and also show up in `/help`.
 - **Model routing by role**: the mechanical `verifier` runs on a fast/cheap model (Haiku); the judgment-heavy `reviewer-*` run on Sonnet. Change an agent's `model:` frontmatter to adjust, or `CLAUDE_CODE_SUBAGENT_MODEL` to override all.
