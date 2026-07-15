@@ -1,5 +1,20 @@
 # flywheel learnings
 
+## gotcha: local verify green is not CI green — awk/mawk portability bites
+<!-- fw: type=gotcha; date=2026-07-15; files=scripts/session-start.sh,scripts/test-session-start.sh; spec=p12-token-discipline; branch=claude/every-agent-native-config-be56a6 -->
+
+v0.19.0's metric passed locally but the PR's test-installer job failed at the
+first session-start scoring assertion. Cause: the UTF-8 truncation guard used
+an octal byte-class regex (`/[\200-\277]$/`) that compiled in the local mawk
+build but aborted CI's mawk, emptying the whole injection. Two guards: (1) cut
+injected entries at the last newline <=500 (ASCII, portable, no octal) instead
+of byte-stripping; parse metadata by scanning the whole entry for the fw: line
+(matches read-prime, drops the fragile blank-line state machine). (2) A comment
+containing an apostrophe INSIDE an `awk '...'` single-quoted program closes the
+quote and breaks the shell — keep awk-embedded comments apostrophe-free. Run
+`bash -n` and the real CI job, not just the happy-path metric, before calling a
+shell change done.
+
 ## gotcha: run the signed metric verbatim — a paraphrase can pass while the contract fails
 <!-- fw: type=gotcha; date=2026-07-15; files=.claude/flywheel/specs/p12-token-discipline.md,skills/review/SKILL.md; spec=p12-token-discipline; branch=claude/every-agent-native-config-be56a6 -->
 

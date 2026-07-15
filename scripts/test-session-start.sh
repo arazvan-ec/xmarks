@@ -23,17 +23,24 @@ git -C "${TARGET}" -c user.email=t@t -c user.name=t commit -qm base
 echo changed >> "${TARGET}/foo.txt"   # unstaged change → foo.txt is "changed"
 
 TODAY="$(date +%F)"
-# Entry A: files= matches the changed file, but a BLANK LINE separates the
-# header from the metadata — the exact case that used to zero its relevance.
-# Entry B: recent but unrelated. Entry C: stale and unrelated.
+# Decoy is deliberately FIRST: if metadata parsing ever breaks, every entry
+# scores 0 and insertion order would crown the decoy — so the assertions below
+# fail loudly instead of passing by luck. "touches foo" must win on *parsed*
+# signals (recent date + files= match) reached across a BLANK LINE before its
+# metadata comment (the case that used to zero relevance).
 cat > "${TARGET}/.claude/flywheel/LEARNINGS.md" <<EOF
 # flywheel learnings
+
+## decision: decoy first
+<!-- fw: type=decision; date=2020-01-01; files=nothing.ts -->
+
+Old and unrelated, but first in the file — the insertion-order default winner.
 
 ## gotcha: touches foo
 
 <!-- fw: type=gotcha; date=${TODAY}; files=foo.txt -->
 
-The entry the scorer must rank first.
+Recent AND files-match, with a blank line before its metadata.
 
 ## decision: recent unrelated
 <!-- fw: type=decision; date=${TODAY}; files=bar.ts -->
@@ -41,7 +48,7 @@ The entry the scorer must rank first.
 Recent but touches nothing changed.
 
 ## pattern: stale unrelated
-<!-- fw: type=pattern; date=2020-01-01; files=baz.ts -->
+<!-- fw: type=pattern; date=2020-01-02; files=baz.ts -->
 
 Old and unrelated.
 EOF
@@ -56,13 +63,13 @@ OUT="$(run_hook)"
 echo "${OUT}" | grep -q 'flywheel loaded' || fail "banner missing"
 pass "banner printed"
 
-echo "== blank-line-tolerant files match wins the budget =="
+echo "== blank-line-tolerant metadata beats the insertion-order decoy =="
 OUT1="$(run_hook 1)"
 echo "${OUT1}" | grep -q 'touches foo' \
-  || fail "entry with blank line before metadata lost its files= relevance"
-echo "${OUT1}" | grep -q 'recent unrelated' && fail "budget of 1 leaked a second entry"
+  || fail "entry with a blank line before its metadata lost its parsed relevance (decoy won)"
+echo "${OUT1}" | grep -q 'decoy first' && fail "budget of 1 leaked the decoy (metadata parse likely broke)"
 echo "${OUT1}" | grep -q 'more learning' || fail "'more learnings' tail missing"
-pass "files-match ranks first despite blank line; INJECT_N=1 budget + tail hold"
+pass "blank-line entry's parsed signals outrank the first-in-file decoy; INJECT_N=1 budget + tail hold"
 
 echo "== full ranking: files > recency > stale =="
 OUT3="$(run_hook 3)"
