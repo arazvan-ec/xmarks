@@ -9,7 +9,7 @@ allowed-tools: Read, Grep, Glob, Write
 
 Turn this request into a **contract**, not a suggestion: **$ARGUMENTS**
 
-First read `.claude/flywheel/LEARNINGS.md` and any related spec in `.claude/flywheel/specs/` for prior art.
+Prime from the SessionStart-injected learnings (pull specifics with `/flywheel:recall <topic>` — never read the whole ledger) and any related spec in `.claude/flywheel/specs/` for prior art.
 
 Produce a REASONS canvas and save it to `.claude/flywheel/specs/<slug>.md` (slug = short kebab-case name of the feature):
 

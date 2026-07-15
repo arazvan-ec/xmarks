@@ -74,6 +74,17 @@ POS_C="$(printf '%s\n' "${OUT3}" | grep -n 'stale unrelated' | head -1 | cut -d:
 [ "${POS_B}" -lt "${POS_C}" ] || fail "recency did not outrank a stale entry"
 pass "top-K ordering: files-match > recent > stale"
 
+echo "== oversized entry is truncated =="
+{
+  printf '## pattern: verbose entry\n<!-- fw: type=pattern; date=%s; files=foo.txt -->\n\n' "${TODAY}"
+  for i in $(seq 1 40); do printf 'This line pads the entry body well past the injection size budget. '; done
+  printf 'ENDMARKER\n'
+} >> "${TARGET}/.claude/flywheel/LEARNINGS.md"
+OUT_TRUNC="$(run_hook 12)"
+echo "${OUT_TRUNC}" | grep -q '\[truncated' || fail "oversized entry was not truncated"
+echo "${OUT_TRUNC}" | grep -q 'ENDMARKER' && fail "truncation kept the oversized entry's tail"
+pass "oversized entry truncated with a recall pointer"
+
 echo "== no ledger =="
 EMPTY="${WORK}/empty"
 mkdir -p "${EMPTY}"

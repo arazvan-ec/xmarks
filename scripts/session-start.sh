@@ -154,7 +154,15 @@ LEARNINGS_OUT="$(BRANCH="${BRANCH}" SPEC="${SPEC}" CUTOFF="${CUTOFF}" CHANGED_FI
         }
         tmp = order[i]; order[i] = order[best]; order[best] = tmp
       }
-      for (i = 1; i <= shown; i++) printf "%s", body[order[i]]
+      # Budget by size, not just count: one verbose entry must not multiply
+      # the injection cost. The full entry stays one /flywheel:recall away.
+      for (i = 1; i <= shown; i++) {
+        e = body[order[i]]
+        if (length(e) > 560) {
+          e = substr(e, 1, 500) "\n[truncated -- /flywheel:recall pulls the full entry]\n"
+        }
+        printf "%s", e
+      }
       remaining = n - shown
       if (remaining > 0) {
         printf "\n... %d more learning%s -- run /flywheel:recall <query> to pull specifics.\n", remaining, (remaining == 1 ? "" : "s")

@@ -11,7 +11,7 @@ You are running the flywheel cycle for: **$ARGUMENTS**
 
 The cycle has six phases, each with an entry gate. Do not enter a phase until the previous gate is green. If a gate fails, stop and report — do not paper over it.
 
-0. **Prime.** Read `.claude/flywheel/LEARNINGS.md` (if it exists) and skim related specs in `.claude/flywheel/specs/`. Reuse past decisions; avoid known gotchas.
+0. **Prime.** Work from the SessionStart-injected learnings subset and skim related specs in `.claude/flywheel/specs/`; pull specifics with `/flywheel:recall <topic>`. Never read the whole ledger — the budgeted injection exists to avoid exactly that cost.
 1. **spec** → run `/flywheel:spec`. Produces a REASONS contract + a single machine-checkable success metric. GATE: the spec is signed off before planning.
 2. **plan** → run `/flywheel:plan`. Ordered tasks, each with its own check. GATE: plan approved; no coding before this.
 3. **work** → run `/flywheel:work`. Implement task by task using the inner iterate-until-green loop. GATE: every task's local check is green.

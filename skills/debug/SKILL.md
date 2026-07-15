@@ -1,6 +1,6 @@
 ---
 name: debug
-description: Systematic debugging runbook — reproduce reliably, form one explicit hypothesis, instrument, isolate by bisection, fix the root cause, and confirm with a regression test. Use when something is broken, a test fails mysteriously, or behavior is wrong — especially fragile failures like web-scraping selectors. Not for green-field feature work.
+description: Systematic debugging runbook — reproduce reliably, one explicit hypothesis, isolate by bisection, fix the root cause, confirm with a regression test. Use when something is broken or a test fails mysteriously. Not for green-field feature work.
 argument-hint: "[what's broken]"
 allowed-tools: Read, Edit, Grep, Glob, Bash
 ---

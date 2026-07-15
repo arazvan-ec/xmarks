@@ -1,6 +1,6 @@
 ---
 name: run
-description: Execute a defined agent-native process as the runtime — follow its fixed rules, apply judgment where the contract allows, persist the result to the repo's datastore (e.g. Postgres) per DATA.md, then reflect and mature the contract. Use to actually run an operation you defined with /flywheel:process (e.g. "run the car analysis for plate 1234ABC"). This is Claude acting as the backend, not calling one.
+description: Execute a process contract as the runtime — follow its fixed rules, apply bounded judgment, persist to the repo's datastore per DATA.md and prove the write, then mature the contract. Use to run an operation defined with /flywheel:process; Claude acts as the backend, not calling one.
 argument-hint: "[process-slug] [input...]"
 allowed-tools: Read, Edit, Write, Grep, Glob, Bash
 ---
