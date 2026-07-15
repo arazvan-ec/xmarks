@@ -1,7 +1,7 @@
 # Spec: P11 — gate.sh hardening (trust, cost, escape valve)
 
 **Slug:** `p11-gate-hardening` · **Created:** 2026-07-15 · **Backlog:** P11
-**Status:** signed 2026-07-15 (owner) — trust-on-first-use fail-safe model, full cycle, PR at the end
+**Status:** signed 2026-07-15 (owner) · shipped as v0.20.0 — metric PASS; review HOLD (2 false-skip Highs + env-override + test/wording) fixed in-release, re-verified
 **Prime:** LEARNINGS.md (10 entries; "local verify green ≠ CI green" and the
 fail-open-vs-fail-safe distinction are directly relevant — this release adds a
 new trust boundary and must be tested on the real CI job, not just locally).

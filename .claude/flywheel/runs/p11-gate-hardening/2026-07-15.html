@@ -72,14 +72,14 @@
     <div class="micro eyebrow">xmarks//flywheel · pilar 1 · ciclo bajo la ley P16</div>
     <h1>INFORME DE CICLO</h1>
     <div class="sub num">spec <strong>p11-gate-hardening</strong> · release objetivo <strong>v0.20.0</strong> · 2026-07-15 · el hallazgo de seguridad más serio de la auditoría</div>
-    <div class="stamp">EN CURSO<small>gate actual: review</small></div>
-    <div class="issued">EMITIDO POR EL RUNTIME. UN HOOK QUE EJECUTABA UN ARCHIVO QUE CUALQUIER PR PODÍA PLANTAR. HOY DEJA DE HACERLO SIN CONSENTIMIENTO.</div>
+    <div class="stamp" style="border-color:var(--ok);color:var(--ok)">PASS<small>ciclo cerrado</small></div>
+    <div class="issued">EMITIDO POR EL RUNTIME. EN UNA RELEASE DE SEGURIDAD, EL REVISOR ENCONTRÓ DOS FORMAS DE QUE UN GATE ROJO PASARA COMO VERDE. AMBAS CERRADAS ANTES DE SHIPPEAR.</div>
   </header>
 
   <div class="livebar num">
     <span><span class="livedot"></span>EN DIRECTO</span>
-    <span>FASES 4/6 CERRADAS</span>
-    <span>MÉTRICA: PASS · REVISOR DE SEGURIDAD DESPLEGADO</span>
+    <span>FASES 6/6 CERRADAS</span>
+    <span>MÉTRICA: PASS · REVIEW: HOLD (2 HIGH) → FIX → VERDE</span>
     <span>REGENERACIÓN: POR TRANSICIÓN DE FASE <span class="cursor"></span></span>
   </div>
 
@@ -107,19 +107,20 @@
         <span class="rev">métrica del spec exit 0 (verbatim): greps consent/stop_hook_active/rev-parse + 5 test scripts + versión + upgrade note con requires-action: true</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip doing">en curso</span>
-        <span class="rev">routing: diff de shell con frontera de confianza → revisor adversarial de corrección+seguridad en contexto fresco, desplegado</span>
+        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip done">hold → fix</span>
+        <span class="rev">1 revisor adversarial (lente seguridad) · 75.621 tokens · 422 s · veredicto HOLD: 2 HIGH de false-skip (contador global desactivaba el gate tras un bypass; caché con `git diff` se saltaba cambios staged/untracked) + env-override del store + test flojo + sobre-claim · TODO corregido: contador keyed-per-tree · firma con `git diff HEAD`+untracked excluyendo el state dir · store rechazado si vive dentro del repo · test real de stop_hook_active · 12 casos verdes</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip pending">pendiente</span>
-        <span class="rev">entradas tipadas al ledger · backlog P11 → shipped · commit + push + PR + vigilar CI</span>
+        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip done">completado</span>
+        <span class="rev">3 gotchas al ledger (hook auto-escritor excluye su estado · contador keyed a lo que cuenta · store valida su ubicación) · backlog P11 → ✅ shipped v0.20.0 · commit + push + PR + vigilar CI</span>
       </div>
     </div>
   </section>
 
-  <div class="verdict num">
-    <span class="vword">— SIN VEREDICTO —</span>
-    <span class="vdetail">la métrica no se ha ejecutado · este bloque cambiará a PASS o FAIL, nunca a una opinión</span>
+  <div class="verdict num" style="border-color:var(--ok)">
+    <span class="vword" style="color:var(--ok)">PASS</span>
+    <span class="vdetail">métrica del spec exit 0 · 5 test scripts (gate.sh estrena cobertura: 12 casos) · v0.20.0 · requires-action: true</span>
+    <span class="vdetail">el hallazgo de seguridad más grave de la auditoría, cerrado — y el revisor cazó dos regresiones de seguridad en el propio fix antes de shippear</span>
   </div>
 
   <p class="colophon num">

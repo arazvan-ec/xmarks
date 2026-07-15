@@ -21,8 +21,11 @@
 #
 # Safety: trust is fail-SAFE (unverified gate never runs); everything else is
 # fail-OPEN (any internal error degrades to a no-op and never blocks the turn).
-# Bounded to MAX consecutive blocks, and the bypass persists so a permanently
-# red gate can't re-trap every turn.
+# Bounded to MAX consecutive blocks PER failing tree, and the bypass persists so
+# a permanently red gate can't re-trap every turn.
+#
+# Note: trust defends against a static planted/edited gate file (a PR/clone),
+# NOT against a concurrent local attacker racing the hash-then-run window.
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 GATE="${PROJECT_DIR}/.claude/flywheel/gate.sh"
@@ -43,6 +46,20 @@ fi
 # also authorize it. FLYWHEEL_STATE_DIR overrides the location (used by tests).
 STATE_DIR="${FLYWHEEL_STATE_DIR:-${XDG_STATE_HOME:-${HOME}/.local/state}/flywheel}"
 TRUSTED="${STATE_DIR}/trusted-gates"
+
+# Refuse a consent store that resolves INSIDE the repo — otherwise a PR could
+# point FLYWHEEL_STATE_DIR/XDG_STATE_HOME (via project config) at a repo path
+# and commit a matching trusted-gates, self-authorizing the planted gate.
+PROJ_ABS="$(cd "${PROJECT_DIR}" 2>/dev/null && pwd -P || printf '%s' "${PROJECT_DIR}")"
+case "${STATE_DIR}" in
+  /*) SD_ABS="${STATE_DIR}" ;;
+  *)  SD_ABS="$(pwd)/${STATE_DIR}" ;;
+esac
+case "${SD_ABS}/" in
+  "${PROJ_ABS}/"*)
+    echo "flywheel gate: consent store resolves inside the repo — refusing to run (trust must live outside the project)." >&2
+    exit 0 ;;
+esac
 
 gate_hash() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" 2>/dev/null | cut -d' ' -f1
@@ -67,31 +84,40 @@ if ! { [ -f "${TRUSTED}" ] && grep -qxF "${HASH}" "${TRUSTED}" 2>/dev/null; }; t
 fi
 
 # --- Cost cache ---------------------------------------------------------------
-# Skip the (possibly expensive) suite when the working tree is byte-for-byte the
-# state that last passed. A cache, never a gate: any change re-runs; no git → run.
-tree_signature() {
-  command -v git >/dev/null 2>&1 || return 1
-  git -C "${PROJECT_DIR}" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
-  local head status diff
-  head="$(git -C "${PROJECT_DIR}" rev-parse HEAD 2>/dev/null)"
-  status="$(git -C "${PROJECT_DIR}" status --porcelain 2>/dev/null)"
-  diff="$(git -C "${PROJECT_DIR}" diff 2>/dev/null)"
-  printf '%s\n%s\n%s' "${head}" "${status}" "${diff}" | gate_stdin_hash
-}
+# Skip the (possibly expensive) suite when the git-tracked working tree is
+# byte-for-byte the state that last passed. A cache, never a gate: any git-
+# visible change re-runs; no git → always run. (Non-git state — env, external
+# files — is not observed; the cache only ever skips a re-run, never turns a
+# red gate green for a changed tree.)
 gate_stdin_hash() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum 2>/dev/null | cut -d' ' -f1
   elif command -v shasum >/dev/null 2>&1; then shasum -a 256 2>/dev/null | cut -d' ' -f1
   fi
 }
+tree_signature() {
+  command -v git >/dev/null 2>&1 || return 1
+  git -C "${PROJECT_DIR}" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
+  # Exclude .claude/flywheel — the hook writes its own state (.gate-state,
+  # reports) there, so including it would make the signature change every run
+  # and the cache never hit. The gate verifies project code, not flywheel state.
+  local ex=':(exclude).claude/flywheel'
+  {
+    git -C "${PROJECT_DIR}" rev-parse HEAD 2>/dev/null
+    git -C "${PROJECT_DIR}" status --porcelain -- . "${ex}" 2>/dev/null
+    git -C "${PROJECT_DIR}" diff HEAD -- . "${ex}" 2>/dev/null     # staged + unstaged tracked content
+    # untracked files: names AND content (status --porcelain shows only names)
+    git -C "${PROJECT_DIR}" ls-files -o --exclude-standard -z -- . "${ex}" 2>/dev/null \
+      | while IFS= read -r -d '' f; do printf '%s\0' "${f}"; cat "${PROJECT_DIR}/${f}" 2>/dev/null; done
+  } | gate_stdin_hash
+}
 SIG="$(tree_signature)"
 
-read_state() {  # echoes: "<count> <passed-sig> <bypass-sig>" (missing fields empty)
-  [ -f "${STATE}" ] && cat "${STATE}" 2>/dev/null
-}
-S="$(read_state)"
+# State file fields (one per line): count, passed-sig, bypass-sig, counting-sig.
+S=""; [ -f "${STATE}" ] && S="$(cat "${STATE}" 2>/dev/null)"
 COUNT="$(printf '%s\n' "${S}" | sed -n '1p' | tr -dc '0-9')"; [ -z "${COUNT}" ] && COUNT=0
 PASSED_SIG="$(printf '%s\n' "${S}" | sed -n '2p')"
 BYPASS_SIG="$(printf '%s\n' "${S}" | sed -n '3p')"
+COUNT_SIG="$(printf '%s\n' "${S}" | sed -n '4p')"
 
 # Unchanged since last green → allow without re-running.
 if [ -n "${SIG}" ] && [ "${SIG}" = "${PASSED_SIG}" ]; then
@@ -104,7 +130,7 @@ if [ -n "${SIG}" ] && [ "${SIG}" = "${BYPASS_SIG}" ]; then
 fi
 
 # stop_hook_active defense-in-depth: if the runtime says we're already looping
-# on the Stop hook and we've hit the block ceiling, stop re-trapping.
+# on the Stop hook, don't re-trap.
 STOP_ACTIVE=0
 if command -v python3 >/dev/null 2>&1; then
   STOP_ACTIVE="$(FW_IN="${INPUT}" python3 -c 'import json,os
@@ -118,15 +144,19 @@ OUT="$( cd "${PROJECT_DIR}" && bash "${GATE}" 2>&1 )"
 CODE=$?
 
 if [ "${CODE}" -eq 0 ]; then
-  # Green → record the passing signature, clear counter and any bypass.
-  printf '0\n%s\n' "${SIG}" > "${STATE}" 2>/dev/null
+  # Green → record the passing signature; clear counter, bypass and counting.
+  printf '0\n%s\n\n\n' "${SIG}" > "${STATE}" 2>/dev/null
   exit 0
 fi
 
-# Gate failed. Bound consecutive blocks so we never trap the user.
+# Gate failed. The attempt counter is keyed to the failing tree: a NEW failing
+# signature starts its own MAX budget, so one bypass can't disable the gate for
+# later, different regressions.
+if [ "${SIG}" != "${COUNT_SIG}" ]; then COUNT=0; fi
+
 if [ "${COUNT}" -ge "${MAX}" ] || [ "${STOP_ACTIVE}" = "1" ]; then
   # Persist the bypass against THIS failing tree so we don't re-trap next turn.
-  printf '%s\n%s\n%s\n' "${COUNT}" "${PASSED_SIG}" "${SIG}" > "${STATE}" 2>/dev/null
+  printf '%s\n%s\n%s\n%s\n' "${COUNT}" "${PASSED_SIG}" "${SIG}" "${SIG}" > "${STATE}" 2>/dev/null
   {
     echo "flywheel gate: still failing after ${MAX} attempts — bypassing so you aren't blocked."
     echo "Fix these before shipping:"
@@ -135,7 +165,7 @@ if [ "${COUNT}" -ge "${MAX}" ] || [ "${STOP_ACTIVE}" = "1" ]; then
   exit 0   # fail-open escape valve
 fi
 
-printf '%s\n%s\n%s\n' "$((COUNT + 1))" "${PASSED_SIG}" "${BYPASS_SIG}" > "${STATE}" 2>/dev/null
+printf '%s\n%s\n%s\n%s\n' "$((COUNT + 1))" "${PASSED_SIG}" "${BYPASS_SIG}" "${SIG}" > "${STATE}" 2>/dev/null
 
 {
   echo "flywheel gate FAILED (.claude/flywheel/gate.sh exited ${CODE}). Do not finish until this is green — fix and re-run:"

@@ -30,7 +30,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P8 | Agent-native runtime pillar (`process` + `run`) | ✅ shipped (v0.15.0) | Done — Claude executes + persists + matures domain operations; see [`agent-native-processes.md`](agent-native-processes.md) |
 | P9 | Read-priming that actually reaches the model + robust session-start | ✅ shipped (v0.18.0) | Done — JSON envelope (docs-confirmed), bash pre-filter, blank-line-safe awk, top-K, macOS date, cached update check |
 | P10 | Portability + installer correctness | ✅ shipped (v0.17.0) | Done — BSD-safe sed, manifest-driven pruning + uninstall, sticky `--auto-update`, generic agents |
-| P11 | `gate.sh` hardening | 🔵 proposed | Consent for repo-controlled gate; tree-hash cache; persistent bypass |
+| P11 | `gate.sh` hardening | ✅ shipped (v0.20.0) | Done — trust-on-first-use consent (outside repo), git-tracked cost cache, per-tree persisted bypass, first test coverage |
 | P12 | Token-discipline pass over the skills | ✅ shipped (v0.19.0) | Done — recall-first priming, diff-routed review with stated skips, honest evaluator wording, slimmer descriptions, size-capped injection |
 | P13 | Pillar-2 security-by-design | 🔵 proposed | Untrusted-data framing; parameterized writes; secret redaction; pin `@main` |
 | P14 | Pillar integration + process lifecycle | 🔵 proposed | Discovery, run→spec escalation, contract sync, write-path probe + file fallback |
@@ -708,6 +708,24 @@ Append-only. Newest at the bottom.
   backslash fall-through, stamp hardening + test, fact-not-imperative
   phrasing) + 1 tie-ordering Info accepted. Three entries compounded. The
   audit's Critical C1 and all four session-start Mediums are now closed.
+- **2026-07-15** — **Shipped P11 as v0.20.0.** Hardened the opt-in completion
+  gate against the flow-audit's most serious finding. Trust-on-first-use
+  (fail-safe): an unrecognized `.claude/flywheel/gate.sh` is no longer
+  auto-run — the hook prints a one-time trust command whose consent hash lives
+  **outside the repo** (owner picked this model at the sign-off gate over a
+  weaker warn-and-run). Plus a git-tracked cost cache (skip re-running an
+  unchanged tree), a per-failing-tree persisted bypass, `stop_hook_active`
+  honoring, and `scripts/test-gate.sh` — the gate's first coverage. Review
+  (adversarial, security lens) returned **HOLD** with two confirmed *false-skip*
+  Highs on a security release: (1) a global block counter that stopped
+  enforcing on all new regressions after the first bypass, and (2) a cost cache
+  over `git diff` that skipped staged-only and untracked-content changes —
+  either could let a red gate read as green. Fixed in-release (counter keyed to
+  the failing signature; signature uses `git diff HEAD` + untracked content and
+  excludes flywheel's own state dir; store path rejected if inside the repo;
+  genuine `stop_hook_active` test; overclaim wording corrected). Three gotchas
+  compounded. `requires-action: true` — existing gate users trust once. All
+  five test scripts green.
 - **2026-07-15** — **Shipped P12 as v0.19.0.** flywheel's token-efficiency
   research applied to itself: recall-first priming in loop/spec/process (no
   more ~18k-token whole-ledger reads), diff-routed review with mandatory
