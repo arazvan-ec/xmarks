@@ -159,7 +159,12 @@ LEARNINGS_OUT="$(BRANCH="${BRANCH}" SPEC="${SPEC}" CUTOFF="${CUTOFF}" CHANGED_FI
       for (i = 1; i <= shown; i++) {
         e = body[order[i]]
         if (length(e) > 560) {
-          e = substr(e, 1, 500) "\n[truncated -- /flywheel:recall pulls the full entry]\n"
+          e = substr(e, 1, 500)
+          # mawk substr is byte-based: never leave a UTF-8 sequence cut open
+          # (strip trailing continuation bytes, then a dangling lead byte).
+          while (e ~ /[\200-\277]$/) e = substr(e, 1, length(e) - 1)
+          if (e ~ /[\300-\367]$/) e = substr(e, 1, length(e) - 1)
+          e = e "\n[truncated -- /flywheel:recall pulls the full entry]\n"
         }
         printf "%s", e
       }

@@ -1,5 +1,24 @@
 # flywheel learnings
 
+## gotcha: run the signed metric verbatim — a paraphrase can pass while the contract fails
+<!-- fw: type=gotcha; date=2026-07-15; files=.claude/flywheel/specs/p12-token-discipline.md,skills/review/SKILL.md; spec=p12-token-discipline; branch=claude/every-agent-native-config-be56a6 -->
+
+The v0.19.0 verify ran a widened version of the spec's metric
+(`grep -qi 'routing\|Route before'`) and passed, while the signed metric's
+literal `grep -qi 'routing'` failed — the reviewer caught the verifier. The
+success metric is a contract: execute it copy-paste, character for character;
+if it needs adjusting, that is a spec revision, not an inline improvisation.
+
+## gotcha: mawk substr is byte-based — truncation can emit invalid UTF-8
+<!-- fw: type=gotcha; date=2026-07-15; files=scripts/session-start.sh,scripts/test-session-start.sh; spec=p12-token-discipline; branch=claude/every-agent-native-config-be56a6 -->
+
+Plain `awk` on Ubuntu is mawk, whose `length`/`substr` count bytes: cutting an
+injected entry at byte 500 can split an em-dash mid-sequence and feed invalid
+UTF-8 into the session context. Guard after any awk truncation: strip trailing
+continuation bytes (`/[\200-\277]$/`), then a dangling lead byte
+(`/[\300-\367]$/`); assert with `iconv -f UTF-8 -t UTF-8` over dash-dense
+fixtures at all three byte offsets.
+
 ## gotcha: a fast pre-filter must fall through on uncertainty, never guess
 <!-- fw: type=gotcha; date=2026-07-13; files=scripts/read-prime.sh; spec=p9-read-priming-real; branch=claude/every-agent-native-config-be56a6 -->
 

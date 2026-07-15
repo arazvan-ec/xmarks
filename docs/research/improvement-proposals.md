@@ -31,7 +31,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P9 | Read-priming that actually reaches the model + robust session-start | ✅ shipped (v0.18.0) | Done — JSON envelope (docs-confirmed), bash pre-filter, blank-line-safe awk, top-K, macOS date, cached update check |
 | P10 | Portability + installer correctness | ✅ shipped (v0.17.0) | Done — BSD-safe sed, manifest-driven pruning + uninstall, sticky `--auto-update`, generic agents |
 | P11 | `gate.sh` hardening | 🔵 proposed | Consent for repo-controlled gate; tree-hash cache; persistent bypass |
-| P12 | Token-discipline pass over the skills | 🔵 proposed | Kill full-ledger reads; diff-based review routing; align evaluator wording |
+| P12 | Token-discipline pass over the skills | ✅ shipped (v0.19.0) | Done — recall-first priming, diff-routed review with stated skips, honest evaluator wording, slimmer descriptions, size-capped injection |
 | P13 | Pillar-2 security-by-design | 🔵 proposed | Untrusted-data framing; parameterized writes; secret redaction; pin `@main` |
 | P14 | Pillar integration + process lifecycle | 🔵 proposed | Discovery, run→spec escalation, contract sync, write-path probe + file fallback |
 | P15 | Dogfooding flywheel on flywheel | 🔵 proposed | Seed LEARNINGS.md; `processes/release.md`; fix help state list |
@@ -708,3 +708,18 @@ Append-only. Newest at the bottom.
   backslash fall-through, stamp hardening + test, fact-not-imperative
   phrasing) + 1 tie-ordering Info accepted. Three entries compounded. The
   audit's Critical C1 and all four session-start Mediums are now closed.
+- **2026-07-15** — **Shipped P12 as v0.19.0.** flywheel's token-efficiency
+  research applied to itself: recall-first priming in loop/spec/process (no
+  more ~18k-token whole-ledger reads), diff-routed review with mandatory
+  stated skips (the pattern that saved ~300k tokens applied manually across
+  three cycles is now law), honest evaluator wording, the four heaviest
+  descriptions trimmed to ≤300 chars, and size-capped injection with a recall
+  tail. Review verdict **HOLD** with a meta-lesson: the spec's signed metric
+  failed verbatim (`grep 'routing'`) while verify had passed a widened
+  paraphrase — the reviewer caught the verifier; plus a real mawk UTF-8
+  byte-split bug in the new truncation (found via dash-dense boundary
+  fixtures) and stale wording in review's/evaluator's own descriptions. All
+  fixed in-release; overstated "reduction" claims corrected in the spec and
+  upgrade note (session-loaded surface shrinks; review's body grows by a
+  routing table that pays for itself). Two gotchas compounded. Metric
+  re-verified **verbatim** PASS.

@@ -1,7 +1,7 @@
 # Spec: P12 — Token-discipline pass over the skills
 
 **Slug:** `p12-token-discipline` · **Created:** 2026-07-15 · **Backlog:** P12
-**Status:** signed 2026-07-15 (owner) — full cycle approved, PR at the end
+**Status:** signed 2026-07-15 (owner) · shipped as v0.19.0 — metric PASS (verbatim, after the HOLD); review HOLD (metric-literal High + 4) fixed in-release
 **Prime:** LEARNINGS.md (7 entries; the "route the review by diff type" pattern
 this release codifies has already been applied manually in three cycles, saving
 ~300k tokens/review vs the fan-out). Source evidence: flow-audit run #1's three
@@ -84,9 +84,12 @@ reviewer-dispatching model can decide from `git diff --stat` it already runs.
 
 ## N — Norms
 
-Keep every edit shorter than what it replaces (this is a *reduction* release —
-net negative lines in skill bodies is the goal). GATEs and fixed contracts
-untouched. Test idiom unchanged.
+The *session-loaded* surface must shrink (frontmatter descriptions + injected
+ledger bytes); invocation-loaded bodies may grow only where the addition pays
+for itself (review's routing table saves multiples of its own weight on the
+first routed dispatch). GATEs and fixed contracts untouched. Test idiom
+unchanged. *(Reworded during review: the original "net negative lines in skill
+bodies" claim was measurably false — routing costs lines.)*
 
 ## S — Safeguards
 

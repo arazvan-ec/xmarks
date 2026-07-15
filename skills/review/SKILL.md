@@ -1,6 +1,6 @@
 ---
 name: review
-description: Adversarial multi-specialist code review — dispatch correctness, security, and performance reviewers in parallel over the current diff and synthesize prioritized findings. Use before finishing a unit of work (after verify passes).
+description: Adversarial multi-specialist code review with diff-type routing — correctness always; security/performance reviewers only when the diff touches their domains — dispatched in parallel and synthesized into prioritized findings. Use before finishing a unit of work (after verify passes).
 argument-hint: "[diff ref, e.g. HEAD~1, main, or a path]"
 allowed-tools: Task, Bash(git *), Read, Grep, Glob
 ---

@@ -72,14 +72,14 @@
     <div class="micro eyebrow">xmarks//flywheel · pilar 1 · ciclo bajo la ley P16</div>
     <h1>INFORME DE CICLO</h1>
     <div class="sub num">spec <strong>p12-token-discipline</strong> · release objetivo <strong>v0.19.0</strong> · 2026-07-15 · rama reiniciada desde main tras el merge de la PR #28</div>
-    <div class="stamp">EN CURSO<small>gate actual: review</small></div>
-    <div class="issued">EMITIDO POR EL RUNTIME. ESTA RELEASE RESTA: EL OBJETIVO ES QUE LOS SKILLS PESEN MENOS AL SALIR QUE AL ENTRAR.</div>
+    <div class="stamp" style="border-color:var(--ok);color:var(--ok)">PASS<small>ciclo cerrado</small></div>
+    <div class="issued">EMITIDO POR EL RUNTIME. EL REVISOR CAZÓ AL VERIFICADOR: LA MÉTRICA FIRMADA FALLABA EN LITERAL MIENTRAS EL VERIFY PASABA UNA PARÁFRASIS. CORREGIDO. LA LECCIÓN ES LEY EN EL LEDGER.</div>
   </header>
 
   <div class="livebar num">
     <span><span class="livedot"></span>EN DIRECTO</span>
-    <span>FASES 4/6 CERRADAS</span>
-    <span>MÉTRICA: PASS · REVISOR DESPLEGADO</span>
+    <span>FASES 6/6 CERRADAS</span>
+    <span>MÉTRICA (VERBATIM): PASS · REVIEW: HOLD → FIX → VERDE</span>
     <span>REGENERACIÓN: POR TRANSICIÓN DE FASE <span class="cursor"></span></span>
   </div>
 
@@ -107,19 +107,20 @@
         <span class="rev">métrica del spec exit 0: greps + límites medidos + 4 test scripts (session-start ahora con 6 grupos de assertions)</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip doing">en curso</span>
-        <span class="rev">routing (el patrón que esta release codifica, aplicado a sí misma): diff de prompts+awk → 1 revisor de lente combinada en contexto fresco, desplegado</span>
+        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip done">hold → fix</span>
+        <span class="rev">1 revisor de lente combinada (routing aplicado a sí mismo) · 77.455 tokens · 441 s · veredicto HOLD: la métrica firmada fallaba en literal (verify había pasado una paráfrasis) + descripción de review pre-P12 + mawk parte UTF-8 al truncar + wording del evaluator + claims de "reducción" sobrestimados · todo corregido: métrica re-verificada VERBATIM · test UTF-8 con fixtures de em-dashes en 3 offsets</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip pending">pendiente</span>
-        <span class="rev">entradas tipadas al ledger · backlog P12 → shipped · commit + push + PR</span>
+        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip done">completado</span>
+        <span class="rev">2 gotchas al ledger (métrica verbatim o nada · mawk es byte-based) · backlog P12 → ✅ shipped v0.19.0 · commit + push + PR</span>
       </div>
     </div>
   </section>
 
-  <div class="verdict num">
-    <span class="vword">— SIN VEREDICTO —</span>
-    <span class="vdetail">la métrica no se ha ejecutado · este bloque cambiará a PASS o FAIL, nunca a una opinión</span>
+  <div class="verdict num" style="border-color:var(--ok)">
+    <span class="vword" style="color:var(--ok)">PASS · VERBATIM</span>
+    <span class="vdetail">métrica del spec ejecutada carácter a carácter, exit 0 · 4 test scripts (session-start: 7 grupos) · v0.19.0 completa</span>
+    <span class="vdetail">superficie por sesión: −418 chars de descripciones + inyección con tope de tamaño · el routing de review ya es ley, no costumbre</span>
   </div>
 
   <p class="colophon num">

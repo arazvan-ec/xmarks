@@ -85,6 +85,25 @@ echo "${OUT_TRUNC}" | grep -q '\[truncated' || fail "oversized entry was not tru
 echo "${OUT_TRUNC}" | grep -q 'ENDMARKER' && fail "truncation kept the oversized entry's tail"
 pass "oversized entry truncated with a recall pointer"
 
+echo "== truncation never emits invalid UTF-8 =="
+if command -v iconv >/dev/null 2>&1; then
+  # Three em-dash-dense entries with 0/1/2 bytes of leading pad: byte 500
+  # lands mid-sequence in at least one of them.
+  for pad in "" "x" "xx"; do
+    {
+      printf '## pattern: utf8 boundary %s\n<!-- fw: type=pattern; date=%s; files=foo.txt -->\n\n%s' "${pad:-0}" "${TODAY}" "${pad}"
+      for i in $(seq 1 400); do printf '—'; done
+      printf '\n'
+    } >> "${TARGET}/.claude/flywheel/LEARNINGS.md"
+  done
+  OUT_UTF8="$(run_hook 12)"
+  printf '%s' "${OUT_UTF8}" | iconv -f UTF-8 -t UTF-8 >/dev/null 2>&1 \
+    || fail "truncated injection contains invalid UTF-8 (byte-split multibyte char)"
+  pass "byte-boundary truncation keeps the output valid UTF-8"
+else
+  pass "iconv unavailable — UTF-8 boundary check skipped"
+fi
+
 echo "== no ledger =="
 EMPTY="${WORK}/empty"
 mkdir -p "${EMPTY}"
