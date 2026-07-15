@@ -103,31 +103,29 @@ LEARNINGS_OUT="$(BRANCH="${BRANCH}" SPEC="${SPEC}" CUTOFF="${CUTOFF}" CHANGED_FI
       started = 1
       entry = $0 "\n"
       header = $0
-      meta_seen = 0
+      got_meta = 0
       ent_date = ""; ent_files = ""; ent_branch = ""; ent_spec = ""
+      # Header-date fallback for old free-prose entries (## YYYY-MM-DD — …).
+      if (header ~ /^## [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) ent_date = substr(header, 4, 10)
       next
     }
     {
       if (!started) next
-      if (!meta_seen) {
-        # Tolerate blank lines between the header and the metadata comment —
-        # read-prime searches the whole entry, so scoring must not disagree.
-        if ($0 ~ /^[[:space:]]*$/) { entry = entry $0 "\n"; next }
-        meta_seen = 1
-        if ($0 ~ /^<!-- fw: /) {
-          metaline = $0
-          sub(/^<!-- fw: /, "", metaline)
-          sub(/ -->[[:space:]]*$/, "", metaline)
-          nkv = split(metaline, kvs, "; ")
-          for (k = 1; k <= nkv; k++) {
-            split(kvs[k], pair, "=")
-            if (pair[1] == "date") ent_date = pair[2]
-            else if (pair[1] == "files") ent_files = pair[2]
-            else if (pair[1] == "branch") ent_branch = pair[2]
-            else if (pair[1] == "spec") ent_spec = pair[2]
-          }
-        } else if (header ~ /^## [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) {
-          ent_date = substr(header, 4, 10)
+      # Scan the WHOLE entry for the metadata comment (not just the first
+      # non-blank line) — same as read-prime.sh, and independent of how many
+      # blank lines sit between the header and the comment.
+      if (!got_meta && index($0, "<!-- fw:") > 0) {
+        got_meta = 1
+        metaline = $0
+        sub(/^[^<]*<!-- fw: /, "", metaline)
+        sub(/ *-->.*$/, "", metaline)
+        nkv = split(metaline, kvs, "; ")
+        for (k = 1; k <= nkv; k++) {
+          split(kvs[k], pair, "=")
+          if (pair[1] == "date") ent_date = pair[2]
+          else if (pair[1] == "files") ent_files = pair[2]
+          else if (pair[1] == "branch") ent_branch = pair[2]
+          else if (pair[1] == "spec") ent_spec = pair[2]
         }
       }
       entry = entry $0 "\n"
@@ -154,7 +152,24 @@ LEARNINGS_OUT="$(BRANCH="${BRANCH}" SPEC="${SPEC}" CUTOFF="${CUTOFF}" CHANGED_FI
         }
         tmp = order[i]; order[i] = order[best]; order[best] = tmp
       }
-      for (i = 1; i <= shown; i++) printf "%s", body[order[i]]
+      # Budget by size, not just count: one verbose entry must not multiply
+      # the injection cost. The full entry stays one /flywheel:recall away.
+      for (i = 1; i <= shown; i++) {
+        e = body[order[i]]
+        if (length(e) > 560) {
+          # mawk substr is byte-based, so cut at the last newline at/under the
+          # limit: a newline is ASCII and never part of a UTF-8 multibyte
+          # sequence, so the cut never splits a character and needs no
+          # non-portable octal byte-class regex. Entries are multi-line, so a
+          # newline is always present to cut on.
+          head = substr(e, 1, 500)
+          cut = 0
+          for (q = length(head); q >= 1; q--) if (substr(head, q, 1) == "\n") { cut = q; break }
+          if (cut == 0) cut = 200   # single-line outlier: conservative ASCII-safe floor
+          e = substr(e, 1, cut) "[truncated -- /flywheel:recall pulls the full entry]\n"
+        }
+        printf "%s", e
+      }
       remaining = n - shown
       if (remaining > 0) {
         printf "\n... %d more learning%s -- run /flywheel:recall <query> to pull specifics.\n", remaining, (remaining == 1 ? "" : "s")

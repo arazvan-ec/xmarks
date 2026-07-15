@@ -1,6 +1,6 @@
 ---
 name: autoloop
-description: Autonomous iterate-until-metric loop — repeatedly change → measure → keep-if-better / discard-if-worse against a single machine-checkable metric, within a fixed budget of iterations, without pausing for human input between iterations. Use only for well-specified, objectively measurable goals (get the suite green, tune a scraper until it extracts all items, drive a lint-error count to zero).
+description: Autonomous iterate-until-metric loop — change → measure → keep-if-better against one machine-checkable metric, within a fixed iteration budget, no human input between iterations. Use only for objectively measurable goals (suite green, lint-error count to zero).
 disable-model-invocation: true
 disallowed-tools: AskUserQuestion
 argument-hint: "[goal] [max-iterations, default 10]"

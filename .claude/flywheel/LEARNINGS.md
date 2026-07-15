@@ -1,5 +1,39 @@
 # flywheel learnings
 
+## gotcha: local verify green is not CI green — awk/mawk portability bites
+<!-- fw: type=gotcha; date=2026-07-15; files=scripts/session-start.sh,scripts/test-session-start.sh; spec=p12-token-discipline; branch=claude/every-agent-native-config-be56a6 -->
+
+v0.19.0's metric passed locally but the PR's test-installer job failed at the
+first session-start scoring assertion. Cause: the UTF-8 truncation guard used
+an octal byte-class regex (`/[\200-\277]$/`) that compiled in the local mawk
+build but aborted CI's mawk, emptying the whole injection. Two guards: (1) cut
+injected entries at the last newline <=500 (ASCII, portable, no octal) instead
+of byte-stripping; parse metadata by scanning the whole entry for the fw: line
+(matches read-prime, drops the fragile blank-line state machine). (2) A comment
+containing an apostrophe INSIDE an `awk '...'` single-quoted program closes the
+quote and breaks the shell — keep awk-embedded comments apostrophe-free. Run
+`bash -n` and the real CI job, not just the happy-path metric, before calling a
+shell change done.
+
+## gotcha: run the signed metric verbatim — a paraphrase can pass while the contract fails
+<!-- fw: type=gotcha; date=2026-07-15; files=.claude/flywheel/specs/p12-token-discipline.md,skills/review/SKILL.md; spec=p12-token-discipline; branch=claude/every-agent-native-config-be56a6 -->
+
+The v0.19.0 verify ran a widened version of the spec's metric
+(`grep -qi 'routing\|Route before'`) and passed, while the signed metric's
+literal `grep -qi 'routing'` failed — the reviewer caught the verifier. The
+success metric is a contract: execute it copy-paste, character for character;
+if it needs adjusting, that is a spec revision, not an inline improvisation.
+
+## gotcha: mawk substr is byte-based — truncation can emit invalid UTF-8
+<!-- fw: type=gotcha; date=2026-07-15; files=scripts/session-start.sh,scripts/test-session-start.sh; spec=p12-token-discipline; branch=claude/every-agent-native-config-be56a6 -->
+
+Plain `awk` on Ubuntu is mawk, whose `length`/`substr` count bytes: cutting an
+injected entry at byte 500 can split an em-dash mid-sequence and feed invalid
+UTF-8 into the session context. Guard after any awk truncation: strip trailing
+continuation bytes (`/[\200-\277]$/`), then a dangling lead byte
+(`/[\300-\367]$/`); assert with `iconv -f UTF-8 -t UTF-8` over dash-dense
+fixtures at all three byte offsets.
+
 ## gotcha: a fast pre-filter must fall through on uncertainty, never guess
 <!-- fw: type=gotcha; date=2026-07-13; files=scripts/read-prime.sh; spec=p9-read-priming-real; branch=claude/every-agent-native-config-be56a6 -->
 

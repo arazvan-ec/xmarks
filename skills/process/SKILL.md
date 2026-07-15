@@ -1,6 +1,6 @@
 ---
 name: process
-description: Define (and later mature) an agent-native process — a reusable prompt-contract for a recurring domain operation that Claude executes as the runtime, instead of static backend code. Scaffolds fixed rules, an output schema, and the repo's data-persistence strategy. Use when the user wants a repeatable operation like "analyze a car", "score a lead", "ingest a report" turned into something /flywheel:run can execute over and over.
+description: Define or deliberately revise an agent-native process contract — fixed rules + output schema + persistence — for a recurring domain operation Claude runs as the backend. Use when a repeatable operation ('analyze a car', 'score a lead') should become something /flywheel:run executes.
 argument-hint: "[process description, e.g. 'analyze a car by registration plate']"
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash
 ---
@@ -11,7 +11,7 @@ Turn this recurring operation into a **process contract**, not one-off code: **$
 
 A *process* is a domain operation a traditional app would implement as a backend function. flywheel implements it instead as a **prompt-contract that Claude executes** (`/flywheel:run`): fixed rules the run must follow, a machine-checkable output schema, a persistence target in the repo's own datastore, and an improvement log that matures with every run. This is the agent-native pillar — the agent *is* the runtime, not a bolt-on (see `docs/research/agent-native-processes.md`).
 
-First read `.claude/flywheel/LEARNINGS.md` and any existing `.claude/flywheel/processes/*.md` for prior art and house conventions.
+Prime from the SessionStart-injected learnings (`/flywheel:recall <topic>` for specifics — never read the whole ledger) and any existing `.claude/flywheel/processes/*.md` for prior art and house conventions.
 
 ## 1. Establish the repo's data strategy (once per repo)
 
