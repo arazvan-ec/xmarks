@@ -24,8 +24,21 @@ echo ""
 VERSION_FILE="${PROJECT_DIR}/.claude/flywheel/VERSION"
 if [ -f "${VERSION_FILE}" ] && [ -z "${FLYWHEEL_NO_UPDATE_CHECK:-}" ] && command -v curl >/dev/null 2>&1; then
   LOCAL_V="$(sed -n 's/^flywheel //p' "${VERSION_FILE}" 2>/dev/null | head -1)"
-  REMOTE_V="$(curl -m 2 -fsSL https://raw.githubusercontent.com/arazvan-ec/xmarks/main/.claude-plugin/plugin.json 2>/dev/null \
-    | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
+  # Cache the remote answer for the day (in TMPDIR, never the working tree) —
+  # a blocking ~650ms curl on every session start buys nothing new intraday.
+  # Per-uid name + regular-file/no-symlink guards: /tmp is world-writable and
+  # a predictable stamp name is a symlink-planting target (CWE-377).
+  STAMP="${TMPDIR:-/tmp}/flywheel-remote-version.$(id -u 2>/dev/null || echo 0)"
+  TODAY="$(date +%F)"
+  if [ -f "${STAMP}" ] && [ ! -L "${STAMP}" ] && [ "$(sed -n 1p "${STAMP}" 2>/dev/null)" = "${TODAY}" ]; then
+    REMOTE_V="$(sed -n 2p "${STAMP}" 2>/dev/null)"
+  else
+    REMOTE_V="$(curl -m 2 -fsSL https://raw.githubusercontent.com/arazvan-ec/xmarks/main/.claude-plugin/plugin.json 2>/dev/null \
+      | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
+    if [ -n "${REMOTE_V}" ] && [ ! -L "${STAMP}" ]; then
+      printf '%s\n%s\n' "${TODAY}" "${REMOTE_V}" > "${STAMP}" 2>/dev/null || true
+    fi
+  fi
   if [ -n "${LOCAL_V}" ] && [ -n "${REMOTE_V}" ] && [ "${LOCAL_V}" != "${REMOTE_V}" ]; then
     echo "⬆️  flywheel ${REMOTE_V} is available (this repo carries ${LOCAL_V}) — run /flywheel:update to refresh."
     echo ""
@@ -50,7 +63,7 @@ CHANGED_FILES="$(cd "${PROJECT_DIR}" 2>/dev/null && {
     git diff --name-only --cached 2>/dev/null
   } | sort -u)"
 SPEC="$(ls -t "${PROJECT_DIR}"/.claude/flywheel/specs/*.md 2>/dev/null | head -1 | xargs -n1 basename 2>/dev/null | sed 's/\.plan\.md$//; s/\.md$//')"
-CUTOFF="$(date -d '-30 days' +%F 2>/dev/null)"
+CUTOFF="$(date -d '-30 days' +%F 2>/dev/null || date -v-30d +%F 2>/dev/null)"
 
 echo "📓 Relevant flywheel learnings (branch=${BRANCH:-?}${SPEC:+, spec=${SPEC}}):"
 echo "------------------------------------------------------------------------------"
@@ -97,6 +110,9 @@ LEARNINGS_OUT="$(BRANCH="${BRANCH}" SPEC="${SPEC}" CUTOFF="${CUTOFF}" CHANGED_FI
     {
       if (!started) next
       if (!meta_seen) {
+        # Tolerate blank lines between the header and the metadata comment —
+        # read-prime searches the whole entry, so scoring must not disagree.
+        if ($0 ~ /^[[:space:]]*$/) { entry = entry $0 "\n"; next }
         meta_seen = 1
         if ($0 ~ /^<!-- fw: /) {
           metaline = $0
@@ -126,15 +142,18 @@ LEARNINGS_OUT="$(BRANCH="${BRANCH}" SPEC="${SPEC}" CUTOFF="${CUTOFF}" CHANGED_FI
         score[i] = s
         order[i] = i
       }
-      for (i = 1; i <= n; i++) {
-        for (j = i + 1; j <= n; j++) {
-          oi = order[i]; oj = order[j]
-          if (score[oj] > score[oi] || (score[oj] == score[oi] && date_arr[oj] > date_arr[oi])) {
-            tmp = order[i]; order[i] = order[j]; order[j] = tmp
-          }
-        }
-      }
+      # Top-K selection (O(n*k), k=INJECT_N) — a full O(n^2) sort of the whole
+      # ledger would blow the 15s hook timeout around ~10k entries; only the
+      # first K positions ever get printed, so only they need ordering.
       shown = (inject_n < n ? inject_n : n)
+      for (i = 1; i <= shown; i++) {
+        best = i
+        for (j = i + 1; j <= n; j++) {
+          ob = order[best]; oj = order[j]
+          if (score[oj] > score[ob] || (score[oj] == score[ob] && date_arr[oj] > date_arr[ob])) best = j
+        }
+        tmp = order[i]; order[i] = order[best]; order[best] = tmp
+      }
       for (i = 1; i <= shown; i++) printf "%s", body[order[i]]
       remaining = n - shown
       if (remaining > 0) {

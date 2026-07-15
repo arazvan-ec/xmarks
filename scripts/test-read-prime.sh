@@ -43,16 +43,31 @@ run_hook() {
 # whole script with a nonzero exit already fails the test — the hook's
 # always-exit-0 contract is enforced implicitly, not just by inspection below.
 
+# A match must be delivered through the hook JSON contract — PreToolUse stdout
+# on exit 0 is transcript-only and never reaches the model (P9).
+assert_envelope() {
+  FW_OUT="$1" FW_EXPECT="$2" python3 - <<'PY'
+import json, os
+payload = json.loads(os.environ["FW_OUT"])
+h = payload["hookSpecificOutput"]
+assert h["hookEventName"] == "PreToolUse", f"wrong hookEventName: {h}"
+ctx = h["additionalContext"]
+assert os.environ["FW_EXPECT"] in ctx, f"expected learning missing from additionalContext: {ctx!r}"
+assert "/flywheel:recall" in ctx, f"recall pointer missing: {ctx!r}"
+assert "unrelated to auth" not in ctx, f"unrelated learning leaked: {ctx!r}"
+PY
+}
+
 echo "== matching file (relative path) =="
 OUT="$(run_hook "src/auth/login.ts")"
-echo "${OUT}" | grep -q "logout didn't clear the session cookie" || fail "matching learning not surfaced"
-echo "${OUT}" | grep -q '/flywheel:recall' || fail "pointer to /flywheel:recall missing"
-echo "${OUT}" | grep -q 'unrelated to auth' && fail "surfaced a learning for a different file"
-pass "matching file surfaces exactly its own learning, exits 0"
+assert_envelope "${OUT}" "logout didn't clear the session cookie" \
+  || fail "relative-path match did not emit a valid hookSpecificOutput envelope"
+pass "matching file emits hookSpecificOutput JSON with exactly its own learning"
 
 echo "== matching file (absolute path) =="
 OUT_ABS="$(run_hook "${TARGET}/src/auth/session.ts")"
-echo "${OUT_ABS}" | grep -q "logout didn't clear the session cookie" || fail "absolute-path match not surfaced"
+assert_envelope "${OUT_ABS}" "logout didn't clear the session cookie" \
+  || fail "absolute-path match did not emit a valid hookSpecificOutput envelope"
 pass "absolute path resolves against the project dir"
 
 echo "== no match =="
