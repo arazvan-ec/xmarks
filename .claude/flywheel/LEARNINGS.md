@@ -1,5 +1,33 @@
 # flywheel learnings
 
+## gotcha: a fast pre-filter must fall through on uncertainty, never guess
+<!-- fw: type=gotcha; date=2026-07-13; files=scripts/read-prime.sh; spec=p9-read-priming-real; branch=claude/every-agent-native-config-be56a6 -->
+
+The v0.18.0 review found two paths where read-prime's naive bash extraction
+produced garbage (escaped quotes in the JSON; a basename starting with `-`
+that grep parsed as an option) and the pre-filter then wrongly skipped the
+python parser that WOULD have matched. The invariant: an optimization layer
+may only skip work when it is certain there is nothing to find — on any
+ambiguity it falls through to the slow, correct path. Guards: `grep -qF --`
+and a backslash check that empties the extraction.
+
+## gotcha: predictable names in /tmp are symlink-attack targets
+<!-- fw: type=gotcha; date=2026-07-13; files=scripts/session-start.sh,scripts/test-session-start.sh; spec=p9-read-priming-real; branch=claude/every-agent-native-config-be56a6 -->
+
+The session-start curl cache used a fixed `/tmp/flywheel-remote-version`
+name: on a multi-user host a pre-planted symlink makes the hook truncate an
+arbitrary victim-writable file (CWE-377), and poisoned content feeds the
+update notice. Guard: per-uid suffix + `[ -f ] && [ ! -L ]` before trusting
+or writing, with a symlink-rejection test.
+
+## pattern: `python3 - <<heredoc` consumes stdin — pass data via environment
+<!-- fw: type=pattern; date=2026-07-13; files=scripts/test-read-prime.sh,scripts/read-prime.sh; spec=p9-read-priming-real; branch=claude/every-agent-native-config-be56a6 -->
+
+With `python3 -` the heredoc IS stdin (the program), so `sys.stdin.read()`
+inside it returns empty — piping data in front does nothing. House pattern:
+hand inputs to heredoc python via environment variables (`FW_*`) and
+`os.environ`, as read-prime and the installer already do.
+
 ## gotcha: an uninstaller must trust its manifest, never its glob
 <!-- fw: type=gotcha; date=2026-07-13; files=scripts/install-vendored.sh,scripts/test-install-vendored.sh; spec=p10-portability-installer; branch=claude/every-agent-native-config-be56a6 -->
 

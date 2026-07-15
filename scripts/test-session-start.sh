@@ -81,5 +81,23 @@ OUT_EMPTY="$(CLAUDE_PROJECT_DIR="${EMPTY}" FLYWHEEL_NO_UPDATE_CHECK=1 bash "${SC
 echo "${OUT_EMPTY}" | grep -q 'No flywheel learnings yet' || fail "no-ledger message missing"
 pass "no ledger: friendly message, exits 0"
 
+echo "== update-check stamp cache =="
+# A same-day stamp must be trusted (no curl needed) and a symlinked stamp must
+# be ignored — both offline-safe because a valid cache short-circuits curl.
+TMP_STAMP_DIR="${WORK}/tmpstamp"
+mkdir -p "${TMP_STAMP_DIR}"
+echo "flywheel 0.0.1" > "${TARGET}/.claude/flywheel/VERSION"
+printf '%s\n9.9.9\n' "$(date +%F)" > "${TMP_STAMP_DIR}/flywheel-remote-version.$(id -u)"
+OUT_STAMP="$(CLAUDE_PROJECT_DIR="${TARGET}" TMPDIR="${TMP_STAMP_DIR}" bash "${SCRIPT}")"
+echo "${OUT_STAMP}" | grep -q '9\.9\.9 is available' || fail "same-day stamp cache not used for the update notice"
+rm -f "${TMP_STAMP_DIR}/flywheel-remote-version.$(id -u)"
+touch "${TMP_STAMP_DIR}/evil-target"
+ln -s "${TMP_STAMP_DIR}/evil-target" "${TMP_STAMP_DIR}/flywheel-remote-version.$(id -u)"
+printf '%s\n6.6.6\n' "$(date +%F)" > "${TMP_STAMP_DIR}/evil-target"
+OUT_SYM="$(CLAUDE_PROJECT_DIR="${TARGET}" FLYWHEEL_NO_UPDATE_CHECK= TMPDIR="${TMP_STAMP_DIR}" bash "${SCRIPT}" 2>/dev/null || true)"
+echo "${OUT_SYM}" | grep -q '6\.6\.6' && fail "symlinked stamp content was trusted"
+rm -f "${TARGET}/.claude/flywheel/VERSION"
+pass "stamp cache honored same-day; symlinked stamp ignored"
+
 echo ""
 echo "all session-start tests passed"

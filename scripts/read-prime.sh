@@ -23,9 +23,10 @@ INPUT="$(cat 2>/dev/null)"
 # a basename the ledger never mentions, nothing can match; if it yields
 # nothing, fall through to python (correctness over speed, never the reverse).
 TARGET_PATH="$(printf '%s' "${INPUT}" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' 2>/dev/null | head -1 2>/dev/null)"
+case "${TARGET_PATH}" in *\\*) TARGET_PATH="" ;; esac  # escaped quotes → sed garbage; let python decide
 if [ -n "${TARGET_PATH}" ]; then
   BASE="${TARGET_PATH##*/}"
-  if [ -n "${BASE}" ] && ! grep -qF "${BASE}" "${LEDGER}" 2>/dev/null; then
+  if [ -n "${BASE}" ] && ! grep -qF -- "${BASE}" "${LEDGER}" 2>/dev/null; then
     exit 0
   fi
 fi
@@ -90,7 +91,9 @@ if matches:
     n = len(matches)
     noun = "learning" if n == 1 else "learnings"
     verb = "touches" if n == 1 else "touch"
-    lines = [f"flywheel: {n} prior {noun} {verb} this file — run /flywheel:recall to see the rest:"]
+    # Stated as fact, not as an instruction — imperative phrasing can trip the
+    # model's prompt-injection defenses and surface instead of priming.
+    lines = [f"flywheel: {n} prior {noun} {verb} this file; /flywheel:recall lists the full entries:"]
     lines.extend(matches)
     print(json.dumps({
         "hookSpecificOutput": {

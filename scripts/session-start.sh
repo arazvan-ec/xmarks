@@ -26,14 +26,16 @@ if [ -f "${VERSION_FILE}" ] && [ -z "${FLYWHEEL_NO_UPDATE_CHECK:-}" ] && command
   LOCAL_V="$(sed -n 's/^flywheel //p' "${VERSION_FILE}" 2>/dev/null | head -1)"
   # Cache the remote answer for the day (in TMPDIR, never the working tree) —
   # a blocking ~650ms curl on every session start buys nothing new intraday.
-  STAMP="${TMPDIR:-/tmp}/flywheel-remote-version"
+  # Per-uid name + regular-file/no-symlink guards: /tmp is world-writable and
+  # a predictable stamp name is a symlink-planting target (CWE-377).
+  STAMP="${TMPDIR:-/tmp}/flywheel-remote-version.$(id -u 2>/dev/null || echo 0)"
   TODAY="$(date +%F)"
-  if [ -r "${STAMP}" ] && [ "$(sed -n 1p "${STAMP}" 2>/dev/null)" = "${TODAY}" ]; then
+  if [ -f "${STAMP}" ] && [ ! -L "${STAMP}" ] && [ "$(sed -n 1p "${STAMP}" 2>/dev/null)" = "${TODAY}" ]; then
     REMOTE_V="$(sed -n 2p "${STAMP}" 2>/dev/null)"
   else
     REMOTE_V="$(curl -m 2 -fsSL https://raw.githubusercontent.com/arazvan-ec/xmarks/main/.claude-plugin/plugin.json 2>/dev/null \
       | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
-    if [ -n "${REMOTE_V}" ]; then
+    if [ -n "${REMOTE_V}" ] && [ ! -L "${STAMP}" ]; then
       printf '%s\n%s\n' "${TODAY}" "${REMOTE_V}" > "${STAMP}" 2>/dev/null || true
     fi
   fi

@@ -1,7 +1,7 @@
 # Spec: P9 — Read-priming that actually reaches the model + robust session-start
 
 **Slug:** `p9-read-priming-real` · **Created:** 2026-07-13 · **Backlog:** P9
-**Status:** signed 2026-07-13 (owner) — full cycle approved, PR at the end
+**Status:** signed 2026-07-13 (owner) · shipped as v0.18.0 — metric PASS; review SHIP (4 Lows fixed in-release, 1 Info accepted)
 **Prime:** LEARNINGS.md read (4 entries; "route review by diff type" → shell/hook
 diff = adversarial correctness lens; "manifest not glob" mindset applies to any
 rewrite). Source evidence: flow-audit run #1 (Critical C1 + 4 Mediums).
