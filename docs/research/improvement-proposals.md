@@ -30,12 +30,13 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P8 | Agent-native runtime pillar (`process` + `run`) | ✅ shipped (v0.15.0) | Done — Claude executes + persists + matures domain operations; see [`agent-native-processes.md`](agent-native-processes.md) |
 | P9 | Read-priming that actually reaches the model + robust session-start | ✅ shipped (v0.18.0) | Done — JSON envelope (docs-confirmed), bash pre-filter, blank-line-safe awk, top-K, macOS date, cached update check |
 | P10 | Portability + installer correctness | ✅ shipped (v0.17.0) | Done — BSD-safe sed, manifest-driven pruning + uninstall, sticky `--auto-update`, generic agents |
-| P11 | `gate.sh` hardening | 🔵 proposed | Consent for repo-controlled gate; tree-hash cache; persistent bypass |
+| P11 | `gate.sh` hardening | ✅ shipped (v0.20.0) | Done — trust-on-first-use consent (outside repo), git-tracked cost cache, per-tree persisted bypass, first test coverage |
 | P12 | Token-discipline pass over the skills | ✅ shipped (v0.19.0) | Done — recall-first priming, diff-routed review with stated skips, honest evaluator wording, slimmer descriptions, size-capped injection |
 | P13 | Pillar-2 security-by-design | 🔵 proposed | Untrusted-data framing; parameterized writes; secret redaction; pin `@main` |
 | P14 | Pillar integration + process lifecycle | 🔵 proposed | Discovery, run→spec escalation, contract sync, write-path probe + file fallback |
 | P15 | Dogfooding flywheel on flywheel | 🔵 proposed | Seed LEARNINGS.md; `processes/release.md`; fix help state list |
 | P16 | Live run progress: task ledger + telemetry report | ✅ shipped (v0.16.0) | Done — both pillars (run/process + loop/work); piloted by flow-audit v3 + the p16 cycle report |
+| P17 | Setup/fixture knowledge as first-class compounded context | 🔵 proposed | New `fixture` learning type; `compound` captures stub/setup recipes; `spec`/`work` prime from them |
 
 ## Priority overview
 
@@ -57,6 +58,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P14 | Pillar integration + process lifecycle | High | Large | Medium | Yes |
 | P15 | Dogfooding flywheel on flywheel | Medium | Low | Low | Partial |
 | P16 | Live run progress (task ledger + run telemetry report) | Medium | Low | Low | Yes |
+| P17 | Setup/fixture knowledge as first-class compounded context | High | Low | Low | Yes |
 
 ---
 
@@ -525,6 +527,51 @@ observability is not operable. Piloted immediately as `flow-audit` v3 (fixed
 
 ---
 
+## P17 — Setup/fixture knowledge as first-class compounded context (owner ask, 2026-07-15)
+
+**Why.** The owner's insight, in their words: *"hemos perdido mucho tiempo
+descubriendo cómo crear el dato stub para las pruebas — una editorial para
+detalles, una editorial para homeTag, otra para amazononsite … quiero que
+nuestras intervenciones siempre creen este conocimiento del repo y usarlo como
+contexto para enriquecer las siguientes."* The costliest thing a session
+rediscovers is not decisions or bugs — it is **how to set up the world**: how to
+build a valid stub/fixture for a domain entity, how to seed the datastore, the
+exact incantation to bring a test harness to life. flywheel's memory pillar
+(`compound` → `LEARNINGS.md` → SessionStart injection → read-priming) captures
+`decision`/`gotcha`/`pattern`/`bugfix`, but "setup recipes" fall through the
+cracks — they read as one-off scaffolding, so nobody compounds them, so the next
+session pays the discovery cost again. This session proved the loss on flywheel
+itself (every hook test rebuilt the same git-fixture scaffold); the owner's
+example (editorial fixtures for `detalles` / `homeTag` / `amazononsite`) is the
+same failure in a product repo.
+
+**What.**
+- A new learning **type `fixture`** (alongside decision/gotcha/pattern/bugfix):
+  a named entity/harness + the concrete recipe to construct a valid instance of
+  it, with the fields/relationships that are easy to get wrong. Seeded already:
+  the hook-test-fixture recipe in `LEARNINGS.md`.
+- `skills/compound/SKILL.md` — explicitly prompt for fixture/setup knowledge at
+  cycle close ("did we discover how to build a stub, seed data, or stand up a
+  harness that a future cycle shouldn't have to rediscover?").
+- `skills/spec/SKILL.md` + `skills/work/SKILL.md` — the prime step surfaces any
+  `type=fixture` entries whose entity intersects the task, so setup knowledge is
+  in context *before* work starts (not after the rediscovery).
+- `skills/process/SKILL.md` — pillar-2 contracts can reference fixture entries
+  for the entities they read/write (ties into DATA.md).
+- Scoring: `scripts/session-start.sh` already ranks by files/branch/recency;
+  fixture entries carry `files=`/entity tags so the existing relevance scorer
+  surfaces them — no scorer change needed, just the new type flowing through.
+
+**Files:** `skills/compound|spec|work|process/SKILL.md`, README + help (document
+the new type), `plugin.json` + `upgrades/`. (`LEARNINGS.md` fixture entries are
+per-repo state, no bump.)
+
+**Open questions:**
+- Is `fixture` a distinct type, or a tag on `pattern`? (Leaning distinct — it
+  answers "how do I build one?", which `pattern` doesn't privilege.)
+- Should `/flywheel:work` *offer to write* a fixture entry when it spends N tool
+  calls constructing test data, the way delegation triggers fire on thresholds?
+
 ## Suggested sequencing
 
 1. **P1** (clean, self-contained win; validates the release flow end-to-end).
@@ -708,6 +755,24 @@ Append-only. Newest at the bottom.
   backslash fall-through, stamp hardening + test, fact-not-imperative
   phrasing) + 1 tie-ordering Info accepted. Three entries compounded. The
   audit's Critical C1 and all four session-start Mediums are now closed.
+- **2026-07-15** — **Shipped P11 as v0.20.0.** Hardened the opt-in completion
+  gate against the flow-audit's most serious finding. Trust-on-first-use
+  (fail-safe): an unrecognized `.claude/flywheel/gate.sh` is no longer
+  auto-run — the hook prints a one-time trust command whose consent hash lives
+  **outside the repo** (owner picked this model at the sign-off gate over a
+  weaker warn-and-run). Plus a git-tracked cost cache (skip re-running an
+  unchanged tree), a per-failing-tree persisted bypass, `stop_hook_active`
+  honoring, and `scripts/test-gate.sh` — the gate's first coverage. Review
+  (adversarial, security lens) returned **HOLD** with two confirmed *false-skip*
+  Highs on a security release: (1) a global block counter that stopped
+  enforcing on all new regressions after the first bypass, and (2) a cost cache
+  over `git diff` that skipped staged-only and untracked-content changes —
+  either could let a red gate read as green. Fixed in-release (counter keyed to
+  the failing signature; signature uses `git diff HEAD` + untracked content and
+  excludes flywheel's own state dir; store path rejected if inside the repo;
+  genuine `stop_hook_active` test; overclaim wording corrected). Three gotchas
+  compounded. `requires-action: true` — existing gate users trust once. All
+  five test scripts green.
 - **2026-07-15** — **Shipped P12 as v0.19.0.** flywheel's token-efficiency
   research applied to itself: recall-first priming in loop/spec/process (no
   more ~18k-token whole-ledger reads), diff-routed review with mandatory

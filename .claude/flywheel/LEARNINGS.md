@@ -1,5 +1,55 @@
 # flywheel learnings
 
+## fixture: how to build a hook-test fixture (the recipe we kept rediscovering)
+<!-- fw: type=fixture; date=2026-07-15; files=scripts/test-gate.sh,scripts/test-session-start.sh,scripts/test-read-prime.sh; branch=claude/every-agent-native-config-be56a6 -->
+
+Every hook test this session rebuilt the same scaffold from scratch — capture it
+so the next one starts from the recipe, not from zero:
+- **Isolated repo fixture:** `mktemp -d`; `git init -q "$T"`; `git -C "$T" -c
+  user.email=t@t -c user.name=t checkout -qb main`; commit a base file; make an
+  unstaged edit so `git diff` reports a change. `trap 'rm -rf "$WORK"' EXIT`.
+- **Feed data to a `python3 -` heredoc via environment, never stdin** — the
+  heredoc *is* stdin, so piped input is lost. Pass `FW_*` env vars + `os.environ`.
+- **Prove a thing did NOT run** with a sentinel file the code-under-test appends
+  to; assert the line count (used to prove an untrusted gate never executes).
+- **Make order work against you:** put a decoy first so a broken parse/scorer
+  loses to it and the test fails loudly, instead of passing by insertion order.
+- **Consent/state stores:** override the location with an env var
+  (`FLYWHEEL_STATE_DIR`) pointed at a temp dir so tests never touch real state.
+
+## gotcha: a self-writing hook must exclude its own state from any tree signature
+<!-- fw: type=gotcha; date=2026-07-15; files=scripts/gate.sh,scripts/test-gate.sh; spec=p11-gate-hardening; branch=claude/every-agent-native-config-be56a6 -->
+
+gate.sh's cost cache hashed the whole working tree including untracked files —
+but the hook writes its own `.claude/flywheel/.gate-state` there, so the
+signature changed every run and the cache never hit (the test caught it). Any
+hook that both reads a tree signature and writes into that tree must exclude
+its own state dir (`git … -- . ':(exclude).claude/flywheel'`). Corollary from
+the same review: a cost cache over `git diff` (unstaged only) silently skips
+staged-only and untracked-content changes — use `git diff HEAD` plus untracked
+file content, or a red gate reads as green.
+
+## gotcha: a bounded-retry counter must be keyed to what it is counting
+<!-- fw: type=gotcha; date=2026-07-15; files=scripts/gate.sh,scripts/test-gate.sh; spec=p11-gate-hardening; branch=claude/every-agent-native-config-be56a6 -->
+
+gate.sh's MAX-consecutive-block counter was global: after one failing tree
+exhausted its budget and tripped the bypass, the count stayed at MAX, so the
+NEXT different regression bypassed immediately with zero blocks — the gate
+silently stopped enforcing. Key the counter to the failing signature (reset
+when the current failure differs from the one being counted) so each distinct
+failure gets its own budget. General rule: a "N attempts" limit that isn't
+scoped to the specific thing being attempted leaks across unrelated cases.
+
+## gotcha: a consent store must reject repo-influenced locations
+<!-- fw: type=gotcha; date=2026-07-15; files=scripts/gate.sh; spec=p11-gate-hardening; branch=claude/every-agent-native-config-be56a6 -->
+
+The "trust lives outside the repo so a PR can't self-authorize" guarantee is
+void if the store PATH is itself repo-influenced: a PR-added project config
+could point FLYWHEEL_STATE_DIR/XDG_STATE_HOME inside the repo and commit a
+matching trusted-gates. gate.sh now refuses a store path that resolves under
+PROJECT_DIR. When a security boundary depends on a location being external,
+validate the location, not just its contents.
+
 ## gotcha: local verify green is not CI green — awk/mawk portability bites
 <!-- fw: type=gotcha; date=2026-07-15; files=scripts/session-start.sh,scripts/test-session-start.sh; spec=p12-token-discipline; branch=claude/every-agent-native-config-be56a6 -->
 

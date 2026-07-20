@@ -104,7 +104,9 @@ Before reading a file, a `PreToolUse` hook greps the ledger's `files=` metadata 
 
 ## Deterministic completion gate (opt-in)
 
-Drop an executable `.claude/flywheel/gate.sh` in your project with your verification command (e.g. `npm test && npm run lint`). While it exists, flywheel's `Stop` hook runs it whenever Claude tries to finish and **blocks** finishing if it fails — so nothing is declared "done" with checks red. It is a no-op when absent, bounded to a few consecutive blocks (so you're never trapped), and fails open on internal errors.
+Drop an executable `.claude/flywheel/gate.sh` in your project with your verification command (e.g. `npm test && npm run lint`). While it exists **and you've trusted it**, flywheel's `Stop` hook runs it whenever Claude tries to finish and **blocks** finishing if it fails — so nothing is declared "done" with checks red.
+
+**Trust it first (v0.20.0)**: because the gate is a repo file that runs automatically, a PR could plant a malicious one — so an unrecognized gate is *not executed*. The first time it's seen, the hook prints the one command to trust it (a content hash stored **outside the repo**, so a PR can't self-authorize); editing the gate revokes trust until you re-consent. It is a no-op when absent, **skips re-running when the git-tracked working tree is byte-for-byte the last-passing state** (a `git`-derived signature over tracked + untracked content; non-git state like env vars or ignored files isn't observed, and it only ever skips a re-run — a changed tree always re-runs), bounded to a few consecutive blocks *per failing tree* with a *persisted* bypass (so a red gate never re-traps you), and fails open on internal errors.
 
 ## Repo layout
 
