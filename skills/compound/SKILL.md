@@ -10,7 +10,7 @@ This is what makes the loop *compound*: each cycle leaves knowledge that primes 
 
 Prepend one **typed entry per distinct learning** to the **top** (newest-first) of `.claude/flywheel/LEARNINGS.md` (create the file if missing, with a `# flywheel learnings` header). Keep it tight — the SessionStart hook injects only a relevance-scored, budgeted subset of this file, and `/flywheel:recall` greps the rest, but every entry still costs something the moment it's selected.
 
-Include only what a future cycle would genuinely benefit from — omit the obvious. One cycle typically yields 0–3 entries, not one per bullet point you can think of.
+Include only what a future cycle would genuinely benefit from — omit the obvious. One cycle typically yields 0–3 entries, not one per bullet point you can think of. Before closing, ask explicitly: *did we discover how to build a stub, seed data, or stand up a harness that the next cycle shouldn't have to rediscover?* — if so, that's a `fixture` entry.
 
 ## Entry format
 
@@ -25,7 +25,13 @@ choice and rejected alternative for a decision, the reusable snippet/command for
 pattern, the root cause and the regression test for a bugfix.>
 ```
 
-- `type` is one of `decision`, `gotcha`, `pattern`, `bugfix`.
+- `type` is one of `decision`, `gotcha`, `pattern`, `bugfix`, `fixture`.
+  A **`fixture`** entry captures *how to set up the world* — the recipe to build
+  a valid stub/fixture for a domain entity, seed the datastore, or stand up a
+  test harness, with the fields/relationships easy to get wrong (title names the
+  entity, e.g. `fixture: editorial stub for homeTag`). This is the costliest
+  thing a future cycle re-derives, so capture it whenever this cycle discovered
+  one. Record *how to build* test data, **never** real credentials or PII.
 - The metadata comment is a **single line**: `key=value` pairs separated by `; `.
   `type` and `date` are required; omit a key entirely when it doesn't apply (no
   `pr=` key at all, not `pr=;`).

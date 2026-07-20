@@ -9,6 +9,8 @@ allowed-tools: Read, Edit, Write, Grep, Glob, Bash
 
 **Progress, live:** materialize each plan task as a visible task in the host task system before starting, and flip its state the moment its local check goes green — never in bulk afterwards. Inside a `/flywheel:loop` cycle, also update the cycle's telemetry report (`.claude/flywheel/runs/<spec-slug>/<date>.html`, never secrets) at each task transition. Fail-open: reporting never blocks the work.
 
+**Prime from fixtures:** before building test data for an entity, `/flywheel:recall fixture <entity>` — if the ledger already has the recipe, use it instead of re-deriving it.
+
 Execute the plan's tasks one at a time. For **each** task, run this loop and do not exit it until the task's local check passes:
 
 1. **Red** — write (or identify) the smallest failing test / check that captures the task. Run it; confirm it fails for the right reason.
@@ -36,6 +38,7 @@ Long solo runs bloat context and bury signal. Hand work off to a **fresh-context
 - **Reading 4+ files** to understand an area → delegate the exploration to a subagent; it digs in its own context and returns just the summary you need, instead of loading everything into this one.
 - **About to touch 2+ non-trivial files** → get a fresh-context review before advancing (`/flywheel:review`, or the `reviewer-*` agents) — a reviewer that didn't write the code catches more.
 - **~20 tool calls or ~5 exploratory reads deep** in one task without converging → stop, re-plan, and re-scope; a bloated context is a signal the task needs splitting, not more grinding.
+- **Standing up test data / a fixture** — ~2+ non-trivial stub files or ~5 tool calls spent constructing a valid instance of a domain entity or a test harness → *offer* to record it as a `type=fixture` learning at compound time (name the entity + the recipe + the fields easy to get wrong). Advisory: it captures the costliest thing the next cycle re-derives; it never forces or blocks.
 
 These keep each turn high-signal, mirroring flywheel's existing use of fresh-context reviewers.
 

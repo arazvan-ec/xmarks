@@ -11,7 +11,7 @@ Turn this recurring operation into a **process contract**, not one-off code: **$
 
 A *process* is a domain operation a traditional app would implement as a backend function. flywheel implements it instead as a **prompt-contract that Claude executes** (`/flywheel:run`): fixed rules the run must follow, a machine-checkable output schema, a persistence target in the repo's own datastore, and an improvement log that matures with every run. This is the agent-native pillar — the agent *is* the runtime, not a bolt-on (see `docs/research/agent-native-processes.md`).
 
-Prime from the SessionStart-injected learnings (`/flywheel:recall <topic>` for specifics — never read the whole ledger) and any existing `.claude/flywheel/processes/*.md` for prior art and house conventions.
+Prime from the SessionStart-injected learnings (`/flywheel:recall <topic>` for specifics — never read the whole ledger) and any existing `.claude/flywheel/processes/*.md` for prior art and house conventions. For the entities this process reads or writes, check for `type=fixture` entries (`/flywheel:recall fixture <entity>`) — the recipe to build a valid instance belongs in the contract's Inputs/persistence, tied to DATA.md.
 
 ## 1. Establish the repo's data strategy (once per repo)
 
