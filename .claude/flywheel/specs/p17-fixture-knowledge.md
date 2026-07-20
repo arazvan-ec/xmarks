@@ -1,7 +1,7 @@
 # Spec: P17 — Setup/fixture knowledge as first-class compounded context
 
 **Slug:** `p17-fixture-knowledge` · **Created:** 2026-07-20 · **Backlog:** P17
-**Status:** signed 2026-07-20 (owner) — option 2 (includes the work capture trigger), full cycle, PR at the end
+**Status:** signed 2026-07-20 (owner) · shipped as v0.21.0 — option 2 + owner's evidence-gate amendment; metric PASS; review SHIP (0 Critical/High, 2 Low, key no-plumbing-change claim empirically confirmed)
 **Prime:** LEARNINGS.md (SessionStart-injected subset; the seeded `fixture`
 entry — the hook-test recipe — is the reference shape). Source: the owner's ask
 (P17 in the backlog) — "the costliest thing a session rediscovers is how to set
@@ -97,6 +97,13 @@ untouched.
   keys — so `recall`, the SessionStart scorer, and the read-priming hook all
   handle it with zero changes (assert this in verify: the existing tests still
   pass, and a fixture entry is greppable by `recall`'s type match).
+- **Evidence-gated capture (owner amendment, 2026-07-20)**: a `fixture` entry is
+  recorded only from a recipe *observed to work this cycle* (it built a valid
+  instance and the check using it went green) — never a plausible-but-unrun one.
+  The `work` trigger offers only after that evidence exists. A false or
+  unverified learning is worse than none — it silently misleads every future
+  cycle — so compounding must hold the same "observe it green" bar as `work`/
+  `verify`. (Generalized to all learning types as P18.)
 - **No secrets in fixtures**: a stub recipe records *how to build* test data,
   never real credentials or PII (call this out in the compound prompt).
 - **Weight**: don't bloat the always-loaded descriptions; the capture/prime

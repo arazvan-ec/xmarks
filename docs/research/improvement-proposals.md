@@ -36,7 +36,8 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P14 | Pillar integration + process lifecycle | 🔵 proposed | Discovery, run→spec escalation, contract sync, write-path probe + file fallback |
 | P15 | Dogfooding flywheel on flywheel | 🔵 proposed | Seed LEARNINGS.md; `processes/release.md`; fix help state list |
 | P16 | Live run progress: task ledger + telemetry report | ✅ shipped (v0.16.0) | Done — both pillars (run/process + loop/work); piloted by flow-audit v3 + the p16 cycle report |
-| P17 | Setup/fixture knowledge as first-class compounded context | 🔵 proposed | New `fixture` learning type; `compound` captures stub/setup recipes; `spec`/`work` prime from them |
+| P17 | Setup/fixture knowledge as first-class compounded context | ✅ shipped (v0.21.0) | Done — `fixture` type, compound captures, spec/work prime + advisory trigger, evidence-gated |
+| P18 | Evidence-gated compounding | 🔵 proposed | A learning must rest on observed evidence, not belief; `evidence=` metadata + trust surfaced at consumption |
 
 ## Priority overview
 
@@ -59,6 +60,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P15 | Dogfooding flywheel on flywheel | Medium | Low | Low | Partial |
 | P16 | Live run progress (task ledger + run telemetry report) | Medium | Low | Low | Yes |
 | P17 | Setup/fixture knowledge as first-class compounded context | High | Low | Low | Yes |
+| P18 | Evidence-gated compounding (protect the ledger from unverified conclusions) | High | Medium | Low | Yes |
 
 ---
 
@@ -571,6 +573,48 @@ per-repo state, no bump.)
   answers "how do I build one?", which `pattern` doesn't privilege.)
 - Should `/flywheel:work` *offer to write* a fixture entry when it spends N tool
   calls constructing test data, the way delegation triggers fire on thresholds?
+
+## P18 — Evidence-gated compounding (owner ask, 2026-07-20)
+
+**Why.** The owner named a structural inconsistency: flywheel refuses to call
+*code* done on reasoning alone — `verify` runs the real thing, `review` is
+adversarial, "unrun tests don't count" — but `compound` writes *knowledge* on
+belief. A learning enters `LEARNINGS.md` because the agent believes it, then is
+injected as trusted context into every future session. A false or unverified
+conclusion is worse than none: it misleads silently and compounds. The framework
+protects the code but not the memory. (Surfaced while adding P17's fixture-
+capture trigger, whose false-positive risk is the specific case; P17 already
+gates fixture capture on observed evidence — P18 generalizes the guard to all
+types.)
+
+**What.** Make compounded knowledge evidence-backed by construction:
+- **A capture bar in `compound`** (partly shipped in v0.21.0 as prose: "only
+  compound what this cycle proved"): a learning is recorded only when it rests
+  on observed evidence — a test that went green, a run/PR, output actually seen
+  — not on reasoning. Unverifiable insight is left out or explicitly marked
+  unverified, never written as a durable conclusion.
+- **An `evidence=` metadata key** on the `fw:` line — a short pointer to what
+  proved it (test name, PR, run id, the command + result). Optional at first;
+  entries without it read as lower-trust.
+- **Surface trust at consumption**: `session-start` injection and `recall` can
+  note when an entry is unverified (or de-prioritize it), so a reader weighs it
+  accordingly — the same way `verify` output carries its evidence.
+- **Optional hard gate later**: a compound lint that refuses an entry with no
+  evidence basis unless flagged `unverified`, mirroring the deterministic
+  completion gate for code.
+
+**Files:** `skills/compound/SKILL.md`, `scripts/session-start.sh` (+ its test)
+if trust is surfaced at injection, `skills/recall/SKILL.md`, README + help,
+`plugin.json` + `upgrades/`.
+
+**Open questions:**
+- Is `evidence=` a hard requirement or an advisory field with a trust signal?
+  (Leaning advisory first — a hard gate risks suppressing genuine
+  cross-cutting lessons that are real but hard to point a single test at.)
+- Does surfacing "unverified" at injection cost more tokens than it saves in
+  avoided wrong-context? Measure before committing to the injection change.
+- How to backfill: existing entries have no `evidence=` — treat absent as
+  "legacy, untagged," not "unverified."
 
 ## Suggested sequencing
 

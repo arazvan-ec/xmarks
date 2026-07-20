@@ -38,7 +38,7 @@ Long solo runs bloat context and bury signal. Hand work off to a **fresh-context
 - **Reading 4+ files** to understand an area → delegate the exploration to a subagent; it digs in its own context and returns just the summary you need, instead of loading everything into this one.
 - **About to touch 2+ non-trivial files** → get a fresh-context review before advancing (`/flywheel:review`, or the `reviewer-*` agents) — a reviewer that didn't write the code catches more.
 - **~20 tool calls or ~5 exploratory reads deep** in one task without converging → stop, re-plan, and re-scope; a bloated context is a signal the task needs splitting, not more grinding.
-- **Standing up test data / a fixture** — ~2+ non-trivial stub files or ~5 tool calls spent constructing a valid instance of a domain entity or a test harness → *offer* to record it as a `type=fixture` learning at compound time (name the entity + the recipe + the fields easy to get wrong). Advisory: it captures the costliest thing the next cycle re-derives; it never forces or blocks.
+- **Standing up test data / a fixture** — ~2+ non-trivial stub files or ~5 tool calls spent constructing a valid instance of a domain entity or a test harness → once the fixture is **proven** (it built a valid instance and the check using it went green), *offer* to record it as a `type=fixture` learning at compound time (name the entity + the recipe + the fields easy to get wrong). Only offer for a recipe you saw work — never an unverified one. Advisory: it captures the costliest thing the next cycle re-derives; it never forces or blocks.
 
 These keep each turn high-signal, mirroring flywheel's existing use of fresh-context reviewers.
 

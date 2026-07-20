@@ -1,5 +1,18 @@
 # flywheel learnings
 
+## decision: gate knowledge the way flywheel gates code — compound only what's proven
+<!-- fw: type=decision; date=2026-07-20; files=skills/compound/SKILL.md,skills/work/SKILL.md; spec=p17-fixture-knowledge; branch=claude/every-agent-native-config-be56a6 -->
+
+The owner caught a structural inconsistency while we added P17's fixture-capture
+trigger: flywheel refuses to call *code* done on reasoning (verify/review,
+"unrun tests don't count") but `compound` wrote *knowledge* on belief, and that
+knowledge is injected as trusted context into every later session — so a false
+learning is worse than none, misleading silently. Rule adopted: a learning is
+recorded only from **observed evidence this cycle** (a green check, a run/PR,
+output seen), never a hypothesis or a plausible-but-unrun recipe. Shipped as
+prose in v0.21.0 (fixture capture is evidence-gated); generalized to all types
+as P18 (`evidence=` metadata + trust surfaced at consumption).
+
 ## fixture: how to build a hook-test fixture (the recipe we kept rediscovering)
 <!-- fw: type=fixture; date=2026-07-15; files=scripts/test-gate.sh,scripts/test-session-start.sh,scripts/test-read-prime.sh; branch=claude/every-agent-native-config-be56a6 -->
 

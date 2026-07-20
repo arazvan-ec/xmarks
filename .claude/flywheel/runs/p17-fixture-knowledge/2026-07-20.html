@@ -107,19 +107,20 @@
         <span class="rev">métrica del spec exit 0 (verbatim): greps de fixture en 5 skills/docs + 5 test scripts + versión + upgrade note</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip doing">en curso</span>
-        <span class="rev">routing: diff de prompts+docs → revisor de lente combinada en contexto fresco; foco: no romper compound/recall ni el formato del ledger</span>
+        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip done">ship</span>
+        <span class="rev">1 revisor de lente combinada · 59.521 tokens · 120 s · veredicto SHIP, 0 Critical/High · confirmó EMPÍRICAMENTE que session-start/read-prime/recall NO filtran el tipo → fixture está vivo (la "feature inerte" de P9 no se repite) · 2 Low (nº1 aplicado: recetas sin líneas `## `) · enmienda del owner a mitad: captura con evidencia (worse-than-none)</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip pending">pendiente</span>
-        <span class="rev">entradas tipadas · backlog P17 → shipped · commit + push + PR + vigilar CI + merge</span>
+        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip done">completado</span>
+        <span class="rev">ledger: decision (gate del conocimiento como del código) + el fixture ya sembrado · backlog P17 → ✅ shipped v0.21.0 · P18 abierta (compounding con evidencia) · commit + push + PR</span>
       </div>
     </div>
   </section>
 
-  <div class="verdict num">
-    <span class="vword">— SIN VEREDICTO —</span>
-    <span class="vdetail">la métrica no se ha ejecutado · este bloque cambiará a PASS o FAIL, nunca a una opinión</span>
+  <div class="verdict num" style="border-color:var(--ok)">
+    <span class="vword" style="color:var(--ok)">PASS · SHIP</span>
+    <span class="vdetail">métrica exit 0 (verbatim) · 5 test scripts verdes · el tipo `fixture` fluye por toda la memoria sin tocar plumbing (confirmado empíricamente)</span>
+    <span class="vdetail">la crítica del owner elevó la release: la memoria ahora se gana igual que el código — solo se compone lo probado</span>
   </div>
 
   <p class="colophon num">
