@@ -77,6 +77,7 @@ LEARNINGS_OUT="$(BRANCH="${BRANCH}" SPEC="${SPEC}" CUTOFF="${CUTOFF}" CHANGED_FI
       files_arr[n] = ent_files
       branch_arr[n] = ent_branch
       spec_arr[n] = ent_spec
+      evidence_arr[n] = ent_evidence
       entry = ""
     }
     function files_match(i,    nf, farr, k) {
@@ -104,7 +105,7 @@ LEARNINGS_OUT="$(BRANCH="${BRANCH}" SPEC="${SPEC}" CUTOFF="${CUTOFF}" CHANGED_FI
       entry = $0 "\n"
       header = $0
       got_meta = 0
-      ent_date = ""; ent_files = ""; ent_branch = ""; ent_spec = ""
+      ent_date = ""; ent_files = ""; ent_branch = ""; ent_spec = ""; ent_evidence = ""
       # Header-date fallback for old free-prose entries (## YYYY-MM-DD — …).
       if (header ~ /^## [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /) ent_date = substr(header, 4, 10)
       next
@@ -126,6 +127,7 @@ LEARNINGS_OUT="$(BRANCH="${BRANCH}" SPEC="${SPEC}" CUTOFF="${CUTOFF}" CHANGED_FI
           else if (pair[1] == "files") ent_files = pair[2]
           else if (pair[1] == "branch") ent_branch = pair[2]
           else if (pair[1] == "spec") ent_spec = pair[2]
+          else if (pair[1] == "evidence") ent_evidence = pair[2]
         }
       }
       entry = entry $0 "\n"
@@ -156,6 +158,12 @@ LEARNINGS_OUT="$(BRANCH="${BRANCH}" SPEC="${SPEC}" CUTOFF="${CUTOFF}" CHANGED_FI
       # the injection cost. The full entry stays one /flywheel:recall away.
       for (i = 1; i <= shown; i++) {
         e = body[order[i]]
+        # Trust signal: flag entries the author explicitly marked unverified
+        # (written on reasoning, not evidence). Legacy entries (no evidence=)
+        # are NOT flagged — only an explicit `evidence=unverified`.
+        if (evidence_arr[order[i]] == "unverified") {
+          e = "[unverified — written on reasoning, not proven] " e
+        }
         if (length(e) > 560) {
           # mawk substr is byte-based, so cut at the last newline at/under the
           # limit: a newline is ASCII and never part of a UTF-8 multibyte
