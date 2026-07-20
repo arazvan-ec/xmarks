@@ -42,7 +42,7 @@ pattern, the root cause and the regression test for a bugfix.>
   `type` and `date` are required; omit a key entirely when it doesn't apply (no
   `pr=` key at all, not `pr=;`).
 - **`evidence=` — what proved this lesson.** A learning is durable context that
-  primes every future session (see "Only compound what this cycle proved" below),
+  primes every future session (see "Only compound what this cycle proved" above),
   so every new entry carries `evidence=` pointing at the proof: a test name, a
   `command → result`, a PR/run id, the green check. If a genuinely cross-cutting
   lesson can't point to one concrete proof, write `evidence=unverified`

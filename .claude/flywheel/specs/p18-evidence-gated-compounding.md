@@ -1,7 +1,7 @@
 # Spec: P18 — Evidence-gated compounding
 
 **Slug:** `p18-evidence-gated-compounding` · **Created:** 2026-07-20 · **Backlog:** P18
-**Status:** awaiting sign-off
+**Status:** signed 2026-07-20 (owner, advisory v1) · shipped as v0.22.0 — metric PASS; review SHIP (0 Critical/High; backward-compat + rank-invariance empirically confirmed; 1 Low doc nit fixed)
 **Prime:** LEARNINGS.md — the `decision` entry "gate knowledge the way flywheel
 gates code" (shipped v0.21.0 as prose) is this release's own prior art; P18
 makes it structural. Source: the owner's ask (P18 in the backlog).

@@ -107,19 +107,20 @@
         <span class="rev">métrica del spec exit 0 (verbatim): greps de evidence + 5 test scripts (session-start ahora con 8 grupos) + versión + upgrade note</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip doing">en curso</span>
-        <span class="rev">routing: diff de prompts+awk → revisor de lente combinada en contexto fresco; foco: backward-compat de legacy, trust ≠ rank, no romper el scorer</span>
+        <span class="rn">F-05</span><span class="rname">REVIEW</span><span class="chip done">ship</span>
+        <span class="rev">1 revisor de lente combinada · 68.022 tokens · 273 s · veredicto SHIP, 0 Critical/High · confirmó EMPÍRICAMENTE: backward-compat (legacy no se marca, solo el unverified explícito) y trust≠rank (mismo ledger, entrada toggled unverified↔verified → orden idéntico) · 1 Low de una palabra ("below"→"above") corregido</span>
       </div>
       <div class="lrow">
-        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip pending">pendiente</span>
-        <span class="rev">entradas tipadas (¡con evidence=!) · backlog P18 → shipped · commit + push + PR + merge</span>
+        <span class="rn">F-06</span><span class="rname">COMPOUND + SHIP</span><span class="chip done">completado</span>
+        <span class="rev">ledger: pattern (trust al consumir sin tocar rank) — y con `evidence=` en su propia metadata (dogfooding del principio recién shippeado) · backlog P18 → ✅ shipped v0.22.0 · commit + push + PR</span>
       </div>
     </div>
   </section>
 
-  <div class="verdict num">
-    <span class="vword">— SIN VEREDICTO —</span>
-    <span class="vdetail">la métrica no se ha ejecutado · este bloque cambiará a PASS o FAIL, nunca a una opinión</span>
+  <div class="verdict num" style="border-color:var(--ok)">
+    <span class="vword" style="color:var(--ok)">PASS · SHIP</span>
+    <span class="vdetail">métrica exit 0 (verbatim) · 5 test scripts verdes · backward-compat y trust≠rank verificados empíricamente por el revisor</span>
+    <span class="vdetail">el principio que abriste hace tres mensajes es ahora mecanismo: la memoria se gana como el código</span>
   </div>
 
   <p class="colophon num">

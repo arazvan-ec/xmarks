@@ -1,5 +1,17 @@
 # flywheel learnings
 
+## pattern: surface trust at consumption without touching relevance rank
+<!-- fw: type=pattern; date=2026-07-20; files=scripts/session-start.sh,skills/recall/SKILL.md; spec=p18-evidence-gated-compounding; pr=32; branch=claude/every-agent-native-config-be56a6; evidence=test-session-start.sh "only explicit unverified is flagged" green + reviewer rank-invariance check -->
+
+When adding a trust signal to compounded entries, keep it **orthogonal to
+ranking**: read `evidence=` and *prepend a marker* to explicitly-`unverified`
+entries, but never let it change the relevance score — a wrong-but-relevant
+entry must still surface (flagged), not be hidden. Distinguish *absent*
+`evidence=` (legacy, unflagged) from an *explicit* `evidence=unverified`
+(flagged) via `arr==...` on the empty-initialized field, reset per `## ` header.
+Verified two ways: a test asserting legacy/verified stay clean, and a reviewer
+toggling one entry unverified↔verified and confirming identical ordering.
+
 ## decision: gate knowledge the way flywheel gates code — compound only what's proven
 <!-- fw: type=decision; date=2026-07-20; files=skills/compound/SKILL.md,skills/work/SKILL.md; spec=p17-fixture-knowledge; branch=claude/every-agent-native-config-be56a6 -->
 
