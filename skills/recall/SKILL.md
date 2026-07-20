@@ -18,9 +18,11 @@ Grep `.claude/flywheel/LEARNINGS.md` for `$ARGUMENTS`, matching against entry he
 Print a numbered list, newest first, cheapest possible per line:
 
 ```
-1. gotcha: logout didn't clear the session cookie (2026-07-08, files: src/auth/login.ts,src/auth/session.ts)
-2. decision: use markdown ledger over SQLite (2026-07-01)
+1. gotcha: logout didn't clear the session cookie (2026-07-08, files: src/auth/login.ts,src/auth/session.ts, evidence: test_logout_clears_cookie)
+2. decision: use markdown ledger over SQLite (2026-07-01, evidence: unverified)
 ```
+
+Surface each entry's `evidence=` in the list so trust is visible at a glance: show the pointer when present, and flag `evidence=unverified` explicitly (that entry rests on reasoning, not proof — weigh it accordingly). An entry with no `evidence=` key at all is *legacy* (pre-convention), not unverified — don't label it either way.
 
 If nothing matches, say so plainly — don't guess or expand an unrelated entry to compensate.
 

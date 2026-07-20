@@ -118,6 +118,33 @@ OUT_EMPTY="$(CLAUDE_PROJECT_DIR="${EMPTY}" FLYWHEEL_NO_UPDATE_CHECK=1 bash "${SC
 echo "${OUT_EMPTY}" | grep -q 'No flywheel learnings yet' || fail "no-ledger message missing"
 pass "no ledger: friendly message, exits 0"
 
+echo "== evidence: only explicit unverified is flagged =="
+# A files-matching entry (so it always injects) in each of the three trust
+# states: explicit unverified, legacy (no evidence=), and verified.
+cat >> "${TARGET}/.claude/flywheel/LEARNINGS.md" <<EOF
+
+## gotcha: guessed cause of the flake
+<!-- fw: type=gotcha; date=${TODAY}; files=foo.txt; evidence=unverified -->
+
+Suspected the retry, never proved it.
+
+## bugfix: proven flake fix
+<!-- fw: type=bugfix; date=${TODAY}; files=foo.txt; evidence=test_retry_is_bounded green -->
+
+Bounded the retry; regression test green.
+EOF
+OUT_EV="$(run_hook 12)"
+echo "${OUT_EV}" | grep -q '\[unverified' || fail "explicit evidence=unverified entry was not flagged"
+# The legacy files-matching entry ("touches foo", no evidence=) must inject unflagged.
+echo "${OUT_EV}" | grep -q 'touches foo' || fail "legacy entry vanished"
+printf '%s\n' "${OUT_EV}" | grep -q 'proven flake fix' \
+  && ! printf '%s\n' "${OUT_EV}" | grep -A0 'proven flake fix' | grep -q '\[unverified' \
+  || fail "verified entry should not be flagged"
+# Exactly one flag: only the unverified entry, not the legacy or verified ones.
+[ "$(printf '%s\n' "${OUT_EV}" | grep -c '\[unverified')" -eq 1 ] \
+  || fail "flag count wrong — legacy or verified entry got marked unverified"
+pass "unverified flagged; legacy and verified inject clean"
+
 echo "== update-check stamp cache =="
 # A same-day stamp must be trusted (no curl needed) and a symlinked stamp must
 # be ignored — both offline-safe because a valid cache short-circuits curl.
