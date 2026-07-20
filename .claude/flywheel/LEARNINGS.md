@@ -1,5 +1,22 @@
 # flywheel learnings
 
+## fixture: how to build a hook-test fixture (the recipe we kept rediscovering)
+<!-- fw: type=fixture; date=2026-07-15; files=scripts/test-gate.sh,scripts/test-session-start.sh,scripts/test-read-prime.sh; branch=claude/every-agent-native-config-be56a6 -->
+
+Every hook test this session rebuilt the same scaffold from scratch — capture it
+so the next one starts from the recipe, not from zero:
+- **Isolated repo fixture:** `mktemp -d`; `git init -q "$T"`; `git -C "$T" -c
+  user.email=t@t -c user.name=t checkout -qb main`; commit a base file; make an
+  unstaged edit so `git diff` reports a change. `trap 'rm -rf "$WORK"' EXIT`.
+- **Feed data to a `python3 -` heredoc via environment, never stdin** — the
+  heredoc *is* stdin, so piped input is lost. Pass `FW_*` env vars + `os.environ`.
+- **Prove a thing did NOT run** with a sentinel file the code-under-test appends
+  to; assert the line count (used to prove an untrusted gate never executes).
+- **Make order work against you:** put a decoy first so a broken parse/scorer
+  loses to it and the test fails loudly, instead of passing by insertion order.
+- **Consent/state stores:** override the location with an env var
+  (`FLYWHEEL_STATE_DIR`) pointed at a temp dir so tests never touch real state.
+
 ## gotcha: a self-writing hook must exclude its own state from any tree signature
 <!-- fw: type=gotcha; date=2026-07-15; files=scripts/gate.sh,scripts/test-gate.sh; spec=p11-gate-hardening; branch=claude/every-agent-native-config-be56a6 -->
 

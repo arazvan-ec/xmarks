@@ -36,6 +36,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P14 | Pillar integration + process lifecycle | 🔵 proposed | Discovery, run→spec escalation, contract sync, write-path probe + file fallback |
 | P15 | Dogfooding flywheel on flywheel | 🔵 proposed | Seed LEARNINGS.md; `processes/release.md`; fix help state list |
 | P16 | Live run progress: task ledger + telemetry report | ✅ shipped (v0.16.0) | Done — both pillars (run/process + loop/work); piloted by flow-audit v3 + the p16 cycle report |
+| P17 | Setup/fixture knowledge as first-class compounded context | 🔵 proposed | New `fixture` learning type; `compound` captures stub/setup recipes; `spec`/`work` prime from them |
 
 ## Priority overview
 
@@ -57,6 +58,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P14 | Pillar integration + process lifecycle | High | Large | Medium | Yes |
 | P15 | Dogfooding flywheel on flywheel | Medium | Low | Low | Partial |
 | P16 | Live run progress (task ledger + run telemetry report) | Medium | Low | Low | Yes |
+| P17 | Setup/fixture knowledge as first-class compounded context | High | Low | Low | Yes |
 
 ---
 
@@ -524,6 +526,51 @@ observability is not operable. Piloted immediately as `flow-audit` v3 (fixed
 `skills/help/SKILL.md`, `plugin.json` + `upgrades/`.
 
 ---
+
+## P17 — Setup/fixture knowledge as first-class compounded context (owner ask, 2026-07-15)
+
+**Why.** The owner's insight, in their words: *"hemos perdido mucho tiempo
+descubriendo cómo crear el dato stub para las pruebas — una editorial para
+detalles, una editorial para homeTag, otra para amazononsite … quiero que
+nuestras intervenciones siempre creen este conocimiento del repo y usarlo como
+contexto para enriquecer las siguientes."* The costliest thing a session
+rediscovers is not decisions or bugs — it is **how to set up the world**: how to
+build a valid stub/fixture for a domain entity, how to seed the datastore, the
+exact incantation to bring a test harness to life. flywheel's memory pillar
+(`compound` → `LEARNINGS.md` → SessionStart injection → read-priming) captures
+`decision`/`gotcha`/`pattern`/`bugfix`, but "setup recipes" fall through the
+cracks — they read as one-off scaffolding, so nobody compounds them, so the next
+session pays the discovery cost again. This session proved the loss on flywheel
+itself (every hook test rebuilt the same git-fixture scaffold); the owner's
+example (editorial fixtures for `detalles` / `homeTag` / `amazononsite`) is the
+same failure in a product repo.
+
+**What.**
+- A new learning **type `fixture`** (alongside decision/gotcha/pattern/bugfix):
+  a named entity/harness + the concrete recipe to construct a valid instance of
+  it, with the fields/relationships that are easy to get wrong. Seeded already:
+  the hook-test-fixture recipe in `LEARNINGS.md`.
+- `skills/compound/SKILL.md` — explicitly prompt for fixture/setup knowledge at
+  cycle close ("did we discover how to build a stub, seed data, or stand up a
+  harness that a future cycle shouldn't have to rediscover?").
+- `skills/spec/SKILL.md` + `skills/work/SKILL.md` — the prime step surfaces any
+  `type=fixture` entries whose entity intersects the task, so setup knowledge is
+  in context *before* work starts (not after the rediscovery).
+- `skills/process/SKILL.md` — pillar-2 contracts can reference fixture entries
+  for the entities they read/write (ties into DATA.md).
+- Scoring: `scripts/session-start.sh` already ranks by files/branch/recency;
+  fixture entries carry `files=`/entity tags so the existing relevance scorer
+  surfaces them — no scorer change needed, just the new type flowing through.
+
+**Files:** `skills/compound|spec|work|process/SKILL.md`, README + help (document
+the new type), `plugin.json` + `upgrades/`. (`LEARNINGS.md` fixture entries are
+per-repo state, no bump.)
+
+**Open questions:**
+- Is `fixture` a distinct type, or a tag on `pattern`? (Leaning distinct — it
+  answers "how do I build one?", which `pattern` doesn't privilege.)
+- Should `/flywheel:work` *offer to write* a fixture entry when it spends N tool
+  calls constructing test data, the way delegation triggers fire on thresholds?
 
 ## Suggested sequencing
 
