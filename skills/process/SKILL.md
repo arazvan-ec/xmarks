@@ -85,7 +85,15 @@ final report. Fail-open: reporting never blocks the run. Never include secrets.
 
 Fill Rules, Output schema, and Persistence concretely — a vague contract yields a vague run. Leave **Improvement log** empty; `/flywheel:run` matures it.
 
-## 4. Maturing an existing process
+## 4. Repo extensions (the repo defines how agents intervene)
+
+A repo can extend *how* agents intervene in it beyond the fixed contract shape — runtime profiles for multiple competing AIs, branch/PR policy, review gates, capability fallbacks. These conventions are **repo-owned**: they live in `.claude/flywheel/extensions/<name>.md`, versioned and matured with the repo — never hardcoded in this plugin.
+
+- An extension doc states: `name`, `applies-to` (all processes or named slugs), the inputs/conventions it adds, its guardrails, and its own append-only Improvement log.
+- Before writing or revising a contract, read the repo's `extensions/`; declare the ones the contract honors in its frontmatter (`extensions: [profiles, …]`). The contract stays the source of truth for its Rules; the extension is the source of truth for the shared convention — don't duplicate its text into every contract.
+- When the owner asks for a **cross-cutting intervention pattern** (e.g. "the same process run by different AI runtimes with comparable outputs"), the deliverable is an extension doc, not per-contract prose — write it, wire it via frontmatter, and let runs mature it in place.
+
+## 5. Maturing an existing process
 
 If `$ARGUMENTS` names a process that already exists, do not recreate it — treat this as a **deliberate revision**: read the contract and its Improvement log, apply the requested change to Rules/Output schema/Persistence, bump `version`, and record the change (what and why) in the Improvement log. Never silently rewrite the fixed rules.
 

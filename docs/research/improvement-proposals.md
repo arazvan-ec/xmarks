@@ -832,3 +832,20 @@ Append-only. Newest at the bottom.
   upgrade note (session-loaded surface shrinks; review's body grows by a
   routing table that pays for itself). Two gotchas compounded. Metric
   re-verified **verbatim** PASS.
+- **2026-07-27** — **v0.22.0**: generalized the **multi-runtime profiles**
+  pattern from the `keep` repo's `keep-experiences` contract (v2) into the
+  plugin. `/flywheel:process` gains an opt-in profiles section (per-profile
+  namespacing, composite `(profile, key)` idempotency, isolation guardrail,
+  runtime-dependent capability clauses, root `AGENTS.md` runbook for external
+  agents like Manus); `/flywheel:run` accepts `profile=<id>` and enforces
+  isolation. Rationale: pillar 2 says the agent is the runtime — profiles make
+  the runtime *pluggable and comparable*, and owner verdicts between competing
+  portfolios become Improvement-log evidence every profile inherits.
+- **2026-07-27** — **v0.23.0**: course-correction on v0.22.0 (owner feedback,
+  same day): the profiles pattern must live **in the repo, not the plugin**,
+  and repos must be able to **extend how agents intervene** in them. New
+  generic mechanism: `.claude/flywheel/extensions/<name>.md` (repo-owned,
+  self-maturing intervention conventions) + `extensions:` frontmatter on
+  contracts + /flywheel:run loading/enforcing them. The multi-runtime
+  profiles text moved out of the skills into `keep`'s
+  `extensions/profiles.md`. Plugin ships mechanism; repo owns pattern.
