@@ -85,17 +85,13 @@ final report. Fail-open: reporting never blocks the run. Never include secrets.
 
 Fill Rules, Output schema, and Persistence concretely — a vague contract yields a vague run. Leave **Improvement log** empty; `/flywheel:run` matures it.
 
-## 4. Multi-runtime profiles (opt-in)
+## 4. Repo extensions (the repo defines how agents intervene)
 
-When the owner wants the same operation executed by **different AI runtimes** (Claude, Manus, …) with comparable, competing outputs — or the contract will be run by agents that don't have this plugin — add profiles to the contract:
+A repo can extend *how* agents intervene in it beyond the fixed contract shape — runtime profiles for multiple competing AIs, branch/PR policy, review gates, capability fallbacks. These conventions are **repo-owned**: they live in `.claude/flywheel/extensions/<name>.md`, versioned and matured with the repo — never hardcoded in this plugin.
 
-- **`profile` input**: kebab-case runtime id, default `claude`. It namespaces every persisted output (path prefix `…/<profile>/…` or a `profile` column/field), and the idempotency key becomes composite: `(profile, key)`.
-- **Isolation guardrail**: a run writes only inside its own profile's namespace; other profiles' outputs are read-only context (useful to avoid duplicating a sibling's work — differences of angle go in the output's rationale). Shared surfaces (an index/hub/registry) must preserve every profile's entries on regeneration.
-- **Runtime-dependent clauses**: anything not every runtime can do (publishing stable artifact URLs, host-task ledgers) is phrased as capability-dependent with a stated fallback (e.g. a URL field goes `null`, telemetry is committed HTML only) so a run without the capability is still contract-valid.
-- **`AGENTS.md` runbook**: create or refresh one at the repo root — ground rules for external agents (the contract is law; own branch `<profile>/<task>` + PR, never push to the default branch; sensitive-data exclusion; never touch another profile's namespace or protected files; append durable findings to the Improvement log) plus a copy-paste task prompt naming the contract path, the profile, and the branch.
-- **Comparison feeds maturation**: the owner's verdict on which profile's output wins is Improvement-log evidence; every profile's next run inherits it.
-
-Skip all of this for single-runtime processes — profiles are structure you only pay for when competition or portability is the point.
+- An extension doc states: `name`, `applies-to` (all processes or named slugs), the inputs/conventions it adds, its guardrails, and its own append-only Improvement log.
+- Before writing or revising a contract, read the repo's `extensions/`; declare the ones the contract honors in its frontmatter (`extensions: [profiles, …]`). The contract stays the source of truth for its Rules; the extension is the source of truth for the shared convention — don't duplicate its text into every contract.
+- When the owner asks for a **cross-cutting intervention pattern** (e.g. "the same process run by different AI runtimes with comparable outputs"), the deliverable is an extension doc, not per-contract prose — write it, wire it via frontmatter, and let runs mature it in place.
 
 ## 5. Maturing an existing process
 
