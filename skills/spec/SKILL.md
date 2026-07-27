@@ -9,7 +9,7 @@ allowed-tools: Read, Grep, Glob, Write
 
 Turn this request into a **contract**, not a suggestion: **$ARGUMENTS**
 
-Prime from the SessionStart-injected learnings (pull specifics with `/flywheel:recall <topic>` — never read the whole ledger) and any related spec in `.claude/flywheel/specs/` for prior art. If the feature touches an entity the ledger has a `type=fixture` entry for (`/flywheel:recall fixture <entity>`), fold that setup recipe into the spec so planning starts with it rather than rediscovering it.
+Prime from the repo's product definition when one exists (`PRODUCT.md`, or the north-star in `CLAUDE.md`/`AGENTS.md`) — the spec's Reasons must anchor in what the repo is building, and a feature the product definition doesn't cover starts by revising it in the same spec. Then prime from the SessionStart-injected learnings (pull specifics with `/flywheel:recall <topic>` — never read the whole ledger) and any related spec in `.claude/flywheel/specs/` for prior art. If the feature touches an entity the ledger has a `type=fixture` entry for (`/flywheel:recall fixture <entity>`), fold that setup recipe into the spec so planning starts with it rather than rediscovering it.
 
 Produce a REASONS canvas and save it to `.claude/flywheel/specs/<slug>.md` (slug = short kebab-case name of the feature):
 

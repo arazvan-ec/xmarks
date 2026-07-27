@@ -849,3 +849,11 @@ Append-only. Newest at the bottom.
   contracts + /flywheel:run loading/enforcing them. The multi-runtime
   profiles text moved out of the skills into `keep`'s
   `extensions/profiles.md`. Plugin ships mechanism; repo owns pattern.
+- **2026-07-27** — **v0.24.0**: repos carry their **product definition**
+  (`PRODUCT.md` / north-star in `CLAUDE.md`/`AGENTS.md`) and the plugin now
+  anchors on it: `/flywheel:spec` grounds Reasons in what the repo is
+  building (revising the definition in the same spec when a feature falls
+  outside it); `/flywheel:process` names the business capability a contract
+  implements. Completes the division from v0.23.0: mechanism in the plugin,
+  business in the repo. First user: `keep`'s PRODUCT.md (personal tracking &
+  development app evolved from the owner's content).
