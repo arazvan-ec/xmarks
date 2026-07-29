@@ -67,6 +67,9 @@ jobs:
       - name: Test read-prime.sh hook
         run: bash scripts/test-read-prime.sh
 
+      - name: Test write-allow.sh hook
+        run: bash scripts/test-write-allow.sh
+
       - name: Test session-start.sh hook
         run: bash scripts/test-session-start.sh
 

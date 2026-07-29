@@ -38,6 +38,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P16 | Live run progress: task ledger + telemetry report | ✅ shipped (v0.16.0) | Done — both pillars (run/process + loop/work); piloted by flow-audit v3 + the p16 cycle report |
 | P17 | Setup/fixture knowledge as first-class compounded context | ✅ shipped (v0.21.0) | Done — `fixture` type, compound captures, spec/work prime + advisory trigger, evidence-gated |
 | P18 | Evidence-gated compounding | ✅ shipped (v0.25.0) | Done — `evidence=` metadata, compound capture rule, `[unverified]` flag at injection + in recall; advisory |
+| P19 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.26.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**` |
 
 ## Priority overview
 
@@ -61,6 +62,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P16 | Live run progress (task ledger + run telemetry report) | Medium | Low | Low | Yes |
 | P17 | Setup/fixture knowledge as first-class compounded context | High | Low | Low | Yes |
 | P18 | Evidence-gated compounding (protect the ledger from unverified conclusions) | High | Medium | Low | Yes |
+| P19 | State-write pre-approval hook (permission-prompt fatigue on loop state) | High | Low | Low | Yes |
 
 ---
 
@@ -616,6 +618,35 @@ if trust is surfaced at injection, `skills/recall/SKILL.md`, README + help,
 - How to backfill: existing entries have no `evidence=` — treat absent as
   "legacy, untagged," not "unverified."
 
+## P19 — State-write pre-approval hook (owner ask, 2026-07-29)
+
+**Why.** The owner named a UX inconsistency in the loop: flywheel's only two
+deliberate approval gates are *conversational* — the spec sign-off and the plan
+approval — and once "apruebo" lands, the loop is designed to run to completion
+without further questions. But the harness's tool-permission layer knows
+nothing about those gates: every save of a spec, plan, ledger entry, process
+contract, `DATA.md` or run report raised a fresh "allow write?" prompt, asking
+again for what the plan approval already implied. Two permission systems, one
+of them blind to the other.
+
+**What.** Teach the harness that flywheel state is pre-approved — and nothing
+else is:
+- **`scripts/write-allow.sh`**, a `PreToolUse` hook on
+  `Write|Edit|MultiEdit|NotebookEdit` that emits `permissionDecision: allow`
+  when the target resolves inside `<project>/.claude/flywheel/`.
+- **Allow-only, fail-open**: never denies, never blocks; out-of-scope paths,
+  malformed input or missing `python3` fall through silently to the ordinary
+  permission prompt.
+- **Strict scope**: `realpath` containment check — `..` traversal, prefix
+  siblings and symlink escapes planted inside the state dir get no grant. A
+  bash pre-filter skips the python spawn for the out-of-scope majority.
+- **Both install modes**: plugin (`hooks/hooks.json`) and vendored
+  (`install-vendored.sh` merge + uninstall).
+
+**Files:** `scripts/write-allow.sh` (+ `scripts/test-write-allow.sh`),
+`hooks/hooks.json`, `scripts/install-vendored.sh` (+ its test), CI workflow,
+README, `plugin.json` + `upgrades/v0.26.0.md`.
+
 ## Suggested sequencing
 
 1. **P1** (clean, self-contained win; validates the release flow end-to-end).
@@ -857,3 +888,14 @@ Append-only. Newest at the bottom.
   implements. Completes the division from v0.23.0: mechanism in the plugin,
   business in the repo. First user: `keep`'s PRODUCT.md (personal tracking &
   development app evolved from the owner's content).
+- **2026-07-29** — **Shipped P19 (state-write pre-approval hook) as v0.26.0**
+  (owner ask, same day): the plan approval is the loop's real write
+  authorization, so the harness must stop re-asking for flywheel's own state.
+  New allow-only `PreToolUse` hook (`scripts/write-allow.sh`) on
+  `Write|Edit|MultiEdit|NotebookEdit` grants writes that `realpath`-resolve
+  inside `.claude/flywheel/` and touches nothing else — repo code and
+  `.claude/settings.json` keep the normal permission flow. Wired in both
+  install modes (plugin hooks.json + vendored settings merge/uninstall),
+  tested (`scripts/test-write-allow.sh`, incl. traversal/symlink/prefix-sibling
+  escapes and fail-open), documented in README. docs-consistency +
+  install-vendored + write-allow tests green.

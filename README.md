@@ -104,6 +104,10 @@ Full vision + the worked car example: [`docs/research/agent-native-processes.md`
 
 Before reading a file, a `PreToolUse` hook greps the ledger's `files=` metadata for that path and, if any typed entry names it, injects a short "prior learnings touch this file" note into context via the hook's `additionalContext` field (v0.18.0 — plain stdout is transcript-only and never reaches the model) — cheap context ahead of an expensive read. A bash pre-filter skips the python parser entirely for the no-match majority. It never blocks the read (unlike claude-mem's File Read Gate) and fails silently (no ledger, no match, or no `python3`) so it can never slow down or break a read.
 
+## State-write pre-approval hook
+
+flywheel has exactly two deliberate approval gates, and both are *conversational*: the spec sign-off and the plan approval. The harness's tool-permission layer knows nothing about them — so without help it re-asks "allow write?" for every spec, plan, ledger entry, process contract and run report the loop persists, even though saving that state is precisely what the approval meant. A `PreToolUse` hook on `Write|Edit|MultiEdit|NotebookEdit` (v0.26.0) closes the gap: a write whose target resolves inside `<project>/.claude/flywheel/` is auto-allowed (`permissionDecision: allow`); **everything else keeps the normal permission flow** — repo code, `.claude/settings.json`, anything outside the state dir. The hook is allow-only and fail-open by contract: it never denies, never asks, and never blocks a write; paths are `realpath`-resolved before the containment check, so `..` traversal, prefix siblings (`.claude/flywheel-evil/`) and symlinks planted inside the state dir that point elsewhere get no grant, and a missing `python3` or malformed input just falls back to the ordinary prompt.
+
 ## Deterministic completion gate (opt-in)
 
 Drop an executable `.claude/flywheel/gate.sh` in your project with your verification command (e.g. `npm test && npm run lint`). While it exists **and you've trusted it**, flywheel's `Stop` hook runs it whenever Claude tries to finish and **blocks** finishing if it fails — so nothing is declared "done" with checks red.
