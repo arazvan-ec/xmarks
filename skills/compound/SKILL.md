@@ -20,7 +20,7 @@ Get today's date with `date +%F` and the current branch with `git branch --show-
 
 ```
 ## <type>: <one-line title>
-<!-- fw: type=<type>; date=<YYYY-MM-DD>; files=<comma-separated touched files>; spec=<spec-slug>; pr=<PR number>; branch=<branch> -->
+<!-- fw: type=<type>; date=<YYYY-MM-DD>; files=<comma-separated touched files>; spec=<spec-slug>; pr=<PR number>; branch=<branch>; evidence=<what proved it> -->
 
 <what/why/fix, as 2-5 sentences of prose: the trap and the guard for a gotcha, the
 choice and rejected alternative for a decision, the reusable snippet/command for a
@@ -41,6 +41,16 @@ pattern, the root cause and the regression test for a bugfix.>
 - The metadata comment is a **single line**: `key=value` pairs separated by `; `.
   `type` and `date` are required; omit a key entirely when it doesn't apply (no
   `pr=` key at all, not `pr=;`).
+- **`evidence=` — what proved this lesson.** A learning is durable context that
+  primes every future session (see "Only compound what this cycle proved" above),
+  so every new entry carries `evidence=` pointing at the proof: a test name, a
+  `command → result`, a PR/run id, the green check. If a genuinely cross-cutting
+  lesson can't point to one concrete proof, write `evidence=unverified`
+  **explicitly** — never omit it to hide that the entry rests on reasoning.
+  Absent `evidence=` means *legacy* (pre-this-convention), which is different
+  from an explicit `unverified`; the SessionStart injection and `/flywheel:recall`
+  flag `unverified` entries so a reader weighs them accordingly. Keep it a
+  pointer — never a credential or a raw output dump.
 - `files` should list the paths most relevant to *finding this entry again* — this
   is what `scripts/session-start.sh` matches against the current branch's changed
   files to decide relevance, so keep it to the handful that actually matter.
