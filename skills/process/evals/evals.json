@@ -1,0 +1,48 @@
+{
+  "skill_name": "process",
+  "notes": "Executor harness + grading: see README.md 'Skill evals'. Each eval copies fixtures/target-repo to a temp dir, git-inits and commits it as the seed, then a fresh subagent executes skills/process/SKILL.md as /flywheel:process in that dir (eval mode: the sign-off GATE is pre-approved). Grade with: bash skills/process/evals/check.sh <id> <workdir>.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "new-contract-shape",
+      "prompt": "/flywheel:process value a used car: given its plate and an asking price in EUR, produce a cheap/fair/overpriced verdict and persist it",
+      "setup": "cp -r skills/process/evals/fixtures/target-repo \"$W\" && git -C \"$W\" init -q && git -C \"$W\" -c user.email=e@e -c user.name=e add -A && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed",
+      "expected_output": "A new contract in .claude/flywheel/processes/ with the full fixed shape: frontmatter, numbered fixed Rules, Output schema, Persistence with an idempotency key, Judgment latitude, Guardrails, Progress reporting naming .claude/flywheel/runs/, and an empty Improvement log.",
+      "expectations": [
+        "A new contract file (not plate-audit.md) exists under .claude/flywheel/processes/",
+        "Frontmatter declares name, kind: process and version: 1",
+        "A Rules section fixes a numbered deterministic procedure (>= 3 numbered steps)",
+        "An Output schema section exists",
+        "A Persistence section exists and names an idempotency key",
+        "Judgment latitude and Guardrails sections exist",
+        "A Progress reporting section names the .claude/flywheel/runs/ telemetry report",
+        "An Improvement log section exists and is empty at creation (maturation hook)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "data-strategy-bootstrap",
+      "prompt": "/flywheel:process count how many audited plates share the same letter triplet, persisting one row per triplet",
+      "setup": "cp -r skills/process/evals/fixtures/target-repo \"$W\" && rm \"$W\"/.claude/flywheel/DATA.md && git -C \"$W\" init -q && git -C \"$W\" -c user.email=e@e -c user.name=e add -A && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed",
+      "expected_output": "DATA.md is missing, so the skill creates the repo's data strategy first (Store/Access/Schema/Conventions), then writes the contract against it.",
+      "expectations": [
+        "DATA.md is recreated at .claude/flywheel/DATA.md with Store, Access, Schema and Conventions sections",
+        "A new contract file exists under .claude/flywheel/processes/",
+        "The contract has the fixed shape: numbered Rules, Output schema, Persistence, Progress reporting, empty Improvement log"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "mature-existing-contract",
+      "prompt": "/flywheel:process plate-audit: audits must also record a round_number boolean, true when digit_sum is a multiple of 10",
+      "setup": "cp -r skills/process/evals/fixtures/target-repo \"$W\" && git -C \"$W\" init -q && git -C \"$W\" -c user.email=e@e -c user.name=e add -A && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed",
+      "expected_output": "A deliberate revision of the existing contract: version bumped, the change recorded in the Improvement log, the original fixed rules preserved rather than silently rewritten.",
+      "expectations": [
+        "plate-audit.md frontmatter is bumped to version: 2",
+        "The Improvement log gains a dated entry recording what changed and why",
+        "The original Rule 1 (Normalize) text is still present — rules were revised, not silently rewritten",
+        "round_number appears in the Output schema"
+      ]
+    }
+  ]
+}

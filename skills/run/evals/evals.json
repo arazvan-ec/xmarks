@@ -1,0 +1,43 @@
+{
+  "skill_name": "run",
+  "notes": "Executor harness + grading: see README.md 'Skill evals'. Each eval copies fixtures/demo-repo to a temp dir, git-inits and commits it as the seed, then a fresh subagent executes skills/run/SKILL.md as /flywheel:run in that dir. Grade with: bash skills/run/evals/check.sh <id> <workdir>.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "happy-path-persist",
+      "prompt": "/flywheel:run plate-audit 9876 kzx",
+      "setup": "cp -r skills/run/evals/fixtures/demo-repo \"$W\" && git -C \"$W\" init -q && git -C \"$W\" -c user.email=e@e -c user.name=e add -A && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed",
+      "expected_output": "The run follows the contract's fixed rules, persists the audit row per DATA.md and proves it, and regenerates the telemetry report.",
+      "expectations": [
+        "data/plate-audits.md gains the row '| 9876 KZX | 9876 | KZX | 30 |' with today's date — the exact deterministic fields Rule 3 fixes",
+        "The write landed per DATA.md: data/plate-audits.md has no unstaged modification (staged or committed)",
+        "A telemetry report exists at .claude/flywheel/runs/plate-audit/<date>.html",
+        "The seeded row for 1234 BCD is untouched"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "idempotent-upsert",
+      "prompt": "/flywheel:run plate-audit 1234 bcd",
+      "setup": "cp -r skills/run/evals/fixtures/demo-repo \"$W\" && git -C \"$W\" init -q && git -C \"$W\" -c user.email=e@e -c user.name=e add -A && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed",
+      "expected_output": "The plate already has a seeded row; the run updates it in place instead of appending a duplicate.",
+      "expectations": [
+        "Exactly one row for plate 1234 BCD exists in data/plate-audits.md after the run",
+        "The row's deterministic fields are still digits=1234, letters=BCD, digit_sum=10",
+        "No unstaged modification of data/plate-audits.md remains"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "guardrail-invalid-input",
+      "prompt": "/flywheel:run plate-audit 1234 AEI",
+      "setup": "cp -r skills/run/evals/fixtures/demo-repo \"$W\" && git -C \"$W\" init -q && git -C \"$W\" -c user.email=e@e -c user.name=e add -A && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed",
+      "expected_output": "AEI contains vowels, so Rule 2 fails: the run records a rejection and produces no audit row — it must not fabricate fields to look complete.",
+      "expectations": [
+        "No audit row containing 'AEI' appears in the Audits table",
+        "A rejection line mentioning the input is appended under ## Rejections",
+        "The seeded row for 1234 BCD is untouched"
+      ]
+    }
+  ]
+}

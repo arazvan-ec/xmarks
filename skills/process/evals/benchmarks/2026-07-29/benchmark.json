@@ -1,0 +1,69 @@
+{
+  "metadata": {
+    "skill_name": "process",
+    "skill_path": "skills/process",
+    "executor_model": "session default (fresh-context general-purpose subagents)",
+    "timestamp": "2026-07-29",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 1,
+    "configurations": ["with_skill"],
+    "baseline_note": "without_skill baseline intentionally skipped: this iteration is the release-gate evidence (regression detection), not a skill-value study. See README 'Skill evals'."
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "new-contract-shape",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 15, "failed": 0, "total": 15, "time_seconds": 8899.1, "tokens": 40910, "tool_calls": 11, "errors": 0},
+      "expectations": [
+        {"text": "new contract file created under .claude/flywheel/processes/", "passed": true, "evidence": "car-valuation.md; check.sh 1 exit 0"},
+        {"text": "frontmatter name / kind: process / version: 1", "passed": true, "evidence": "3 greps PASS"},
+        {"text": "fixed Rules: >= 3 numbered steps", "passed": true, "evidence": "7 numbered steps"},
+        {"text": "Output schema / Persistence + idempotency key", "passed": true, "evidence": "greps PASS; upsert on normalized plate"},
+        {"text": "Judgment latitude / Guardrails sections", "passed": true, "evidence": "greps PASS"},
+        {"text": "Progress reporting names .claude/flywheel/runs/", "passed": true, "evidence": "grep PASS"},
+        {"text": "Improvement log present and empty at creation", "passed": true, "evidence": "awk PASS"}
+      ],
+      "notes": ["Executor also extended the existing DATA.md Schema with the new table instead of duplicating a strategy — correct §1 behavior.", "Eval-mode inference: valuation constants fixed deterministically and flagged for maturation."]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "data-strategy-bootstrap",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 20, "failed": 0, "total": 20, "time_seconds": 8916.0, "tokens": 38838, "tool_calls": 9, "errors": 0},
+      "expectations": [
+        {"text": "DATA.md recreated with Store/Access/Schema/Conventions", "passed": true, "evidence": "check.sh 2: 5 PASS"},
+        {"text": "new contract (triplet-count.md) with the full fixed shape", "passed": true, "evidence": "15 PASS, exit 0"}
+      ],
+      "notes": ["Skill correctly wrote DATA.md before the contract ('a process that cannot say where its results go is not done')."]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "mature-existing-contract",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 8888.2, "tokens": 39890, "tool_calls": 14, "errors": 0},
+      "expectations": [
+        {"text": "plate-audit.md bumped to version: 2", "passed": true, "evidence": "grep PASS"},
+        {"text": "Improvement log gained a dated entry", "passed": true, "evidence": "dated bullet appended (see notes on grader fix)"},
+        {"text": "original Rule 1 (Normalize) preserved", "passed": true, "evidence": "grep PASS"},
+        {"text": "round_number added to Output schema", "passed": true, "evidence": "awk PASS"}
+      ],
+      "notes": ["Grader fix during this iteration: the dated-entry check originally required a '### <date>' heading — that format is fixed only by run's §4 template; process §5 fixes none, and the executor used a dated bullet. check.sh now accepts any dated entry. Possible future tightening: pin the Improvement-log entry format in process SKILL.md §5.", "Executor also migrated DATA.md schema + backfilled the seeded row additively — beyond the assertions, consistent with the no-destructive-ops convention."]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 8901.1, "stddev": 11.5, "min": 8888.2, "max": 8916.0},
+      "tokens": {"mean": 39879, "stddev": 847, "min": 38838, "max": 40910}
+    }
+  },
+  "notes": [
+    "Release-gate iteration: 3/3 evals green, 39/39 assertions after one grader (not skill) fix.",
+    "time_seconds comes from the task notification's duration_ms and includes harness queueing of 6 parallel subagents — use tokens, not time, to compare iterations.",
+    "Total cost this suite: ~119.6k subagent tokens (with_skill only, 1 run per eval)."
+  ]
+}

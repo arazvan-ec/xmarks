@@ -123,15 +123,18 @@ Drop an executable `.claude/flywheel/gate.sh` in your project with your verifica
 
 ## Skill evals (manual release gate — not in CI)
 
-Skills are prompts, so structural checks can't catch a behavioral regression — `verify` starting to rationalize a FAIL into a PASS, or `work` skipping the red step. The skills where that hurts most carry behavioral evals in the skill-creator format: `skills/verify/evals/` and `skills/work/evals/` (pillar 1), each with `evals.json` (realistic prompts + objective assertions) and planted-bug mini-repo fixtures under `evals/fixtures/` whose ground truth is known.
+Skills are prompts, so structural checks can't catch a behavioral regression — `verify` starting to rationalize a FAIL into a PASS, `work` skipping the red step, or `process` emitting a contract with no fixed rules. The skills where that hurts most carry behavioral evals in the skill-creator format, each with `evals.json` (realistic prompts + objective assertions), fixtures whose ground truth is known, and `benchmarks/<date>/` holding the committed evidence of the last graded iteration:
 
-**When to run**: manually, before bumping the version on any release whose diff touches one of those skills. They are deliberately **not in CI** — one iteration (all evals × with-skill vs baseline) costs roughly 300–800k tokens.
+- **Pillar 1** — `skills/verify/evals/` and `skills/work/evals/`: planted-bug mini-repos under `evals/fixtures/`, graded mechanically (last-line `VERDICT:` regex; `.check-log` first-FAIL-with-pristine-`IMPL_SHA`-then-PASS against `baseline-sha`).
+- **Pillar 2** — `skills/process/evals/` and `skills/run/evals/`: a versioned mini target repo (DATA.md + the trivial `plate-audit` contract + a seeded datastore, its setup recipe captured as a `type=fixture` learning) and a committed grader script `check.sh` that greps the artifacts the run left behind.
+
+**When to run**: manually, before bumping the version on any release whose diff touches one of those skills. They are deliberately **not in CI** — one iteration costs roughly 300–800k tokens.
 
 **How to run one iteration** (from a Claude Code session on this repo):
 
-1. For each eval in `skills/<name>/evals/evals.json`: copy its fixture (the `files` field) to a scratch directory and substitute `{{WORKDIR}}` in the prompt with that path — never point a run at the fixture template.
-2. Spawn two subagents per eval in the same turn: one told to read and follow `skills/<name>/SKILL.md` with the prompt as its task (with-skill), one given only the prompt (baseline). Executors save `report.md`/`transcript.md` (verify) or leave the modified workdir + `transcript.md` (work).
-3. Grade each run against the eval's `expectations` — the assertions are mechanical on purpose (last-line `VERDICT:` regex; `.check-log` first-FAIL-with-pristine-`IMPL_SHA`-then-PASS against `baseline-sha`).
+1. Instantiate the eval's fixture into a scratch workdir — copy the fixture (`files`) and substitute `{{WORKDIR}}` in the prompt (pillar 1), or run the eval's `setup` command into `W=$(mktemp -d)` (pillar 2). Never point a run at the fixture template itself.
+2. Spawn a **fresh-context** subagent per run, told to read `skills/<name>/SKILL.md` and execute it as if the user had invoked the eval's prompt, with every repo-relative path resolved against the workdir. Pillar 2 briefs add eval mode: gates are pre-approved and the host task system / artifact publishing are unavailable, so the skill's fail-open paths apply — the telemetry report still gets written. A baseline (no-skill) run per eval is optional: it measures the skill's *value*, while the release gate only needs the with-skill regression signal.
+3. Grade against the eval's `expectations` — mechanically wherever possible: pillar 1's regexes and check-log, pillar 2's `bash skills/<name>/evals/check.sh <id> "$W"` (one PASS/FAIL line per expectation, exit 0 = all green; export `FW_EVAL_DATE=<run date>` when regrading a workdir on a later day).
 4. Aggregate into `benchmark.json`/`benchmark.md` (skill-creator schema) and commit them under `skills/<name>/evals/benchmarks/<date>/` as the release evidence.
 
 A regression (with-skill pass rate below the committed benchmark, or any planted-bug eval rationalized into a PASS) blocks the release until the skill text is fixed.

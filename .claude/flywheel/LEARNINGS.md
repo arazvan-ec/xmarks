@@ -232,3 +232,25 @@ A prompt/docs-only diff got one combined correctness+coherence reviewer
 P12's routing applied manually until it ships: docs diff → single reviewer;
 security only when input/auth/secrets/deps are touched; performance only for
 loops/queries/IO.
+
+## fixture: pillar-2 eval fixture — demo-repo + the plate-audit contract
+<!-- fw: type=fixture; date=2026-07-29; files=skills/run/evals/fixtures/demo-repo/.claude/flywheel/processes/plate-audit.md,skills/run/evals/check.sh,skills/process/evals/check.sh; spec=p22-evals-pillar2; branch=claude/p22-evals-pillar2-ubuaty; evidence=benchmarks 2026-07-29: 6/6 evals green, 41/41 assertions (skills/{process,run}/evals/benchmarks/) -->
+
+The behavioral evals for `process`/`run` need a target repo whose correct
+output is knowable in advance. Recipe (versioned at
+`skills/{run,process}/evals/fixtures/`):
+- **A deliberately trivial, fully deterministic contract** (`plate-audit` v1:
+  regex-validate a Spanish plate, digit_sum, upsert one markdown row) so every
+  assertion is a grep on exact values — never a judgment call.
+- **Seed the datastore with one row** (`1234 BCD`): it powers three cases at
+  once — idempotent-upsert target, collateral-damage sentinel ("seeded row
+  untouched"), and prior art the skill should read.
+- **Stand up per eval**: `W=$(mktemp -d)`; copy the fixture; `git init` +
+  commit as seed, so "staged" (DATA.md's landed-proof) is distinguishable
+  from "committed at seed".
+- **Executor brief must declare eval mode**: gates pre-approved, task system +
+  artifact publishing unavailable → the skills' own fail-open paths make runs
+  terminate without a human while still exercising contract law.
+- **Grader over-specification is the trap**: assert only what the skill text
+  fixes (run's §4 pins `### <date>` log entries; process §5 pins no format —
+  accept any dated entry). Caught live in iteration 1, eval proc-3.

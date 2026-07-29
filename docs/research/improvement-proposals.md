@@ -41,7 +41,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P19 | Update postprocess: persistent pending-strategy state + refresh smoke check | ✅ shipped (v0.26.0) | Done — `PENDING-UPGRADES` written by the installer, nagged by SessionStart, cleared by `/flywheel:update`; `bash -n` gate aborts a broken refresh. CI auto-apply deferred until the nag proves recurring debt |
 | P20 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.27.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**`. (Renumbered from P19/v0.26.0 at merge time — main had taken both) |
 | P21 | Bash grants coherent with the approval gates (P20 for commands) | ✅ shipped (v0.28.0) | Done — allow-only `bash-allow.sh` (add/commit/stash, branch-aware force-free push); gate-time consent rules in spec/process; permission drift in sync |
-| P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | 🟢 phase 2 building | Phase 1 (v0.29.0): CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2 pillar 1: behavioral evals + planted-bug fixtures + benchmark evidence for `verify`/`work` (manual release gate, not CI). Pillar 2 (`process`/`run`): parallel session |
+| P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
 
 ## Priority overview
 
@@ -1098,3 +1098,23 @@ Append-only. Newest at the bottom.
   Benchmarks committed under `skills/<name>/evals/benchmarks/2026-07-29/`;
   runbook in README (manual, never CI); fixtures captured as `type=fixture`
   learnings.
+- **2026-07-30** — **P22 phase 2, pillar 2 shipped as v0.32.0** (async session
+  B; renumbered twice at rebase — v0.30.0 went to the optimization release and
+  v0.31.0 to pillar 1, the exact collision `briefs/README.md` warns about).
+  Behavioral eval suites for `process` and `run` per the skill-creator
+  harness: `skills/{process,run}/evals/` with 3 realistic prompts each,
+  objective expectations, a committed deterministic `check.sh` grader
+  (verified red on an untouched fixture, green on correct output, and red on
+  adversarial output — a fabricated row and a silently rewritten rule), and
+  the versioned `plate-audit` fixture repo (recipe captured as a
+  `type=fixture` learning). One real iteration with fresh-context subagents:
+  6/6 evals green, 49/49 assertions, ~237k subagent tokens (with-skill only —
+  the release gate needs regression detection, not the value baseline);
+  benchmarks committed under `evals/benchmarks/2026-07-29/`. Two findings,
+  both in the *grader* rather than the skills: `process` §5 pins no
+  Improvement-log entry format (`run` §4 does), so the grader over-specified
+  `### <date>` and was loosened — tightening the skill text is a follow-up;
+  and a dated assertion compared against the grading clock, so a correct run
+  regraded after midnight failed (`check.sh` now pins the run date via
+  `FW_EVAL_DATE`). The README's eval section now covers both pillars as one
+  runbook. Runs manual-only pre-release, never CI. **P22 is now complete.**
