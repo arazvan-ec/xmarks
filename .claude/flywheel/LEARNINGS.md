@@ -1,5 +1,18 @@
 # flywheel learnings
 
+## decision: writing-token discipline — terse code, never echo files into chat, edit over rewrite
+<!-- fw: type=decision; date=2026-07-29; files=CLAUDE.md; branch=claude/token-usage-writing-rkfoby; evidence=owner directive adopted in-session 2026-07-29 -->
+
+The owner asked how to optimize the token cost of writing work. Adopted rules
+(now in CLAUDE.md as repo convention): (1) generated code is terse by default —
+no redundant comments, ceremonial docstrings, or speculative blocks; verbosity
+in output compounds on every future write. (2) Never paste written/edited file
+contents back into the chat response — report what changed and where; echoing
+pays the same output twice when git already holds the diff. (3) Prefer `Edit`
+(pay the changed lines) over regenerating whole files with `Write`. Rationale:
+output tokens are the priciest, and the cost of a written class is its content
+— the only lever is eliminating waste around it (re-writes, echoes, verbosity).
+
 ## pattern: surface trust at consumption without touching relevance rank
 <!-- fw: type=pattern; date=2026-07-20; files=scripts/session-start.sh,skills/recall/SKILL.md; spec=p18-evidence-gated-compounding; pr=32; branch=claude/every-agent-native-config-be56a6; evidence=test-session-start.sh "only explicit unverified is flagged" green + reviewer rank-invariance check -->
 
