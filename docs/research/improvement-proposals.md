@@ -39,7 +39,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P17 | Setup/fixture knowledge as first-class compounded context | ✅ shipped (v0.21.0) | Done — `fixture` type, compound captures, spec/work prime + advisory trigger, evidence-gated |
 | P18 | Evidence-gated compounding | ✅ shipped (v0.25.0) | Done — `evidence=` metadata, compound capture rule, `[unverified]` flag at injection + in recall; advisory |
 | P19 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.26.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**` |
-| P20 | Bash grants coherent with the approval gates (P19 for commands) | 🟡 discussing | Analysis done (2026-07-29); owner go/no-go on the three-layer design |
+| P20 | Bash grants coherent with the approval gates (P19 for commands) | 🟡 discussing | Open questions resolved (2026-07-29: yes-stash, no-gh, layer 2 in spec/process); awaiting owner go to build |
 
 ## Priority overview
 
@@ -716,14 +716,21 @@ branch (`add`, `commit`, `push -u origin <branch>` from work/ship/compound;
 `scripts/install-vendored.sh` (+ test), `skills/spec/SKILL.md`,
 `skills/process/SKILL.md`, README, CI, `plugin.json` + `upgrades/`.
 
-**Open questions:**
-- autoloop's revert path (`git stash` / `git checkout -- <path>`): grant
-  `stash push/pop` (bounded, reversible) but keep `checkout --` prompting
-  (can discard user edits)? Leaning yes-stash / no-checkout.
-- Should layer 1 also grant `gh pr create` for ship? Leaning no at first —
-  it's outward-facing; one prompt per cycle is cheap.
-- Ship layer 2 as part of spec/process, or as a standalone
-  `/flywheel:permissions` audit skill the owner runs once per repo?
+**Decisions (owner, 2026-07-29):**
+- **`git stash`: yes** — grant `stash push/pop/list` (bounded, reversible);
+  `git checkout -- <path>` keeps prompting (it can silently discard the
+  owner's own uncommitted edits — the one revert autoloop must never
+  auto-fire).
+- **`gh pr create`: no** — outward-facing, one prompt per cycle is cheap,
+  and opening a PR is the loop's boundary with the outside world.
+- **Layer 2 lives inside `spec`/`process`, not a standalone skill** — the
+  whole P20 thesis is that the conversational gate IS the authorization, so
+  the grant must be offered at the exact moment of sign-off, in the same
+  breath as the metric/datastore command it covers. A standalone
+  `/flywheel:permissions` skill would detach consent from approval and
+  become one more thing to remember to run. If a retrofit need appears
+  (contracts signed before this ships), `/flywheel:sync` can flag the
+  missing rules as drift — no new surface needed.
 
 ## Suggested sequencing
 
@@ -988,3 +995,10 @@ Append-only. Newest at the bottom.
   consent that writes the repo-specific test/datastore rules into project
   settings at spec/process sign-off, and documented turn-scoping for the
   existing frontmatter grants. Status 🟡 — awaiting owner go/no-go.
+- **2026-07-29** — **P20 open questions resolved by the owner** (same day as
+  the analysis): `git stash` yes (`push/pop/list`; `checkout --` keeps
+  prompting), `gh pr create` no (outward-facing boundary), and layer 2 lives
+  **inside `spec`/`process`** rather than a standalone permissions skill —
+  consent stays welded to the gate that grants it, with `/flywheel:sync`
+  as the retrofit path for pre-existing contracts. P20 stays 🟡 pending the
+  explicit go to build (target: v0.27.0).
