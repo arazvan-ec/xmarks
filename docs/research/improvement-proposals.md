@@ -40,7 +40,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P18 | Evidence-gated compounding | ✅ shipped (v0.25.0) | Done — `evidence=` metadata, compound capture rule, `[unverified]` flag at injection + in recall; advisory |
 | P19 | Update postprocess: persistent pending-strategy state + refresh smoke check | ✅ shipped (v0.26.0) | Done — `PENDING-UPGRADES` written by the installer, nagged by SessionStart, cleared by `/flywheel:update`; `bash -n` gate aborts a broken refresh. CI auto-apply deferred until the nag proves recurring debt |
 | P20 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.27.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**`. (Renumbered from P19/v0.26.0 at merge time — main had taken both) |
-| P21 | Bash grants coherent with the approval gates (P20 for commands) | 🟡 discussing | Open questions resolved (2026-07-29: yes-stash, no-gh, layer 2 in spec/process); awaiting owner go to build |
+| P21 | Bash grants coherent with the approval gates (P20 for commands) | ✅ shipped (v0.28.0) | Done — allow-only `bash-allow.sh` (add/commit/stash, branch-aware force-free push); gate-time consent rules in spec/process; permission drift in sync |
 
 ## Priority overview
 
@@ -1021,3 +1021,15 @@ Append-only. Newest at the bottom.
   (update postprocess), so this branch's state-write hook renumbers
   **P19→P20, v0.26.0→v0.27.0**, and the bash-grants proposal **P20→P21**
   (target v0.28.0). Content unchanged; only identifiers moved.
+- **2026-07-29** — **Shipped P21 (bash grants coherent with the approval
+  gates) as v0.28.0**, on the owner's go, per the three-layer design and the
+  resolved questions: `scripts/bash-allow.sh` (allow-only `PreToolUse`/`Bash`;
+  one plain command; add/commit/stash push-pop-list; force-free push of the
+  current non-default branch to origin, checked live; global-flag,
+  metacharacter, foreign-remote/-cwd and refspec escapes all fall through to
+  the prompt); spec/process sign-offs now offer to write the repo-specific
+  metric/datastore rules into project `permissions.allow` (committed with the
+  spec/contract, never unasked); sync gains permission drift as a third
+  class; work/ship document the prefer-single-commands rule. 40-assertion
+  hook test + installer coverage wired into CI. Full suite +
+  `plugin validate --strict` green.

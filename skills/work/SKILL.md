@@ -21,6 +21,8 @@ Execute the plan's tasks one at a time. For **each** task, run this loop and do 
 
 **Standing rule:** "done" means the objective check is green *and you have seen it be green*. Never report a task complete on the basis of reasoning alone.
 
+**Prefer single commands over `&&` chains**: permission grants and allow rules match subcommand-by-subcommand, so `git add -A && npm test` re-prompts where two plain commands sail through.
+
 **Anti-rationalization — these are banned:**
 
 | Excuse | Reality |

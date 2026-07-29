@@ -70,6 +70,9 @@ jobs:
       - name: Test write-allow.sh hook
         run: bash scripts/test-write-allow.sh
 
+      - name: Test bash-allow.sh hook
+        run: bash scripts/test-bash-allow.sh
+
       - name: Test session-start.sh hook
         run: bash scripts/test-session-start.sh
 

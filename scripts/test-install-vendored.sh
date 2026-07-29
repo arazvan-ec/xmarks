@@ -64,6 +64,7 @@ pass "${AGENT_COUNT} agents vendored"
 [ -x "${TARGET}/.claude/flywheel/bin/session-start.sh" ] || fail "session-start.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/read-prime.sh" ] || fail "read-prime.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/write-allow.sh" ] || fail "write-allow.sh missing or not executable"
+[ -x "${TARGET}/.claude/flywheel/bin/bash-allow.sh" ] || fail "bash-allow.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/gate.sh" ] || fail "gate.sh missing or not executable"
 CLAUDE_PROJECT_DIR="${TARGET}" FLYWHEEL_NO_UPDATE_CHECK=1 \
   bash "${TARGET}/.claude/flywheel/bin/session-start.sh" > "${WORK}/hook-out.txt"
@@ -78,6 +79,13 @@ grep -q '"permissionDecision": "allow"' "${WORK}/write-allow-out.txt" \
 echo '{"tool_input": {"file_path": "src/app.ts"}}' | CLAUDE_PROJECT_DIR="${TARGET}" \
   bash "${TARGET}/.claude/flywheel/bin/write-allow.sh" > "${WORK}/write-allow-none.txt"
 [ ! -s "${WORK}/write-allow-none.txt" ] || fail "vendored write-allow.sh granted an out-of-scope write"
+echo '{"tool_input": {"command": "git add -A"}, "cwd": "'"${TARGET}"'"}' | CLAUDE_PROJECT_DIR="${TARGET}" \
+  bash "${TARGET}/.claude/flywheel/bin/bash-allow.sh" > "${WORK}/bash-allow-out.txt"
+grep -q '"permissionDecision": "allow"' "${WORK}/bash-allow-out.txt" \
+  || fail "vendored bash-allow.sh did not grant a plain git add"
+echo '{"tool_input": {"command": "git push --force origin main"}, "cwd": "'"${TARGET}"'"}' | CLAUDE_PROJECT_DIR="${TARGET}" \
+  bash "${TARGET}/.claude/flywheel/bin/bash-allow.sh" > "${WORK}/bash-allow-none.txt"
+[ ! -s "${WORK}/bash-allow-none.txt" ] || fail "vendored bash-allow.sh granted a force push"
 pass "hook scripts vendored, executable and runnable"
 
 grep -q '^flywheel ' "${TARGET}/.claude/flywheel/VERSION" || fail "VERSION marker missing"
@@ -120,6 +128,8 @@ assert pre.count(("Read", '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/read-prime
 assert pre.count(("Write|Edit|MultiEdit|NotebookEdit",
                   '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/write-allow.sh')) == 1, \
     "flywheel PreToolUse write-allow hook missing, duplicated, or missing its Write|Edit matcher"
+assert pre.count(("Bash", '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/bash-allow.sh')) == 1, \
+    "flywheel PreToolUse bash-allow hook missing, duplicated, or missing its Bash matcher"
 assert stop.count('"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh') == 1, \
     "flywheel Stop hook missing or duplicated"
 PY

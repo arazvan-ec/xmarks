@@ -69,6 +69,7 @@ UPDATE_WORKFLOW_REL=".github/workflows/flywheel-update.yml"
 SESSION_START_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/session-start.sh'
 READ_PRIME_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/read-prime.sh'
 WRITE_ALLOW_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/write-allow.sh'
+BASH_ALLOW_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/bash-allow.sh'
 GATE_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh'
 
 # True if a previous install wrote this repo-relative path (so it is ours to
@@ -121,7 +122,7 @@ if [ "${MODE}" = "uninstall" ]; then
 
   if [ -f "${SETTINGS}" ]; then
     FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
-    FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
+    FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_BASH_ALLOW="${BASH_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
     python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
@@ -130,7 +131,8 @@ with open(path) as f:
     settings = json.load(f)
 
 ours = {os.environ["FW_SESSION_START"], os.environ["FW_READ_PRIME"],
-        os.environ["FW_WRITE_ALLOW"], os.environ["FW_GATE"]}
+        os.environ["FW_WRITE_ALLOW"], os.environ["FW_BASH_ALLOW"],
+        os.environ["FW_GATE"]}
 hooks = settings.get("hooks", {})
 for event in list(hooks):
     groups = []
@@ -217,7 +219,7 @@ for f in "${SRC}"/agents/*.md; do
 done
 echo "vendored $(ls "${SRC}"/agents/*.md | wc -l | tr -d ' ') agents into .claude/agents/"
 
-for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/gate.sh; do
+for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh; do
   rewrite "${f}" | vendor_file ".claude/flywheel/bin/$(basename "${f}")"
   chmod +x "${BIN_DST}/$(basename "${f}")"
 done
@@ -341,7 +343,7 @@ rm -f "${NEW_MANIFEST}"
 # .claude/settings.json, keeping everything already there. Idempotent: entries
 # are matched by their command string.
 FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
-FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
+FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_BASH_ALLOW="${BASH_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
 python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
@@ -366,6 +368,11 @@ wanted = [
         "type": "command",
         "command": os.environ["FW_WRITE_ALLOW"],
         "timeout": 5,
+    }),
+    ("PreToolUse", "Bash", {
+        "type": "command",
+        "command": os.environ["FW_BASH_ALLOW"],
+        "timeout": 10,
     }),
     ("Stop", None, {
         "type": "command",

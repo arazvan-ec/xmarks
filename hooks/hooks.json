@@ -1,5 +1,5 @@
 {
-  "description": "flywheel: at session start, load the learnings ledger and surface the loop commands; before a file read, advisorily surface any prior learnings that touch it; before a file write, pre-approve writes to flywheel's own state dir (.claude/flywheel/**) so the loop's spec/plan approvals aren't re-asked as tool permission prompts; at stop, run the project's opt-in verification gate.",
+  "description": "flywheel: at session start, load the learnings ledger and surface the loop commands; before a file read, advisorily surface any prior learnings that touch it; before a file write or a bash command, pre-approve writes to flywheel's own state dir (.claude/flywheel/**) and single loop-advancing git commands (add/commit/stash, force-free push of the current feature branch) so the loop's spec/plan approvals aren't re-asked as tool permission prompts; at stop, run the project's opt-in verification gate.",
   "hooks": {
     "SessionStart": [
       {
@@ -30,6 +30,16 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/write-allow.sh",
             "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/bash-allow.sh",
+            "timeout": 10
           }
         ]
       }

@@ -24,3 +24,5 @@ Produce a REASONS canvas and save it to `.claude/flywheel/specs/<slug>.md` (slug
 Then define the **Success metric** — a single, objectively checkable pass condition (e.g. "all N tests pass and re-running the import changes 0 rows"). This is what `/flywheel:verify` checks against. If you cannot state a machine-checkable metric, the spec is not done.
 
 GATE: present the spec and the metric, and get explicit sign-off before `/flywheel:plan`. Treat the signed spec as the contract; if reality later diverges, fix the spec first (see `/flywheel:sync`).
+
+**At sign-off, materialize the metric's permission** (P21): the sign-off already approves running the metric command every cycle, so offer — in the same message as the gate, one question, once per repo — to append the matching rule (e.g. `Bash(npm test*)`) to `permissions.allow` in the project's `.claude/settings.json` (create file/key if needed, preserve everything else). On yes, write it and commit it with the spec so every future session inherits the grant; on no, drop it without argument. Never write it unasked — that settings write prompting IS the consent.
