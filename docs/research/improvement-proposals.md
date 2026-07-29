@@ -37,7 +37,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P15 | Dogfooding flywheel on flywheel | 🔵 proposed | Seed LEARNINGS.md; `processes/release.md`; fix help state list |
 | P16 | Live run progress: task ledger + telemetry report | ✅ shipped (v0.16.0) | Done — both pillars (run/process + loop/work); piloted by flow-audit v3 + the p16 cycle report |
 | P17 | Setup/fixture knowledge as first-class compounded context | ✅ shipped (v0.21.0) | Done — `fixture` type, compound captures, spec/work prime + advisory trigger, evidence-gated |
-| P18 | Evidence-gated compounding | ✅ shipped (v0.22.0) | Done — `evidence=` metadata, compound capture rule, `[unverified]` flag at injection + in recall; advisory |
+| P18 | Evidence-gated compounding | ✅ shipped (v0.25.0) | Done — `evidence=` metadata, compound capture rule, `[unverified]` flag at injection + in recall; advisory |
 
 ## Priority overview
 

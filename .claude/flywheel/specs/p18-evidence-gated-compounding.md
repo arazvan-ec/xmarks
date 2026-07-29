@@ -1,7 +1,7 @@
 # Spec: P18 — Evidence-gated compounding
 
 **Slug:** `p18-evidence-gated-compounding` · **Created:** 2026-07-20 · **Backlog:** P18
-**Status:** signed 2026-07-20 (owner, advisory v1) · shipped as v0.22.0 — metric PASS; review SHIP (0 Critical/High; backward-compat + rank-invariance empirically confirmed; 1 Low doc nit fixed)
+**Status:** signed 2026-07-20 (owner, advisory v1) · shipped as v0.25.0 — metric PASS; review SHIP (0 Critical/High; backward-compat + rank-invariance empirically confirmed; 1 Low doc nit fixed)
 **Prime:** LEARNINGS.md — the `decision` entry "gate knowledge the way flywheel
 gates code" (shipped v0.21.0 as prose) is this release's own prior art; P18
 makes it structural. Source: the owner's ask (P18 in the backlog).
@@ -65,7 +65,7 @@ entangle trust with ranking; keep them orthogonal — trust is shown, not ranked
 - `skills/recall/SKILL.md` — layer-1 list surfaces the evidence pointer / an
   `unverified` flag.
 - README + `skills/help/SKILL.md` — document the key + the trust signal.
-- `.claude-plugin/plugin.json` → **0.22.0** · `upgrades/v0.22.0.md`
+- `.claude-plugin/plugin.json` → **0.25.0** · `upgrades/v0.25.0.md`
   (`requires-action: false`).
 
 ## O — Operations
@@ -76,7 +76,7 @@ entangle trust with ranking; keep them orthogonal — trust is shown, not ranked
    verified→clean).
 4. `recall`: surface evidence in the cheap list.
 5. README + help wording.
-6. Bump + `upgrades/v0.22.0.md`; run the five test scripts.
+6. Bump + `upgrades/v0.25.0.md`; run the five test scripts.
 
 ## N — Norms
 
@@ -115,6 +115,6 @@ grep -q 'evidence=' skills/compound/SKILL.md \
   && bash scripts/test-docs-consistency.sh \
   && bash scripts/test-install-vendored.sh \
   && bash scripts/test-gate.sh \
-  && grep -q '"version": "0.22.0"' .claude-plugin/plugin.json \
-  && test -f upgrades/v0.22.0.md
+  && grep -q '"version": "0.25.0"' .claude-plugin/plugin.json \
+  && test -f upgrades/v0.25.0.md
 ```
