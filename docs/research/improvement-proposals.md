@@ -41,6 +41,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P19 | Update postprocess: persistent pending-strategy state + refresh smoke check | ✅ shipped (v0.26.0) | Done — `PENDING-UPGRADES` written by the installer, nagged by SessionStart, cleared by `/flywheel:update`; `bash -n` gate aborts a broken refresh. CI auto-apply deferred until the nag proves recurring debt |
 | P20 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.27.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**`. (Renumbered from P19/v0.26.0 at merge time — main had taken both) |
 | P21 | Bash grants coherent with the approval gates (P20 for commands) | ✅ shipped (v0.28.0) | Done — allow-only `bash-allow.sh` (add/commit/stash, branch-aware force-free push); gate-time consent rules in spec/process; permission drift in sync |
+| P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | 🟢 phase 1 building (v0.29.0) | Phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2 (open): eval harnesses for `verify`/`work` and `process`/`run` as release gates |
 
 ## Priority overview
 
@@ -66,6 +67,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P18 | Evidence-gated compounding (protect the ledger from unverified conclusions) | High | Medium | Low | Yes |
 | P20 | State-write pre-approval hook (permission-prompt fatigue on loop state) | High | Low | Low | Yes |
 | P21 | Bash grants coherent with the approval gates | High | Medium | Medium | Yes |
+| P22 | Dev-loop discipline on the plugin itself (dogfooded TDD + skill evals) | High | Medium (phase 1 Low) | Low | Yes |
 
 ---
 
@@ -755,6 +757,46 @@ token savings), P11 and P13 (security posture), P15 (dogfooding), and P14 last
 
 ---
 
+## P22 — Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals (owner ask, 2026-07-29)
+
+**Why.** The owner asked directly: why don't we follow TDD when developing
+plugin features? Diagnosis: the repo has a real test net (every script has a
+paired `test-*.sh`, run in CI, plus docs-consistency and `plugin validate
+--strict`) but it is test-*after*, not test-first, and nothing enforces the
+pairing; ~90% of the surface (skills/agents = prompts) has only structural
+validation, no behavioral check; and "small" sessions skip the very
+`spec → work → verify` loop the plugin prescribes — the exact rationalization
+`/flywheel:work`'s table bans. P15 seeds dogfooding state; P22 makes the
+discipline binding.
+
+**What — two phases:**
+
+- **Phase 1 (cheap, root cause).** (a) CLAUDE.md convention: every plugin
+  feature runs the loop on this repo, no size exception; scripts are developed
+  red→green. (b) CI gate `scripts/check-test-pairing.sh` (+ its own test,
+  itself written test-first): any PR diff touching `scripts/<name>.sh` must
+  also touch `scripts/test-<name>.sh` — add, change or delete together;
+  `SKIP_TEST_PAIRING=1` is a logged escape, never silent.
+- **Phase 2 (behavioral evals as release gates, selective).** Skills are
+  prompts: the only real test is running a session and grading the output.
+  Adopt the skill-creator eval harness (`evals/evals.json` per skill: realistic
+  prompts + objectively verifiable assertions; with-skill vs baseline subagent
+  runs; grader → `benchmark.json`) for the skills where a silent regression
+  hurts most: `verify` (must not rationalize FAIL→PASS), `work` (must induce
+  red→green), `process`/`run` (pillar 2, Claude-as-backend). Fixtures: a
+  planted-bug mini-repo per eval, captured as `type=fixture` learnings. Cost
+  is real (a 3-case × 2-config iteration ≈ 300–800k tokens), so evals run
+  **manually before a release that touches one of those skills**, not in CI.
+  Parallelizes as two independent sessions: pillar 1 (`work`/`verify`) and
+  pillar 2 (`process`/`run`).
+
+**Files:** phase 1: `CLAUDE.md`, `scripts/check-test-pairing.sh` (+
+`scripts/test-check-test-pairing.sh`), `.github/workflows/validate-plugins.yml`,
+`plugin.json` + `upgrades/`. Phase 2: `skills/<name>/evals/evals.json` +
+fixtures, README testing section; no runtime skill changes required.
+
+---
+
 ## Decision log
 
 Append-only. Newest at the bottom.
@@ -1033,3 +1075,10 @@ Append-only. Newest at the bottom.
   class; work/ship document the prefer-single-commands rule. 40-assertion
   hook test + installer coverage wired into CI. Full suite +
   `plugin validate --strict` green.
+- **2026-07-29** — **P22 opened and phase 1 shipped as v0.29.0** (owner ask:
+  "why no TDD on the plugin itself?"; owner approved the two-phase plan).
+  Phase 1: CLAUDE.md dev-loop discipline section (loop on every feature,
+  test-first scripts) + `check-test-pairing.sh` CI gate, developed red→green
+  — its test existed and failed before the gate did. Phase 2 (skill evals for
+  `verify`/`work` and `process`/`run` as manual release gates) stays open,
+  split into two parallel sessions, one per pillar.

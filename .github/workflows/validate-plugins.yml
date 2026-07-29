@@ -60,6 +60,16 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: the test-pairing gate diffs against the PR base.
+          fetch-depth: 0
+
+      - name: Check script/test pairing (P22)
+        if: github.event_name == 'pull_request'
+        run: bash scripts/check-test-pairing.sh "origin/${{ github.base_ref }}"
+
+      - name: Test check-test-pairing.sh gate
+        run: bash scripts/test-check-test-pairing.sh
 
       - name: Test install-vendored.sh
         run: bash scripts/test-install-vendored.sh

@@ -50,6 +50,25 @@ whether it lands in a file or in chat. Rules for every session in this repo:
 - **Edit over rewrite.** Change the lines that change; don't regenerate whole
   files for a partial modification.
 
+## Dev-loop discipline: flywheel develops flywheel (owner decision, 2026-07-29)
+
+The plugin prescribes TDD for every repo it is installed in; developing the
+plugin itself is no exception — "it's a small change" is the exact excuse
+`/flywheel:work` bans.
+
+- **Every plugin feature runs the loop on this repo**: `/flywheel:spec` →
+  `/flywheel:work` → `/flywheel:verify`, regardless of size. Skills-only
+  (prose) changes still get a spec with a success metric; the structural
+  checks below are their minimum verify gate.
+- **Scripts are test-first**: every `scripts/<name>.sh` has a paired
+  `scripts/test-<name>.sh`. Write the failing test, see it red, implement,
+  see it green. CI enforces the pair moving together in every diff
+  (`scripts/check-test-pairing.sh`; escape hatch `SKIP_TEST_PAIRING=1` is
+  logged, never silent).
+- **Skill behavior changes to `work`, `verify`, `process`, or `run`** are
+  release-gated by evals (P22 phase 2): run the skill's eval before bumping
+  the version when one exists.
+
 ## Repo conventions (do not skip — CI enforces them)
 
 - The plugin lives at the repo root: `.claude-plugin/` (manifest + marketplace),
