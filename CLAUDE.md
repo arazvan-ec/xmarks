@@ -36,6 +36,20 @@ loop that Claude improves with each execution.
 - `.claude/flywheel/DATA.md` — the repo's data-persistence strategy that runs follow.
 - `.claude/flywheel/runs/<slug>/<date>.html` — per-execution live telemetry reports (pillar 1 cycles + pillar 2 runs).
 
+## Writing-token discipline (owner convention, 2026-07-29)
+
+Output tokens are the most expensive ones — generated code costs the same
+whether it lands in a file or in chat. Rules for every session in this repo:
+
+- **Terse code by default.** No redundant comments, no ceremonial docstrings,
+  no speculative "just in case" blocks. A comment must state a constraint the
+  code can't show; everything else is noise that costs output tokens forever.
+- **Never echo file contents into chat.** After writing or editing a file,
+  report *what* was created/changed and *where* — never paste the code back
+  into the response. The diff is already in git; pasting pays for it twice.
+- **Edit over rewrite.** Change the lines that change; don't regenerate whole
+  files for a partial modification.
+
 ## Repo conventions (do not skip — CI enforces them)
 
 - The plugin lives at the repo root: `.claude-plugin/` (manifest + marketplace),

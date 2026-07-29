@@ -1,5 +1,34 @@
 # flywheel learnings
 
+## pattern: a required-action warning must outlive the message that carries it
+<!-- fw: type=pattern; date=2026-07-29; files=scripts/install-vendored.sh,scripts/session-start.sh,skills/update/SKILL.md; spec=p19-update-postprocess; branch=claude/token-usage-writing-rkfoby; evidence=test-install-vendored.sh "pending strategies recorded" + test-session-start.sh "pending-upgrade nag" green -->
+
+The auto-update PR's "requires action" note was ephemeral: merge the PR without
+acting and the pending upgrade strategies vanished — files current, VERSION
+current, debt invisible. Fix shape (P19, v0.26.0): the component that *creates*
+the obligation (the installer — the only one holding both the old version and
+the notes) persists it as repo state (`PENDING-UPGRADES`, never in the manifest
+so pruning can't erase it); a session-start nag re-raises it every session,
+offline; the acting skill clears it per item applied. General rule: when a
+workflow step emits a "you must still do X" warning in a transient channel
+(PR body, chat, log), have the step also write X to durable state that
+something re-reads until X is done. Corollary shipped with it: refresh steps
+that vendor executable code get a parse gate (`bash -n`) *before* recording
+the install, so a broken copy can never be marked installed.
+
+## decision: writing-token discipline — terse code, never echo files into chat, edit over rewrite
+<!-- fw: type=decision; date=2026-07-29; files=CLAUDE.md; branch=claude/token-usage-writing-rkfoby; evidence=owner directive adopted in-session 2026-07-29 -->
+
+The owner asked how to optimize the token cost of writing work. Adopted rules
+(now in CLAUDE.md as repo convention): (1) generated code is terse by default —
+no redundant comments, ceremonial docstrings, or speculative blocks; verbosity
+in output compounds on every future write. (2) Never paste written/edited file
+contents back into the chat response — report what changed and where; echoing
+pays the same output twice when git already holds the diff. (3) Prefer `Edit`
+(pay the changed lines) over regenerating whole files with `Write`. Rationale:
+output tokens are the priciest, and the cost of a written class is its content
+— the only lever is eliminating waste around it (re-writes, echoes, verbosity).
+
 ## pattern: surface trust at consumption without touching relevance rank
 <!-- fw: type=pattern; date=2026-07-20; files=scripts/session-start.sh,skills/recall/SKILL.md; spec=p18-evidence-gated-compounding; pr=32; branch=claude/every-agent-native-config-be56a6; evidence=test-session-start.sh "only explicit unverified is flagged" green + reviewer rank-invariance check -->
 
