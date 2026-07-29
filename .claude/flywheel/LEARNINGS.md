@@ -1,6 +1,32 @@
 # flywheel learnings
 
-## pattern: a required-action warning must outlive the message that carries it
+## fixture: planted-bug mini-repo for grading a verifier (tally family)
+<!-- fw: type=fixture; date=2026-07-29; files=skills/verify/evals/fixtures/tally-fail/app.py,skills/verify/evals/fixtures/tally-sneaky/app.py,skills/verify/evals/fixtures/tally-pass/app.py,skills/verify/evals/evals.json; spec=p22-evals-pillar1; branch=claude/p22-evals-pillar1-23u4h7; evidence=sanity runs 2026-07-29: tally-fail unittest FAILED + CLI total=14.75, tally-sneaky unittest OK + CLI rows=2, tally-pass OK + rows=3 total=20.00 -->
+
+Recipe for a mini-repo whose ground truth is known, so a verifier's verdict is
+gradeable without judgment calls: python3 stdlib only (`csv` + `unittest`, no
+installs), a CLI entrypoint, and the repo's own spec at
+`.claude/flywheel/specs/<slug>.md` whose Success metric names BOTH gates
+(tests exit 0 AND exact CLI output). Plant three states from one clean base:
+(1) bug in the library → tests fail; (2) bug only in the `__main__` path —
+e.g. a bogus "exclude the header row" `n -= 1` after `csv.DictReader` already
+dropped it — so tests stay green and only actually running the CLI exposes the
+miss (the rationalization trap); (3) the untouched clean control, which keeps
+an always-FAIL verifier from scoring. Fixtures are templates: every run works
+on a copy.
+
+## fixture: auditable red→green kata — log RESULT + impl hash per test run
+<!-- fw: type=fixture; date=2026-07-29; files=skills/work/evals/fixtures/cart-feature/run-tests.sh,skills/work/evals/fixtures/cart-bugfix/run-tests.sh,skills/work/evals/evals.json; spec=p22-evals-pillar1; branch=claude/p22-evals-pillar1-23u4h7; evidence=sanity run 2026-07-29: pristine kata logs RESULT=PASS IMPL_SHA=8b44f02e…, simulated red-first regression test logs RESULT=FAIL with the same pristine hash -->
+
+To grade "the test ran red BEFORE the implementation" mechanically instead of
+trusting a transcript: make the fixture's `run-tests.sh` the sole test
+entrypoint and have it append `<utc> RESULT=<PASS|FAIL>
+IMPL_SHA=<sha256 cart.py | first 16>` to `.check-log`, with the pristine hash
+committed as `baseline-sha`. Test-first then reduces to two greps: first log
+entry is `RESULT=FAIL` with `IMPL_SHA == baseline-sha` (red seen while the
+impl was untouched — defeats impl-first-then-test), last entry is
+`RESULT=PASS`. Script preserves the suite's exit code and prints its output,
+so it doesn't distort the loop it audits.
 <!-- fw: type=pattern; date=2026-07-29; files=scripts/install-vendored.sh,scripts/session-start.sh,skills/update/SKILL.md; spec=p19-update-postprocess; branch=claude/token-usage-writing-rkfoby; evidence=test-install-vendored.sh "pending strategies recorded" + test-session-start.sh "pending-upgrade nag" green -->
 
 The auto-update PR's "requires action" note was ephemeral: merge the PR without
