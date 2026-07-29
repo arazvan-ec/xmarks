@@ -39,6 +39,8 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P17 | Setup/fixture knowledge as first-class compounded context | ✅ shipped (v0.21.0) | Done — `fixture` type, compound captures, spec/work prime + advisory trigger, evidence-gated |
 | P18 | Evidence-gated compounding | ✅ shipped (v0.25.0) | Done — `evidence=` metadata, compound capture rule, `[unverified]` flag at injection + in recall; advisory |
 | P19 | Update postprocess: persistent pending-strategy state + refresh smoke check | ✅ shipped (v0.26.0) | Done — `PENDING-UPGRADES` written by the installer, nagged by SessionStart, cleared by `/flywheel:update`; `bash -n` gate aborts a broken refresh. CI auto-apply deferred until the nag proves recurring debt |
+| P20 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.27.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**`. (Renumbered from P19/v0.26.0 at merge time — main had taken both) |
+| P21 | Bash grants coherent with the approval gates (P20 for commands) | ✅ shipped (v0.28.0) | Done — allow-only `bash-allow.sh` (add/commit/stash, branch-aware force-free push); gate-time consent rules in spec/process; permission drift in sync |
 
 ## Priority overview
 
@@ -62,6 +64,8 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P16 | Live run progress (task ledger + run telemetry report) | Medium | Low | Low | Yes |
 | P17 | Setup/fixture knowledge as first-class compounded context | High | Low | Low | Yes |
 | P18 | Evidence-gated compounding (protect the ledger from unverified conclusions) | High | Medium | Low | Yes |
+| P20 | State-write pre-approval hook (permission-prompt fatigue on loop state) | High | Low | Low | Yes |
+| P21 | Bash grants coherent with the approval gates | High | Medium | Medium | Yes |
 
 ---
 
@@ -617,6 +621,118 @@ if trust is surfaced at injection, `skills/recall/SKILL.md`, README + help,
 - How to backfill: existing entries have no `evidence=` — treat absent as
   "legacy, untagged," not "unverified."
 
+## P20 — State-write pre-approval hook (owner ask, 2026-07-29)
+
+**Why.** The owner named a UX inconsistency in the loop: flywheel's only two
+deliberate approval gates are *conversational* — the spec sign-off and the plan
+approval — and once "apruebo" lands, the loop is designed to run to completion
+without further questions. But the harness's tool-permission layer knows
+nothing about those gates: every save of a spec, plan, ledger entry, process
+contract, `DATA.md` or run report raised a fresh "allow write?" prompt, asking
+again for what the plan approval already implied. Two permission systems, one
+of them blind to the other.
+
+**What.** Teach the harness that flywheel state is pre-approved — and nothing
+else is:
+- **`scripts/write-allow.sh`**, a `PreToolUse` hook on
+  `Write|Edit|MultiEdit|NotebookEdit` that emits `permissionDecision: allow`
+  when the target resolves inside `<project>/.claude/flywheel/`.
+- **Allow-only, fail-open**: never denies, never blocks; out-of-scope paths,
+  malformed input or missing `python3` fall through silently to the ordinary
+  permission prompt.
+- **Strict scope**: `realpath` containment check — `..` traversal, prefix
+  siblings and symlink escapes planted inside the state dir get no grant. A
+  bash pre-filter skips the python spawn for the out-of-scope majority.
+- **Both install modes**: plugin (`hooks/hooks.json`) and vendored
+  (`install-vendored.sh` merge + uninstall).
+
+**Files:** `scripts/write-allow.sh` (+ `scripts/test-write-allow.sh`),
+`hooks/hooks.json`, `scripts/install-vendored.sh` (+ its test), CI workflow,
+README, `plugin.json` + `upgrades/v0.26.0.md`.
+
+## P21 — Bash grants coherent with the approval gates (owner ask, 2026-07-29)
+
+**Why.** P20 fixed state *writes*; the same incoherence remains for *commands*.
+The owner's model is explicit: after the plan approval, the loop runs to
+completion — commits and pushes included — yet the harness still prompts for
+much of what the loop shells out. The analysis found three root causes,
+confirmed against the official docs
+(code.claude.com/docs — skills, permissions, plugins, subagents):
+
+1. **`allowed-tools` grants are turn-scoped.** A skill's `allowed-tools`
+   frontmatter DOES pre-approve its patterns — but only for the turn that
+   invokes the skill, and *the grant clears on the next user message*. The
+   loop's gates are user messages by design ("apruebo"), so the post-gate
+   action lands in a **new** turn where no skill was re-invoked and the grant
+   is gone. That is exactly the owner's reported moment: approve the plan →
+   the very next thing (saving/committing it) prompts again. The frontmatter
+   grants (`ship: Bash(git *)`, `work/verify/run: Bash`) were never wrong —
+   they just evaporate at each gate.
+2. **Plugins cannot ship `permissions.allow` rules.** Plugin `settings.json`
+   supports no permission keys; hooks (`PreToolUse` → `permissionDecision:
+   allow`) are the only durable plugin-native grant — the P20 mechanism.
+3. **The riskiest prompts are repo-specific and the plugin can't know them.**
+   The test/metric command (`npm test`, `pytest …`) and pillar-2 datastore
+   commands come from the repo (spec metric, `DATA.md`), not from flywheel.
+
+**Command inventory** (what the loop actually shells out post-approval):
+git read-only forms (status/diff/log/show/branch — already covered by Claude
+Code's built-in read-only list, no prompt); git state-advancing on the feature
+branch (`add`, `commit`, `push -u origin <branch>` from work/ship/compound;
+`stash` in autoloop reverts); the repo's verification/metric commands
+(work/verify/autoloop/debug); pillar-2 datastore commands per `DATA.md`
+(run); `gh pr create` (ship).
+
+**What — three layers, each grant anchored to the approval that implies it:**
+
+- **Layer 1 — `scripts/bash-allow.sh`** (plugin-native, dynamic; the P20
+  contract applied to Bash): allow-only, fail-open `PreToolUse` hook on
+  `Bash`. Grants ONLY single, unchained commands (any `&&`, `;`, `|`, `$()`,
+  backtick or redirect falls through to the normal prompt) in two classes:
+  (a) `git add` / `git commit` without repo-relocation flags
+  (`-C`, `--git-dir`, `--work-tree`); (b) `git push` only when force-free,
+  remote is `origin`, and the target branch **is the current branch and is
+  not the default branch** — checked live inside the hook (`git branch
+  --show-current` vs `origin/HEAD`), which is precisely what static rules
+  cannot express. Never grants: force pushes, pushes to default, `reset`,
+  `rebase`, `checkout`, `clean`, `rm`, network commands, installs,
+  `git config`. Docs guarantee a hook "allow" can never override an explicit
+  user `deny`/`ask` rule, so the owner keeps the last word.
+- **Layer 2 — gate-time consent writes durable repo rules.** The repo-specific
+  commands get their grant *at the conversational gate that approves them*:
+  `/flywheel:spec` — when the success metric fixes a command — and
+  `/flywheel:process` — when `DATA.md`/the contract fixes datastore commands —
+  **offer** to append the matching `Bash(<cmd>*)` rules to the project's
+  `.claude/settings.json` `permissions.allow` as part of the sign-off. One
+  question, once, at the moment the owner is already approving that exact
+  command; committed with the spec/contract so every future session inherits
+  it. (Same consent pattern as gate.sh trust: explicit, durable, visible in
+  the diff.)
+- **Layer 3 — keep frontmatter grants, document the turn-scoping.** They still
+  eliminate prompts *within* each skill-invoking turn; skills gain a one-line
+  note to prefer single commands over `&&` chains so grants and rules actually
+  match (compound commands must match rule-by-rule).
+
+**Files:** `scripts/bash-allow.sh` (+ test), `hooks/hooks.json`,
+`scripts/install-vendored.sh` (+ test), `skills/spec/SKILL.md`,
+`skills/process/SKILL.md`, README, CI, `plugin.json` + `upgrades/`.
+
+**Decisions (owner, 2026-07-29):**
+- **`git stash`: yes** — grant `stash push/pop/list` (bounded, reversible);
+  `git checkout -- <path>` keeps prompting (it can silently discard the
+  owner's own uncommitted edits — the one revert autoloop must never
+  auto-fire).
+- **`gh pr create`: no** — outward-facing, one prompt per cycle is cheap,
+  and opening a PR is the loop's boundary with the outside world.
+- **Layer 2 lives inside `spec`/`process`, not a standalone skill** — the
+  whole P21 thesis is that the conversational gate IS the authorization, so
+  the grant must be offered at the exact moment of sign-off, in the same
+  breath as the metric/datastore command it covers. A standalone
+  `/flywheel:permissions` skill would detach consent from approval and
+  become one more thing to remember to run. If a retrofit need appears
+  (contracts signed before this ships), `/flywheel:sync` can flag the
+  missing rules as drift — no new surface needed.
+
 ## Suggested sequencing
 
 1. **P1** (clean, self-contained win; validates the release flow end-to-end).
@@ -870,3 +986,50 @@ Append-only. Newest at the bottom.
   aborts a refresh before VERSION/manifest are recorded when a vendored hook
   script no longer parses. Deferred: CI auto-applying strategies — revisit if
   the nag shows recurring debt. Spec: `specs/p19-update-postprocess.md`.
+- **2026-07-29** — **Shipped P20 (state-write pre-approval hook) as v0.27.0**
+  (owner ask, same day): the plan approval is the loop's real write
+  authorization, so the harness must stop re-asking for flywheel's own state.
+  New allow-only `PreToolUse` hook (`scripts/write-allow.sh`) on
+  `Write|Edit|MultiEdit|NotebookEdit` grants writes that `realpath`-resolve
+  inside `.claude/flywheel/` and touches nothing else — repo code and
+  `.claude/settings.json` keep the normal permission flow. Wired in both
+  install modes (plugin hooks.json + vendored settings merge/uninstall),
+  tested (`scripts/test-write-allow.sh`, incl. traversal/symlink/prefix-sibling
+  escapes and fail-open), documented in README. docs-consistency +
+  install-vendored + write-allow tests green.
+- **2026-07-29** — **P21 analysis recorded (docs-only, no version bump)**:
+  mapped every Bash command the loop shells out post-approval to the approval
+  gate that implies it, and confirmed the mechanics against the official docs
+  — skill `allowed-tools` grants are real but turn-scoped (they clear at each
+  user gate, which is why "apruebo" is immediately followed by a prompt),
+  plugins cannot ship `permissions.allow`, and a PreToolUse "allow" can never
+  override an owner's explicit deny/ask. Proposed three layers: a P20-style
+  allow-only `bash-allow.sh` hook for branch-aware git advancement, gate-time
+  consent that writes the repo-specific test/datastore rules into project
+  settings at spec/process sign-off, and documented turn-scoping for the
+  existing frontmatter grants. Status 🟡 — awaiting owner go/no-go.
+- **2026-07-29** — **P21 open questions resolved by the owner** (same day as
+  the analysis): `git stash` yes (`push/pop/list`; `checkout --` keeps
+  prompting), `gh pr create` no (outward-facing boundary), and layer 2 lives
+  **inside `spec`/`process`** rather than a standalone permissions skill —
+  consent stays welded to the gate that grants it, with `/flywheel:sync`
+  as the retrofit path for pre-existing contracts. P21 stays 🟡 pending the
+  explicit go to build (target: v0.28.0).
+- **2026-07-29** — **Renumbered at merge time** (the exact scenario
+  `briefs/README.md` warns about, third occurrence after v0.12.0 and
+  v0.25.0): a parallel session merged its own P19 as v0.26.0 into `main`
+  (update postprocess), so this branch's state-write hook renumbers
+  **P19→P20, v0.26.0→v0.27.0**, and the bash-grants proposal **P20→P21**
+  (target v0.28.0). Content unchanged; only identifiers moved.
+- **2026-07-29** — **Shipped P21 (bash grants coherent with the approval
+  gates) as v0.28.0**, on the owner's go, per the three-layer design and the
+  resolved questions: `scripts/bash-allow.sh` (allow-only `PreToolUse`/`Bash`;
+  one plain command; add/commit/stash push-pop-list; force-free push of the
+  current non-default branch to origin, checked live; global-flag,
+  metacharacter, foreign-remote/-cwd and refspec escapes all fall through to
+  the prompt); spec/process sign-offs now offer to write the repo-specific
+  metric/datastore rules into project `permissions.allow` (committed with the
+  spec/contract, never unasked); sync gains permission drift as a third
+  class; work/ship document the prefer-single-commands rule. 40-assertion
+  hook test + installer coverage wired into CI. Full suite +
+  `plugin validate --strict` green.

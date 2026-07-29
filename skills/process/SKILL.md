@@ -98,3 +98,5 @@ A repo can extend *how* agents intervene in it beyond the fixed contract shape �
 If `$ARGUMENTS` names a process that already exists, do not recreate it — treat this as a **deliberate revision**: read the contract and its Improvement log, apply the requested change to Rules/Output schema/Persistence, bump `version`, and record the change (what and why) in the Improvement log. Never silently rewrite the fixed rules.
 
 GATE: present the contract (or the diff, when revising) and the data strategy, and get explicit sign-off. Then tell the user how to run it: `/flywheel:run <slug> <input>`. Stage the contract (and DATA.md) so it is committed with the work.
+
+**At sign-off, materialize the datastore permission** (P21): approving the contract approves the write path DATA.md names, so offer — in the same message as the gate — to append the matching rule(s) (e.g. `Bash(psql*)`, `Bash(npm run db:exec*)`) to `permissions.allow` in the project's `.claude/settings.json`, so `/flywheel:run` persists without re-prompting every run. On yes, write and commit with the contract; on no, drop it. Scope rules to the exact Access command from DATA.md — never a broad `Bash(*)`.

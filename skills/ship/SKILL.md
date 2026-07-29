@@ -22,3 +22,5 @@ Then:
 5. Report the PR URL.
 
 Never push straight to the default branch. Never open a PR while a gate is red without an explicit waiver from the user.
+
+Prefer single commands over `&&` chains — the loop's git pre-approval (P21) and permission rules match one plain command at a time, and a force-free push of the current feature branch is pre-approved while anything chained re-prompts.
