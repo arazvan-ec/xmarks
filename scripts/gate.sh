@@ -26,14 +26,24 @@
 #
 # Note: trust defends against a static planted/edited gate file (a PR/clone),
 # NOT against a concurrent local attacker racing the hash-then-run window.
+#
+# SEAL mode (`gate.sh seal`): records the CURRENT tree signature as passed
+# without running the gate, so the Stop hook cache-hits and the suite is not
+# run twice in one cycle. Only for a caller that just ran the gate's checks
+# green itself (/flywheel:verify after a PASS) — seal accepts the caller's
+# evidence, it does not create any. Trust still applies: an untrusted gate is
+# never sealed, otherwise a planted gate could arrive pre-passed.
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 GATE="${PROJECT_DIR}/.claude/flywheel/gate.sh"
 STATE="${PROJECT_DIR}/.claude/flywheel/.gate-state"
 MAX=3
+MODE="${1:-}"
 
 # Read stdin (hook JSON) so we can inspect stop_hook_active; never fail on it.
-INPUT="$(cat 2>/dev/null)"
+# Seal mode is a direct CLI call, not a hook — there is no stdin to drain.
+INPUT=""
+[ "${MODE}" = "seal" ] || INPUT="$(cat 2>/dev/null)"
 
 # Not opted in → allow (no-op), and clear any leftover state.
 if [ ! -x "${GATE}" ]; then
@@ -74,6 +84,10 @@ if [ -z "${HASH}" ]; then
 fi
 
 if ! { [ -f "${TRUSTED}" ] && grep -qxF "${HASH}" "${TRUSTED}" 2>/dev/null; }; then
+  if [ "${MODE}" = "seal" ]; then
+    echo "flywheel gate: gate is not trusted — not sealing (an untrusted gate must never arrive pre-passed)." >&2
+    exit 0
+  fi
   {
     echo "flywheel gate: .claude/flywheel/gate.sh is not trusted yet, so it was NOT run."
     echo "A repo file that runs on every turn is a code-execution risk — review it, then trust it with:"
@@ -111,6 +125,14 @@ tree_signature() {
   } | gate_stdin_hash
 }
 SIG="$(tree_signature)"
+
+if [ "${MODE}" = "seal" ]; then
+  # No signature (no git) → nothing safe to seal; the hook will just re-run.
+  [ -n "${SIG}" ] || exit 0
+  printf '0\n%s\n\n\n' "${SIG}" > "${STATE}" 2>/dev/null
+  echo "flywheel gate: sealed — the Stop hook skips re-running until the tree changes."
+  exit 0
+fi
 
 # State file fields (one per line): count, passed-sig, bypass-sig, counting-sig.
 S=""; [ -f "${STATE}" ] && S="$(cat "${STATE}" 2>/dev/null)"

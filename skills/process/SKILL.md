@@ -1,6 +1,6 @@
 ---
 name: process
-description: Define or deliberately revise an agent-native process contract — fixed rules + output schema + persistence — for a recurring domain operation Claude runs as the backend. Use when a repeatable operation ('analyze a car', 'score a lead') should become something /flywheel:run executes.
+description: Define or revise an agent-native process contract (fixed rules + output schema + persistence) for a recurring domain operation Claude runs as the backend. Use when a repeatable operation ('analyze a car', 'score a lead') should become something /flywheel:run executes.
 argument-hint: "[process description, e.g. 'analyze a car by registration plate']"
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash
 ---
@@ -73,10 +73,12 @@ destructive-operation ban from DATA.md.
 
 ## Progress reporting
 How /flywheel:run shows this process live: one host-task per Rule updated at
-every state transition, and a telemetry report at
-.claude/flywheel/runs/<slug>/<date>.html regenerated per transition and
-republished to a stable artifact URL. Chat only for gates, blockers, and the
-final report. Fail-open: reporting never blocks the run. Never include secrets.
+every state transition; one JSON line appended per transition to
+.claude/flywheel/runs/<slug>/<date>.jsonl; the HTML report at
+.claude/flywheel/runs/<slug>/<date>.html rendered from that JSONL only at
+gates and at the final report, republished to a stable artifact URL. Chat
+only for gates, blockers, and the final report. Fail-open: reporting never
+blocks the run. Never include secrets.
 
 ## Improvement log
 <!-- Append-only. /flywheel:run adds a dated entry when a run surfaces a durable

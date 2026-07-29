@@ -1,6 +1,6 @@
 ---
 name: update
-description: Update flywheel to the latest version — detects whether this repo uses the marketplace install (local CLI/IDE) or the vendored install (Claude Code web), or takes the mode as an argument, then refreshes it and reports old → new version. Use when the user wants to upgrade flywheel or asks which flywheel version a repo carries.
+description: Update flywheel itself — autodetects marketplace vs vendored install, refreshes it, applies upgrade strategies, reports old → new version. Use to upgrade flywheel or check which version a repo carries.
 argument-hint: "[vendored|marketplace] (optional — autodetected)"
 allowed-tools: Bash, Read, Grep, Glob
 ---

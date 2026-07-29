@@ -1,13 +1,13 @@
 ---
 name: work
-description: Implement plan tasks with a tight iterate-until-green inner loop — write a failing test, implement the minimum, run tests + linter, observe, fix, repeat — and never declare a task done until its objective check is green. Use when executing tasks from an approved plan.
+description: Implement plan tasks with the iterate-until-green inner loop — failing test, minimal implementation, run, observe, fix — never done until the objective check is green. Use when executing tasks from an approved plan.
 argument-hint: "[task or plan-slug]"
 allowed-tools: Read, Edit, Write, Grep, Glob, Bash
 ---
 
 # /flywheel:work — the inner loop (iterate until green)
 
-**Progress, live:** materialize each plan task as a visible task in the host task system before starting, and flip its state the moment its local check goes green — never in bulk afterwards. Inside a `/flywheel:loop` cycle, also update the cycle's telemetry report (`.claude/flywheel/runs/<spec-slug>/<date>.html`, never secrets) at each task transition. Fail-open: reporting never blocks the work.
+**Progress, live:** materialize each plan task as a visible task in the host task system before starting, and flip its state the moment its local check goes green — never in bulk afterwards. Inside a `/flywheel:loop` cycle, also append **one JSON line** per task transition to the cycle's telemetry data file (`.claude/flywheel/runs/<spec-slug>/<date>.jsonl`, never secrets): `{"ts": "<ISO>", "task": …, "state": …}` plus what the transition proved. Do **not** regenerate the HTML report here — the loop renders it from the JSONL at phase gates and at close; a transition costs one line, not a page. Fail-open: reporting never blocks the work.
 
 **Prime from fixtures:** before building test data for an entity, `/flywheel:recall fixture <entity>` — if the ledger already has the recipe, use it instead of re-deriving it.
 

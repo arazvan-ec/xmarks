@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: Turn a vague idea into sharp, agreed requirements before writing a spec — restate the goal, ask the few highest-leverage questions, lay out 2–3 approaches with trade-offs, and converge on scope. Use when the user has a fuzzy idea they want to develop; it precedes /flywheel:spec.
+description: Sharpen a vague or fuzzy idea into agreed requirements — key questions, 2–3 approaches with trade-offs, converge on scope. Use before /flywheel:spec when the idea isn't clear yet.
 argument-hint: "[rough idea]"
 allowed-tools: Read, Grep, Glob
 ---

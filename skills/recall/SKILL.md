@@ -1,6 +1,6 @@
 ---
 name: recall
-description: On-demand search over the flywheel learnings ledger — list matching entries cheaply by type/title/files/branch, then expand one on request. Use when you want a past decision, gotcha, or pattern that the SessionStart hook's budgeted injection didn't surface, especially when working on a file or topic the ledger has entries about.
+description: Search the learnings ledger on demand — list matches cheaply, expand one on request. Use for a past decision, gotcha, pattern, or fixture the session-start injection didn't surface.
 argument-hint: "<query>"
 allowed-tools: Read, Grep
 ---

@@ -1,6 +1,6 @@
 ---
 name: compound
-description: Capture the reusable knowledge from this cycle — decisions, gotchas, and patterns — into the versioned learnings ledger so the next cycle starts smarter. Use at the end of a unit of work, after review.
+description: Capture this cycle's decisions, gotchas, patterns, and fixtures into the learnings ledger so the next cycle starts smarter. Use at the end of a unit of work, after review.
 allowed-tools: Read, Edit, Write, Bash(git *), Bash(date *)
 ---
 
