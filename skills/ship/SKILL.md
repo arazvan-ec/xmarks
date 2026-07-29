@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Close out a unit of work — a clean commit, push, and pull request — following the repo's conventions and the learnings ledger. Use at the very end of a cycle, after verify passes and compound is done.
+description: Close out a unit of work — clean commit, push, pull request. Use at the very end of a cycle, after verify passes and compound is done.
 disable-model-invocation: true
 argument-hint: "[branch or PR title]"
 allowed-tools: Read, Grep, Glob, Bash(git *), Bash(gh *)

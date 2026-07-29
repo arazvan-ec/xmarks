@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Turn a feature request into a REASONS spec-contract (Requirements, Entities, Approach, Structure, Operations, Norms, Safeguards) with one machine-checkable success metric. Use at the very start of a unit of work, before planning or writing code.
+description: Turn a feature request into a REASONS spec-contract with one machine-checkable success metric. Use at the start of a unit of work, before planning or writing code.
 argument-hint: "[feature description]"
 allowed-tools: Read, Grep, Glob, Write
 ---

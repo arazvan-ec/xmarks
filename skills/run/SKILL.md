@@ -1,6 +1,6 @@
 ---
 name: run
-description: Execute a process contract as the runtime — follow its fixed rules, apply bounded judgment, persist to the repo's datastore per DATA.md and prove the write, then mature the contract. Use to run an operation defined with /flywheel:process; Claude acts as the backend, not calling one.
+description: Execute a process contract as the runtime — follow its fixed rules, persist to the repo's datastore per DATA.md, prove the write, mature the contract. Use to run an operation defined with /flywheel:process; Claude is the backend.
 argument-hint: "[process-slug] [input...]"
 allowed-tools: Read, Edit, Write, Grep, Glob, Bash
 ---
@@ -13,7 +13,7 @@ There is no static backend here — **you are the execution**. You follow the co
 
 ## 0. Progress ledger (spans the whole run)
 
-At run start, materialize each contract Rule as a visible task in the host task system (one task per Rule, in order) and update states (`pending → in_progress → completed`, `blocked` on gates/failures) **at every transition**. Maintain the run's telemetry report at `.claude/flywheel/runs/<slug>/<date>.html` — declared repo extensions may adjust the filename (e.g. a per-profile suffix) — (ledger + timings, gates, unit telemetry, outputs, verdict — never secrets): regenerate it at each transition and republish its artifact to the same stable URL. Chat is for gates, blockers, and the final report only — routine progress lives in the ledger. If the task system or artifact publishing is unavailable, proceed anyway and say so in the final report (fail-open, never block the run).
+At run start, materialize each contract Rule as a visible task in the host task system (one task per Rule, in order) and update states (`pending → in_progress → completed`, `blocked` on gates/failures) **at every transition**. Telemetry is two-tier: append **one JSON line per transition** to `.claude/flywheel/runs/<slug>/<date>.jsonl`, and render the HTML report `.claude/flywheel/runs/<slug>/<date>.html` from that JSONL only at gates/blockers and at the final report — declared repo extensions may adjust the filenames (e.g. a per-profile suffix) — (ledger + timings, gates, unit telemetry, outputs, verdict — never secrets); republish the artifact to the same stable URL each time the HTML is rendered, never per Rule transition. Chat is for gates, blockers, and the final report only — routine progress lives in the ledger. If the task system or artifact publishing is unavailable, proceed anyway and say so in the final report (fail-open, never block the run).
 
 ## 1. Load the contract and the data strategy
 

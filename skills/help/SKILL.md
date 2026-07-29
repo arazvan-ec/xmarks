@@ -1,6 +1,6 @@
 ---
 name: help
-description: Onboarding and command reference for the flywheel plugin — explains the nested loop, lists every /flywheel command with when to use it, and helps the user pick where to start. Use when someone is new to flywheel, asks how flywheel works or how to use it, or runs /flywheel:help.
+description: Onboarding and command reference — the nested loop, every /flywheel command, and where to start. Use when someone is new to flywheel or asks how it works.
 argument-hint: "[optional: a topic, or a task you want to start]"
 ---
 
@@ -16,7 +16,7 @@ It has a **second pillar** too: where the loop *builds* software, `/flywheel:pro
 ## 2. The command map — show as a table
 | Command | When to use it |
 | --- | --- |
-| `/flywheel:loop <task>` | **Start here.** Runs the whole cycle end to end, gating between phases. |
+| `/flywheel:loop <task>` | **Start here.** Runs the whole cycle end to end, gating between phases; routes small, clear tasks through a collapsed micro-cycle. |
 | `/flywheel:brainstorm <idea>` | The idea is fuzzy — sharpen it into agreed requirements first. |
 | `/flywheel:spec <feature>` | Write the contract + one machine-checkable success metric. |
 | `/flywheel:plan <spec>` | Turn a signed spec into ordered tasks, each with its own check. |
@@ -42,10 +42,10 @@ It has a **second pillar** too: where the loop *builds* software, `/flywheel:pro
 
 ## 4. Good to know
 - **State lives in this project** under `.claude/flywheel/`: specs in `specs/`, process contracts in `processes/` + the data strategy `DATA.md`, run/cycle telemetry reports in `runs/`, plus the compounding ledger `LEARNINGS.md`. The `SessionStart` hook injects a relevance-scored, budgeted subset of recent lessons each session (matched to the current branch/files); anything it skips is one `/flywheel:recall <query>` away.
-- **Live progress**: process runs and dev cycles materialize their steps as visible tasks (states updated at every transition) and keep a per-execution telemetry report in `runs/`, republished to a stable artifact URL — watch the ledger move instead of asking "how is it going". Fail-open: reporting never blocks execution.
+- **Live progress**: process runs and dev cycles materialize their steps as visible tasks (states updated at every transition) and keep per-execution telemetry in `runs/` — one appended JSONL line per transition, plus an HTML report rendered from it at gates and close, republished to a stable artifact URL. Watch the ledger move instead of asking "how is it going". Fail-open: reporting never blocks execution.
 - **Fixture memory** (v0.21.0): the ledger's `fixture` type captures *how to build* a stub for a domain entity / seed data / a test harness. `work` offers to record one when you spend real effort on test data; `spec`/`work` surface matching recipes before you re-derive them — so setup knowledge compounds like everything else.
 - **Evidence-gated memory** (v0.25.0): every learning carries `evidence=` (what proved it); a lesson with no proof is written `evidence=unverified` and gets **flagged** at injection and in `/flywheel:recall`, so knowledge is trusted the way code is — only what a cycle proved primes the next one.
-- **Optional hard gate**: drop an executable `.claude/flywheel/gate.sh` (for example `npm test && npm run lint`). Once you **trust it** (the hook prints the one-time command the first time it sees the gate — an unrecognized gate is never auto-run, since a PR could plant one), the `Stop` hook blocks finishing a turn whenever it fails — so nothing is called "done" with checks red. It skips re-running on an unchanged tree and never re-traps you on a persistently red gate.
+- **Optional hard gate**: drop an executable `.claude/flywheel/gate.sh` (for example `npm test && npm run lint`). Once you **trust it** (the hook prints the one-time command the first time it sees the gate — an unrecognized gate is never auto-run, since a PR could plant one), the `Stop` hook blocks finishing a turn whenever it fails — so nothing is called "done" with checks red. It skips re-running on an unchanged tree and never re-traps you on a persistently red gate. `/flywheel:verify` runs the gate as its suite command and **seals** the passing tree afterwards (`gate.sh seal`), so verify + Stop hook cost one suite run, not two.
 - Commands are namespaced `/flywheel:…` and also show up in `/help`.
 - **Model routing by role**: the mechanical `verifier` runs on a fast/cheap model (Haiku); the judgment-heavy `reviewer-*` run on Sonnet. Change an agent's `model:` frontmatter to adjust, or `CLAUDE_CODE_SUBAGENT_MODEL` to override all.
 - **`/flywheel:autoloop` self-checks itself**: on ambiguous keep/discard results and before declaring its target met, it dispatches the `evaluator` agent (Haiku) to re-run the metric command independently, rather than trusting its own self-report.

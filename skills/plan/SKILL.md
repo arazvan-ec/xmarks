@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Turn an approved REASONS spec into an ordered implementation plan where every task carries its own pass/fail check. Use after /flywheel:spec is signed off and before writing code.
+description: Turn an approved spec into ordered tasks, each with its own pass/fail check. Use after /flywheel:spec sign-off, before writing code.
 argument-hint: "[spec-slug]"
 allowed-tools: Read, Grep, Glob, Write
 ---

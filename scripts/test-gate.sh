@@ -3,7 +3,9 @@
 # Covers: not-opted-in no-op; the trust boundary (an untrusted gate is NEVER
 # executed); trusted green allows + caches; trusted red blocks then bypasses
 # after MAX; the cost cache skips an unchanged-tree re-run; the bypass persists
-# so a permanently-red gate can't re-trap.
+# so a permanently-red gate can't re-trap; `seal` records the current tree as
+# passed on the caller's evidence (verify's PASS) so the Stop hook skips one
+# whole suite run — but never for an untrusted gate.
 
 set -euo pipefail
 
@@ -139,6 +141,48 @@ echo 0 > "${WORK}/mode"
 run_hook '{}'
 [ "${RC}" -eq 0 ] || fail "green gate should allow, got ${RC}"
 pass "green run clears state"
+
+run_seal() {
+  RC=0
+  CLAUDE_PROJECT_DIR="${TARGET}" FLYWHEEL_STATE_DIR="${STORE}" bash "${HOOK}" seal >"${WORK}/out" 2>"${WORK}/err" </dev/null || RC=$?
+}
+
+echo "== seal records the tree as passed (verify's evidence, no gate run) =="
+echo sealme >> "${TARGET}/file.txt"     # new tree, not cached
+echo 1 > "${WORK}/mode"                 # gate WOULD fail — seal must not run it
+BEFORE="$(ran_count)"
+run_seal
+[ "${RC}" -eq 0 ] || fail "seal should exit 0, got ${RC}"
+[ "$(ran_count)" -eq "${BEFORE}" ] || fail "seal must not execute the gate"
+run_hook '{}'
+[ "${RC}" -eq 0 ] || fail "sealed tree should allow (exit 0), got ${RC}"
+[ "$(ran_count)" -eq "${BEFORE}" ] || fail "sealed tree should skip the gate run, ran $(ran_count)"
+pass "seal → Stop hook cache-hits without running the gate"
+
+echo "== seal is per-tree: a changed tree still re-runs =="
+echo unsealed >> "${TARGET}/file.txt"
+run_hook '{}'
+[ "${RC}" -eq 2 ] || fail "changed tree after seal should re-run and block, got ${RC}"
+[ "$(ran_count)" -eq "$((BEFORE + 1))" ] || fail "changed tree after seal should have run the gate"
+pass "seal covers exactly one tree signature"
+
+echo "== seal refuses an untrusted gate (fail-safe) =="
+echo 0 > "${WORK}/mode"; run_hook '{}'  # back to green so state is clean
+cat > "${GATE}" <<EOF
+#!/usr/bin/env bash
+echo ran >> "${RAN}"
+exit \$(cat "${WORK}/mode" 2>/dev/null || echo 0)
+EOF
+echo '# retrusted' >> "${GATE}"          # new content → new hash → untrusted
+echo sneaky >> "${TARGET}/file.txt"      # new tree, so no earlier pass is cached
+run_seal
+[ "${RC}" -eq 0 ] || fail "seal on untrusted gate should still exit 0, got ${RC}"
+grep -q 'not trusted' "${WORK}/err" || fail "seal on untrusted gate should say why it refused"
+trust_gate                                # now trust it: a prior sneaky seal must not stick
+BEFORE="$(ran_count)"
+run_hook '{}'
+[ "$(ran_count)" -eq "$((BEFORE + 1))" ] || fail "untrusted-era seal took effect — trust boundary breached"
+pass "untrusted gate cannot be sealed"
 
 echo ""
 echo "all gate tests passed"

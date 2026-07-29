@@ -34,7 +34,7 @@ loop that Claude improves with each execution.
 - `.claude/flywheel/LEARNINGS.md` — the compounding, cross-cutting ledger.
 - `.claude/flywheel/processes/<slug>.md` — process contracts (pillar 2).
 - `.claude/flywheel/DATA.md` — the repo's data-persistence strategy that runs follow.
-- `.claude/flywheel/runs/<slug>/<date>.html` — per-execution live telemetry reports (pillar 1 cycles + pillar 2 runs).
+- `.claude/flywheel/runs/<slug>/<date>.jsonl` + `.html` — per-execution telemetry (pillar 1 cycles + pillar 2 runs): one JSONL line appended per transition; the HTML report rendered from it only at gates and close.
 
 ## Writing-token discipline (owner convention, 2026-07-29)
 

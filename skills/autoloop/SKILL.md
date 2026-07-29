@@ -1,6 +1,6 @@
 ---
 name: autoloop
-description: Autonomous iterate-until-metric loop — change → measure → keep-if-better against one machine-checkable metric, within a fixed iteration budget, no human input between iterations. Use only for objectively measurable goals (suite green, lint-error count to zero).
+description: Autonomous metric-driven loop — change → measure → keep-if-better against one machine-checkable metric, within a fixed iteration budget. Use only for objectively measurable goals (suite green, lint errors to zero).
 disable-model-invocation: true
 disallowed-tools: AskUserQuestion
 argument-hint: "[goal] [max-iterations, default 10]"

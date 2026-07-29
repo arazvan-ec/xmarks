@@ -1,6 +1,6 @@
 ---
 name: sync
-description: Detect and reconcile drift between a REASONS spec and the actual code — find entities/operations present in code but not the spec, and spec items not yet implemented, then update the spec (with confirmation) or flag the missing implementation. Use after code has evolved past its original spec.
+description: Detect and reconcile spec↔code drift — code the spec doesn't reflect, spec items not implemented — then fix whichever is wrong, with confirmation. Use after code has evolved past its original spec.
 argument-hint: "[spec-slug]"
 allowed-tools: Read, Grep, Glob, Edit
 ---
