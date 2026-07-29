@@ -145,6 +145,22 @@ printf '%s\n' "${OUT_EV}" | grep -q 'proven flake fix' \
   || fail "flag count wrong — legacy or verified entry got marked unverified"
 pass "unverified flagged; legacy and verified inject clean"
 
+echo "== pending-upgrade nag =="
+# Non-empty PENDING-UPGRADES must nag with every version, even when the
+# network update check is disabled (it is pure local state); an empty or
+# absent file must stay silent.
+printf '0.26.0\n0.27.0\n' > "${TARGET}/.claude/flywheel/PENDING-UPGRADES"
+OUT_PEND="$(run_hook)"
+echo "${OUT_PEND}" | grep -q 'strategies PENDING' || fail "pending-upgrade nag missing"
+echo "${OUT_PEND}" | grep -q 'v0\.26\.0, v0\.27\.0' || fail "nag does not list the pending versions"
+: > "${TARGET}/.claude/flywheel/PENDING-UPGRADES"
+OUT_EMPTYPEND="$(run_hook)"
+echo "${OUT_EMPTYPEND}" | grep -q 'strategies PENDING' && fail "empty PENDING-UPGRADES still nagged"
+rm -f "${TARGET}/.claude/flywheel/PENDING-UPGRADES"
+OUT_NOPEND="$(run_hook)"
+echo "${OUT_NOPEND}" | grep -q 'strategies PENDING' && fail "nag printed with no PENDING-UPGRADES file"
+pass "pending-upgrade nag: lists versions when debt exists, silent otherwise"
+
 echo "== update-check stamp cache =="
 # A same-day stamp must be trusted (no curl needed) and a symlinked stamp must
 # be ignored — both offline-safe because a valid cache short-circuits curl.

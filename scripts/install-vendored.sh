@@ -117,7 +117,7 @@ if [ "${MODE}" = "uninstall" ]; then
       remove_or_restore ".claude/agents/$(basename "${f}")"
     done
   fi
-  rm -rf "${BIN_DST}" "${FLYWHEEL_DST}/VERSION" "${MANIFEST}"
+  rm -rf "${BIN_DST}" "${FLYWHEEL_DST}/VERSION" "${FLYWHEEL_DST}/PENDING-UPGRADES" "${MANIFEST}"
 
   if [ -f "${SETTINGS}" ]; then
     FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
@@ -172,6 +172,14 @@ fi
 mkdir -p "${SKILLS_DST}" "${AGENTS_DST}" "${BIN_DST}"
 NEW_MANIFEST="$(mktemp)"
 
+# The version this repo carried BEFORE this refresh — read now, before anything
+# overwrites VERSION. Drives the pending-strategy computation below. (Guarded:
+# under pipefail a sed on a missing file would abort fresh installs.)
+OLD_VERSION=""
+if [ -f "${FLYWHEEL_DST}/VERSION" ]; then
+  OLD_VERSION="$(sed -n 's/^flywheel //p' "${FLYWHEEL_DST}/VERSION" | head -1)"
+fi
+
 # Rewrite plugin-namespaced command references (/flywheel:spec) to the
 # vendored flat names (/flywheel-spec).
 rewrite() { sed 's|/flywheel:|/flywheel-|g' "$1"; }
@@ -213,7 +221,13 @@ for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC
   rewrite "${f}" | vendor_file ".claude/flywheel/bin/$(basename "${f}")"
   chmod +x "${BIN_DST}/$(basename "${f}")"
 done
-echo "vendored hook scripts into .claude/flywheel/bin/"
+# Smoke check: a vendored hook that doesn't parse breaks every future session
+# start. Abort before the manifest/VERSION swap so a broken refresh is never
+# recorded as installed (the rewrite sed above could itself introduce this).
+for f in "${BIN_DST}"/*.sh; do
+  bash -n "${f}" || { echo "error: vendored ${f#"${TARGET}"/} fails bash -n — aborting install" >&2; exit 1; }
+done
+echo "vendored hook scripts into .claude/flywheel/bin/ (bash -n clean)"
 
 if [ "${AUTO_UPDATE}" = 1 ]; then
   if [ -f "${TARGET}/${UPDATE_WORKFLOW_REL}" ] && ! in_manifest "${UPDATE_WORKFLOW_REL}"; then
@@ -267,6 +281,31 @@ SRC_COMMIT="$(git -C "${SRC}" rev-parse --short HEAD 2>/dev/null || echo unknown
 } > "${FLYWHEEL_DST}/VERSION"
 echo ".claude/flywheel/VERSION" >> "${NEW_MANIFEST}"
 echo "recorded flywheel ${PLUGIN_VERSION} (${SRC_COMMIT}) in .claude/flywheel/VERSION"
+
+# Record upgrade strategies this refresh does NOT apply: notes in the range
+# (old, new] with requires-action: true. The file is repo STATE (like
+# LEARNINGS.md) — deliberately kept out of the manifest so pruning can never
+# erase the debt. SessionStart nags on it every session; /flywheel:update
+# clears each version after executing its strategy; --uninstall removes it.
+PENDING="${FLYWHEEL_DST}/PENDING-UPGRADES"
+if [ -n "${OLD_VERSION}" ] && [ "${OLD_VERSION}" != "${PLUGIN_VERSION}" ]; then
+  for f in "${SRC}"/upgrades/v*.md; do
+    [ -f "${f}" ] || continue
+    v="$(basename "${f}" .md)"; v="${v#v}"
+    # keep OLD_VERSION < v <= PLUGIN_VERSION
+    [ "${v}" = "${OLD_VERSION}" ] && continue
+    [ "$(printf '%s\n%s\n' "${OLD_VERSION}" "${v}" | sort -V | head -1)" = "${OLD_VERSION}" ] || continue
+    [ "$(printf '%s\n%s\n' "${v}" "${PLUGIN_VERSION}" | sort -V | head -1)" = "${v}" ] || continue
+    grep -q '^requires-action: true$' "${f}" || continue
+    echo "${v}" >> "${PENDING}"
+  done
+  if [ -f "${PENDING}" ]; then
+    sort -uV -o "${PENDING}" "${PENDING}"
+    echo "⚠️  pending upgrade strategies recorded in .claude/flywheel/PENDING-UPGRADES:"
+    sed 's/^/     v/' "${PENDING}"
+    echo "   run /flywheel:update to execute and clear them."
+  fi
+fi
 
 # Preserve a previously vendored auto-update workflow across plain re-installs
 # (the --auto-update choice is sticky; --uninstall still removes it).

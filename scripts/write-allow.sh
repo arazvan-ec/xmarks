@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# flywheel — PreToolUse hook on Write/Edit (P19): pre-approve state writes.
+# flywheel — PreToolUse hook on Write/Edit (P20): pre-approve state writes.
 #
 # The loop's real approval gates are conversational — the spec sign-off and the
 # plan approval. Once those pass, persisting flywheel's OWN state (specs,

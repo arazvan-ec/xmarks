@@ -152,6 +152,47 @@ grep -qxF '.github/workflows/flywheel-update.yml' "${TARGET}/.claude/flywheel/.m
   || fail "auto-update workflow dropped from manifest on plain re-install"
 pass "auto-update choice sticky across a plain re-install"
 
+echo "== pending upgrade strategies =="
+PENDING="${TARGET}/.claude/flywheel/PENDING-UPGRADES"
+# Fresh and same-version installs (all runs so far) must never record debt.
+[ ! -e "${PENDING}" ] || fail "PENDING-UPGRADES written without a version change"
+pass "no pending marker on fresh/same-version installs"
+# Simulate a repo carrying an old vendored copy: requires-action notes in
+# (0.7.0, current] must be recorded (v0.8.0 and v0.20.0 are requires-action;
+# v0.9.0 is not and must be skipped).
+printf 'flywheel 0.7.0\n' > "${TARGET}/.claude/flywheel/VERSION"
+bash "${INSTALLER}" "${TARGET}" > "${WORK}/pending-out.txt"
+grep -qx '0.8.0' "${PENDING}" || fail "requires-action note 0.8.0 not recorded as pending"
+grep -qx '0.20.0' "${PENDING}" || fail "requires-action note 0.20.0 not recorded as pending"
+grep -qx '0.9.0' "${PENDING}" && fail "non-requires-action note 0.9.0 recorded as pending"
+grep -q 'pending upgrade strategies recorded' "${WORK}/pending-out.txt" || fail "pending recording not logged"
+grep -qxF '.claude/flywheel/PENDING-UPGRADES' "${TARGET}/.claude/flywheel/.manifest" \
+  && fail "PENDING-UPGRADES leaked into the manifest (pruning would erase the debt)"
+pass "pending strategies recorded for the (old, new] range, requires-action only, kept out of the manifest"
+# Debt must survive a same-version re-install unchanged (no dupes, no clearing).
+cp "${PENDING}" "${WORK}/pending-before.txt"
+bash "${INSTALLER}" "${TARGET}" > /dev/null
+cmp -s "${PENDING}" "${WORK}/pending-before.txt" || fail "same-version re-install changed PENDING-UPGRADES"
+pass "pending debt survives a same-version re-install unchanged"
+
+echo "== post-refresh smoke check =="
+# A hook script that no longer parses must abort the install (non-zero) so a
+# broken vendored copy is never recorded as installed.
+BROKEN_SRC="${WORK}/broken-src"
+mkdir -p "${BROKEN_SRC}/scripts"
+cp -R "${SRC}/skills" "${SRC}/agents" "${SRC}/.claude-plugin" "${BROKEN_SRC}/"
+cp "${SRC}"/scripts/*.sh "${BROKEN_SRC}/scripts/"
+echo 'if [ -z "${broken}" ; then' >> "${BROKEN_SRC}/scripts/gate.sh"
+BROKEN_TARGET="${WORK}/broken-target"
+mkdir -p "${BROKEN_TARGET}"
+git init -q "${BROKEN_TARGET}"
+if bash "${BROKEN_SRC}/scripts/install-vendored.sh" "${BROKEN_TARGET}" > /dev/null 2>&1; then
+  fail "installer succeeded despite a hook script that fails bash -n"
+fi
+[ ! -e "${BROKEN_TARGET}/.claude/flywheel/VERSION" ] \
+  || fail "aborted install still recorded a VERSION marker"
+pass "broken hook script aborts the install before VERSION/manifest are recorded"
+
 echo "== uninstall =="
 mkdir -p "${TARGET}/.claude/flywheel"
 echo "# flywheel learnings" > "${TARGET}/.claude/flywheel/LEARNINGS.md"
@@ -185,7 +226,8 @@ pass "auto-update workflow removed"
 [ ! -e "${TARGET}/.claude/flywheel/bin" ] || fail "hook scripts survived uninstall"
 [ ! -e "${TARGET}/.claude/flywheel/VERSION" ] || fail "VERSION survived uninstall"
 [ ! -e "${TARGET}/.claude/flywheel/.manifest" ] || fail "manifest survived uninstall"
-pass "hook scripts, VERSION and manifest removed"
+[ ! -e "${TARGET}/.claude/flywheel/PENDING-UPGRADES" ] || fail "PENDING-UPGRADES survived uninstall"
+pass "hook scripts, VERSION, manifest and pending marker removed"
 [ -f "${TARGET}/.claude/flywheel/LEARNINGS.md" ] || fail "LEARNINGS.md was deleted by uninstall"
 pass "project state (LEARNINGS.md) preserved"
 

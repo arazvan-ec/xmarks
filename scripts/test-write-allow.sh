@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# flywheel — test for the state-write pre-approval PreToolUse hook (P19).
+# flywheel — test for the state-write pre-approval PreToolUse hook (P20).
 # Asserts the allow-only contract: a write targeting the flywheel state dir
 # emits a permissionDecision=allow envelope; everything else — out-of-scope
 # paths, `..` traversal, symlink escapes, malformed input, missing python3 —
