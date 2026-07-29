@@ -74,6 +74,9 @@ jobs:
               echo "> ⚠️ At least one note above **requires action** beyond this file refresh."
               echo "> Open a Claude Code session on this branch and run \`/flywheel-update\` —"
               echo "> it executes the strategies and logs them to \`.claude/flywheel/UPGRADES.md\`."
+              echo "> The pending versions are recorded in \`.claude/flywheel/PENDING-UPGRADES\`"
+              echo "> (part of this PR), so every session will keep nagging until they are applied —"
+              echo "> merging without acting no longer loses them."
             fi
             echo ""
             echo "Review the \`.claude/\` diff — any \`*.pre-flywheel\` backups in it mean"

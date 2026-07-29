@@ -38,6 +38,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P16 | Live run progress: task ledger + telemetry report | ✅ shipped (v0.16.0) | Done — both pillars (run/process + loop/work); piloted by flow-audit v3 + the p16 cycle report |
 | P17 | Setup/fixture knowledge as first-class compounded context | ✅ shipped (v0.21.0) | Done — `fixture` type, compound captures, spec/work prime + advisory trigger, evidence-gated |
 | P18 | Evidence-gated compounding | ✅ shipped (v0.25.0) | Done — `evidence=` metadata, compound capture rule, `[unverified]` flag at injection + in recall; advisory |
+| P19 | Update postprocess: persistent pending-strategy state + refresh smoke check | ✅ shipped (v0.26.0) | Done — `PENDING-UPGRADES` written by the installer, nagged by SessionStart, cleared by `/flywheel:update`; `bash -n` gate aborts a broken refresh. CI auto-apply deferred until the nag proves recurring debt |
 
 ## Priority overview
 
@@ -857,3 +858,15 @@ Append-only. Newest at the bottom.
   implements. Completes the division from v0.23.0: mechanism in the plugin,
   business in the repo. First user: `keep`'s PRODUCT.md (personal tracking &
   development app evolved from the owner's content).
+- **2026-07-29** — **Shipped P19 (v0.26.0): update postprocess.** Owner asked
+  whether post-update processing was worth adding; audit found the real hole —
+  the auto-update PR's `requires-action` warning is ephemeral, so merging
+  without running `/flywheel:update` lost pending strategies silently. Fix:
+  the installer (the single writer that holds both the old version and the
+  notes) persists the `(old, new]` requires-action range to
+  `.claude/flywheel/PENDING-UPGRADES` (state, never in the manifest);
+  SessionStart nags every session, offline; `/flywheel:update` clears per
+  applied version; uninstall removes it. Plus a `bash -n` smoke gate that
+  aborts a refresh before VERSION/manifest are recorded when a vendored hook
+  script no longer parses. Deferred: CI auto-applying strategies — revisit if
+  the nag shows recurring debt. Spec: `specs/p19-update-postprocess.md`.

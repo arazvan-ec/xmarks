@@ -45,6 +45,19 @@ if [ -f "${VERSION_FILE}" ] && [ -z "${FLYWHEEL_NO_UPDATE_CHECK:-}" ] && command
   fi
 fi
 
+# Pending-upgrade nag (vendored installs). install-vendored.sh records here
+# the upgrade notes whose requires-action strategy a file refresh alone does
+# not apply — e.g. an auto-update PR merged without running /flywheel:update.
+# Pure local state (no network, independent of FLYWHEEL_NO_UPDATE_CHECK);
+# repeats every session until /flywheel:update executes and clears the file.
+PENDING_FILE="${PROJECT_DIR}/.claude/flywheel/PENDING-UPGRADES"
+if [ -s "${PENDING_FILE}" ]; then
+  PENDING_LIST="$(awk '{printf "%s%s", (NR > 1 ? ", " : ""), "v" $0}' "${PENDING_FILE}" 2>/dev/null)"
+  echo "⚠️  flywheel upgrade strategies PENDING for: ${PENDING_LIST}"
+  echo "   The file refresh did not apply them — run /flywheel:update to execute and clear."
+  echo ""
+fi
+
 if [ ! -f "${LEDGER}" ]; then
   echo "📓 No flywheel learnings yet. /flywheel:compound will create"
   echo "   .claude/flywheel/LEARNINGS.md at the end of your first cycle."
