@@ -44,7 +44,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
 | P23 | Cycle-cost telemetry: the loop measures its own cost | 🔵 proposed | Add mechanically-observable cost fields to the JSONL transition line + a two-run comparison helper. Open question: what proxy replaces unreliable self-reported tokens |
 | P24 | Description budget as a CI ratchet | ✅ shipped (v0.33.0) | Done — `check-description-budget.sh` sums description values (3301) against `scripts/description-budget.txt` (3600); malformed frontmatter fails loudly; wired into CI |
-| P25 | Close the gaps the P22 eval iteration exposed | 🟡 implemented, release held | Done in code; **bump blocked on the `process` eval run** (CLAUDE.md gates skill changes on evals). v0.34.0 reserved |
+| P25 | Close the gaps the P22 eval iteration exposed | ✅ shipped (v0.34.0) | Done — §5 format pinned + grader re-tightened (gate: 3/3 evals, 39/39); work kata de-hinted via a fixture guard; a hollow `run` eval-2 grader fixed. Baseline arm documented, still unrun |
 
 ## Priority overview
 
@@ -1256,3 +1256,22 @@ Append-only. Newest at the bottom.
   fresh-context subagents and owner authorization, so v0.34.0 is reserved and
   unclaimed. CI stays green — `test-docs-consistency.sh` only requires the
   *current* version to have its note.
+- **2026-07-30** — **P25 shipped as v0.34.0; eval gate run and green.** The
+  `process` eval suite ran with fresh-context subagents against the P25 branch:
+  3/3 evals, 39/39 assertions, ~133k subagent tokens, and — unlike 2026-07-29 —
+  **no grader changes were needed**. The headline result is eval 3: with §5
+  pinning `### <YYYY-MM-DD> — …`, the executor emitted that heading unprompted
+  and the **re-tightened** assertion passed. v0.32.0 had loosened that exact
+  check because the executor used a dated bullet; fixing the skill rather than
+  the grader was the right direction and is now proven, not asserted.
+  **A third gap surfaced while preparing the gate, worse than the two P25 knew
+  about:** `skills/run/evals/check.sh` eval 2 (idempotent-upsert) passed on an
+  **untouched fixture** — all three assertions were satisfied by the seed, so a
+  run that did nothing scored 3/3 and the idempotency gate could never fail.
+  v0.32.0's claim that the graders were "verified red on an untouched fixture"
+  did not cover eval 2. It now requires the row's `audited` field to hold the run
+  date and the datastore to be staged (DATA.md's own definition of landed), and
+  was verified red on the untouched fixture, green on a correct simulated upsert,
+  and red again on a duplicated row. Lesson for the ledger: *check every eval id
+  for a vacuous pass, not a sample* — a grader that cannot fail is worse than no
+  grader, because it reports confidence.

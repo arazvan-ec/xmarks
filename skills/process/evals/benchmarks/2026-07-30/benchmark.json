@@ -1,0 +1,64 @@
+{
+  "metadata": {
+    "skill_name": "process",
+    "skill_path": "skills/process",
+    "executor_model": "session default (fresh-context general-purpose subagents)",
+    "timestamp": "2026-07-30",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 1,
+    "configurations": ["with_skill"],
+    "release_gate_for": "P25 — pins the Improvement-log entry format in process SKILL.md §5",
+    "baseline_note": "without_skill baseline intentionally skipped: this is the release-gate iteration (regression detection) for a §5 wording change, not a skill-value study. The value study is the documented, still-unrun baseline-arm procedure in README."
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "new-contract-shape",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 15, "failed": 0, "total": 15, "time_seconds": 151.8, "tokens": 45795, "tool_calls": 12, "errors": 0},
+      "notes": [
+        "Contract `car-valuation` v1, 11 numbered fixed Rules, Improvement log empty at creation.",
+        "Executor extended the existing DATA.md Schema with the new target instead of duplicating a strategy — correct §1 behavior, same as the 2026-07-29 iteration.",
+        "Fixed the valuation constants deterministically (base price, verdict bands, mileage slope) and flagged each for maturation, as eval mode requires."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "data-strategy-bootstrap",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 20, "failed": 0, "total": 20, "time_seconds": 148.5, "tokens": 42541, "tool_calls": 8, "errors": 0},
+      "notes": [
+        "DATA.md written before the contract ('a process that cannot say where its results go is not done'), with the store inferred from evidence (no DATABASE_URL, no ORM, no compose db service; the sibling contract's `persistence: git-markdown:` clinched it).",
+        "Contract `letter-triplet-counts` v1 put the derived table in its own file so recomputes never touch the protected source table — beyond the assertions, consistent with the no-destructive-ops convention."
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "mature-existing-contract",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 142.8, "tokens": 45063, "tool_calls": 18, "errors": 0},
+      "notes": [
+        "THE POINT OF THIS ITERATION: the Improvement-log assertion passes against the RE-TIGHTENED grader, which now requires '^### <YYYY-MM-DD>'. In the 2026-07-29 iteration the executor emitted a dated bullet and the grader had to be loosened to accept any dated line; with process SKILL.md §5 pinning the format (P25), the executor produced `### 2026-07-30 — added round_number boolean …` unprompted. The v0.32.0 follow-up is closed by fixing the skill, not the grader.",
+        "Version bumped 1 → 2; original Rule 1 (Normalize) preserved; round_number added to Rules, Output schema, Persistence and Guardrails (derived-never-judged, so it stays out of Judgment latitude).",
+        "Executor also migrated the datastore header and backfilled the one seeded row additively — no row or rejection deleted."
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 147.7, "stddev": 3.7, "min": 142.8, "max": 151.8},
+      "tokens": {"mean": 44466, "stddev": 1440, "min": 42541, "max": 45795}
+    }
+  },
+  "notes": [
+    "Release gate for v0.34.0: 3/3 evals green, 39/39 assertions, no grader changes needed this iteration — the opposite of 2026-07-29, where the grader had to be loosened.",
+    "Graders verified red on the untouched fixture before the runs (all three eval ids).",
+    "Total cost: ~133.4k subagent tokens, 38 tool calls, 1 run per eval.",
+    "n=1 per eval. Adequate as a regression gate; not a statistical result.",
+    "Executors were instructed not to read skills/process/evals/ so the grading criteria could not leak into the runs."
+  ]
+}

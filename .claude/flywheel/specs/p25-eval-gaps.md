@@ -1,7 +1,7 @@
 # Spec: P25 — close the gaps the P22 eval iteration exposed
 
 **Slug:** `p25-eval-gaps` · **Created:** 2026-07-30 · **Backlog:** P25
-**Status:** implemented, metric PASS — **release deliberately held at the bump.** This spec
+**Status:** shipped as v0.34.0 — metric PASS; eval gate run 2026-07-30: 3/3 process evals, 39/39 assertions, no grader changes needed. Also fixed a hollow `run` eval-2 grader found while preparing the gate. Originally held at the bump because this spec
 changes `skills/process/SKILL.md`, and CLAUDE.md requires the skill's eval to
 run *before* the version is bumped. That run needs fresh-context subagents
 (~120k tokens for `process` alone) and explicit owner authorization, so the
