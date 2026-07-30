@@ -43,7 +43,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P21 | Bash grants coherent with the approval gates (P20 for commands) | ✅ shipped (v0.28.0) | Done — allow-only `bash-allow.sh` (add/commit/stash, branch-aware force-free push); gate-time consent rules in spec/process; permission drift in sync |
 | P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
 | P23 | Cycle-cost telemetry: the loop measures its own cost | 🔵 proposed | Add mechanically-observable cost fields to the JSONL transition line + a two-run comparison helper. Open question: what proxy replaces unreliable self-reported tokens |
-| P24 | Description budget as a CI ratchet | 🔵 proposed | Sum the frontmatter `description` chars across skills; fail above a committed budget so the v0.30.0 −22% can't silently regrow |
+| P24 | Description budget as a CI ratchet | ✅ shipped (v0.33.0) | Done — `check-description-budget.sh` sums description values (3301) against `scripts/description-budget.txt` (3600); malformed frontmatter fails loudly; wired into CI |
 | P25 | Close the gaps the P22 eval iteration exposed | 🔵 proposed | Non-discriminating `work` kata; no baseline arm for `process`/`run`; pin the Improvement-log format in `process` §5 |
 
 ## Priority overview
@@ -1219,3 +1219,17 @@ Append-only. Newest at the bottom.
   `work`'s evals didn't discriminate and `process`/`run` have no baseline arm
   (→ P25). All benchmark iterations are n=1 — adequate as a regression gate,
   not as a value study, and the README should keep saying so.
+- **2026-07-30** — **P24 shipped as v0.33.0.** The v0.30.0 description saving is
+  now a ratchet: `scripts/check-description-budget.sh` sums the frontmatter
+  `description` values across `skills/*/SKILL.md` (3,301 today) and fails above
+  `scripts/description-budget.txt` (3,600 — roughly one average description of
+  headroom, so one new skill is free and a second needs a deliberate bump).
+  Developed red→green per the CLAUDE.md rule: the test failed with exit 127
+  before the gate existed. Two design calls worth recording: the budget lives in
+  its own file so a policy bump does not trip the script/test pairing gate; and
+  malformed frontmatter (missing, empty, or a YAML folded `>` / `|` value) exits
+  2 naming the skill rather than counting as 0, because a silent-zero parser
+  could be used to evade the budget. Deliberately *not* included: a per-skill
+  cap — the proposal names the total only, and a second rule is scope the spec
+  didn't buy. Note the two ways to measure the same trim: 5,441 → 4,246 chars
+  whole-line (the audit's figure) vs 3,301 values-only (what the gate sums).
