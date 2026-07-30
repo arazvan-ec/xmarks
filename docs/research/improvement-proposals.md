@@ -1082,3 +1082,19 @@ Append-only. Newest at the bottom.
   — its test existed and failed before the gate did. Phase 2 (skill evals for
   `verify`/`work` and `process`/`run` as manual release gates) stays open,
   split into two parallel sessions, one per pillar.
+- **2026-07-29** — **P22 phase 2, pillar 1 shipped as v0.31.0** (parallel
+  session; pillar 2 `process`/`run` runs separately). Behavioral evals in the
+  skill-creator format for `verify` (planted failing bug → must end
+  `VERDICT: FAIL — <reason>`; tests-green-but-CLI-wrong "sneaky" trap → must
+  actually run the real thing and still FAIL; clean control → must PASS) and
+  `work` (fixture `run-tests.sh` logs `RESULT` + impl hash per run, so
+  red-before-impl is graded mechanically from `.check-log` vs `baseline-sha`).
+  Iteration 1 executed for real (with-skill vs baseline, ~360k tokens
+  total including a rerun of the with-skill arm against the v0.30.0 text
+  after rebase): with_skill 10/10 + 8/8 assertions; baseline correct on
+  analysis but broke the parseable verdict-line contract on all 3 verify
+  evals; work evals non-discriminating vs baseline this iteration (both did
+  red→green) — their gate value is regression detection on the skill text.
+  Benchmarks committed under `skills/<name>/evals/benchmarks/2026-07-29/`;
+  runbook in README (manual, never CI); fixtures captured as `type=fixture`
+  learnings.
