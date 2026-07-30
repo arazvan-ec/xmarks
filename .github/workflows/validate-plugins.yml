@@ -71,6 +71,12 @@ jobs:
       - name: Test check-test-pairing.sh gate
         run: bash scripts/test-check-test-pairing.sh
 
+      - name: Check skill description budget (P24)
+        run: bash scripts/check-description-budget.sh
+
+      - name: Test check-description-budget.sh gate
+        run: bash scripts/test-check-description-budget.sh
+
       - name: Test install-vendored.sh
         run: bash scripts/test-install-vendored.sh
 
