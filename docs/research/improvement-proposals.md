@@ -762,6 +762,23 @@ macOS installs), then P9 (restores a shipped-but-inert feature), P12 (immediate
 token savings), P11 and P13 (security posture), P15 (dogfooding), and P14 last
 (largest surface; split into integration + lifecycle releases when built).
 
+**Post-audit sequencing (2026-07-30, P23–P26 and the eval follow-ups):** the
+order is a dependency, not a preference — **P26 before re-running any pillar-1
+eval.** `verify`'s expectations are prose applied by hand, so an iteration run
+today spends ~250k subagent tokens on assertions nobody can audit for a vacuous
+pass. That is exactly how the `run` eval-2 grader stayed incapable of failing
+until a committed `check.sh` let someone run it against an untouched fixture.
+Build the instrument, then measure.
+
+After P26: the `verify` iteration on the cleaned fixtures (3 evals × 2 arms — its
+bug-detection assertions currently have **no** trustworthy measurement), then the
+pillar-2 baseline arm (meaningful only now that v0.36.0 removed the
+`demo-repo`/`target-repo` leak that would have poisoned it), then P23's open
+question — whether the cost proxies track real token spend, which needs two
+comparable real cycles and therefore a session with the plugin actually
+installed. Smallest last: pin whether `run_end` carries its own cost, and the
+per-skill cap left out of P24.
+
 ---
 
 ## P22 — Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals (owner ask, 2026-07-29)
