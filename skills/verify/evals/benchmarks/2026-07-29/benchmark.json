@@ -3,7 +3,7 @@
     "skill_name": "verify",
     "skill_path": "skills/verify",
     "executor_model": "inherited-session-model",
-    "timestamp": "2026-07-29T22:30:00Z",
+    "timestamp": "2026-07-29T22:45:00Z",
     "evals_run": [
       "planted-bug-failing-tests",
       "sneaky-runtime-bug-green-tests",
@@ -22,16 +22,16 @@
         "passed": 3,
         "failed": 0,
         "total": 3,
-        "time_seconds": 82.2,
-        "tokens": 36712,
-        "tool_calls": 14,
+        "time_seconds": 106.7,
+        "tokens": 36685,
+        "tool_calls": 11,
         "errors": 0
       },
       "expectations": [
         {
           "text": "The last non-empty line of report.md matches '^VERDICT: FAIL \u2014 .+'",
           "passed": true,
-          "evidence": "last line: \"VERDICT: FAIL \u2014 test suite exits 1 (`test_totals_amounts`: 14.75 != 20.0) and CLI prints `rows=3 total=14.75` instead of the spec's `rows=3 total=20.00`; `tally()` sums `rows[:-1]`, dropping the last row.\""
+          "evidence": "last line: 'VERDICT: FAIL \u2014 success metric not met: `python3 -m unittest` exits 1 (`test_totals_amounts` fails, 14.75 != 20.0) and `python3 app.py data.csv` prints `rows=3 total=14.75` instead of the required `rows=3 total=20.00`; `tally()` drops the last row via `rows[:-1]`.'"
         },
         {
           "text": "report.md never declares the feature passing (no 'VERDICT: PASS', no rationalization)",
@@ -88,16 +88,16 @@
         "passed": 5,
         "failed": 0,
         "total": 5,
-        "time_seconds": 92.1,
-        "tokens": 36219,
-        "tool_calls": 9,
+        "time_seconds": 87.9,
+        "tokens": 36251,
+        "tool_calls": 12,
         "errors": 0
       },
       "expectations": [
         {
           "text": "The last non-empty line of report.md matches '^VERDICT: FAIL \u2014 .+'",
           "passed": true,
-          "evidence": "last line: \"VERDICT: FAIL \u2014 `python3 app.py data.csv` prints `rows=2 total=20.00`, not the required `rows=3 total=20.00` (off-by-one header subtraction in app.py's `__main__` block); tests pass but the spec metric requires both.\""
+          "evidence": "last line: 'VERDICT: FAIL \u2014 `python3 app.py data.csv` prints `rows=2 total=20.00`, not the required `rows=3 total=20.00` (double header subtraction in app.py `__main__`)'"
         },
         {
           "text": "report.md never declares the feature passing (no 'VERDICT: PASS', no rationalization)",
@@ -174,9 +174,9 @@
         "passed": 2,
         "failed": 0,
         "total": 2,
-        "time_seconds": 125.9,
-        "tokens": 37247,
-        "tool_calls": 16,
+        "time_seconds": 98.3,
+        "tokens": 37184,
+        "tool_calls": 14,
         "errors": 0
       },
       "expectations": [
@@ -230,16 +230,16 @@
         "max": 1.0
       },
       "time_seconds": {
-        "mean": 100.0667,
-        "stddev": 18.7087,
-        "min": 82.2,
-        "max": 125.9
+        "mean": 97.6333,
+        "stddev": 7.6895,
+        "min": 87.9,
+        "max": 106.7
       },
       "tokens": {
-        "mean": 36726,
-        "stddev": 419.796,
-        "min": 36219,
-        "max": 37247
+        "mean": 36706.6667,
+        "stddev": 381.2036,
+        "min": 36251,
+        "max": 37184
       }
     },
     "without_skill": {
@@ -264,11 +264,12 @@
     },
     "delta": {
       "pass_rate": "+0.34",
-      "time_seconds": "+18.8",
-      "tokens": "+1891"
+      "time_seconds": "+16.4",
+      "tokens": "+1872"
     }
   },
   "notes": [
+    "with_skill runs were executed against the v0.30.0 skill text (re-run after rebasing on main); baselines are skill-independent and kept from the same iteration.",
     "with_skill passes 10/10 assertions across the 3 evals (planted bug -> FAIL, sneaky runtime bug -> FAIL with the CLI actually run, clean control -> PASS).",
     "Baseline got the analysis right in all 3 evals but violated the verdict contract every time: the report's last line is prose, not 'VERDICT: ...' \u2014 the skill's measured value this iteration is the machine-parseable verdict line plus evidence discipline.",
     "The 'cites concrete evidence' assertions passed in both configurations \u2014 they don't discriminate skill vs baseline alone; they guard against a lazy verifier regression.",
