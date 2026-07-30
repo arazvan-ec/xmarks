@@ -1,0 +1,163 @@
+{
+  "metadata": {
+    "skill_name": "run",
+    "skill_path": "skills/run",
+    "executor_model": "session default (fresh-context general-purpose subagents)",
+    "timestamp": "2026-07-29",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1,
+    "configurations": [
+      "with_skill"
+    ],
+    "baseline_note": "without_skill baseline intentionally skipped: this iteration is the release-gate evidence (regression detection), not a skill-value study. See README 'Skill evals'."
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "happy-path-persist",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 8886.3,
+        "tokens": 37734,
+        "tool_calls": 9,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "row for 9876 KZX with digits/letters/digit_sum=30/audited=today",
+          "passed": true,
+          "evidence": "check.sh 1: grep PASS on the exact row"
+        },
+        {
+          "text": "write landed per DATA.md (staged, no unstaged modification)",
+          "passed": true,
+          "evidence": "git status: 'M  data/plate-audits.md'"
+        },
+        {
+          "text": "telemetry report regenerated in .claude/flywheel/runs/plate-audit/",
+          "passed": true,
+          "evidence": "2026-07-29.html present"
+        },
+        {
+          "text": "seeded 1234 BCD row untouched",
+          "passed": true,
+          "evidence": "grep PASS"
+        }
+      ],
+      "notes": [
+        "evaluator agent unavailable in harness; executor flagged the self-check instead of silently claiming independent verification — the honest path.",
+        "No maturation (clean run) — correct per §4 'most runs add nothing'."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "idempotent-upsert",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 8908.1,
+        "tokens": 40216,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "exactly one row for 1234 BCD after re-audit",
+          "passed": true,
+          "evidence": "key-count grep = 1"
+        },
+        {
+          "text": "deterministic fields preserved (digit_sum=10)",
+          "passed": true,
+          "evidence": "grep PASS; audited date updated in place"
+        },
+        {
+          "text": "write landed (staged)",
+          "passed": true,
+          "evidence": "git status: 'M  data/plate-audits.md'"
+        }
+      ],
+      "notes": [
+        "Maturation observed: executor tightened the upsert-vs-never-rewrite Guardrail ambiguity with a dated Improvement-log entry, no version bump — exactly the §4 evidence-based single refinement."
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "guardrail-invalid-input",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 8901.2,
+        "tokens": 39233,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "no fabricated audit row for AEI",
+          "passed": true,
+          "evidence": "awk over Audits section: no match"
+        },
+        {
+          "text": "rejection recorded under ## Rejections",
+          "passed": true,
+          "evidence": "dated rejection line, read-back grep"
+        },
+        {
+          "text": "seeded 1234 BCD row untouched",
+          "passed": true,
+          "evidence": "grep PASS"
+        }
+      ],
+      "notes": [
+        "Maturation observed: executor extended Rule-5-style proof to rejection writes via Improvement log + Guardrails tweak, no version bump."
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 8898.5,
+        "stddev": 9.1,
+        "min": 8886.3,
+        "max": 8908.1
+      },
+      "tokens": {
+        "mean": 39061,
+        "stddev": 1021,
+        "min": 37734,
+        "max": 40216
+      }
+    }
+  },
+  "notes": [
+    "Release-gate iteration: 3/3 evals green, 10/10 assertions, no grader changes needed on this suite.",
+    "time_seconds comes from the task notification's duration_ms and includes harness queueing of 6 parallel subagents — use tokens, not time, to compare iterations.",
+    "Total cost this suite: ~117.2k subagent tokens (with_skill only, 1 run per eval).",
+    "Iteration ran against the pre-v0.30.0 telemetry wording (HTML regenerated per transition); the fixture contract and grader now track two-tier telemetry, and the HTML-at-close assertion is unaffected.",
+    "Grader fix found while regrading after midnight: eval 1 compared the audited field to the grading date, so a correct run failed a day later. check.sh now takes the run date from FW_EVAL_DATE (default: today) — verified green with FW_EVAL_DATE=2026-07-29 and still red on a wrong date."
+  ]
+}
