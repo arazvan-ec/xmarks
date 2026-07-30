@@ -90,6 +90,8 @@ Full vision + the worked car example: [`docs/research/agent-native-processes.md`
 
 **Live progress** (v0.16.0, two-tier since v0.30.0): every process run (`/flywheel:run`) and dev cycle (`/flywheel:loop`/`work`) materializes its steps as visible tasks in the host task system — states updated at every transition — and keeps per-execution telemetry at `.claude/flywheel/runs/<slug>/<date>.jsonl` (one appended JSON line per transition) plus an HTML report at `…/<date>.html`, rendered from the JSONL **only at gates and at close** and republished to a stable artifact URL. Output tokens are the expensive ones: a transition costs one line, never a regenerated page. Chat stays reserved for gates, blockers, and the final summary. Fail-open: reporting never blocks execution.
 
+**Cycle cost, measured** (P23): each transition line carries a `cost` object — `bytes_out`, `tool_calls`, `elapsed_s` — and the rendered report ends with a cost block. These are **proxies, labelled as such everywhere they appear, never token counts**: a session cannot observe its own token usage, so recording one would put unverifiable evidence in the ledger (P18) — `scripts/run-cost.sh` warns if it finds a `tokens` key. `bash scripts/run-cost.sh <run.jsonl> [baseline.jsonl]` totals a run and prints the per-field delta against a baseline, so "this made the loop cheaper" becomes a number. Transitions from before the schema are reported as *unmeasured*, never counted as zero — otherwise every old run would look free.
+
 ## State it keeps (in the project you use it on)
 
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.
@@ -150,7 +152,7 @@ The release gate needs only the with-skill arm: it answers "did this skill text 
 
 **Status: not run for `process`/`run`.** Their committed iteration is with-skill only (~237k tokens), so their 49 green assertions are a regression baseline and **not** evidence that the skills beat an unaided model. Cost of closing that gap is roughly 120k tokens per skill. Until it is run, do not cite pillar-2 pass rates as skill value.
 
-**`work`'s pillar-1 baseline is stale, not missing.** Its 2026-07-29 iteration tied at 8/8 because the prompt named the test runner; P25 rewrote the prompts and moved that requirement into the fixture, so the old benchmark is marked superseded (`skills/work/evals/benchmarks/2026-07-29/SUPERSEDED.md`) and the rewrite's discriminating power is untested until the next authorized run.
+**`work`'s katas are regression-only, and that is now a measured conclusion rather than a caveat.** Three iterations tried to make them discriminate and all three tied at 100%: the v0.31.0 run (prompt named `./run-tests.sh`), the P25 run (prompt de-hinted, but the fixture README still stated the grading rule verbatim), and the 2026-07-30 run with that leak removed and the fixture reading like an ordinary repo — where the baseline **still** wrote the regression test first, ran it red against a pristine `cart.py`, and only then fixed it. A strong model does test-first on a kata this small whether or not the skill says so. That is a fact about the task, not a defect in the skill, and citing the 100% as skill value would be the kind of unverifiable claim these evals exist to remove. What the suite still earns its cost for: if a future edit to `work/SKILL.md` stops inducing the red step, the with-skill arm drops below 8/8 and that is a real regression signal. Evidence: `skills/work/evals/benchmarks/2026-07-30/benchmark.json`.
 
 ## Repo layout
 

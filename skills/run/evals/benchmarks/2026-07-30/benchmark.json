@@ -1,0 +1,109 @@
+{
+  "metadata": {
+    "skill_name": "run",
+    "skill_path": "skills/run",
+    "executor_model": "session default (fresh-context general-purpose subagents)",
+    "timestamp": "2026-07-30",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1,
+    "configurations": [
+      "with_skill"
+    ],
+    "release_gate_for": "P23 \u2014 adds the cost object to the run transition line and a proxy-labelled cost block to the final report",
+    "baseline_note": "without_skill baseline intentionally skipped: release-gate iteration (regression detection), not a value study. The baseline-arm procedure is documented in README and remains unrun."
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "happy-path-persist",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 175.5,
+        "tokens": 46786,
+        "tool_calls": 19,
+        "errors": 0
+      },
+      "notes": [
+        "END-TO-END VERIFICATION OF P23: the run's JSONL has 14 transitions and all 14 carry a cost object; zero carry a tokens key. scripts/run-cost.sh parses it: 2,002 bytes_out / 19 tool_calls / 14 elapsed_s. The skill-text change produced the intended data on real output.",
+        "Row for 9876 KZX with digit_sum=30 and audited=run date; write staged; HTML rendered; seeded row untouched.",
+        "Executor matured Rule 4 (upsert never specified WHERE a new row lands) \u2014 evidence-based single refinement."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "idempotent-upsert",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 210.0,
+        "tokens": 49005,
+        "tool_calls": 20,
+        "errors": 0
+      },
+      "notes": [
+        "Graded by the FIXED grader (P25): it now requires the audited field to hold the run date and the datastore to be staged. Before the fix all three assertions were satisfied by the seed, so a run that did nothing scored 3/3.",
+        "Row updated in place (one row, digit_sum=10 preserved, audited refreshed to 2026-07-30); 14/14 JSONL lines carry cost.",
+        "Executor surfaced a genuine contract ambiguity: Rule 4's 'upsert' vs the guardrail 'never rewrite existing rows' pointed opposite ways on a re-audit."
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "guardrail-invalid-input",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 214.0,
+        "tokens": 49076,
+        "tool_calls": 22,
+        "errors": 0
+      },
+      "notes": [
+        "Rejection recorded, no fabricated audit row, seeded row untouched.",
+        "THE UNMEASURED-\u2260-FREE SAFEGUARD FIRED ON REAL DATA: 16 transitions, 15 with cost \u2014 the run_end line omitted it, and run-cost.sh reported 1 UNMEASURED transition plus the incompleteness NOTE rather than counting it as 0. Follow-up: the schema should say explicitly whether run_end carries its own cost or the run totals."
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 199.8,
+        "min": 175.5,
+        "max": 214.0
+      },
+      "tokens": {
+        "mean": 48289,
+        "min": 46786,
+        "max": 49076
+      }
+    }
+  },
+  "notes": [
+    "Gate PASS: 3/3 evals, 10/10 assertions.",
+    "This suite is what actually verifies P23: cost objects present on real telemetry in all three runs, no tokens key anywhere, and run-cost.sh producing a real two-run delta (-1,143 bytes / -57.1%).",
+    "Eval 2 was graded by the grader fixed on the P25 branch; before that fix it could not fail.",
+    "n=1 per eval."
+  ]
+}

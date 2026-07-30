@@ -42,7 +42,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P20 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.27.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**`. (Renumbered from P19/v0.26.0 at merge time — main had taken both) |
 | P21 | Bash grants coherent with the approval gates (P20 for commands) | ✅ shipped (v0.28.0) | Done — allow-only `bash-allow.sh` (add/commit/stash, branch-aware force-free push); gate-time consent rules in spec/process; permission drift in sync |
 | P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
-| P23 | Cycle-cost telemetry: the loop measures its own cost | 🔵 proposed | Add mechanically-observable cost fields to the JSONL transition line + a two-run comparison helper. Open question: what proxy replaces unreliable self-reported tokens |
+| P23 | Cycle-cost telemetry: the loop measures its own cost | ✅ shipped (v0.35.0) | Done — `cost: {bytes_out, tool_calls, elapsed_s}`, no tokens (enforced by `run-cost.sh`); gate 8/8 evals, 57/57 assertions, cost object verified on real run telemetry. Open: do the proxies track real spend? |
 | P24 | Description budget as a CI ratchet | ✅ shipped (v0.33.0) | Done — `check-description-budget.sh` sums description values (3301) against `scripts/description-budget.txt` (3600); malformed frontmatter fails loudly; wired into CI |
 | P25 | Close the gaps the P22 eval iteration exposed | ✅ shipped (v0.34.0) | Done — §5 format pinned + grader re-tightened (gate: 3/3 evals, 39/39); work kata de-hinted via a fixture guard; a hollow `run` eval-2 grader fixed. Baseline arm documented, still unrun |
 
@@ -1275,3 +1275,80 @@ Append-only. Newest at the bottom.
   and red again on a duplicated row. Lesson for the ledger: *check every eval id
   for a vacuous pass, not a sample* — a grader that cannot fail is worse than no
   grader, because it reports confidence.
+- **2026-07-30** — **P23 implemented; release deliberately held.** The open
+  question is closed by owner decision: the transition line carries
+  `cost: {bytes_out, tool_calls, elapsed_s}` — three mechanically observable
+  proxies — and **no `tokens` field**, because a session cannot observe its own
+  usage and a guessed number is precisely the unverifiable evidence P18 exists to
+  keep out of the ledger. The ban is enforced rather than documented:
+  `scripts/run-cost.sh` warns when it finds a `tokens` key. The proxies are
+  labelled as proxies in both surfaces (the rendered cost block and the script's
+  header), so `bytes_out` can never be misread as a token count later.
+  `run-cost.sh <run.jsonl> [baseline.jsonl]` totals a run and prints the
+  per-field delta with sign and percentage; a zero baseline prints `n/a` rather
+  than a fake percentage. The load-bearing honesty rule: transitions with no
+  `cost` object — every run from v0.16.0 to v0.32.0 — are reported as
+  **UNMEASURED, never folded in as 0**, which would make old runs look free and
+  flatter every comparison against them. Developed red→green (test failed with
+  exit 127 first, 8 scenarios). **Why no bump:** the diff touches
+  `skills/{work,loop,run,process}/SKILL.md` and three of those four have evals,
+  so CLAUDE.md's gate applies; v0.35.0 is reserved and unclaimed. **What this
+  still cannot tell you:** whether the proxies actually track token spend. That
+  needs two comparable real cycles, and it is the first thing to do once this
+  ships — otherwise P23 repeats P30's mistake of shipping an unverifiable cost
+  claim, one level up.
+- **2026-07-30** — **P23 shipped as v0.35.0; eval gate run across three
+  suites.** 8/8 evals green, 57/57 assertions (`work` 8/8, `process` 39/39,
+  `run` 10/10), ~356k subagent tokens. Two results worth keeping:
+  **(1) The `run` suite is what actually verified the release, and the `work`
+  suite could not.** `work`'s telemetry applies only inside a `/flywheel:loop`
+  cycle, and its eval runs `work` standalone — both executors independently
+  reported writing no JSONL for that reason — so its 8/8 proves only that the
+  added text broke nothing. The `run` suite exercised the real thing: all three
+  runs emitted a `cost` object on every transition of their own telemetry (14/14,
+  14/14, 15/16), none emitted a `tokens` key, and `run-cost.sh` produced a real
+  two-run delta (−1,143 bytes, −57.1%). Lesson: *check which suite actually
+  covers the change before treating a green gate as verification* — a passing
+  eval that cannot see the diff is not evidence about it.
+  **(2) The unmeasured-≠-free safeguard fired on real data, unplanned.** One
+  executor omitted `cost` from its closing `run_end` line; `run-cost.sh` reported
+  1 UNMEASURED transition and an incompleteness note instead of counting it as 0.
+  Follow-up: pin whether `run_end` carries its own cost or the run totals.
+  Still open, and the reason this release is not self-congratulatory: **whether
+  the proxies track real token spend is unverified.** Two comparable cycles are
+  needed. Until then P23 has built the instrument, not the measurement.
+- **2026-07-30** — **Causal evidence for P25's format pin, from an accident.**
+  The `process` eval 3 ran the same day against both branches. On the P23 branch,
+  whose §5 is unchanged, the executor emitted a dated **bullet**. On the P25
+  branch, whose §5 pins the format, it emitted the **`### <date>` heading**. Same
+  prompt, same model, same fixture, different skill text, different output — so
+  the v0.32.0 grader loosening really was treating a skill defect as a grader
+  problem, and pinning §5 fixed the cause. Recorded because neither spec planned
+  this comparison; it fell out of running the two gates on the same day.
+- **2026-07-30** — **The `work` kata does not discriminate, and the reason the
+  last two attempts looked inconclusive was a leak I introduced.** After merging
+  v0.34.0 into the P23 branch the katas became P25's de-hinted ones, which
+  invalidated that branch's `work` benchmark, so it was re-run with a baseline
+  arm. Both arms scored 100% — and one baseline executor volunteered why: the
+  **fixture `README.md`, which is copied into the executor's workdir**, stated the
+  grading rule verbatim ("the eval asserts from `.check-log` that the first logged
+  run is `RESULT=FAIL` with `IMPL_SHA` equal to `baseline-sha`"). That is a
+  stronger hint than the `./run-tests.sh` mention P25 removed from the prompt, and
+  P25 *added* a paragraph to that same file explaining the guard. The de-hinting
+  moved the leak instead of closing it.
+  Fixed: grading rules now live in `skills/work/evals/README.md` (not copied,
+  and executors are told not to read it), fixtures describe the scenario only,
+  and the rule is written down — *nothing describing the assertions may live
+  inside a fixture, and a fixture may not announce that it is one*; the second
+  baseline flagged even "this is an eval fixture template" as telling it the run
+  was graded. Re-ran the bugfix kata on the cleaned fixture: **still 4/4 vs 4/4.**
+  So after three attempts the conclusion is that the kata measures the model, not
+  the skill. Taking P25's own documented fallback: the suite is now labelled
+  **regression-only** in the README instead of having its 100% presented as skill
+  value. It still earns its keep — a future edit that stops inducing the red step
+  drops the with-skill arm below 8/8 — but it is not evidence the skill adds
+  anything on a kata this small.
+  Also removed four `__pycache__/*.pyc` files that leaked into v0.34.0 from
+  running the fixture suites in place while verifying the guard, and added
+  `__pycache__/` + `*.pyc` to `.gitignore`; fixture templates must stay
+  byte-identical.

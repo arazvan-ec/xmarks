@@ -1,0 +1,170 @@
+{
+  "metadata": {
+    "skill_name": "work",
+    "skill_path": "skills/work",
+    "executor_model": "session default (fresh-context general-purpose subagents)",
+    "timestamp": "2026-07-30",
+    "evals_run": [
+      1,
+      2
+    ],
+    "runs_per_configuration": 1,
+    "configurations": [
+      "with_skill",
+      "without_skill"
+    ],
+    "release_gate_for": "P23 v0.35.0 (regression) + the P25 discrimination question (answered: it does not discriminate)",
+    "supersedes": "The earlier 2026-07-30 iteration on this branch, which ran against the pre-P25 katas before main was merged."
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "feature-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "fixture_state": "merged fixtures, grading criteria still in fixture README",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 83.1,
+        "tokens": 37930,
+        "tool_calls": 16,
+        "errors": 0
+      },
+      "notes": [
+        "Red at IMPL_SHA=8b44f02e8e4f2e3b (== baseline-sha), then PASS."
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "feature-test-first",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "fixture_state": "merged fixtures, grading criteria still in fixture README",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 55.2,
+        "tokens": 34221,
+        "tool_calls": 11,
+        "errors": 0
+      },
+      "notes": [
+        "Also red-at-baseline-sha then PASS, unaided."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "fixture_state": "merged fixtures, grading criteria still in fixture README",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 66.4,
+        "tokens": 36873,
+        "tool_calls": 14,
+        "errors": 0
+      },
+      "notes": [
+        "Red at baseline-sha then PASS."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "fixture_state": "merged fixtures, grading criteria still in fixture README",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 51.0,
+        "tokens": 34159,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "notes": [
+        "THIS RUN EXPOSED THE LEAK: the executor reported reading the fixture README, which stated the grading rule verbatim ('the eval asserts from .check-log that the first logged run is RESULT=FAIL with IMPL_SHA equal to baseline-sha'). That tells the executor red-before-green is what is measured \u2014 a stronger hint than the ./run-tests.sh mention P25 removed."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "fixture_state": "leak removed: fixture README describes the module only",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 94.2,
+        "tokens": 37884,
+        "tool_calls": 17,
+        "errors": 0
+      },
+      "notes": [
+        "Red at baseline-sha then PASS. Skipped the advisory fresh-context review and said so rather than silently."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "fixture_state": "leak removed: fixture README describes the module only",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 66.7,
+        "tokens": 34587,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "notes": [
+        "Still red-at-baseline-sha then PASS with no skill and no hint of any kind. Also flagged the leftover 'this is an eval fixture template' line as contradicting its instructions \u2014 which is itself a signal that the run is graded, since removed."
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00"
+    }
+  },
+  "notes": [
+    "REGRESSION GATE: PASS. 8/8 assertions with the skill \u2014 P23's added text did not break the red\u2192green inner loop.",
+    "DISCRIMINATION: FAILED, THIRD ATTEMPT. The arms tie at 100% and the kata therefore measures the model, not the skill. Attempt 1 (v0.31.0): prompt named ./run-tests.sh. Attempt 2 (P25): prompt de-hinted, but the fixture README still stated the grading rule verbatim. Attempt 3 (this iteration): leak removed, fixture reads like an ordinary repo \u2014 the baseline STILL wrote the regression test first, ran it red against a pristine cart.py, then fixed it.",
+    "CONCLUSION, per P25's own documented fallback: stop trying to make this kata discriminate and label it regression-only in the README. A strong model does test-first on a kata this small whether or not the skill tells it to. That is a fact about the task, not a defect in the skill \u2014 and pretending 100% is skill value would be exactly the unverifiable claim this whole line of work exists to remove.",
+    "COVERAGE LIMIT, unchanged: this suite does not exercise P23's cost fields at all. work's telemetry applies only inside a /flywheel:loop cycle and the eval runs work standalone; all six executors independently reported writing no JSONL. The run suite is what verified v0.35.0.",
+    "What the suite is still good for: catching a future edit to work/SKILL.md that stops inducing the red step. The with_skill arm dropping below 8/8 is a real regression signal even though the baseline also passes today.",
+    "n=1 per arm per eval. Six runs, ~215k subagent tokens."
+  ]
+}
