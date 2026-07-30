@@ -42,7 +42,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P20 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.27.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**`. (Renumbered from P19/v0.26.0 at merge time — main had taken both) |
 | P21 | Bash grants coherent with the approval gates (P20 for commands) | ✅ shipped (v0.28.0) | Done — allow-only `bash-allow.sh` (add/commit/stash, branch-aware force-free push); gate-time consent rules in spec/process; permission drift in sync |
 | P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
-| P23 | Cycle-cost telemetry: the loop measures its own cost | 🔵 proposed | Add mechanically-observable cost fields to the JSONL transition line + a two-run comparison helper. Open question: what proxy replaces unreliable self-reported tokens |
+| P23 | Cycle-cost telemetry: the loop measures its own cost | 🟡 implemented, release held | Done in code; proxy decided by owner (bytes_out / tool_calls / elapsed_s, no tokens). **Bump blocked on the work+process+run eval runs.** v0.35.0 reserved |
 | P24 | Description budget as a CI ratchet | 🔵 proposed | Sum the frontmatter `description` chars across skills; fail above a committed budget so the v0.30.0 −22% can't silently regrow |
 | P25 | Close the gaps the P22 eval iteration exposed | 🔵 proposed | Non-discriminating `work` kata; no baseline arm for `process`/`run`; pin the Improvement-log format in `process` §5 |
 
@@ -1219,3 +1219,25 @@ Append-only. Newest at the bottom.
   `work`'s evals didn't discriminate and `process`/`run` have no baseline arm
   (→ P25). All benchmark iterations are n=1 — adequate as a regression gate,
   not as a value study, and the README should keep saying so.
+- **2026-07-30** — **P23 implemented; release deliberately held.** The open
+  question is closed by owner decision: the transition line carries
+  `cost: {bytes_out, tool_calls, elapsed_s}` — three mechanically observable
+  proxies — and **no `tokens` field**, because a session cannot observe its own
+  usage and a guessed number is precisely the unverifiable evidence P18 exists to
+  keep out of the ledger. The ban is enforced rather than documented:
+  `scripts/run-cost.sh` warns when it finds a `tokens` key. The proxies are
+  labelled as proxies in both surfaces (the rendered cost block and the script's
+  header), so `bytes_out` can never be misread as a token count later.
+  `run-cost.sh <run.jsonl> [baseline.jsonl]` totals a run and prints the
+  per-field delta with sign and percentage; a zero baseline prints `n/a` rather
+  than a fake percentage. The load-bearing honesty rule: transitions with no
+  `cost` object — every run from v0.16.0 to v0.32.0 — are reported as
+  **UNMEASURED, never folded in as 0**, which would make old runs look free and
+  flatter every comparison against them. Developed red→green (test failed with
+  exit 127 first, 8 scenarios). **Why no bump:** the diff touches
+  `skills/{work,loop,run,process}/SKILL.md` and three of those four have evals,
+  so CLAUDE.md's gate applies; v0.35.0 is reserved and unclaimed. **What this
+  still cannot tell you:** whether the proxies actually track token spend. That
+  needs two comparable real cycles, and it is the first thing to do once this
+  ships — otherwise P23 repeats P30's mistake of shipping an unverifiable cost
+  claim, one level up.

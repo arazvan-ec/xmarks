@@ -90,6 +90,8 @@ Full vision + the worked car example: [`docs/research/agent-native-processes.md`
 
 **Live progress** (v0.16.0, two-tier since v0.30.0): every process run (`/flywheel:run`) and dev cycle (`/flywheel:loop`/`work`) materializes its steps as visible tasks in the host task system — states updated at every transition — and keeps per-execution telemetry at `.claude/flywheel/runs/<slug>/<date>.jsonl` (one appended JSON line per transition) plus an HTML report at `…/<date>.html`, rendered from the JSONL **only at gates and at close** and republished to a stable artifact URL. Output tokens are the expensive ones: a transition costs one line, never a regenerated page. Chat stays reserved for gates, blockers, and the final summary. Fail-open: reporting never blocks execution.
 
+**Cycle cost, measured** (P23): each transition line carries a `cost` object — `bytes_out`, `tool_calls`, `elapsed_s` — and the rendered report ends with a cost block. These are **proxies, labelled as such everywhere they appear, never token counts**: a session cannot observe its own token usage, so recording one would put unverifiable evidence in the ledger (P18) — `scripts/run-cost.sh` warns if it finds a `tokens` key. `bash scripts/run-cost.sh <run.jsonl> [baseline.jsonl]` totals a run and prints the per-field delta against a baseline, so "this made the loop cheaper" becomes a number. Transitions from before the schema are reported as *unmeasured*, never counted as zero — otherwise every old run would look free.
+
 ## State it keeps (in the project you use it on)
 
 - `.claude/flywheel/specs/<slug>.md` — REASONS specs and `.plan.md` plans.
