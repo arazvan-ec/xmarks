@@ -1,7 +1,7 @@
 # Spec: P22 phase 2 (pillar 2) — behavioral evals for `process` and `run`
 
 **Slug:** `p22-evals-pillar2` · **Created:** 2026-07-29 · **Backlog:** P22 phase 2
-**Status:** shipped as v0.31.0 — metric PASS; eval iteration 1: 6/6 evals green, 49/49 assertions (two grader fixes, no skill regression). Renumbered from v0.30.0 at rebase (the optimization release claimed it first).
+**Status:** shipped as v0.32.0 — metric PASS; eval iteration 1: 6/6 evals green, 49/49 assertions (two grader fixes, no skill regression). Renumbered twice at rebase (v0.30.0 went to the optimization release, v0.31.0 to the pillar-1 evals).
 **Prime:** P22 section in `docs/research/improvement-proposals.md`; the
 `type=fixture` learning "how to build a hook-test fixture"; skill-creator
 harness (`evals/evals.json` schema, grader, `benchmark.json`).
@@ -40,7 +40,7 @@ release-gate evals per the skill-creator harness:
 | grader script ×2 | deterministic assertion checker `check.sh <eval_id> <workdir>` | `skills/{process,run}/evals/check.sh` |
 | benchmark evidence | one graded iteration per suite | `skills/{process,run}/evals/benchmarks/2026-07-29/benchmark.json` |
 | fixture learning | recipe to stand the fixture up | `.claude/flywheel/LEARNINGS.md` (`type=fixture`) |
-| release | bump + upgrade note | `.claude-plugin/plugin.json`, `upgrades/v0.31.0.md` |
+| release | bump + upgrade note | `.claude-plugin/plugin.json`, `upgrades/v0.32.0.md` |
 
 ## A — Approach
 
@@ -65,7 +65,7 @@ surface for no determinism gain).
 - `skills/{process,run}/evals/benchmarks/2026-07-29/benchmark.json`
 - `.claude/flywheel/LEARNINGS.md` — one `type=fixture` entry
 - `README.md` — "Skill evals" section (manual, pre-release, cost note)
-- `.claude-plugin/plugin.json` → **0.31.0** · `upgrades/v0.31.0.md`
+- `.claude-plugin/plugin.json` → **0.32.0** · `upgrades/v0.32.0.md`
   (`requires-action: false`)
 
 ## O — Operations
@@ -114,6 +114,6 @@ python3 -c "import json;[json.load(open(p)) for p in ['skills/process/evals/eval
   && bash scripts/test-docs-consistency.sh \
   && bash scripts/test-install-vendored.sh \
   && bash scripts/check-test-pairing.sh \
-  && grep -q '"version": "0.31.0"' .claude-plugin/plugin.json \
-  && test -f upgrades/v0.31.0.md
+  && grep -q '"version": "0.32.0"' .claude-plugin/plugin.json \
+  && test -f upgrades/v0.32.0.md
 ```
