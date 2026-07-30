@@ -48,3 +48,18 @@ script sets — so the log exists whichever way the executor is prompted):
 3. `test_cart.py` covers the required behaviour, including the `ValueError` path.
 4. `cart.py` implements it and the suite is green on an independent re-run.
 
+## Before any iteration: check the fixtures for leaks
+
+Every file in a fixture is copied into the workdir, so every file in it is part
+of the prompt. Three leaks were found this week — the `work` fixture README, the
+`verify` fixture READMEs, and a *comment in `run-tests.sh`* explaining that
+red-before-green is what gets checked. Run this first; it must print nothing:
+
+```bash
+grep -rinE 'VERDICT:|baseline-sha|the eval asserts|pristine|red.?(→|->|then )green|mechanically checkable|eval fixture|is graded' \
+  skills/*/evals/fixtures/
+```
+
+A hit is not automatically a leak — `run-tests.sh` must mention `.check-log`
+because it writes it — but every hit needs a reason that is not "it explains what
+we measure".
