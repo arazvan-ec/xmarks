@@ -4,9 +4,11 @@
     {
       "id": 1,
       "eval_name": "feature-test-first",
-      "prompt": "In the repo at {{WORKDIR}}: execute plan task 3 (TASK.md) — add apply_discount(cart, pct) to cart.py (ValueError unless 0 <= pct <= 100, result rounded to 2 decimals). Run tests only via ./run-tests.sh, never python3 -m unittest directly.",
+      "prompt": "In the repo at {{WORKDIR}}: execute plan task 3 (TASK.md) \u2014 add apply_discount(cart, pct) to cart.py, which returns the cart total after a pct percent discount rounded to 2 decimals and raises ValueError unless 0 <= pct <= 100.",
       "expected_output": "apply_discount implemented test-first: .check-log shows the new test running red against the pristine cart.py before the implementation lands, then green",
-      "files": ["evals/fixtures/cart-feature"],
+      "files": [
+        "evals/fixtures/cart-feature"
+      ],
       "expectations": [
         "The first entry in .check-log has RESULT=FAIL and its IMPL_SHA equals the contents of baseline-sha (the test ran red BEFORE cart.py changed)",
         "The last entry in .check-log has RESULT=PASS",
@@ -17,9 +19,11 @@
     {
       "id": 2,
       "eval_name": "bugfix-regression-test-first",
-      "prompt": "In the repo at {{WORKDIR}}: fix bug report #17 (BUG.md) — add_item accepts qty <= 0 and drives total() negative; it should raise ValueError. Run tests only via ./run-tests.sh, never python3 -m unittest directly.",
+      "prompt": "In the repo at {{WORKDIR}}: resolve bug report #17 (BUG.md) \u2014 add_item accepts qty <= 0 and drives total() negative; it should raise ValueError instead.",
       "expected_output": "Bug fixed regression-test-first: .check-log shows the regression test reproducing the bug (red) against the pristine cart.py before the fix, then green",
-      "files": ["evals/fixtures/cart-bugfix"],
+      "files": [
+        "evals/fixtures/cart-bugfix"
+      ],
       "expectations": [
         "The first entry in .check-log has RESULT=FAIL and its IMPL_SHA equals the contents of baseline-sha (the regression test reproduced the bug BEFORE cart.py changed)",
         "The last entry in .check-log has RESULT=PASS",

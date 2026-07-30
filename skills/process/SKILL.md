@@ -98,7 +98,14 @@ A repo can extend *how* agents intervene in it beyond the fixed contract shape �
 
 ## 5. Maturing an existing process
 
-If `$ARGUMENTS` names a process that already exists, do not recreate it — treat this as a **deliberate revision**: read the contract and its Improvement log, apply the requested change to Rules/Output schema/Persistence, bump `version`, and record the change (what and why) in the Improvement log. Never silently rewrite the fixed rules.
+If `$ARGUMENTS` names a process that already exists, do not recreate it — treat this as a **deliberate revision**: read the contract and its Improvement log, apply the requested change to Rules/Output schema/Persistence, bump `version`, and record the change in the Improvement log. Never silently rewrite the fixed rules.
+
+Append the entry in exactly this shape — the same one `/flywheel:run` uses, so a contract's log reads the same whether a revision or a run matured it:
+
+```
+### <YYYY-MM-DD> — <one-line what changed>
+<why, from this revision's evidence>
+```
 
 GATE: present the contract (or the diff, when revising) and the data strategy, and get explicit sign-off. Then tell the user how to run it: `/flywheel:run <slug> <input>`. Stage the contract (and DATA.md) so it is committed with the work.
 

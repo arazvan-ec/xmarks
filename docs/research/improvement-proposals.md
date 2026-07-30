@@ -44,7 +44,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
 | P23 | Cycle-cost telemetry: the loop measures its own cost | ✅ shipped (v0.35.0) | Done — `cost: {bytes_out, tool_calls, elapsed_s}`, no tokens (enforced by `run-cost.sh`); gate 8/8 evals, 57/57 assertions, cost object verified on real run telemetry. Open: do the proxies track real spend? |
 | P24 | Description budget as a CI ratchet | ✅ shipped (v0.33.0) | Done — `check-description-budget.sh` sums description values (3301) against `scripts/description-budget.txt` (3600); malformed frontmatter fails loudly; wired into CI |
-| P25 | Close the gaps the P22 eval iteration exposed | 🔵 proposed | Non-discriminating `work` kata; no baseline arm for `process`/`run`; pin the Improvement-log format in `process` §5 |
+| P25 | Close the gaps the P22 eval iteration exposed | ✅ shipped (v0.34.0) | Done — §5 format pinned + grader re-tightened (gate: 3/3 evals, 39/39); work kata de-hinted via a fixture guard; a hollow `run` eval-2 grader fixed. Baseline arm documented, still unrun |
 
 ## Priority overview
 
@@ -1233,6 +1233,48 @@ Append-only. Newest at the bottom.
   cap — the proposal names the total only, and a second rule is scope the spec
   didn't buy. Note the two ways to measure the same trim: 5,441 → 4,246 chars
   whole-line (the audit's figure) vs 3,301 values-only (what the gate sums).
+- **2026-07-30** — **P25 implemented; release deliberately held.** Three gaps
+  the P22 iteration named are closed in code. (a) `work`'s katas no longer hint
+  the method: both prompts are now a plain feature request / bug report, and the
+  runner requirement moved from the prompt into the fixture — `test_cart.py`
+  refuses to import without `KATA_HARNESS=1`, which only `run-tests.sh` sets, so
+  `.check-log` still exists for grading whichever arm runs. Verified by hand
+  before the prompts lost their hint: direct `python3 -m unittest` aborts with a
+  message naming the runner, and `./run-tests.sh` writes
+  `RESULT=PASS IMPL_SHA=8b44f02e8e4f2e3b`, matching `baseline-sha`. The old
+  benchmark is marked `SUPERSEDED.md` rather than deleted — it no longer matches
+  `evals.json`, and the rewrite's discriminating power is **unverified** until an
+  authorized run. (b) `process` §5 now pins the same
+  `### <YYYY-MM-DD> — …` Improvement-log shape `run` §4 uses, and
+  `evals/check.sh` re-tightens to require it — fixing the skill, which v0.32.0
+  flagged as the real follow-up, instead of keeping the loosened grader. Verified
+  red on a dated bullet, green on the heading, eval 3 exit 0. (c) The missing
+  baseline arm is now a documented procedure in the README with its cost and an
+  explicit *not run* status, so 49/49 green is never cited as skill value.
+  **Why no bump:** CLAUDE.md requires the skill's eval to run *before* the
+  version moves, and this diff touches `skills/process/SKILL.md`. That run needs
+  fresh-context subagents and owner authorization, so v0.34.0 is reserved and
+  unclaimed. CI stays green — `test-docs-consistency.sh` only requires the
+  *current* version to have its note.
+- **2026-07-30** — **P25 shipped as v0.34.0; eval gate run and green.** The
+  `process` eval suite ran with fresh-context subagents against the P25 branch:
+  3/3 evals, 39/39 assertions, ~133k subagent tokens, and — unlike 2026-07-29 —
+  **no grader changes were needed**. The headline result is eval 3: with §5
+  pinning `### <YYYY-MM-DD> — …`, the executor emitted that heading unprompted
+  and the **re-tightened** assertion passed. v0.32.0 had loosened that exact
+  check because the executor used a dated bullet; fixing the skill rather than
+  the grader was the right direction and is now proven, not asserted.
+  **A third gap surfaced while preparing the gate, worse than the two P25 knew
+  about:** `skills/run/evals/check.sh` eval 2 (idempotent-upsert) passed on an
+  **untouched fixture** — all three assertions were satisfied by the seed, so a
+  run that did nothing scored 3/3 and the idempotency gate could never fail.
+  v0.32.0's claim that the graders were "verified red on an untouched fixture"
+  did not cover eval 2. It now requires the row's `audited` field to hold the run
+  date and the datastore to be staged (DATA.md's own definition of landed), and
+  was verified red on the untouched fixture, green on a correct simulated upsert,
+  and red again on a duplicated row. Lesson for the ledger: *check every eval id
+  for a vacuous pass, not a sample* — a grader that cannot fail is worse than no
+  grader, because it reports confidence.
 - **2026-07-30** — **P23 implemented; release deliberately held.** The open
   question is closed by owner decision: the transition line carries
   `cost: {bytes_out, tool_calls, elapsed_s}` — three mechanically observable

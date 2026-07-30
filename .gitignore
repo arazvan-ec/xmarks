@@ -10,3 +10,8 @@ Thumbs.db
 
 # flywheel runtime state (created inside consuming projects, never shipped)
 .claude/flywheel/.gate-state
+
+# Python byte-cache. Leaked into v0.34.0 from running the work eval fixtures'
+# suite in place; the fixtures are templates and must stay byte-identical.
+__pycache__/
+*.pyc

@@ -141,6 +141,19 @@ Skills are prompts, so structural checks can't catch a behavioral regression —
 
 A regression (with-skill pass rate below the committed benchmark, or any planted-bug eval rationalized into a PASS) blocks the release until the skill text is fixed.
 
+### The baseline arm (value study) — documented, not yet run
+
+The release gate needs only the with-skill arm: it answers "did this skill text regress?". A **baseline arm** — the same eval run by a subagent that is *not* given the skill — answers a different and unanswered question: "is this behavior the skill's, or would a strong model do it anyway?". Run it as a deliberate study, never as part of a release:
+
+1. Same fixture instantiation as step 1 above, into a separate workdir per arm so the two never share state.
+2. Spawn the baseline subagent with the eval's prompt **and no reference to `skills/<name>/SKILL.md`** — no summary of it, no paraphrase. Everything else (eval-mode briefing, pre-approved gates, path resolution) stays identical, or the comparison measures the briefing instead of the skill.
+3. Grade both arms with the same grader and record them as two `configuration` values (`with_skill`, `without_skill`) in one `benchmark.json`, as the pillar-1 benchmarks do.
+4. Report the delta per assertion, not just per eval — a tie on pass rate can still hide which specific contract the baseline broke.
+
+**Status: not run for `process`/`run`.** Their committed iteration is with-skill only (~237k tokens), so their 49 green assertions are a regression baseline and **not** evidence that the skills beat an unaided model. Cost of closing that gap is roughly 120k tokens per skill. Until it is run, do not cite pillar-2 pass rates as skill value.
+
+**`work`'s pillar-1 baseline is stale, not missing.** Its 2026-07-29 iteration tied at 8/8 because the prompt named the test runner; P25 rewrote the prompts and moved that requirement into the fixture, so the old benchmark is marked superseded (`skills/work/evals/benchmarks/2026-07-29/SUPERSEDED.md`) and the rewrite's discriminating power is untested until the next authorized run.
+
 ## Repo layout
 
 The plugin lives at the repo root: `.claude-plugin/` (manifest + marketplace), `skills/`, `agents/`, `hooks/`, `scripts/`. Setup guides are in [`docs/`](docs/), and [`upgrades/`](upgrades/) holds the per-version, AI-authored migration notes that `/flywheel:update` executes in installed repos (CI requires one per release).
