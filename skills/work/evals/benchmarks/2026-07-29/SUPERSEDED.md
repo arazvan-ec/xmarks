@@ -16,10 +16,11 @@ for grading without the prompt hinting the method.
 - This benchmark is **no longer the regression baseline** — it does not
   correspond to the current `evals.json`. Do not compare a new iteration's
   numbers against it.
-- The rewrite is *designed* to discriminate; whether it *does* is **unverified**.
-  No iteration has been run against the new prompts. The next authorized run
-  produces the real baseline, and it is entirely possible the arms still tie —
-  in which case the honest outcome is to say so in the README rather than let
-  100% read as skill value.
+- **Answered on 2026-07-30: the rewrite did not discriminate.** Two further
+  iterations tied at 100%. The first still leaked the grading rule through the
+  fixture README; the second removed that leak entirely and the baseline still
+  did strict red→green unaided. Per the fallback written above, the kata is now
+  labelled regression-only in the README rather than having its 100% cited as
+  skill value. See `../2026-07-30/benchmark.json`.
 - It is kept rather than deleted because the v0.31.0 evidence is still a true
   record of what was measured then.

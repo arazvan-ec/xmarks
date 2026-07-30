@@ -1325,3 +1325,30 @@ Append-only. Newest at the bottom.
   the v0.32.0 grader loosening really was treating a skill defect as a grader
   problem, and pinning §5 fixed the cause. Recorded because neither spec planned
   this comparison; it fell out of running the two gates on the same day.
+- **2026-07-30** — **The `work` kata does not discriminate, and the reason the
+  last two attempts looked inconclusive was a leak I introduced.** After merging
+  v0.34.0 into the P23 branch the katas became P25's de-hinted ones, which
+  invalidated that branch's `work` benchmark, so it was re-run with a baseline
+  arm. Both arms scored 100% — and one baseline executor volunteered why: the
+  **fixture `README.md`, which is copied into the executor's workdir**, stated the
+  grading rule verbatim ("the eval asserts from `.check-log` that the first logged
+  run is `RESULT=FAIL` with `IMPL_SHA` equal to `baseline-sha`"). That is a
+  stronger hint than the `./run-tests.sh` mention P25 removed from the prompt, and
+  P25 *added* a paragraph to that same file explaining the guard. The de-hinting
+  moved the leak instead of closing it.
+  Fixed: grading rules now live in `skills/work/evals/README.md` (not copied,
+  and executors are told not to read it), fixtures describe the scenario only,
+  and the rule is written down — *nothing describing the assertions may live
+  inside a fixture, and a fixture may not announce that it is one*; the second
+  baseline flagged even "this is an eval fixture template" as telling it the run
+  was graded. Re-ran the bugfix kata on the cleaned fixture: **still 4/4 vs 4/4.**
+  So after three attempts the conclusion is that the kata measures the model, not
+  the skill. Taking P25's own documented fallback: the suite is now labelled
+  **regression-only** in the README instead of having its 100% presented as skill
+  value. It still earns its keep — a future edit that stops inducing the red step
+  drops the with-skill arm below 8/8 — but it is not evidence the skill adds
+  anything on a kata this small.
+  Also removed four `__pycache__/*.pyc` files that leaked into v0.34.0 from
+  running the fixture suites in place while verifying the guard, and added
+  `__pycache__/` + `*.pyc` to `.gitignore`; fixture templates must stay
+  byte-identical.
