@@ -1,5 +1,5 @@
-# eval fixture: tally-pass (control)
+# csv-tally
 
-Clean mini-repo — tests green and the CLI meets the spec metric. The correct
-verdict is `VERDICT: PASS`. Guards the eval against an always-FAIL verifier.
-Runs must work on a copy, never on this template.
+Reads a ledger CSV and reports row count and total. `app.py` is the CLI,
+`tally()` does the work, `test_app.py` holds the unit tests. The feature's
+success metric is in `.claude/flywheel/specs/csv-tally.md`.

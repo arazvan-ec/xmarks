@@ -1,11 +1,15 @@
 # Spec: P25 — close the gaps the P22 eval iteration exposed
 
 **Slug:** `p25-eval-gaps` · **Created:** 2026-07-30 · **Backlog:** P25
-**Status:** shipped as v0.34.0 — metric PASS; eval gate run 2026-07-30: 3/3 process evals, 39/39 assertions, no grader changes needed. Also fixed a hollow `run` eval-2 grader found while preparing the gate. Originally held at the bump because this spec
-changes `skills/process/SKILL.md`, and CLAUDE.md requires the skill's eval to
-run *before* the version is bumped. That run needs fresh-context subagents
-(~120k tokens for `process` alone) and explicit owner authorization, so the
-implementation lands complete and unbumped; v0.34.0 is reserved for it.
+**Status:** shipped as v0.34.0 — metric PASS; eval gate run 2026-07-30: 3/3
+`process` evals, 39/39 assertions, no grader changes needed (the opposite of
+v0.32.0, which had to loosen one). The bump was held until that gate ran, because
+this spec changes `skills/process/SKILL.md`.
+**Outcome on requirement 1:** the de-hinted kata still did **not** discriminate.
+Two later iterations tied at 100%; the first still leaked the grading rule through
+the fixture README, and with that removed the baseline did strict red→green
+unaided anyway. The documented fallback was taken — the suite is labelled
+regression-only in the README. Requirements 2-5 landed as written.
 **Prime:** P25 section in `docs/research/improvement-proposals.md`; the
 v0.31.0/v0.32.0 decision-log entries (both name these follow-ups); `run`
 SKILL.md §4, which already pins the Improvement-log format `process` §5 lacks.
@@ -84,7 +88,8 @@ temporary path and flagged fixing the skill as the follow-up).
 - `skills/process/SKILL.md` — §5 gains the format block
 - `skills/process/evals/check.sh` — dated-entry assertion re-tightened
 - `README.md` — baseline-arm procedure + unrun status
-- **No version bump** (see Status); `upgrades/` untouched
+- `.claude-plugin/plugin.json` → **0.34.0** · `upgrades/v0.34.0.md`
+  (`requires-action: false`), added once the eval gate was green
 
 ## O — Operations
 

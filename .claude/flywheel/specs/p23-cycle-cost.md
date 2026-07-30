@@ -1,11 +1,12 @@
 # Spec: P23 — cycle-cost telemetry (the loop measures its own cost)
 
 **Slug:** `p23-cycle-cost` · **Created:** 2026-07-30 · **Backlog:** P23
-**Status:** shipped as v0.35.0 — metric PASS; eval gate run 2026-07-30 across work/process/run: 8/8 evals, 57/57 assertions, cost object verified on real run telemetry. Originally held at the bump because This spec
-changes `skills/{work,loop,run,process}/SKILL.md`, and CLAUDE.md gates skill
-changes on running that skill's evals first (`work`, `process`, `run` all have
-them). That needs fresh-context subagents and owner authorization, so the
-implementation lands complete and unbumped; v0.35.0 is reserved for it.
+**Status:** shipped as v0.35.0 — metric PASS; eval gate run 2026-07-30 across
+`work`/`process`/`run`: 8/8 evals, 57/57 assertions, with the `cost` object
+verified on real run telemetry (14/14, 14/14 and 15/16 transitions). The bump was
+held until that gate ran, because this spec changes
+`skills/{work,loop,run,process}/SKILL.md` and CLAUDE.md gates skill changes on
+running their evals first.
 **Prime:** P23 section in `docs/research/improvement-proposals.md`; the
 2026-07-30 measurement-audit entry; P16 (telemetry ledger) and v0.30.0
 (two-tier telemetry) — this extends their line format rather than inventing one;
@@ -80,7 +81,8 @@ through v0.32.0 runs have no cost object; report, don't reject).
 - `scripts/run-cost.sh` + `scripts/test-run-cost.sh` (new, executable)
 - `README.md` — the "Live progress" paragraph gains the cost-proxy sentence and
   the script
-- **No version bump** (see Status); `upgrades/` untouched
+- `.claude-plugin/plugin.json` → **0.35.0** · `upgrades/v0.35.0.md`
+  (`requires-action: false`), added once the eval gate was green
 
 ## O — Operations
 

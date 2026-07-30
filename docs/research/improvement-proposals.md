@@ -44,6 +44,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
 | P23 | Cycle-cost telemetry: the loop measures its own cost | ✅ shipped (v0.35.0) | Done — `cost: {bytes_out, tool_calls, elapsed_s}`, no tokens (enforced by `run-cost.sh`); gate 8/8 evals, 57/57 assertions, cost object verified on real run telemetry. Open: do the proxies track real spend? |
 | P24 | Description budget as a CI ratchet | ✅ shipped (v0.33.0) | Done — `check-description-budget.sh` sums description values (3301) against `scripts/description-budget.txt` (3600); malformed frontmatter fails loudly; wired into CI |
+| P26 | Committed graders for `verify` and `work` | 🔵 proposed | `process`/`run` have `check.sh`; pillar 1 re-derives its regexes by hand each iteration, which is exactly where a vacuous or leaked assertion survives unnoticed |
 | P25 | Close the gaps the P22 eval iteration exposed | ✅ shipped (v0.34.0) | Done — §5 format pinned + grader re-tightened (gate: 3/3 evals, 39/39); work kata de-hinted via a fixture guard; a hollow `run` eval-2 grader fixed. Baseline arm documented, still unrun |
 
 ## Priority overview
@@ -885,6 +886,32 @@ value study, separate from the gate. (c) Pin the Improvement-log format in
 
 ---
 
+## P26 — Committed graders for `verify` and `work` (analysis, 2026-07-30)
+
+**Why.** `process` and `run` each ship a deterministic `evals/check.sh`; that is
+the only reason the hollow `run` eval-2 assertion was ever found — a committed
+grader can be *run against an untouched fixture* to ask "can this even fail?".
+`verify` and `work` have no grader: their expectations are prose, and each
+iteration re-derives the regexes by hand. Two defects have now been found by
+accident in pillar 1 (the `work` fixture README leaking the grading rule, then
+the `verify` fixtures carrying the full answer key), and neither would have
+survived a `check.sh` that someone had run red-first.
+
+**What.** `skills/{verify,work}/evals/check.sh <id> <workdir>`, same contract as
+pillar 2: one PASS/FAIL line per expectation, exit 0 only if all pass, verified
+red on an untouched fixture before any real run. For `work` most assertions are
+already mechanical (`.check-log` vs `baseline-sha`); for `verify` they are
+regexes over `report.md`/`transcript.md`.
+
+**Also worth encoding as a check**: no fixture file may match the assertion
+vocabulary (`VERDICT:`, `baseline-sha`, `.check-log`, "the eval asserts"), which
+would have caught both leaks mechanically instead of by an executor volunteering
+that the instructions contradicted each other.
+
+**Files:** `skills/{verify,work}/evals/check.sh`, README runbook.
+
+---
+
 ## Decision log
 
 Append-only. Newest at the bottom.
@@ -1352,3 +1379,40 @@ Append-only. Newest at the bottom.
   running the fixture suites in place while verifying the guard, and added
   `__pycache__/` + `*.pyc` to `.gitignore`; fixture templates must stay
   byte-identical.
+- **2026-07-30** — **The `verify` fixtures contained the answer key; found while
+  auditing pillar 1 for the same defect class as the `work` leak.** Each
+  fixture's `README.md` is copied into the executor's workdir, and
+  `tally-sneaky`'s named the defect's location, named the rationalization trap
+  ("a verifier that only runs the tests and rationalizes from there will wrongly
+  PASS") and stated the required verdict verbatim; `tally-fail`'s and
+  `tally-pass`'s stated the correct verdict outright. **Both arms of the
+  2026-07-29 iteration read it.** Cleaned in v0.36.0: fixtures now read as an
+  ordinary repo, ground truth moved to `skills/verify/evals/README.md`, and
+  `COMPROMISED.md` sits beside the old benchmark stating precisely what survives.
+  What survives: the **+30 pp headline (10/10 vs 7/10) holds and is probably an
+  understatement** — the leak stated the required `VERDICT: FAIL — <reason>`
+  format verbatim and the baseline still closed in prose all three times, so the
+  hint worked against that result. What does not survive: the bug-detection,
+  evidence-citation and ran-the-real-CLI assertions, which both arms passed and
+  which the benchmark already flagged as non-discriminating — now with a cause.
+  The fixture's `specs/csv-tally.md` stays in the workdir: stating the success
+  metric is the contract, not a leak.
+  **The pattern is the lesson, and it is now twice-confirmed:** when a fixture is
+  copied into the workdir, every file in it is part of the prompt. Both leaks were
+  found only because an executor volunteered the contradiction; neither the specs
+  nor the reviews caught them. Hence P26 — pillar 1 has no committed grader, so
+  nobody can run "can this assertion fail?" the way the pillar-2 `check.sh` let me.
+  **Open:** no iteration has run against the clean `verify` fixtures, so the
+  bug-detection assertions currently have no trustworthy measurement at all.
+- **2026-07-30 (same audit, continued)** — **Six leaks, not one, and the count
+  only stopped because the check was re-run after every fix.** Beyond the three
+  `verify` fixture READMEs: a comment in the `work` fixtures' `run-tests.sh`
+  ("whether the impl was still pristine at red time is mechanically checkable"),
+  the pillar-2 fixture READMEs announcing themselves as "Eval fixture for flywheel
+  pillar-2 skills", and the `work` guard message added in v0.34.0 — mine, written
+  the same day — saying the runner records "the audit log this kata is **graded**
+  from". Every one of them is a file copied into the executor's workdir.
+  The generalizable rule, now in both eval READMEs as a mandatory pre-iteration
+  grep: **a fixture is a prompt, so audit every file in it, not just the obvious
+  one — and re-run the audit after each fix, because fixing a leak is itself an
+  edit that can add one.** I added two of these six while closing the first three.
