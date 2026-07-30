@@ -41,7 +41,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P19 | Update postprocess: persistent pending-strategy state + refresh smoke check | ✅ shipped (v0.26.0) | Done — `PENDING-UPGRADES` written by the installer, nagged by SessionStart, cleared by `/flywheel:update`; `bash -n` gate aborts a broken refresh. CI auto-apply deferred until the nag proves recurring debt |
 | P20 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.27.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**`. (Renumbered from P19/v0.26.0 at merge time — main had taken both) |
 | P21 | Bash grants coherent with the approval gates (P20 for commands) | ✅ shipped (v0.28.0) | Done — allow-only `bash-allow.sh` (add/commit/stash, branch-aware force-free push); gate-time consent rules in spec/process; permission drift in sync |
-| P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | 🟢 phase 1 building (v0.29.0) | Phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2 (open): eval harnesses for `verify`/`work` and `process`/`run` as release gates |
+| P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | 🟢 phase 2 building | Phase 1 (v0.29.0): CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2 pillar 1: behavioral evals + planted-bug fixtures + benchmark evidence for `verify`/`work` (manual release gate, not CI). Pillar 2 (`process`/`run`): parallel session |
 
 ## Priority overview
 
@@ -1082,3 +1082,19 @@ Append-only. Newest at the bottom.
   — its test existed and failed before the gate did. Phase 2 (skill evals for
   `verify`/`work` and `process`/`run` as manual release gates) stays open,
   split into two parallel sessions, one per pillar.
+- **2026-07-29** — **P22 phase 2, pillar 1 shipped as v0.31.0** (parallel
+  session; pillar 2 `process`/`run` runs separately). Behavioral evals in the
+  skill-creator format for `verify` (planted failing bug → must end
+  `VERDICT: FAIL — <reason>`; tests-green-but-CLI-wrong "sneaky" trap → must
+  actually run the real thing and still FAIL; clean control → must PASS) and
+  `work` (fixture `run-tests.sh` logs `RESULT` + impl hash per run, so
+  red-before-impl is graded mechanically from `.check-log` vs `baseline-sha`).
+  Iteration 1 executed for real (with-skill vs baseline, ~360k tokens
+  total including a rerun of the with-skill arm against the v0.30.0 text
+  after rebase): with_skill 10/10 + 8/8 assertions; baseline correct on
+  analysis but broke the parseable verdict-line contract on all 3 verify
+  evals; work evals non-discriminating vs baseline this iteration (both did
+  red→green) — their gate value is regression detection on the skill text.
+  Benchmarks committed under `skills/<name>/evals/benchmarks/2026-07-29/`;
+  runbook in README (manual, never CI); fixtures captured as `type=fixture`
+  learnings.

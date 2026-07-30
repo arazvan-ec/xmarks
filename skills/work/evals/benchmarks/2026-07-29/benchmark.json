@@ -1,0 +1,220 @@
+{
+  "metadata": {
+    "skill_name": "work",
+    "skill_path": "skills/work",
+    "executor_model": "inherited-session-model",
+    "timestamp": "2026-07-29T22:45:00Z",
+    "evals_run": [
+      "feature-test-first",
+      "bugfix-regression-test-first"
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "feature-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 73.6,
+        "tokens": 36825,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "First .check-log entry is RESULT=FAIL with IMPL_SHA equal to baseline-sha (test ran red BEFORE the impl changed)",
+          "passed": true,
+          "evidence": "first entry: '2026-07-30T20:19:33Z RESULT=FAIL IMPL_SHA=8b44f02e8e4f2e3b'; baseline-sha: '8b44f02e8e4f2e3b'"
+        },
+        {
+          "text": "Last .check-log entry is RESULT=PASS",
+          "passed": true,
+          "evidence": "last entry: '2026-07-30T20:19:48Z RESULT=PASS IMPL_SHA=cb078317cd591d4c'"
+        },
+        {
+          "text": "test_cart.py contains a test exercising apply_discount including the ValueError bounds",
+          "passed": true,
+          "evidence": "test file covers apply_discount + ValueError bounds"
+        },
+        {
+          "text": "cart.py implements apply_discount and the final suite is green",
+          "passed": true,
+          "evidence": "def apply_discount present: True; independent re-run of suite: OK"
+        }
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "feature-test-first",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 88.6,
+        "tokens": 36267,
+        "tool_calls": 13,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "First .check-log entry is RESULT=FAIL with IMPL_SHA equal to baseline-sha (test ran red BEFORE the impl changed)",
+          "passed": true,
+          "evidence": "first entry: '2026-07-29T22:09:22Z RESULT=FAIL IMPL_SHA=8b44f02e8e4f2e3b'; baseline-sha: '8b44f02e8e4f2e3b'"
+        },
+        {
+          "text": "Last .check-log entry is RESULT=PASS",
+          "passed": true,
+          "evidence": "last entry: '2026-07-29T22:09:34Z RESULT=PASS IMPL_SHA=cb078317cd591d4c'"
+        },
+        {
+          "text": "test_cart.py contains a test exercising apply_discount including the ValueError bounds",
+          "passed": true,
+          "evidence": "test file covers apply_discount + ValueError bounds"
+        },
+        {
+          "text": "cart.py implements apply_discount and the final suite is green",
+          "passed": true,
+          "evidence": "def apply_discount present: True; independent re-run of suite: OK"
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 72.1,
+        "tokens": 36246,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "First .check-log entry is RESULT=FAIL with IMPL_SHA equal to baseline-sha (test ran red BEFORE the impl changed)",
+          "passed": true,
+          "evidence": "first entry: '2026-07-30T20:19:39Z RESULT=FAIL IMPL_SHA=8b44f02e8e4f2e3b'; baseline-sha: '8b44f02e8e4f2e3b'"
+        },
+        {
+          "text": "Last .check-log entry is RESULT=PASS",
+          "passed": true,
+          "evidence": "last entry: '2026-07-30T20:19:51Z RESULT=PASS IMPL_SHA=23d5a024823ee65a'"
+        },
+        {
+          "text": "test_cart.py contains a regression test asserting ValueError for non-positive qty",
+          "passed": true,
+          "evidence": "regression test present"
+        },
+        {
+          "text": "add_item rejects qty <= 0 after the fix and the final suite is green",
+          "passed": true,
+          "evidence": "guard in cart.py: True; independent re-run of suite: OK"
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 74.6,
+        "tokens": 34862,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "First .check-log entry is RESULT=FAIL with IMPL_SHA equal to baseline-sha (test ran red BEFORE the impl changed)",
+          "passed": true,
+          "evidence": "first entry: '2026-07-29T22:09:17Z RESULT=FAIL IMPL_SHA=8b44f02e8e4f2e3b'; baseline-sha: '8b44f02e8e4f2e3b'"
+        },
+        {
+          "text": "Last .check-log entry is RESULT=PASS",
+          "passed": true,
+          "evidence": "last entry: '2026-07-29T22:09:30Z RESULT=PASS IMPL_SHA=23d5a024823ee65a'"
+        },
+        {
+          "text": "test_cart.py contains a regression test asserting ValueError for non-positive qty",
+          "passed": true,
+          "evidence": "regression test present"
+        },
+        {
+          "text": "add_item rejects qty <= 0 after the fix and the final suite is green",
+          "passed": true,
+          "evidence": "guard in cart.py: True; independent re-run of suite: OK"
+        }
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 72.85,
+        "stddev": 0.75,
+        "min": 72.1,
+        "max": 73.6
+      },
+      "tokens": {
+        "mean": 36535.5,
+        "stddev": 289.5,
+        "min": 36246,
+        "max": 36825
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 81.6,
+        "stddev": 7.0,
+        "min": 74.6,
+        "max": 88.6
+      },
+      "tokens": {
+        "mean": 35564.5,
+        "stddev": 702.5,
+        "min": 34862,
+        "max": 36267
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "-8.8",
+      "tokens": "+971"
+    }
+  },
+  "notes": [
+    "with_skill runs were executed against the v0.30.0 skill text (re-run after rebasing on main); baselines are skill-independent and kept from the same iteration.",
+    "Non-discriminating vs baseline this iteration: both configurations did strict red->green (first .check-log entry RESULT=FAIL at baseline-sha, last RESULT=PASS). The kata prompt names ./run-tests.sh and strong models default to test-first here.",
+    "The eval's release-gate value is regression detection on the skill text: an edit to skills/work/SKILL.md that stops inducing the red step drops with_skill below the committed 100% baseline.",
+    ".check-log + IMPL_SHA grading is fully mechanical \u2014 no grader judgment involved in the red-before-impl assertions."
+  ]
+}

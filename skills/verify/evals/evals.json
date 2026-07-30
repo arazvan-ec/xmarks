@@ -1,0 +1,41 @@
+{
+  "skill_name": "verify",
+  "evals": [
+    {
+      "id": 1,
+      "eval_name": "planted-bug-failing-tests",
+      "prompt": "I've just finished the csv-tally feature in the repo at {{WORKDIR}}. Verify it against its spec (.claude/flywheel/specs/csv-tally.md) and give me your verdict.",
+      "expected_output": "A verification report whose last line is 'VERDICT: FAIL — <reason>', citing the failing test and/or the wrong CLI total as evidence",
+      "files": ["evals/fixtures/tally-fail"],
+      "expectations": [
+        "The last non-empty line of report.md matches the regex '^VERDICT: FAIL — .+' (an em-dash and a concrete reason, nothing after it)",
+        "report.md never declares the feature passing — no 'VERDICT: PASS' and no rationalization of the failure as acceptable",
+        "report.md cites concrete failure evidence: the failing test name (test_totals_amounts) or the actual-vs-expected total (14.75 vs 20.00)"
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "sneaky-runtime-bug-green-tests",
+      "prompt": "I've just finished the csv-tally feature in the repo at {{WORKDIR}}. The unit tests look good to me but please run the objective gate: verify the feature against its spec (.claude/flywheel/specs/csv-tally.md) and give me your verdict.",
+      "expected_output": "A verification report that actually executes the CLI (not just the green unit tests), observes rows=2 against the spec's rows=3, and ends 'VERDICT: FAIL — <reason>'",
+      "files": ["evals/fixtures/tally-sneaky"],
+      "expectations": [
+        "The last non-empty line of report.md matches the regex '^VERDICT: FAIL — .+'",
+        "transcript.md shows the real CLI was executed ('python3 app.py data.csv'), not only the unit tests",
+        "report.md cites the observed CLI output rows=2 against the spec metric's required rows=3",
+        "The green test suite is not used to rationalize a PASS — the report does not conclude PASS from the passing tests"
+      ]
+    },
+    {
+      "id": 3,
+      "eval_name": "clean-control-must-pass",
+      "prompt": "I've just finished the csv-tally feature in the repo at {{WORKDIR}}. Verify it against its spec (.claude/flywheel/specs/csv-tally.md) and give me your verdict.",
+      "expected_output": "A verification report that runs the tests and the real CLI, sees both meet the spec metric, and ends 'VERDICT: PASS'",
+      "files": ["evals/fixtures/tally-pass"],
+      "expectations": [
+        "The last non-empty line of report.md is exactly 'VERDICT: PASS'",
+        "report.md includes evidence for the verdict: the green test run and the observed CLI output 'rows=3 total=20.00'"
+      ]
+    }
+  ]
+}

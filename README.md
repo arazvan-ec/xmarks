@@ -121,6 +121,21 @@ Drop an executable `.claude/flywheel/gate.sh` in your project with your verifica
 
 **One suite run per cycle (v0.30.0)**: `/flywheel:verify` uses the project's `gate.sh` as its suite command when present, and after a PASS runs `gate.sh seal` — recording the passing tree's signature so the `Stop` hook cache-hits instead of re-running the same suite minutes later. Seal accepts the caller's evidence, never creates it: it refuses an untrusted gate (a planted gate can't arrive pre-passed) and covers exactly one tree signature — any change re-runs.
 
+## Skill evals (manual release gate — not in CI)
+
+Skills are prompts, so structural checks can't catch a behavioral regression — `verify` starting to rationalize a FAIL into a PASS, or `work` skipping the red step. The skills where that hurts most carry behavioral evals in the skill-creator format: `skills/verify/evals/` and `skills/work/evals/` (pillar 1), each with `evals.json` (realistic prompts + objective assertions) and planted-bug mini-repo fixtures under `evals/fixtures/` whose ground truth is known.
+
+**When to run**: manually, before bumping the version on any release whose diff touches one of those skills. They are deliberately **not in CI** — one iteration (all evals × with-skill vs baseline) costs roughly 300–800k tokens.
+
+**How to run one iteration** (from a Claude Code session on this repo):
+
+1. For each eval in `skills/<name>/evals/evals.json`: copy its fixture (the `files` field) to a scratch directory and substitute `{{WORKDIR}}` in the prompt with that path — never point a run at the fixture template.
+2. Spawn two subagents per eval in the same turn: one told to read and follow `skills/<name>/SKILL.md` with the prompt as its task (with-skill), one given only the prompt (baseline). Executors save `report.md`/`transcript.md` (verify) or leave the modified workdir + `transcript.md` (work).
+3. Grade each run against the eval's `expectations` — the assertions are mechanical on purpose (last-line `VERDICT:` regex; `.check-log` first-FAIL-with-pristine-`IMPL_SHA`-then-PASS against `baseline-sha`).
+4. Aggregate into `benchmark.json`/`benchmark.md` (skill-creator schema) and commit them under `skills/<name>/evals/benchmarks/<date>/` as the release evidence.
+
+A regression (with-skill pass rate below the committed benchmark, or any planted-bug eval rationalized into a PASS) blocks the release until the skill text is fixed.
+
 ## Repo layout
 
 The plugin lives at the repo root: `.claude-plugin/` (manifest + marketplace), `skills/`, `agents/`, `hooks/`, `scripts/`. Setup guides are in [`docs/`](docs/), and [`upgrades/`](upgrades/) holds the per-version, AI-authored migration notes that `/flywheel:update` executes in installed repos (CI requires one per release).
