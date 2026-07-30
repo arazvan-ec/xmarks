@@ -44,7 +44,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
 | P23 | Cycle-cost telemetry: the loop measures its own cost | ✅ shipped (v0.35.0) | Done — `cost: {bytes_out, tool_calls, elapsed_s}`, no tokens (enforced by `run-cost.sh`); gate 8/8 evals, 57/57 assertions, cost object verified on real run telemetry. Open: do the proxies track real spend? |
 | P24 | Description budget as a CI ratchet | ✅ shipped (v0.33.0) | Done — `check-description-budget.sh` sums description values (3301) against `scripts/description-budget.txt` (3600); malformed frontmatter fails loudly; wired into CI |
-| P26 | Committed graders for `verify` and `work` | 🔵 proposed | `process`/`run` have `check.sh`; pillar 1 re-derives its regexes by hand each iteration, which is exactly where a vacuous or leaked assertion survives unnoticed |
+| P26 | Committed graders for `verify` and `work` | ✅ shipped (v0.37.0) | Done — `skills/{verify,work}/evals/check.sh` on the pillar-2 contract; `test-eval-graders.sh` requires all four graders red on an untouched fixture (and pillar 1 green on an ideal outcome); `check-fixture-leaks.sh` turns the manual leak grep into a CI gate with a per-path/per-pattern allowlist. Unblocks the pending `verify` iteration |
 | P25 | Close the gaps the P22 eval iteration exposed | ✅ shipped (v0.34.0) | Done — §5 format pinned + grader re-tightened (gate: 3/3 evals, 39/39); work kata de-hinted via a fixture guard; a hollow `run` eval-2 grader fixed. Baseline arm documented, still unrun |
 
 ## Priority overview
@@ -1433,3 +1433,45 @@ Append-only. Newest at the bottom.
   grep: **a fixture is a prompt, so audit every file in it, not just the obvious
   one — and re-run the audit after each fix, because fixing a leak is itself an
   edit that can add one.** I added two of these six while closing the first three.
+- **2026-07-30** — **Shipped P26 (committed graders for pillar 1) as v0.37.0** —
+  the sequencing dependency this backlog named: build the instrument, then
+  measure. `skills/{verify,work}/evals/check.sh` now grade on pillar 2's
+  contract (one `PASS:`/`FAIL:` per expectation, exit 0 only if all pass, exit 2
+  on an unknown id), each mechanizing exactly the `expectations` already in its
+  `evals.json` — deliberately no new assertion, so the pending `verify`
+  iteration measures the skill and not a moved goalpost. `work` is graded from
+  `.check-log` plus a behaviour probe and an independent suite re-run
+  (`python3 -m unittest`, which does not append to the log it grades); `verify`
+  from `report.md`/`transcript.md`, where a **missing artifact is a `FAIL:`
+  naming the path** — a grader that passes on absence is worse than none,
+  because it reads as evidence.
+  Two CI gates, both aimed at how the previous defects were actually found —
+  by accident. `scripts/test-eval-graders.sh` runs **all four** graders against
+  an untouched fixture and requires red (the "can this assertion even fail?"
+  question that exposed the hollow `run` eval-2 grader, now asked by the build),
+  and requires the pillar-1 graders green on a synthesized ideal outcome so the
+  mirror defect — a grader that can never pass — is caught too. Pillar 2's green
+  side is deliberately not synthesized: writing a valid process contract in bash
+  would reimplement the thing being graded, and the test prints that gap rather
+  than implying coverage. `scripts/check-fixture-leaks.sh` promotes the manual
+  pre-iteration grep to a gate: 14 vocabulary patterns over every file under
+  `*/evals/fixtures/`, exemptions per **path *and* pattern with a written
+  reason** in `scripts/fixture-leak-allow.txt` (6 entries, all `run-tests.sh`
+  naming the `.check-log` it writes), stale exemptions failing, and
+  `SKIP_FIXTURE_LEAKS=1` logged rather than silent. Its own test proves the
+  allowlist is load-bearing by emptying it and requiring the real fixtures to
+  fail — a vocabulary loose enough to let the runner through unaided would have
+  let the `work` README leak through too.
+  Built test-first per CLAUDE.md: both test scripts were written and seen red
+  (graders absent, gate absent) before either implementation existed.
+  Skill text is untouched, so P22 phase 2's eval-before-bump gate does not apply
+  to this release — stated in the upgrade note rather than left as an inference.
+  **Open (new, small):** the gate scans file *contents*, so the fixture file
+  *named* `baseline-sha` is still a standing hint sitting in the executor's
+  workdir. Its contents are an opaque hash; renaming it would change the `work`
+  eval definition and invalidate the committed benchmark, so it is recorded in
+  the allowlist header and both eval READMEs instead of quietly accepted. Worth
+  folding into the next change that touches those fixtures for another reason.
+  **Next per the sequencing note, now unblocked:** the `verify` iteration on the
+  cleaned fixtures (3 evals × 2 arms), whose bug-detection assertions have had no
+  trustworthy measurement since the answer-key leak.

@@ -1,0 +1,19 @@
+# Allowlist for scripts/check-fixture-leaks.sh (P26).
+# Format: <path-relative-to-repo-root> <pattern-id> <reason>
+#
+# A reason must say why the fixture legitimately needs the word — "it explains
+# what we measure" is the leak this gate exists to catch, not a reason.
+# Every entry must match a real hit: stale entries fail the gate.
+#
+# Standing exception NOT covered here: the fixture file *named* `baseline-sha`.
+# The gate scans contents, not filenames, so the name itself still sits in the
+# executor's workdir. Its contents are an opaque hash, and renaming it would
+# change the `work` eval definition — tracked as an open question in
+# docs/research/improvement-proposals.md rather than silently accepted.
+
+skills/work/evals/fixtures/cart-feature/run-tests.sh checklog the runner writes this file, so it must name it
+skills/work/evals/fixtures/cart-feature/run-tests.sh result the runner emits the RESULT= field it logs
+skills/work/evals/fixtures/cart-feature/run-tests.sh implsha the runner computes the IMPL_SHA field it logs
+skills/work/evals/fixtures/cart-bugfix/run-tests.sh checklog the runner writes this file, so it must name it
+skills/work/evals/fixtures/cart-bugfix/run-tests.sh result the runner emits the RESULT= field it logs
+skills/work/evals/fixtures/cart-bugfix/run-tests.sh implsha the runner computes the IMPL_SHA field it logs

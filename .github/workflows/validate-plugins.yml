@@ -77,6 +77,15 @@ jobs:
       - name: Test check-description-budget.sh gate
         run: bash scripts/test-check-description-budget.sh
 
+      - name: Check eval fixtures for grading leaks (P26)
+        run: bash scripts/check-fixture-leaks.sh
+
+      - name: Test check-fixture-leaks.sh gate
+        run: bash scripts/test-check-fixture-leaks.sh
+
+      - name: Test the committed eval graders (P26)
+        run: bash scripts/test-eval-graders.sh
+
       - name: Test install-vendored.sh
         run: bash scripts/test-install-vendored.sh
 

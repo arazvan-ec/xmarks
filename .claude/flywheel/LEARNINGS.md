@@ -257,3 +257,32 @@ output is knowable in advance. Recipe (versioned at
 - **Never grade a dated artifact against the grading clock**: pin the run's
   date (`FW_EVAL_DATE`) — a correct run regraded after midnight failed on an
   `audited == today` assertion.
+
+## pattern: a grader is only evidence once you have proven it can fail — and pass
+<!-- fw: type=pattern; date=2026-07-30; files=scripts/test-eval-graders.sh,scripts/check-fixture-leaks.sh,skills/verify/evals/check.sh,skills/work/evals/check.sh; spec=p26-pillar1-graders; branch=claude/recent-changes-analysis-5p3jst; evidence=test-eval-graders.sh green: 11 red-on-untouched cases across 4 graders, 5 green-on-ideal cases; check-fixture-leaks.sh: 35 fixture files, 6 allowlisted hits -->
+
+Two eval defects in one week — a hollow `run` assertion and answer keys inside
+`verify` fixtures — were both found by accident. What made the first findable at
+all was a *committed* grader someone could run against an untouched fixture. So:
+
+- **Red-on-untouched is the primary property of a grader**, not a nicety. Make it
+  a build check over every grader, for every eval id: a fixture copy with nothing
+  done to it must produce a non-zero exit *and* a `FAIL:` line saying which
+  expectation failed.
+- **Check the mirror too.** A grader that can never pass (a typo'd regex) is just
+  as useless and fails silently as "the skill regressed". Synthesize the ideal
+  outcome and require green.
+- **Where synthesizing the ideal would reimplement the graded thing, don't** —
+  and print the gap. Pillar 2's green side is evidenced by benchmarks; a test
+  that quietly covers 3 of 4 cases reads as covering 4.
+- **Absence must fail loudly.** A missing `report.md` graded as a pass is worse
+  than no grader: it looks like evidence.
+- **Never let grading mutate what it grades.** The `work` suite re-run goes
+  through `python3 -m unittest`, not `run-tests.sh`, so it cannot append to the
+  `.check-log` it is reading; a test asserts the log is byte-identical after.
+- **A recurring manual grep is a gate that has not been written yet.** Both eval
+  READMEs carried the leak grep as mandatory; six leaks got through anyway.
+  Promoting it needed an allowlist keyed on **path + pattern + a written reason**,
+  because the one loose-enough-to-pass-`run-tests.sh` regex would also have passed
+  the leak. Prove the allowlist is load-bearing by emptying it in a test and
+  requiring the real fixtures to fail.
