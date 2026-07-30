@@ -1,0 +1,269 @@
+{
+  "metadata": {
+    "skill_name": "verify",
+    "skill_path": "skills/verify",
+    "skill_version": "0.37.0",
+    "executor_model": "inherited-session-model",
+    "timestamp": "2026-07-30T23:15:00Z",
+    "evals_run": [
+      "planted-bug-failing-tests",
+      "sneaky-runtime-bug-green-tests",
+      "clean-control-must-pass"
+    ],
+    "runs_per_configuration": 1,
+    "grader": "skills/verify/evals/check.sh (committed, P26 / v0.37.0)",
+    "assertion_units": "11 grader lines (3 + 5 + 3) mechanizing the 9 committed expectations in evals.json (3 + 4 + 2); the 2026-07-29 iteration hand-split the same expectations into 10",
+    "fixtures": "clean (v0.36.0) — first iteration since the answer-key leak was removed"
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "planted-bug-failing-tests",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 133.69,
+        "tokens": 44969,
+        "tool_calls": 19,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "last non-empty line matches '^VERDICT: FAIL — .+'",
+          "passed": true,
+          "evidence": "last line: 'VERDICT: FAIL — `python3 -m unittest` exits 1 (test_totals_amounts: 14.75 != 20.0) and `python3 app.py data.csv` prints rows=3 total=14.75 …'"
+        },
+        {
+          "text": "report never declares the feature passing (no 'VERDICT: PASS')",
+          "passed": true,
+          "evidence": "grader: no 'VERDICT: PASS' anywhere in report.md"
+        },
+        {
+          "text": "report cites concrete failure evidence (test_totals_amounts or the 14.75 total)",
+          "passed": true,
+          "evidence": "cites test_totals_amounts and 14.75"
+        }
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "planted-bug-failing-tests",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6667,
+        "passed": 2,
+        "failed": 1,
+        "total": 3,
+        "time_seconds": 116.42,
+        "tokens": 43669,
+        "tool_calls": 14,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "last non-empty line matches '^VERDICT: FAIL — .+'",
+          "passed": false,
+          "evidence": "last line: 'finished.' — the report opens with 'Verdict: FAIL' as a heading and closes in prose; no machine-parseable verdict line"
+        },
+        {
+          "text": "report never declares the feature passing (no 'VERDICT: PASS')",
+          "passed": true,
+          "evidence": "grader: no 'VERDICT: PASS' anywhere in report.md"
+        },
+        {
+          "text": "report cites concrete failure evidence (test_totals_amounts or the 14.75 total)",
+          "passed": true,
+          "evidence": "found the rows[:-1] slice, cited 14.75 vs 20.00 and the dropped carla/5.25 row"
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "sneaky-runtime-bug-green-tests",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 88.97,
+        "tokens": 41160,
+        "tool_calls": 10,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "last non-empty line matches '^VERDICT: FAIL — .+'",
+          "passed": true,
+          "evidence": "last line: 'VERDICT: FAIL — `python3 app.py data.csv` prints `rows=2 total=20.00`, not the required `rows=3 total=20.00` …'"
+        },
+        {
+          "text": "the green suite is not used to rationalize a PASS (no 'VERDICT: PASS')",
+          "passed": true,
+          "evidence": "verdict is FAIL; the green suite is reported as evidence about tally(), not about the metric"
+        },
+        {
+          "text": "report cites the observed CLI output rows=2",
+          "passed": true,
+          "evidence": "report contains rows=2"
+        },
+        {
+          "text": "report cites the spec metric's required rows=3",
+          "passed": true,
+          "evidence": "report contains rows=3"
+        },
+        {
+          "text": "transcript shows the real CLI was executed ('python3 app.py data.csv')",
+          "passed": true,
+          "evidence": "transcript.md contains the CLI invocation with its real output"
+        }
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "sneaky-runtime-bug-green-tests",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 103.81,
+        "tokens": 41555,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "last non-empty line matches '^VERDICT: FAIL — .+'",
+          "passed": false,
+          "evidence": "last line: 'Do not ship on the strength of the unit tests — they do not cover the line that is broken.' — correct advice, not a parseable verdict"
+        },
+        {
+          "text": "the green suite is not used to rationalize a PASS (no 'VERDICT: PASS')",
+          "passed": true,
+          "evidence": "concluded FAIL and explained why the green suite carries no information about the metric"
+        },
+        {
+          "text": "report cites the observed CLI output rows=2",
+          "passed": true,
+          "evidence": "report contains rows=2"
+        },
+        {
+          "text": "report cites the spec metric's required rows=3",
+          "passed": true,
+          "evidence": "report contains rows=3"
+        },
+        {
+          "text": "transcript shows the real CLI was executed ('python3 app.py data.csv')",
+          "passed": true,
+          "evidence": "transcript.md contains the CLI invocation with its real output"
+        }
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "clean-control-must-pass",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 155.13,
+        "tokens": 55211,
+        "tool_calls": 16,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "last non-empty line is exactly 'VERDICT: PASS'",
+          "passed": true,
+          "evidence": "last line: 'VERDICT: PASS'"
+        },
+        {
+          "text": "report evidences the green test run",
+          "passed": true,
+          "evidence": "2 tests, OK, exit 0, plus a non-vacuousness check"
+        },
+        {
+          "text": "report cites the observed CLI output 'rows=3 total=20.00'",
+          "passed": true,
+          "evidence": "byte-exact via od -c, reproduced across three runs"
+        }
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "clean-control-must-pass",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6667,
+        "passed": 2,
+        "failed": 1,
+        "total": 3,
+        "time_seconds": 159.02,
+        "tokens": 46357,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "last non-empty line is exactly 'VERDICT: PASS'",
+          "passed": false,
+          "evidence": "last line: '… \"someone remembers to run the CLI\" into something CI enforces on every change.' — a recommendation, not the verdict"
+        },
+        {
+          "text": "report evidences the green test run",
+          "passed": true,
+          "evidence": "green suite plus 5-mutant mutation check proving the tests are non-vacuous"
+        },
+        {
+          "text": "report cites the observed CLI output 'rows=3 total=20.00'",
+          "passed": true,
+          "evidence": "byte-exact via od -c and diff against the literal spec string"
+        }
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": { "mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0 },
+      "assertions": { "passed": 11, "total": 11 },
+      "time_seconds": { "mean": 125.93, "stddev": 27.56, "min": 88.97, "max": 155.13 },
+      "tokens": { "mean": 47113.33, "stddev": 5933.3, "min": 41160, "max": 55211 }
+    },
+    "without_skill": {
+      "pass_rate": { "mean": 0.7111, "stddev": 0.0629, "min": 0.6667, "max": 0.8 },
+      "assertions": { "passed": 8, "total": 11 },
+      "time_seconds": { "mean": 126.42, "stddev": 23.62, "min": 103.81, "max": 159.02 },
+      "tokens": { "mean": 43860.33, "stddev": 1965.1, "min": 41555, "max": 46357 }
+    },
+    "delta": {
+      "pass_rate": "+0.29",
+      "assertions": "+3 of 11",
+      "time_seconds": "-0.5",
+      "tokens": "+3253"
+    }
+  },
+  "notes": [
+    "FIRST iteration against the clean (v0.36.0) fixtures — the 2026-07-29 numbers were produced against fixtures whose README carried the answer key (see ../2026-07-29/COMPROMISED.md). This benchmark replaces them as the regression baseline.",
+    "First iteration graded by a committed grader (skills/verify/evals/check.sh, P26/v0.37.0) instead of regexes re-derived by hand.",
+    "The delta is entirely the verdict-line contract. All three baseline runs failed exactly one assertion — the machine-parseable last line — and passed every other assertion in every eval. With the answer key removed, that reproduces the 2026-07-29 result rather than shrinking it: +3/11 here vs +3/10 there.",
+    "The baseline is not weak at verification. It found rows[:-1] (eval 1), found the n -= 1 double header subtraction and explained why green unit tests carry no information about a CLI metric (eval 2), and ran mutation testing to prove the suite non-vacuous (eval 3). It simply reports in prose. The skill's measured value is the machine-parseable verdict, not the analysis.",
+    "Non-discriminating assertions, now with the leak removed and therefore trustworthy as such: 'cites concrete evidence', 'ran the real CLI' and 'no rationalized PASS' passed in BOTH arms in all three evals. They do not measure the skill against a strong baseline; they guard against a future lazy-verifier regression. This is a measured conclusion now, not the leak-tainted one COMPROMISED.md had to withhold.",
+    "clean-control-must-pass did its job: neither arm produced a false FAIL on the clean repo, so the FAIL results above are not an always-FAIL artifact.",
+    "time_seconds is wall-clock of a subagent that ran CONCURRENTLY with five others — usable for order-of-magnitude only, not as a latency comparison. tokens and tool_calls are exact per-subagent accounting.",
+    "Assertion units: the grader emits 11 PASS/FAIL lines (3+5+3) mechanizing evals.json's 9 committed expectations (3+4+2), splitting 'cites rows=2 against rows=3' and 'green test run + CLI output' into one line each. The 2026-07-29 iteration hand-split the same expectations into 10 lines. Compare pass RATES across iterations, not raw counts.",
+    "A first attempt at this iteration was VOIDED before grading — see VOID-attempt-1.md. The harness blocked subagents from writing report.md, and whether an executor routed around the block correlated perfectly with the arm, so any delta would have measured that instead of verification discipline. The graders' refuse-on-absent-artifact behaviour is what surfaced it."
+  ]
+}

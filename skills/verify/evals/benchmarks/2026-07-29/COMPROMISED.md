@@ -23,10 +23,18 @@ discriminate — now there is a reason: the fixture told the executor where to l
 and that the CLI had to be run. Those assertions measured reading
 comprehension, not verification discipline.
 
-## Status
+## Status — superseded 2026-07-30
 
 Fixtures were cleaned in v0.36.0 and the ground truth moved to
-`skills/verify/evals/README.md`. **No iteration has yet run against the clean
-fixtures**, so `verify` currently has no trustworthy measurement of the
-bug-detection assertions. Re-running is the open follow-up; this file stays as
-the record of what was actually measured on 2026-07-29.
+`skills/verify/evals/README.md`. The re-run has now happened:
+**`../2026-07-30/` is the current regression baseline** — clean fixtures, graded
+by the committed `check.sh` (P26 / v0.37.0).
+
+Both predictions on this page held. The delta survived: **+3/11 on clean fixtures
+against +3/10 here**, still resting entirely on the machine-parseable verdict
+line. And the "does not survive" list was right — with the leak gone, the
+bug-detection, evidence-citation and ran-the-real-CLI assertions **still** pass in
+both arms, so they are regression guards rather than evidence of skill value.
+That is now a measured conclusion instead of one this file had to withhold.
+
+This file stays as the record of what was actually measured on 2026-07-29.

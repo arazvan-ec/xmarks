@@ -771,7 +771,10 @@ until a committed `check.sh` let someone run it against an untouched fixture.
 Build the instrument, then measure.
 
 After P26: the `verify` iteration on the cleaned fixtures (3 evals × 2 arms — its
-bug-detection assertions currently have **no** trustworthy measurement), then the
+bug-detection assertions currently have **no** trustworthy measurement)
+— **done 2026-07-30, v0.38.0: with-skill 11/11, baseline 8/11, the delta entirely
+the verdict line; the bug-detection assertions are confirmed non-discriminating
+against a strong baseline** — then the
 pillar-2 baseline arm (meaningful only now that v0.36.0 removed the
 `demo-repo`/`target-repo` leak that would have poisoned it), then P23's open
 question — whether the cost proxies track real token spend, which needs two
@@ -1475,3 +1478,46 @@ Append-only. Newest at the bottom.
   **Next per the sequencing note, now unblocked:** the `verify` iteration on the
   cleaned fixtures (3 evals × 2 arms), whose bug-detection assertions have had no
   trustworthy measurement since the answer-key leak.
+- **2026-07-30** — **Ran the `verify` iteration P26 unblocked (v0.38.0): with-skill
+  11/11 assertions, baseline 8/11, and the delta is one thing.** First iteration
+  against the clean (v0.36.0) fixtures and the first graded by a committed
+  `check.sh` rather than regexes re-derived by hand. All three baseline runs failed
+  **exactly one** assertion — the machine-parseable `VERDICT:` last line — and
+  passed every other assertion in every eval.
+  **`COMPROMISED.md`'s two predictions both held**, which is the more valuable
+  result. The delta survived removing the answer key (+3/11 clean vs +3/10
+  leaked), and the "does not survive" list was right: with the leak gone, the
+  bug-detection, evidence-citation and ran-the-real-CLI assertions **still** pass
+  in both arms. They are regression guards, not evidence of skill value — now a
+  measured conclusion instead of one we had to withhold.
+  **The honest reading, and it narrows the claim**: the baseline is not weak at
+  verifying. It found `rows[:-1]`, found the `n -= 1` double header subtraction,
+  explained *unprompted* why green unit tests carry no information about a metric
+  written in terms of CLI stdout, and ran 5-mutant mutation testing on the clean
+  control. What `verify` demonstrably supplies is the **contract** — a verdict a
+  gate can read without a human — not the analysis. `work` is regression-only for
+  a similar reason; the difference is that `verify` has a measured, non-zero delta
+  and `work` does not. Cost: ~264k subagent tokens, 6 runs, exact per-run
+  accounting in the benchmark.
+  **A first attempt was voided before grading, and that is the process finding.**
+  The subagent harness refuses `Write` on files it classifies as reports, and
+  whether an executor routed around it with a heredoc **correlated perfectly with
+  the arm** — two with-skill runs did, all three baselines declined. Grading that
+  would have measured "did the executor work around a tool block" and reported it
+  as verification discipline: the same confound family as the fixture leaks, and
+  pointing the same flattering direction. Salvaging the two gradeable with-skill
+  runs was rejected too — an arm graded on the runs that happened to produce
+  artifacts is survivor-biased. Recorded in
+  `benchmarks/2026-07-30/VOID-attempt-1.md`; the runbook now tells the brief to
+  name the write mechanism, identically in both arms.
+  **P26 paid for itself on first use**: the grader's refuse-on-absent-artifact rule
+  is what surfaced the confound. A grader that treated absence as silence would
+  have produced a tidy 2/3-vs-0/3 sweep and the delta would have shipped as skill
+  value. That is precisely the failure mode "a grader that passes on absence is
+  worse than no grader, because it reads as evidence" was written against.
+  **Generalizable:** any assertion that reads an artifact needs the brief to
+  guarantee the artifact can be produced — otherwise an unproduced artifact is
+  indistinguishable from a skill failure, and the run fails in whichever direction
+  the harness happens to lean.
+  **Next, unchanged:** the pillar-2 baseline arm (`process`/`run`, ~120k tokens
+  per skill), then P23's open question on the cost proxies.
