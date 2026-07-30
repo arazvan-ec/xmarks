@@ -55,9 +55,10 @@ case "$ID" in
   3)
     f="$PROC/plate-audit.md"
     check grep -Eq '^version: 2' "$f" -- "version bumped to 2"
-    # date may arrive as a '### <date> — …' heading (run's template) or a dated
-    # bullet — process SKILL.md fixes no format, so accept any dated entry
-    check awk '/^## Improvement log/{f=1;next} f&&/20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]/&&!/^<!--/&&!/-->/{found=1} END{exit !found}' "$f" -- "Improvement log gained a dated entry"
+    # process SKILL.md §5 now pins the same '### <YYYY-MM-DD> — …' heading run §4
+    # uses (P25), so the grader requires it again instead of accepting any dated
+    # line — the v0.32.0 loosening was the temporary path, not the fix.
+    check awk '/^## Improvement log/{f=1;next} f&&/^### 20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]/{found=1} END{exit !found}' "$f" -- "Improvement log gained a '### <date>' entry"
     check grep -q '\*\*Normalize\*\*' "$f" -- "original Rule 1 (Normalize) preserved"
     check awk '/^## Output schema/{f=1;next} /^## /{f=0} f&&/round_number/{found=1} END{exit !found}' "$f" -- "round_number added to Output schema"
     ;;

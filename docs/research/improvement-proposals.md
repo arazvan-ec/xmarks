@@ -44,7 +44,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
 | P23 | Cycle-cost telemetry: the loop measures its own cost | 🔵 proposed | Add mechanically-observable cost fields to the JSONL transition line + a two-run comparison helper. Open question: what proxy replaces unreliable self-reported tokens |
 | P24 | Description budget as a CI ratchet | 🔵 proposed | Sum the frontmatter `description` chars across skills; fail above a committed budget so the v0.30.0 −22% can't silently regrow |
-| P25 | Close the gaps the P22 eval iteration exposed | 🔵 proposed | Non-discriminating `work` kata; no baseline arm for `process`/`run`; pin the Improvement-log format in `process` §5 |
+| P25 | Close the gaps the P22 eval iteration exposed | 🟡 implemented, release held | Done in code; **bump blocked on the `process` eval run** (CLAUDE.md gates skill changes on evals). v0.34.0 reserved |
 
 ## Priority overview
 
@@ -1219,3 +1219,26 @@ Append-only. Newest at the bottom.
   `work`'s evals didn't discriminate and `process`/`run` have no baseline arm
   (→ P25). All benchmark iterations are n=1 — adequate as a regression gate,
   not as a value study, and the README should keep saying so.
+- **2026-07-30** — **P25 implemented; release deliberately held.** Three gaps
+  the P22 iteration named are closed in code. (a) `work`'s katas no longer hint
+  the method: both prompts are now a plain feature request / bug report, and the
+  runner requirement moved from the prompt into the fixture — `test_cart.py`
+  refuses to import without `KATA_HARNESS=1`, which only `run-tests.sh` sets, so
+  `.check-log` still exists for grading whichever arm runs. Verified by hand
+  before the prompts lost their hint: direct `python3 -m unittest` aborts with a
+  message naming the runner, and `./run-tests.sh` writes
+  `RESULT=PASS IMPL_SHA=8b44f02e8e4f2e3b`, matching `baseline-sha`. The old
+  benchmark is marked `SUPERSEDED.md` rather than deleted — it no longer matches
+  `evals.json`, and the rewrite's discriminating power is **unverified** until an
+  authorized run. (b) `process` §5 now pins the same
+  `### <YYYY-MM-DD> — …` Improvement-log shape `run` §4 uses, and
+  `evals/check.sh` re-tightens to require it — fixing the skill, which v0.32.0
+  flagged as the real follow-up, instead of keeping the loosened grader. Verified
+  red on a dated bullet, green on the heading, eval 3 exit 0. (c) The missing
+  baseline arm is now a documented procedure in the README with its cost and an
+  explicit *not run* status, so 49/49 green is never cited as skill value.
+  **Why no bump:** CLAUDE.md requires the skill's eval to run *before* the
+  version moves, and this diff touches `skills/process/SKILL.md`. That run needs
+  fresh-context subagents and owner authorization, so v0.34.0 is reserved and
+  unclaimed. CI stays green — `test-docs-consistency.sh` only requires the
+  *current* version to have its note.
