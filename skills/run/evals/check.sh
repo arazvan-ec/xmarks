@@ -19,10 +19,14 @@ seed_intact() { grep -E "\|[ ]*1234 BCD[ ]*\|[ ]*1234[ ]*\|[ ]*BCD[ ]*\|[ ]*10[ 
 
 case "$ID" in
   1)
-    TODAY="$(date +%F)"
+    # the run's own date, not the grading date — a workdir graded the next day
+    # must still grade the same. Export FW_EVAL_DATE when regrading old runs.
+    TODAY="${FW_EVAL_DATE:-$(date +%F)}"
     check grep -E "\|[ ]*9876 KZX[ ]*\|[ ]*9876[ ]*\|[ ]*KZX[ ]*\|[ ]*30[ ]*\|[ ]*${TODAY}[ ]*\|" "$AUD" -- "row for 9876 KZX with digits/letters/digit_sum=30/audited=today"
     check not_unstaged -- "write landed (no unstaged modification of the datastore)"
-    check ls "$W"/.claude/flywheel/runs/plate-audit/*.html -- "telemetry report regenerated in .claude/flywheel/runs/plate-audit/"
+    # two-tier since v0.30.0: JSONL per transition, HTML rendered at close —
+    # the final report always renders, so require the HTML and accept the JSONL beside it
+    check ls "$W"/.claude/flywheel/runs/plate-audit/*.html -- "telemetry report rendered in .claude/flywheel/runs/plate-audit/"
     check seed_intact -- "seeded 1234 BCD row untouched"
     ;;
   2)

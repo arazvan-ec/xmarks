@@ -66,11 +66,12 @@ registration era from the letter series). Never alters the computed fields.
 
 ## Progress reporting
 
-One host-task per Rule updated at every state transition, and a telemetry
-report at `.claude/flywheel/runs/plate-audit/<date>.html` regenerated per
-transition and republished to a stable artifact URL. Chat only for gates,
-blockers, and the final report. Fail-open: reporting never blocks the run.
-Never include secrets.
+One host-task per Rule updated at every state transition; one JSON line
+appended per transition to `.claude/flywheel/runs/plate-audit/<date>.jsonl`;
+the HTML report at `.claude/flywheel/runs/plate-audit/<date>.html` rendered
+from that JSONL at gates and at the final report, republished to a stable
+artifact URL. Chat only for gates, blockers, and the final report. Fail-open:
+reporting never blocks the run. Never include secrets.
 
 ## Improvement log
 

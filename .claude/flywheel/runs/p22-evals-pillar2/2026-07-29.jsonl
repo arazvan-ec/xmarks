@@ -1,0 +1,9 @@
+{"t":"2026-07-29","phase":"spec","state":"completed","note":"REASONS spec p22-evals-pillar2 written; success metric fixed"}
+{"t":"2026-07-29","phase":"work/fixture","state":"completed","note":"demo-repo + target-repo fixture (DATA.md, plate-audit v1, seeded datastore)"}
+{"t":"2026-07-29","phase":"work/evals","state":"completed","note":"evals.json x2 (3 cases each) + check.sh graders"}
+{"t":"2026-07-29","phase":"work/graders-red","state":"completed","note":"graders verified red on untouched fixture, green on simulated correct output, red on adversarial output (fabricated row; silently rewritten rule)"}
+{"t":"2026-07-29","phase":"eval-iteration-1","state":"completed","note":"6 fresh-context executors (with_skill); run 3/3 green 10/10 assertions; process 3/3 green 39/39 after one grader fix"}
+{"t":"2026-07-29","phase":"finding","state":"logged","note":"process SKILL.md fixes no Improvement-log entry format (run does) -> grader loosened; skill-text tightening left as follow-up"}
+{"t":"2026-07-30","phase":"finding","state":"logged","note":"regrade after midnight failed: audited-vs-grading-date assertion; check.sh now pins FW_EVAL_DATE"}
+{"t":"2026-07-30","phase":"rebase","state":"completed","note":"rebased onto origin/main (v0.30.0 optimization release claimed the number) -> this release renumbered v0.31.0; fixture contract aligned to two-tier telemetry"}
+{"t":"2026-07-30","phase":"verify","state":"completed","note":"spec metric exit 0; docs-consistency, install-vendored, check-test-pairing green"}

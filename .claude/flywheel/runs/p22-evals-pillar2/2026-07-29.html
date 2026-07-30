@@ -1,0 +1,92 @@
+<title>p22-evals-pillar2 · ciclo v0.31.0 — informe de ciclo</title>
+<style>
+  :root {
+    --ground:#0B0E11; --panel:#12161B; --panel-2:#161B21; --line:#232B33; --line-soft:#1A2027;
+    --ink:#D8DEE3; --dim:#77828E; --faint:#4A545F; --phosphor:#FFC15E; --ok:#6FD08C; --crit:#E03D50;
+    --mono: ui-monospace,"SFMono-Regular","Cascadia Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  html,body{background:var(--ground)!important}
+  body{color:var(--ink);font-family:var(--mono);font-size:13px;line-height:1.55;margin:0}
+  .console{max-width:920px;margin:0 auto;padding:28px 20px 64px}
+  .micro{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+  .num{font-variant-numeric:tabular-nums}
+  .masthead{border:1px solid var(--line);border-top:3px double var(--line);border-bottom:3px double var(--line);background:var(--panel);padding:22px 24px 18px;position:relative}
+  .masthead .eyebrow{color:var(--phosphor)}
+  .masthead h1{font-size:clamp(24px,5vw,36px);font-weight:700;letter-spacing:.04em;margin:10px 0 6px}
+  .masthead .sub{color:var(--dim);font-size:13px}
+  .issued{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);color:var(--faint);font-size:11px;letter-spacing:.06em}
+  .stamp{position:absolute;top:18px;right:20px;transform:rotate(4deg);border:2px solid var(--ok);color:var(--ok);font-weight:700;font-size:16px;letter-spacing:.22em;padding:6px 12px 6px 15px}
+  .stamp small{display:block;font-size:9px;letter-spacing:.12em;font-weight:400}
+  section{margin-top:34px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:16px}
+  .sec-head .tag{color:var(--phosphor);font-size:11px;letter-spacing:.1em}
+  .sec-head h2{font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin:0}
+  .ledger{border:1px solid var(--line);background:var(--panel)}
+  .lrow{display:grid;grid-template-columns:110px 1fr auto;gap:8px 14px;align-items:baseline;padding:11px 16px;border-top:1px dashed var(--line-soft)}
+  .lrow:first-child{border-top:0}
+  .lrow .rn{color:var(--phosphor);font-weight:700}
+  .lrow .rev{color:var(--dim);font-size:12px;grid-column:2}
+  .chip{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border:1px solid;white-space:nowrap;justify-self:end;align-self:center}
+  .chip.done{color:var(--ok);border-color:var(--ok)}
+  .chip.note{color:var(--phosphor);border-color:var(--phosphor)}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--panel)}
+  th,td{text-align:left;padding:9px 14px;border-top:1px dashed var(--line-soft);font-size:12px}
+  th{color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-top:0}
+  td.ok{color:var(--ok)}
+  .verdict{margin-top:40px;border:1px solid var(--ok);background:var(--panel);padding:20px 24px}
+  .verdict h3{margin:0 0 8px;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--ok)}
+  .verdict p{margin:6px 0;color:var(--dim)}
+  code{color:var(--ink)}
+  @media (max-width:640px){.lrow{grid-template-columns:1fr;}.chip{justify-self:start}}
+</style>
+
+<div class="console">
+  <header class="masthead">
+    <div class="micro eyebrow">xmarks//flywheel · pilar 2 · los prompts también se testean</div>
+    <h1>INFORME DE CICLO</h1>
+    <div class="sub num">spec <strong>p22-evals-pillar2</strong> · release <strong>v0.31.0</strong> · 2026-07-29/30 · evals de comportamiento para <code>process</code> y <code>run</code></div>
+    <div class="stamp">CERRADO<small>métrica exit 0</small></div>
+    <div class="issued">EMITIDO POR EL RUNTIME. TELEMETRÍA DE DOS NIVELES: JSONL POR TRANSICIÓN, HTML EN GATES Y CIERRE.</div>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="tag">01</span><h2>Ledger del ciclo</h2></div>
+    <div class="ledger">
+      <div class="lrow"><span class="rn">spec</span><span>REASONS + métrica machine-checkable</span><span class="chip done">completed</span><span class="rev"><code>.claude/flywheel/specs/p22-evals-pillar2.md</code></span></div>
+      <div class="lrow"><span class="rn">work · fixture</span><span>demo-repo / target-repo: DATA.md, contrato <code>plate-audit</code> v1, datastore sembrado</span><span class="chip done">completed</span><span class="rev">versionado junto a los evals; recogido como learning <code>type=fixture</code></span></div>
+      <div class="lrow"><span class="rn">work · evals</span><span>2 suites × 3 prompts reales + graders <code>check.sh</code></span><span class="chip done">completed</span><span class="rev">aserciones objetivas: greps sobre artefactos deterministas</span></div>
+      <div class="lrow"><span class="rn">work · red</span><span>graders en rojo sobre fixture intacto y sobre salida adversarial</span><span class="chip done">completed</span><span class="rev">fila fabricada y regla reescrita en silencio: ambas detectadas</span></div>
+      <div class="lrow"><span class="rn">eval iter 1</span><span>6 ejecutores de contexto fresco (with_skill)</span><span class="chip done">completed</span><span class="rev">~237k tokens de subagente</span></div>
+      <div class="lrow"><span class="rn">rebase</span><span>sobre <code>origin/main</code>; v0.30.0 ya tomada por la release de optimización</span><span class="chip note">renumerado</span><span class="rev">esta release pasa a v0.31.0; contrato fixture alineado a telemetría de dos niveles</span></div>
+      <div class="lrow"><span class="rn">verify</span><span>métrica del spec + docs-consistency + install-vendored + pairing</span><span class="chip done">completed</span><span class="rev">exit 0</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="tag">02</span><h2>Benchmark — iteración 1 (with_skill)</h2></div>
+    <table>
+      <tr><th>Suite / eval</th><th>Aserciones</th><th>Tokens</th><th>Resultado</th></tr>
+      <tr><td>run · happy-path-persist</td><td>4/4</td><td class="num">37 734</td><td class="ok">PASS</td></tr>
+      <tr><td>run · idempotent-upsert</td><td>3/3</td><td class="num">40 216</td><td class="ok">PASS</td></tr>
+      <tr><td>run · guardrail-invalid-input</td><td>3/3</td><td class="num">39 233</td><td class="ok">PASS</td></tr>
+      <tr><td>process · new-contract-shape</td><td>15/15</td><td class="num">40 910</td><td class="ok">PASS</td></tr>
+      <tr><td>process · data-strategy-bootstrap</td><td>20/20</td><td class="num">38 838</td><td class="ok">PASS</td></tr>
+      <tr><td>process · mature-existing-contract</td><td>4/4</td><td class="num">39 890</td><td class="ok">PASS</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="tag">03</span><h2>Hallazgos de la iteración</h2></div>
+    <div class="ledger">
+      <div class="lrow"><span class="rn">grader</span><span><code>process</code> §5 no fija formato para la entrada del Improvement log (<code>run</code> §4 sí): el grader exigía <code>### &lt;fecha&gt;</code> y el ejecutor usó un bullet fechado</span><span class="chip note">corregido</span><span class="rev">grader relajado; endurecer el texto de la skill queda como follow-up</span></div>
+      <div class="lrow"><span class="rn">grader</span><span>regrade pasada la medianoche: la aserción comparaba <code>audited</code> con la fecha de graduación, no con la del run</span><span class="chip note">corregido</span><span class="rev"><code>FW_EVAL_DATE</code> fija la fecha del run; verificado verde con la correcta y rojo con otra</span></div>
+      <div class="lrow"><span class="rn">skill</span><span>ningún fallo de comportamiento: contratos con forma fija completa, persistencia probada con read-back, guardrail sin fabricar campos, maduración con evidencia y sin deriva</span><span class="chip done">sin regresión</span><span class="rev">2 de 3 runs añadieron exactamente 1 refinamiento; el limpio no añadió ninguno (correcto)</span></div>
+    </div>
+  </section>
+
+  <div class="verdict">
+    <h3>Veredicto — PASS</h3>
+    <p>6/6 evals verdes, 49/49 aserciones. Métrica del spec: exit 0.</p>
+    <p>Los evals corren <strong>a mano antes de una release</strong> que toque <code>process</code> o <code>run</code> — nunca en CI (~300-800k tokens por iteración). Coste real de esta iteración: ~237k tokens de subagente, sin baseline sin-skill.</p>
+  </div>
+</div>

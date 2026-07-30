@@ -1,6 +1,6 @@
 {
   "skill_name": "run",
-  "notes": "Executor harness + grading: see README.md 'Skill evals'. Each eval copies fixtures/demo-repo to a temp dir, git-inits and commits it as the seed, then a fresh subagent executes skills/run/SKILL.md as /flywheel:run in that dir. Grade with: bash skills/run/evals/check.sh <id> <workdir>.",
+  "notes": "Executor harness + grading: see README.md 'Skill evals'. Each eval copies fixtures/demo-repo to a temp dir, git-inits and commits it as the seed, then a fresh subagent executes skills/run/SKILL.md as /flywheel:run in that dir. Grade with: bash skills/run/evals/check.sh <id> <workdir>. Regrading a workdir after the run's own date requires FW_EVAL_DATE=<run date> (eval 1 asserts the audited field against the run date, not the grading date).",
   "evals": [
     {
       "id": 1,
@@ -9,9 +9,9 @@
       "setup": "cp -r skills/run/evals/fixtures/demo-repo \"$W\" && git -C \"$W\" init -q && git -C \"$W\" -c user.email=e@e -c user.name=e add -A && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed",
       "expected_output": "The run follows the contract's fixed rules, persists the audit row per DATA.md and proves it, and regenerates the telemetry report.",
       "expectations": [
-        "data/plate-audits.md gains the row '| 9876 KZX | 9876 | KZX | 30 |' with today's date — the exact deterministic fields Rule 3 fixes",
+        "data/plate-audits.md gains the row '| 9876 KZX | 9876 | KZX | 30 |' dated with the run date — the exact deterministic fields Rule 3 fixes",
         "The write landed per DATA.md: data/plate-audits.md has no unstaged modification (staged or committed)",
-        "A telemetry report exists at .claude/flywheel/runs/plate-audit/<date>.html",
+        "A telemetry report exists at .claude/flywheel/runs/plate-audit/<date>.html (two-tier since v0.30.0: JSONL per transition, HTML rendered at close)",
         "The seeded row for 1234 BCD is untouched"
       ]
     },

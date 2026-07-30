@@ -254,3 +254,6 @@ output is knowable in advance. Recipe (versioned at
 - **Grader over-specification is the trap**: assert only what the skill text
   fixes (run's §4 pins `### <date>` log entries; process §5 pins no format —
   accept any dated entry). Caught live in iteration 1, eval proc-3.
+- **Never grade a dated artifact against the grading clock**: pin the run's
+  date (`FW_EVAL_DATE`) — a correct run regraded after midnight failed on an
+  `audited == today` assertion.
