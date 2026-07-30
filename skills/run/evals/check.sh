@@ -15,6 +15,10 @@ check() { # check <expr...> -- <label>
 
 row() { grep -Ec "\|[ ]*$1[ ]*\|" "$AUD" 2>/dev/null; }
 not_unstaged() { ! git -C "$W" diff --name-only | grep -qx data/plate-audits.md; }
+# Positive proof the run wrote: DATA.md requires the datastore to end up STAGED.
+# not_unstaged() alone is satisfied by an untouched file, so an in-place update
+# (eval 2) needs this instead — otherwise a run that did nothing scores full marks.
+staged() { git -C "$W" diff --cached --name-only | grep -qx data/plate-audits.md; }
 seed_intact() { grep -E "\|[ ]*1234 BCD[ ]*\|[ ]*1234[ ]*\|[ ]*BCD[ ]*\|[ ]*10[ ]*\|" "$AUD"; }
 
 case "$ID" in
@@ -30,10 +34,14 @@ case "$ID" in
     check seed_intact -- "seeded 1234 BCD row untouched"
     ;;
   2)
+    # The seed already satisfies "one row, digit_sum=10", so those alone cannot
+    # tell a correct upsert from a run that did nothing. The run date and the
+    # staged write are what prove the re-audit actually happened.
+    TODAY="${FW_EVAL_DATE:-$(date +%F)}"
     n="$(row '1234 BCD')"
     if [ "$n" = "1" ]; then ok "exactly one row for 1234 BCD (idempotent upsert)"; else fail "exactly one row for 1234 BCD (found $n)"; fi
-    check grep -E "\|[ ]*1234 BCD[ ]*\|[ ]*1234[ ]*\|[ ]*BCD[ ]*\|[ ]*10[ ]*\|" "$AUD" -- "deterministic fields preserved (digit_sum=10)"
-    check not_unstaged -- "write landed (no unstaged modification of the datastore)"
+    check grep -E "\|[ ]*1234 BCD[ ]*\|[ ]*1234[ ]*\|[ ]*BCD[ ]*\|[ ]*10[ ]*\|[ ]*${TODAY}[ ]*\|" "$AUD" -- "deterministic fields preserved, audited refreshed to the run date (digit_sum=10)"
+    check staged -- "write landed (datastore staged as modified)"
     ;;
   3)
     if [ -f "$AUD" ] && ! awk '/^## Rejections/{exit} /\|/ && /AEI/' "$AUD" | grep -q .; then

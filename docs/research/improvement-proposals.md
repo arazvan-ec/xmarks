@@ -42,7 +42,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P20 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.27.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**`. (Renumbered from P19/v0.26.0 at merge time — main had taken both) |
 | P21 | Bash grants coherent with the approval gates (P20 for commands) | ✅ shipped (v0.28.0) | Done — allow-only `bash-allow.sh` (add/commit/stash, branch-aware force-free push); gate-time consent rules in spec/process; permission drift in sync |
 | P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
-| P23 | Cycle-cost telemetry: the loop measures its own cost | 🟡 implemented, release held | Done in code; proxy decided by owner (bytes_out / tool_calls / elapsed_s, no tokens). **Bump blocked on the work+process+run eval runs.** v0.35.0 reserved |
+| P23 | Cycle-cost telemetry: the loop measures its own cost | ✅ shipped (v0.35.0) | Done — `cost: {bytes_out, tool_calls, elapsed_s}`, no tokens (enforced by `run-cost.sh`); gate 8/8 evals, 57/57 assertions, cost object verified on real run telemetry. Open: do the proxies track real spend? |
 | P24 | Description budget as a CI ratchet | ✅ shipped (v0.33.0) | Done — `check-description-budget.sh` sums description values (3301) against `scripts/description-budget.txt` (3600); malformed frontmatter fails loudly; wired into CI |
 | P25 | Close the gaps the P22 eval iteration exposed | 🔵 proposed | Non-discriminating `work` kata; no baseline arm for `process`/`run`; pin the Improvement-log format in `process` §5 |
 
@@ -1255,3 +1255,31 @@ Append-only. Newest at the bottom.
   needs two comparable real cycles, and it is the first thing to do once this
   ships — otherwise P23 repeats P30's mistake of shipping an unverifiable cost
   claim, one level up.
+- **2026-07-30** — **P23 shipped as v0.35.0; eval gate run across three
+  suites.** 8/8 evals green, 57/57 assertions (`work` 8/8, `process` 39/39,
+  `run` 10/10), ~356k subagent tokens. Two results worth keeping:
+  **(1) The `run` suite is what actually verified the release, and the `work`
+  suite could not.** `work`'s telemetry applies only inside a `/flywheel:loop`
+  cycle, and its eval runs `work` standalone — both executors independently
+  reported writing no JSONL for that reason — so its 8/8 proves only that the
+  added text broke nothing. The `run` suite exercised the real thing: all three
+  runs emitted a `cost` object on every transition of their own telemetry (14/14,
+  14/14, 15/16), none emitted a `tokens` key, and `run-cost.sh` produced a real
+  two-run delta (−1,143 bytes, −57.1%). Lesson: *check which suite actually
+  covers the change before treating a green gate as verification* — a passing
+  eval that cannot see the diff is not evidence about it.
+  **(2) The unmeasured-≠-free safeguard fired on real data, unplanned.** One
+  executor omitted `cost` from its closing `run_end` line; `run-cost.sh` reported
+  1 UNMEASURED transition and an incompleteness note instead of counting it as 0.
+  Follow-up: pin whether `run_end` carries its own cost or the run totals.
+  Still open, and the reason this release is not self-congratulatory: **whether
+  the proxies track real token spend is unverified.** Two comparable cycles are
+  needed. Until then P23 has built the instrument, not the measurement.
+- **2026-07-30** — **Causal evidence for P25's format pin, from an accident.**
+  The `process` eval 3 ran the same day against both branches. On the P23 branch,
+  whose §5 is unchanged, the executor emitted a dated **bullet**. On the P25
+  branch, whose §5 pins the format, it emitted the **`### <date>` heading**. Same
+  prompt, same model, same fixture, different skill text, different output — so
+  the v0.32.0 grader loosening really was treating a skill defect as a grader
+  problem, and pinning §5 fixed the cause. Recorded because neither spec planned
+  this comparison; it fell out of running the two gates on the same day.

@@ -1,7 +1,7 @@
 # Spec: P23 — cycle-cost telemetry (the loop measures its own cost)
 
 **Slug:** `p23-cycle-cost` · **Created:** 2026-07-30 · **Backlog:** P23
-**Status:** implemented, metric PASS — **release deliberately held at the bump.** This spec
+**Status:** shipped as v0.35.0 — metric PASS; eval gate run 2026-07-30 across work/process/run: 8/8 evals, 57/57 assertions, cost object verified on real run telemetry. Originally held at the bump because This spec
 changes `skills/{work,loop,run,process}/SKILL.md`, and CLAUDE.md gates skill
 changes on running that skill's evals first (`work`, `process`, `run` all have
 them). That needs fresh-context subagents and owner authorization, so the

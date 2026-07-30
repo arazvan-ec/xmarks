@@ -1,0 +1,86 @@
+{
+  "metadata": {
+    "skill_name": "work",
+    "skill_path": "skills/work",
+    "executor_model": "session default (fresh-context general-purpose subagents)",
+    "timestamp": "2026-07-30",
+    "evals_run": [
+      1,
+      2
+    ],
+    "runs_per_configuration": 1,
+    "configurations": [
+      "with_skill"
+    ],
+    "release_gate_for": "P23 \u2014 adds the cost object to the work transition-line schema",
+    "baseline_note": "without_skill baseline intentionally skipped: release-gate iteration (regression detection), not a value study. The baseline-arm procedure is documented in README and remains unrun."
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "feature-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 83.4,
+        "tokens": 38095,
+        "tool_calls": 16,
+        "errors": 0
+      },
+      "notes": [
+        "First .check-log entry RESULT=FAIL IMPL_SHA=8b44f02e8e4f2e3b, equal to baseline-sha: the test ran red while cart.py was pristine. Last entry PASS.",
+        "Suite re-run independently by the grader: green."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 94.4,
+        "tokens": 38823,
+        "tool_calls": 19,
+        "errors": 0
+      },
+      "notes": [
+        "First entry RESULT=FAIL at baseline-sha (regression test reproduced the bug before the fix), last PASS.",
+        "Guard placed before the append, so a rejected item never enters the cart \u2014 beyond the assertions."
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 88.9,
+        "min": 83.4,
+        "max": 94.4
+      },
+      "tokens": {
+        "mean": 38459,
+        "min": 38095,
+        "max": 38823
+      }
+    }
+  },
+  "notes": [
+    "Gate PASS: 8/8 assertions, unchanged from the 2026-07-29 iteration \u2014 P23's added text did not break the red\u2192green inner loop.",
+    "IMPORTANT COVERAGE LIMIT: this suite does NOT exercise P23's actual change. work's telemetry applies only inside a /flywheel:loop cycle, and the eval runs work standalone; both executors independently reported writing no JSONL for that reason. The cost schema is exercised by the run suite instead, where it was verified on real output.",
+    "Fixtures here are the pre-P25 katas (they still name ./run-tests.sh) because P25 is not on this branch. Discrimination is therefore not tested \u2014 see SUPERSEDED.md on the P25 branch.",
+    "n=1 per eval. Regression gate, not a statistical result."
+  ]
+}
