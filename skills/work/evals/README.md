@@ -38,28 +38,48 @@ fixture explaining how the harness works, you have re-opened the leak.
 
 ## How each kata is graded
 
-Both katas are graded mechanically from `.check-log`, which only `run-tests.sh`
-writes (`test_cart.py` refuses to import without `KATA_HARNESS=1`, which only that
-script sets — so the log exists whichever way the executor is prompted):
+```bash
+bash skills/work/evals/check.sh <eval-id> "$W"        # one PASS:/FAIL: line per expectation
+```
+
+Exit 0 only if all pass; exit 2 on an unknown id. Both katas are graded
+mechanically from `.check-log`, which only `run-tests.sh` writes (`test_cart.py`
+refuses to import without `KATA_HARNESS=1`, which only that script sets — so the
+log exists whichever way the executor is prompted):
 
 1. First entry `RESULT=FAIL` with `IMPL_SHA` equal to `baseline-sha` — the test
    ran red while `cart.py` was still pristine.
 2. Last entry `RESULT=PASS`.
 3. `test_cart.py` covers the required behaviour, including the `ValueError` path.
-4. `cart.py` implements it and the suite is green on an independent re-run.
+4. `cart.py` implements it — checked by a behaviour probe, not a grep for `def` —
+   and the suite is green on an independent re-run.
 
-## Before any iteration: check the fixtures for leaks
+The re-run uses `python3 -m unittest` directly, which does **not** append to
+`.check-log`: grading must not mutate the log it grades, and
+`scripts/test-eval-graders.sh` asserts the log is byte-identical afterwards. That
+same test requires this grader to be **red on an untouched fixture** and green on
+a synthesized ideal outcome — the "can this assertion even fail?" question that
+exposed the hollow `run` eval-2 grader, now asked by CI instead of by luck.
+
+## Before any iteration: the leak check is a gate now, not a habit
 
 Every file in a fixture is copied into the workdir, so every file in it is part
-of the prompt. Three leaks were found this week — the `work` fixture README, the
-`verify` fixture READMEs, and a *comment in `run-tests.sh`* explaining that
-red-before-green is what gets checked. Run this first; it must print nothing:
+of the prompt. Three leaks were found in one week — the `work` fixture README,
+the `verify` fixture READMEs, and a *comment in `run-tests.sh`* explaining that
+red-before-green is what gets checked. That is the evidence that a manual grep
+is not a gate, so it became one (P26):
 
 ```bash
-grep -rinE 'VERDICT:|baseline-sha|the eval asserts|pristine|red.?(→|->|then )green|mechanically checkable|eval fixture|is graded' \
-  skills/*/evals/fixtures/
+bash scripts/check-fixture-leaks.sh
 ```
 
 A hit is not automatically a leak — `run-tests.sh` must mention `.check-log`
-because it writes it — but every hit needs a reason that is not "it explains what
-we measure".
+because it writes it — but every exemption lives in
+`scripts/fixture-leak-allow.txt` as `<path> <pattern-id> <reason>`, and the
+reason may not be "it explains what we measure". Stale exemptions fail too.
+
+**Known standing hint the gate does not cover:** the fixture file *named*
+`baseline-sha`. The gate scans contents, not filenames, so the name still sits in
+the executor's workdir. Its contents are an opaque hash and renaming it would
+change the eval definition — recorded as an open question in
+`docs/research/improvement-proposals.md` rather than quietly accepted.

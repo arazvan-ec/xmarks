@@ -8,7 +8,27 @@ evals".
 To instantiate an eval: copy its fixture (`files`) to a scratch workdir,
 substitute `{{WORKDIR}}` in the prompt with that path, and point the executor
 at a copy — never at the fixture template. Executors save `report.md` (verdict
-as last line) and `transcript.md` (commands + real output) for grading.
+as last line) and `transcript.md` (commands + real output) **into the workdir
+root**, where the grader looks for them.
+
+## Grading: `check.sh`, not regexes re-derived by hand
+
+```bash
+bash skills/verify/evals/check.sh <eval-id> "$W"      # one PASS:/FAIL: line per expectation
+```
+
+Exit 0 only if all pass; exit 2 on an unknown id. It mechanizes exactly the
+`expectations` in `evals.json` — verdict regex on the last non-empty line of
+`report.md`, no `VERDICT: PASS` anywhere in a planted-bug report, the cited
+evidence, and (eval 2) the real CLI in `transcript.md`. `FW_EVAL_REPORT` /
+`FW_EVAL_TRANSCRIPT` override the artifact paths. A missing artifact is a
+`FAIL:` naming the path — never a silent pass.
+
+Two CI gates keep the instrument honest, since both pillar-1 defects so far were
+found by accident: `scripts/test-eval-graders.sh` requires this grader to be
+**red on an untouched fixture** and green on a synthesized ideal report, and
+`scripts/check-fixture-leaks.sh` fails the build on assertion vocabulary inside a
+fixture.
 
 ## Ground truth — lives here because it must NOT reach the executor
 
@@ -33,18 +53,19 @@ The fixture's `.claude/flywheel/specs/csv-tally.md` **does** stay in the workdir
 and states the success metric — that is not a leak, it is the contract the
 verifier is supposed to check against.
 
-## Before any iteration: check the fixtures for leaks
+## Before any iteration: the leak check is a gate now, not a habit
 
 Every file in a fixture is copied into the workdir, so every file in it is part
-of the prompt. Three leaks were found this week — the `work` fixture README, the
-`verify` fixture READMEs, and a *comment in `run-tests.sh`* explaining that
-red-before-green is what gets checked. Run this first; it must print nothing:
+of the prompt. Three leaks were found in one week — the `work` fixture README,
+the `verify` fixture READMEs, and a *comment in `run-tests.sh`* explaining that
+red-before-green is what gets checked. That is the evidence that a manual grep
+is not a gate, so it became one (P26):
 
 ```bash
-grep -rinE 'VERDICT:|baseline-sha|the eval asserts|pristine|red.?(→|->|then )green|mechanically checkable|eval fixture|is graded' \
-  skills/*/evals/fixtures/
+bash scripts/check-fixture-leaks.sh
 ```
 
 A hit is not automatically a leak — `run-tests.sh` must mention `.check-log`
-because it writes it — but every hit needs a reason that is not "it explains what
-we measure".
+because it writes it — but every exemption lives in
+`scripts/fixture-leak-allow.txt` as `<path> <pattern-id> <reason>`, and the
+reason may not be "it explains what we measure". Stale exemptions fail too.
