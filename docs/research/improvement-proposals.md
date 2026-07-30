@@ -42,6 +42,9 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P20 | State-write pre-approval hook (plan approval covers persisting loop state) | ✅ shipped (v0.27.0) | Done — allow-only `PreToolUse` hook on `Write\|Edit`; scope strictly `.claude/flywheel/**`. (Renumbered from P19/v0.26.0 at merge time — main had taken both) |
 | P21 | Bash grants coherent with the approval gates (P20 for commands) | ✅ shipped (v0.28.0) | Done — allow-only `bash-allow.sh` (add/commit/stash, branch-aware force-free push); gate-time consent rules in spec/process; permission drift in sync |
 | P22 | Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals | ✅ shipped (v0.29.0 / v0.31.0 / v0.32.0) | Done — phase 1: CLAUDE.md rule + `check-test-pairing.sh` CI gate. Phase 2: behavioral evals as manual release gates for `verify`/`work` (pillar 1, v0.31.0) and `process`/`run` (pillar 2, v0.32.0) |
+| P23 | Cycle-cost telemetry: the loop measures its own cost | 🔵 proposed | Add mechanically-observable cost fields to the JSONL transition line + a two-run comparison helper. Open question: what proxy replaces unreliable self-reported tokens |
+| P24 | Description budget as a CI ratchet | ✅ shipped (v0.33.0) | Done — `check-description-budget.sh` sums description values (3301) against `scripts/description-budget.txt` (3600); malformed frontmatter fails loudly; wired into CI |
+| P25 | Close the gaps the P22 eval iteration exposed | 🔵 proposed | Non-discriminating `work` kata; no baseline arm for `process`/`run`; pin the Improvement-log format in `process` §5 |
 
 ## Priority overview
 
@@ -68,6 +71,9 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P20 | State-write pre-approval hook (permission-prompt fatigue on loop state) | High | Low | Low | Yes |
 | P21 | Bash grants coherent with the approval gates | High | Medium | Medium | Yes |
 | P22 | Dev-loop discipline on the plugin itself (dogfooded TDD + skill evals) | High | Medium (phase 1 Low) | Low | Yes |
+| P23 | Cycle-cost telemetry (the loop measures its own cost) | High | Medium | Low | Yes |
+| **P24** | **Description budget as a CI ratchet** ⭐ cheapest of the three | Medium | Low | Low | Yes |
+| P25 | Close the gaps the P22 eval iteration exposed | Medium | Medium | Low | Partial |
 
 ---
 
@@ -797,6 +803,88 @@ fixtures, README testing section; no runtime skill changes required.
 
 ---
 
+## P23 — Cycle-cost telemetry: the loop measures its own cost (analysis, 2026-07-30)
+
+**Why.** v0.30.0 shipped four changes whose entire justification is output-token
+cost (two-tier telemetry, micro-cycle routing, `gate.sh seal`, trimmed
+descriptions) and **only the last one can be verified after the fact** — the
+description trim is measurable with `git` (5,441 → 4,246 chars, −22.0%); the
+other three have no before/after at all. The repo preaches machine-checkable
+success metrics and then shipped its own optimization release on a design
+argument. The telemetry JSONL (P16 + v0.30.0) already writes one line per
+transition, so the ledger exists — it records *what* happened, never *what it
+cost*.
+
+**What.** Extend the JSONL transition line with cost fields, summarize them in
+the HTML report at close, and add a helper that diffs two run JSONLs so
+"cheaper" becomes a number instead of a claim.
+
+**Open question — this is the crux, not a detail.** Self-reported token counts
+are unreliable: a session cannot see its own usage accurately, so a
+`tokens:` field would invite exactly the fabricated evidence P18 exists to keep
+out of the ledger. Candidate honest substitutes, all mechanically observable:
+bytes written per transition, tool-call count, files touched, wall-clock
+between transitions. Decide the proxy set *before* building, and label it a
+proxy in the report.
+
+**Files:** `skills/{work,loop,run,process}/SKILL.md` (line schema + close-time
+summary), a new `scripts/run-cost.sh` (+ its paired test), README; `plugin.json`
++ `upgrades/`.
+
+---
+
+## P24 — Description budget as a CI ratchet (analysis, 2026-07-30)
+
+**Why.** The 17 skill `description` fields load into context every session, so
+their length is a fixed cost paid on every invocation forever. v0.30.0 cut them
+22% — and nothing stops the next skill from adding 400 chars back. A one-off
+measurement that isn't a gate decays; every other invariant in this repo (test
+pairing, docs consistency, `plugin validate`) is enforced in CI.
+
+**What.** `scripts/check-description-budget.sh`: sum the frontmatter
+`description` chars across `skills/*/SKILL.md`, compare against a committed
+budget, fail above it. Report the per-skill breakdown on failure so the diff
+says which skill grew. Budget starts at the current total plus modest headroom
+for new skills; raising it is a deliberate, reviewable commit — the ratchet is
+that it can't move silently. Developed test-first per the CLAUDE.md rule.
+
+**Why this one first.** Cheapest of the three, no open design question, and it
+protects a saving that is already banked and already measured.
+
+**Files:** `scripts/check-description-budget.sh` +
+`scripts/test-check-description-budget.sh`,
+`.github/workflows/validate-plugins.yml`, `plugin.json` + `upgrades/`.
+
+---
+
+## P25 — Close the gaps the P22 eval iteration exposed (analysis, 2026-07-30)
+
+**Why.** The committed benchmarks are honest about their own limits, and those
+limits are the follow-up work:
+
+- **`work`'s evals don't discriminate** — 8/8 with the skill and 8/8 without.
+  The kata prompt names `./run-tests.sh`, so a strong model does red→green
+  unaided; the eval currently proves the model, not the skill.
+- **`process`/`run` have no baseline arm** (deliberately skipped: the release
+  gate needs regression detection, not a value study). So their 49 green
+  assertions cannot answer whether the contract shape is skill-induced or
+  model-default — an open question about the whole pillar-2 premise.
+- **`process` §5 pins no Improvement-log entry format** while `run` §4 does, so
+  the grader was loosened rather than the skill tightened (already flagged as a
+  follow-up in the v0.32.0 log entry).
+
+**What.** (a) Rewrite the `work` kata prompt so the test runner isn't named,
+making the red step attributable — or, if it still won't discriminate, say so
+explicitly in the README instead of letting 100% read as skill value. (b) Run
+one baseline iteration for `process`/`run` (~120k tokens each) purely as a
+value study, separate from the gate. (c) Pin the Improvement-log format in
+`process` §5 and re-tighten `check.sh`.
+
+**Files:** `skills/work/evals/`, `skills/{process,run}/evals/`,
+`skills/process/SKILL.md` (§5), README; version bump only for the §5 change.
+
+---
+
 ## Decision log
 
 Append-only. Newest at the bottom.
@@ -1118,3 +1206,30 @@ Append-only. Newest at the bottom.
   regraded after midnight failed (`check.sh` now pins the run date via
   `FW_EVAL_DATE`). The README's eval section now covers both pillars as one
   runbook. Runs manual-only pre-release, never CI. **P22 is now complete.**
+- **2026-07-30** — **Measurement audit of v0.29.0–v0.32.0** (analysis session,
+  no code changed). Reading the four releases against their committed evidence
+  turned up one real A/B and three gaps, filed as P23–P25. What is measured:
+  `verify` with-skill 10/10 assertions vs baseline 7/10 (+30 pp) — but the
+  baseline got the *analysis* right in all three evals and failed only the
+  parseable verdict-line contract, so the measured value is output discipline,
+  not analytical ability; and the v0.30.0 description trim, 5,441 → 4,246 chars
+  (−22.0%), reproducible with `git show c17e7bf^`. What is **not** measured:
+  v0.30.0's two-tier telemetry, micro-cycle routing and `gate.sh seal` have no
+  before/after at all (→ P23); the description saving has no ratchet (→ P24);
+  `work`'s evals didn't discriminate and `process`/`run` have no baseline arm
+  (→ P25). All benchmark iterations are n=1 — adequate as a regression gate,
+  not as a value study, and the README should keep saying so.
+- **2026-07-30** — **P24 shipped as v0.33.0.** The v0.30.0 description saving is
+  now a ratchet: `scripts/check-description-budget.sh` sums the frontmatter
+  `description` values across `skills/*/SKILL.md` (3,301 today) and fails above
+  `scripts/description-budget.txt` (3,600 — roughly one average description of
+  headroom, so one new skill is free and a second needs a deliberate bump).
+  Developed red→green per the CLAUDE.md rule: the test failed with exit 127
+  before the gate existed. Two design calls worth recording: the budget lives in
+  its own file so a policy bump does not trip the script/test pairing gate; and
+  malformed frontmatter (missing, empty, or a YAML folded `>` / `|` value) exits
+  2 naming the skill rather than counting as 0, because a silent-zero parser
+  could be used to evade the budget. Deliberately *not* included: a per-skill
+  cap — the proposal names the total only, and a second rule is scope the spec
+  didn't buy. Note the two ways to measure the same trim: 5,441 → 4,246 chars
+  whole-line (the audit's figure) vs 3,301 values-only (what the gate sums).
