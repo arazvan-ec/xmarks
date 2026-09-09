@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "skill_name": "loop",
+    "skill_path": "skills/loop",
+    "executor_model": "session default (fresh-context general-purpose subagents)",
+    "timestamp": "2026-09-09",
+    "evals_run": [1, 2],
+    "runs_per_configuration": "2 per eval: a first pass that found two defects, and a clean re-run of both after fixing them",
+    "configurations": ["with_skill"],
+    "release_gate_for": "P29 v0.41.0 (the loop eval suite itself), and the first verification of any cycle telemetry",
+    "assertion_count_note": "passed/total count the grader's own PASS:/FAIL: lines — 11 for eval 1, 8 for eval 2.",
+    "token_note": "tokens are the harness-reported subagent totals per Agent call, not a self-estimate (P18)."
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "cycle-telemetry-and-atomic-commits",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "fixture_state": "inventory-repo, git-init + seed. Seed also tracked two stray .pyc files left by a manual check of the fixture — harness pollution, no effect on any assertion",
+      "result": {"pass_rate": 1.0, "passed": 11, "failed": 0, "total": 11, "time_seconds": 327.9, "tokens": 87602, "tool_calls": 29, "errors": 0},
+      "notes": [
+        "THE GAP THIS SUITE EXISTS FOR, CLOSED: 4 distinct commit shas recorded in the JSONL, all 4 resolving to real commits via git cat-file.",
+        "Full cycle: review found a real High the run's own tests missed — restock credited EVERY duplicate line item of the same name (5 -> 11, expected 8) — looped back to work, fixed it, pinned it with a regression test.",
+        "Route: micro-cycle. Pathspec commits throughout; no .py left uncommitted."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "no-repo-fail-open",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "fixture_state": "inventory-repo, deliberately not a git repo",
+      "result": {"pass_rate": 0.875, "passed": 7, "failed": 1, "total": 8, "time_seconds": 235.0, "tokens": 80366, "tool_calls": 19, "errors": 0},
+      "notes": [
+        "FAILED assertion: 'no transition records a commit sha'. The executor wrote \"none (not a git repo; commits skipped for cycle)\" into the commit field of both work transitions.",
+        "DEFECT FOUND, IN THE SKILL NOT THE EXECUTOR: no sha was invented — the value was honest — but prose in a data field breaks its type for any reader, and skills/work/SKILL.md never said what to write when there is nothing to commit. The house rule already existed one paragraph above for the cost object (omit rather than fill); commit now says it too.",
+        "This is the suite finding a real contract gap on its first execution."
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "cycle-telemetry-and-atomic-commits",
+      "configuration": "with_skill",
+      "run_number": 2,
+      "fixture_state": "clean inventory-repo, git-init + seed; skill text carrying the 'no commit, no field' rule",
+      "result": {"pass_rate": 1.0, "passed": 11, "failed": 0, "total": 11, "time_seconds": 325.4, "tokens": 84957, "tool_calls": 29, "errors": 0},
+      "notes": [
+        "4 recorded shas, all abbreviated (7 chars) and all resolving — git resolves unambiguous abbreviations, so the cross-check holds for the form executors actually write.",
+        "SECOND DEFECT FOUND, THIS TIME IN THE GRADER: the sweep test went red on a commit that swept nothing. The cycle wrote a renderer to .claude/flywheel/bin/render-run.py and committed it with the telemetry; that file ends in .py and lives under .claude/, so it matched BOTH sides of the grader's AND. Source now means .py outside .claude/. Regression case added to test-eval-graders.sh, seen red first. 11/11 after the fix, and the synthetic swept commit (real source + state) is still graded red.",
+        "Unprompted, the executor reported writing a placeholder sha into T2's line before the commit output was in hand and replacing it with the real one, citing the skill's ban — the rule added after run 2 of eval 2, being followed."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "no-repo-fail-open",
+      "configuration": "with_skill",
+      "run_number": 2,
+      "fixture_state": "clean inventory-repo, not a git repo; skill text carrying the 'no commit, no field' rule",
+      "result": {"pass_rate": 1.0, "passed": 8, "failed": 0, "total": 8, "time_seconds": 233.2, "tokens": 76530, "tool_calls": 25, "errors": 0},
+      "notes": [
+        "commit omitted on all 11 transition lines. The fix verified by a real run, not by reasoning.",
+        "The executor disclosed running a stray `git init` while probing state and removing it immediately; the workdir is non-git as graded (verified independently before grading)."
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "eval_1": {"pass_rate": 1.0, "runs": 2},
+      "eval_2": {"pass_rate": {"run_1": 0.875, "run_2": 1.0}, "runs": 2}
+    }
+  },
+  "notes": [
+    "GATE FOR v0.41.0: PASS on the final state — eval 1 11/11 twice, eval 2 8/8 after the contract fix its first run exposed.",
+    "WHAT THIS SUITE PROVED THAT NOTHING PREVIOUSLY COULD: cycle telemetry exists, parses, carries no tokens key, and its commit shas are real git objects. Before P29 the JSONL was written by work and read by no test.",
+    "TWO DEFECTS, ONE ON EACH SIDE. The first was the skill's (prose in the commit field, because the contract was silent about absence). The second was the grader's (source and state conflated, failing a clean run). Both were found by running the thing, both are now pinned by a case in test-eval-graders.sh, and the second is the same failure mode v0.40.1 fixed in the work grader one release earlier: a property mechanized as a surface form that correct behaviour does not always take.",
+    "COVERAGE LIMIT: both evals run a cycle that PASSES its gates. A cycle whose verify comes back FAIL, or whose review finds a Critical, is untested — the telemetry of a blocked cycle is not graded by anything.",
+    "COVERAGE LIMIT: the executors reported the Task tool unavailable, so review ran inline in all four runs instead of dispatching reviewer-* subagents. Parallel specialist review is not exercised here.",
+    "No without_skill arm: the release gate needs the regression signal, and a bare model given this fixture would not write flywheel telemetry at all, so the comparison would measure nothing.",
+    "Four subagent runs, ~330k harness-reported subagent tokens."
+  ]
+}
