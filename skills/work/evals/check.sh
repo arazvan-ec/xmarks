@@ -24,12 +24,8 @@ entries()    { grep -E 'RESULT=' "$LOG" 2>/dev/null; }
 last_entry() { entries | tail -1; }
 baseline()   { tr -d '[:space:]' < "$BASE_FILE" 2>/dev/null; }
 
-# The test went red against the untouched implementation: a RESULT=FAIL entry at
-# the pristine IMPL_SHA, with no run of a changed implementation before it.
-# Deliberately not "the FIRST entry is that FAIL" — an executor that runs the
-# suite once to confirm a green baseline before writing the test still satisfies
-# test-first, and 4/4 executors in the 2026-09-09 gate did exactly that. What
-# disqualifies is an entry whose IMPL_SHA has already moved.
+# Not "the FIRST entry is FAIL": a green baseline run before the red is still
+# test-first. The disqualifier is an entry whose IMPL_SHA has already moved.
 red_before_impl_changed() {
   local b; b="$(baseline)"
   [ -n "$b" ] || return 1

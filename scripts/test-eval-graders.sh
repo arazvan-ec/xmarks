@@ -151,8 +151,8 @@ pass "absent artifacts fail by name"
 
 echo "== GREEN on an ideal work outcome: the work grader can pass =="
 # work_ideal <id> <workdir> — apply the real fix, then write the red→green log
-# the harness would have produced. The log is built from baseline-sha so the
-# first entry is genuinely the pristine implementation.
+# the harness would have produced. The red is at baseline-sha, so it genuinely
+# precedes any change to the implementation.
 work_ideal() {
   local id="$1" w="$2"
   local base; base="$(tr -d '[:space:]' < "${w}/baseline-sha")"
@@ -235,43 +235,38 @@ for spec in "1:cart-feature" "2:cart-bugfix"; do
   pass "work eval ${id}: green on an ideal outcome, .check-log untouched"
 done
 
-echo "== work: a log whose first entry is not the pristine impl fails =="
-w="$(fixture_copy work cart-feature late-test)"
-work_ideal 1 "${w}"
-# implementation-first: the first logged run already had the finished cart.py
-final="$(sha256sum "${w}/cart.py" | cut -c1-16)"
-{ echo "2026-07-30T10:00:00Z RESULT=FAIL IMPL_SHA=${final}"
-  echo "2026-07-30T10:05:00Z RESULT=PASS IMPL_SHA=${final}"; } > "${w}/.check-log"
-run_grader work 1 "${w}"
-[ "${RC}" -ne 0 ] || fail "work: a red step taken AFTER the implementation must not pass"
-pass "test-after is graded red"
+echo "== work: the .check-log orderings the grader must separate =="
+# log_case <name> <eval-id> <fixture> <want-rc> <entry...> — grade a hand-written
+# log against an otherwise ideal outcome. entry is RESULT:base|final, and the line
+# grammar mirrors fixtures/*/run-tests.sh, the only writer of a real .check-log.
+log_case() {
+  local name="$1" id="$2" fixture="$3" want="$4"; shift 4
+  local w; w="$(fixture_copy work "${fixture}" "${name}")"
+  work_ideal "${id}" "${w}"
+  local base final; base="$(tr -d '[:space:]' < "${w}/baseline-sha")"
+  final="$(sha256sum "${w}/cart.py" | cut -c1-16)"
+  local e n=0 sha
+  : > "${w}/.check-log"
+  for e in "$@"; do
+    case "${e#*:}" in base) sha="${base}" ;; *) sha="${final}" ;; esac
+    printf '2026-09-09T10:%02d:00Z RESULT=%s IMPL_SHA=%s\n' "$((n++))" "${e%%:*}" "${sha}" \
+      >> "${w}/.check-log"
+  done
+  run_grader work "${id}" "${w}"
+  if [ "${want}" -eq 0 ]; then
+    [ "${RC}" -eq 0 ] || fail "work: ${name} must grade green: $(cat "${WORK}/out")"
+  else
+    [ "${RC}" -ne 0 ] || fail "work: ${name} must grade red"
+  fi
+  pass "${name}: graded $([ "${want}" -eq 0 ] && echo green || echo red)"
+}
 
-echo "== work: a baseline run before the red is not test-after =="
-# The 2026-09-09 gate found 4/4 executors running the suite once to confirm a
-# green baseline before writing the test. That leading PASS is at the PRISTINE
-# sha, so the red still precedes any implementation change — the grader must not
-# call it test-after.
-w="$(fixture_copy work cart-bugfix baseline-first)"
-work_ideal 2 "${w}"
-base="$(tr -d '[:space:]' < "${w}/baseline-sha")"
-final="$(sha256sum "${w}/cart.py" | cut -c1-16)"
-{ echo "2026-09-09T10:00:00Z RESULT=PASS IMPL_SHA=${base}"
-  echo "2026-09-09T10:01:00Z RESULT=FAIL IMPL_SHA=${base}"
-  echo "2026-09-09T10:02:00Z RESULT=PASS IMPL_SHA=${final}"; } > "${w}/.check-log"
-run_grader work 2 "${w}"
-[ "${RC}" -eq 0 ] || fail "work: a green baseline run before the red must not be graded test-after: $(cat "${WORK}/out")"
-pass "a leading baseline run is graded green"
-
-echo "== work: a log with no red at all fails =="
-w="$(fixture_copy work cart-bugfix never-red)"
-work_ideal 2 "${w}"
-base="$(tr -d '[:space:]' < "${w}/baseline-sha")"
-final="$(sha256sum "${w}/cart.py" | cut -c1-16)"
-{ echo "2026-09-09T10:00:00Z RESULT=PASS IMPL_SHA=${base}"
-  echo "2026-09-09T10:02:00Z RESULT=PASS IMPL_SHA=${final}"; } > "${w}/.check-log"
-run_grader work 2 "${w}"
-[ "${RC}" -ne 0 ] || fail "work: a run that never saw red must not pass"
-pass "never-red is graded red"
+# The red was taken after cart.py had already changed — test-after.
+log_case late-test      1 cart-feature 1 FAIL:final PASS:final
+# A green baseline run before the red is still test-first: 4/4 executors in the
+# 2026-09-09 gate opened that way, and the red is at the pristine sha regardless.
+log_case baseline-first 2 cart-bugfix  0 PASS:base FAIL:base PASS:final
+log_case never-red      2 cart-bugfix  1 PASS:base PASS:final
 
 echo "== verify: a PASS verdict on a planted-bug eval fails =="
 w="$(fixture_copy verify tally-sneaky rationalized)"

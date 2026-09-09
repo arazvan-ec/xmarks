@@ -49,10 +49,8 @@ log exists whichever way the executor is prompted):
 
 1. A `RESULT=FAIL` entry with `IMPL_SHA` equal to `baseline-sha`, with **no
    entry of a changed `IMPL_SHA` before it** — the test ran red while `cart.py`
-   was still pristine. Not "the first entry": running the suite once to confirm
-   a green baseline before writing the test is test-first too, and the
-   2026-09-09 gate found 4/4 executors doing it (v0.40.1 fixed the
-   mechanization, which had been failing them since).
+   was still pristine. Not "the first entry": a green baseline run before the
+   red is test-first too (v0.40.1; evidence in `benchmarks/2026-09-09/`).
 2. Last entry `RESULT=PASS`.
 3. `test_cart.py` covers the required behaviour, including the `ValueError` path.
 4. `cart.py` implements it — checked by a behaviour probe, not a grep for `def` —
