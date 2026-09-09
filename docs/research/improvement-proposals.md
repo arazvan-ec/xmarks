@@ -1544,8 +1544,14 @@ Append-only. Newest at the bottom.
   **Method note:** the tests were written first and seen red on `sonnet/high`,
   which is the evidence the gap was real and not a reading of the code; one of
   them proves the table is the authority by making a custom table accept what
-  the default rejects. Two findings from the same pass are recorded as open
-  rather than fixed: CI still enumerates its 13 test steps by hand (the
-  mechanism that left `test-run-cost.sh` decorative for four releases), and
-  `route_escalated_from` still has no reader in `run-cost.sh`, so the evidence
-  P27 promises for the tier question is not yet aggregated by anything.
+  the default rejects. **CI enumeration fixed in the same pass:** the workflow
+  named its 13 test steps by hand, which is precisely the mechanism that let
+  `test-run-cost.sh` sit unrun for four releases — a test was executed because
+  someone remembered it, not because it existed. It now discovers
+  `scripts/test-*.sh`, so `check-test-pairing.sh` guaranteeing a script arrives
+  with its test and CI guaranteeing that test runs close the loop between them.
+  Per-test log groups keep the failure ergonomics the named steps gave, and the
+  loop runs every test before failing so one red does not mask the rest.
+  One finding from the pass stays open: `route_escalated_from` has no reader in
+  `run-cost.sh` (`FIELDS` is fixed), so the evidence P27 promises for the tier
+  question is written by `work` and aggregated by nothing.

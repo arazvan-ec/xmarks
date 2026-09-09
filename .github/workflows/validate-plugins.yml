@@ -68,47 +68,39 @@ jobs:
         if: github.event_name == 'pull_request'
         run: bash scripts/check-test-pairing.sh "origin/${{ github.base_ref }}"
 
-      - name: Test check-test-pairing.sh gate
-        run: bash scripts/test-check-test-pairing.sh
-
       - name: Check skill description budget (P24)
         run: bash scripts/check-description-budget.sh
-
-      - name: Test check-description-budget.sh gate
-        run: bash scripts/test-check-description-budget.sh
 
       - name: Check eval fixtures for grading leaks (P26)
         run: bash scripts/check-fixture-leaks.sh
 
-      - name: Test check-fixture-leaks.sh gate
-        run: bash scripts/test-check-fixture-leaks.sh
-
-      - name: Test the committed eval graders (P26)
-        run: bash scripts/test-eval-graders.sh
-
-      - name: Test plan-route.sh linter (P27)
-        run: bash scripts/test-plan-route.sh
-
-      - name: Test run-cost.sh (P23)
-        run: bash scripts/test-run-cost.sh
-
-      - name: Test install-vendored.sh
-        run: bash scripts/test-install-vendored.sh
-
-      - name: Test read-prime.sh hook
-        run: bash scripts/test-read-prime.sh
-
-      - name: Test write-allow.sh hook
-        run: bash scripts/test-write-allow.sh
-
-      - name: Test bash-allow.sh hook
-        run: bash scripts/test-bash-allow.sh
-
-      - name: Test session-start.sh hook
-        run: bash scripts/test-session-start.sh
-
-      - name: Test gate.sh hook
-        run: bash scripts/test-gate.sh
-
-      - name: Check docs consistency
-        run: bash scripts/test-docs-consistency.sh
+      # Discovery, not a hand-written list. check-test-pairing.sh guarantees a
+      # script arrives with its test; this guarantees the test is then run, so a
+      # new one cannot sit in the tree never executed (which is what happened to
+      # test-run-cost.sh for four releases). Every test is run before failing, so
+      # one red does not hide the rest.
+      - name: Run every scripts/test-*.sh
+        run: |
+          shopt -s nullglob
+          tests=(scripts/test-*.sh)
+          if [ "${#tests[@]}" -eq 0 ]; then
+            echo "::error::no scripts/test-*.sh found — the discovery glob is broken"
+            exit 1
+          fi
+          echo "discovered ${#tests[@]} test scripts"
+          failed=()
+          for t in "${tests[@]}"; do
+            echo "::group::${t}"
+            if bash "${t}"; then
+              echo "::endgroup::"
+            else
+              echo "::endgroup::"
+              echo "::error file=${t}::${t} failed"
+              failed+=("${t}")
+            fi
+          done
+          if [ "${#failed[@]}" -ne 0 ]; then
+            echo "${#failed[@]} of ${#tests[@]} failed: ${failed[*]}"
+            exit 1
+          fi
+          echo "all ${#tests[@]} passed"
