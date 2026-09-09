@@ -16,20 +16,62 @@ set -euo pipefail
 
 [ "$#" -ge 1 ] || { echo "usage: plan-route.sh <plan.md>" >&2; exit 2; }
 
-python3 - "$1" <<'PY'
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+python3 - "$1" "${FLYWHEEL_ROUTE_TIERS:-${HERE}/route-tiers.txt}" <<'PY'
 import os, re, sys
 from collections import Counter
 
-MODELS = ("haiku", "sonnet", "opus", "inherit")
-EFFORTS = ("low", "medium", "high", "max")
+# Ascending cost/strength. These are the CLI's legal values; which point on each
+# axis defines a tier is policy, and lives in route-tiers.txt.
+MODEL_LADDER = ("haiku", "sonnet", "opus")
+EFFORT_LADDER = ("low", "medium", "high", "max")
+MODELS = MODEL_LADDER + ("inherit",)
+EFFORTS = EFFORT_LADDER
 TASK_RE = re.compile(r"^###\s+T(\d+)\s*[—–-]*\s*(.*)$")
 FIELD_RE = re.compile(r"^\s*[-*]\s*([a-z-]+):\s*(.*)$", re.I)
 ROUTE_RE = re.compile(r"^([^/+]+)/([^+]+)(?:\+(.+))?$")
 
-path = sys.argv[1]
+path, tiers_path = sys.argv[1], sys.argv[2]
 if not os.path.isfile(path):
     print(f"plan-route: cannot read {path}: no such file", file=sys.stderr)
     sys.exit(2)
+
+
+def load_tiers(p):
+    """-> {tier: (model, effort, delegate)} from the route-tiers.txt table."""
+    if not os.path.isfile(p):
+        print(f"plan-route: cannot read the tier table (route-tiers.txt) at {p}: "
+              "no such file — the riskiest-step rule has no definition without it",
+              file=sys.stderr)
+        sys.exit(2)
+    out = {}
+    for n, raw in enumerate(open(p), 1):
+        line = raw.split("#", 1)[0].split()
+        if not line:
+            continue
+        bad = None
+        if len(line) < 3 or not line[0].isdigit():
+            bad = "expected '<tier> <model> <effort> [delegate]'"
+        elif line[1] not in MODEL_LADDER:
+            bad = f"unknown model '{line[1]}'"
+        elif line[2] not in EFFORT_LADDER:
+            bad = f"unknown effort '{line[2]}'"
+        elif len(line) > 3 and line[3] != "delegate":
+            bad = f"unknown flag '{line[3]}'"
+        if bad:
+            print(f"plan-route: {p}:{n}: {bad}", file=sys.stderr)
+            sys.exit(2)
+        out[int(line[0])] = (line[1], line[2], len(line) > 3)
+    if not out:
+        print(f"plan-route: {p}: no tiers defined", file=sys.stderr)
+        sys.exit(2)
+    return out
+
+
+TIERS = load_tiers(tiers_path)
+TOP = max(TIERS)
+TOP_MODEL, TOP_EFFORT, _ = TIERS[TOP]
 
 tasks, cur = [], None
 with open(path) as fh:
@@ -76,9 +118,19 @@ def parse_route(spec):
     return (None if msgs else (model, effort, suffix == "delegate")), msgs
 
 
-def cheap(model, effort):
-    """The cheapest tier: the fast model, or thinking turned down."""
-    return model == "haiku" or effort == "low" or (effort.isdigit() and int(effort) < 5)
+def ranks(model, effort):
+    """-> (model rank, effort rank); either is None when it cannot be ranked."""
+    m = MODEL_LADDER.index(model) if model in MODEL_LADDER else None
+    e = EFFORT_LADDER.index(effort) if effort in EFFORT_LADDER else None
+    return m, e
+
+
+def tier_of(model, effort):
+    """The tier a route exactly matches, or None when it sits between tiers."""
+    for n, (tm, te, _d) in TIERS.items():
+        if (model, effort) == (tm, te):
+            return n
+    return None
 
 
 routed, risky = [], []
@@ -99,9 +151,18 @@ for t in tasks:
     if not r:
         continue
     routed.append(r)
-    if hot and cheap(r[0], r[1]):
-        errors.append(f"{t['id']} is the riskiest step but routed '{r[0]}/{r[1]}' — the riskiest "
-                      "step never runs on the cheapest tier (not haiku, not low effort)")
+    if hot:
+        rm, re_ = ranks(r[0], r[1])
+        top_rm, top_re = ranks(TOP_MODEL, TOP_EFFORT)
+        if rm is None or re_ is None:
+            errors.append(f"{t['id']} is the riskiest step but routed '{r[0]}/{r[1]}' — the riskiest "
+                          "step needs a named model and a named effort (not 'inherit', not an "
+                          f"integer) so its tier is checkable; the top tier is tier {TOP} "
+                          f"({TOP_MODEL}/{TOP_EFFORT})")
+        elif rm < top_rm or re_ < top_re:
+            errors.append(f"{t['id']} is the riskiest step but routed '{r[0]}/{r[1]}' — the riskiest "
+                          f"step runs at the top tier: tier {TOP} ({TOP_MODEL}/{TOP_EFFORT}) or above "
+                          "(scripts/route-tiers.txt)")
 
 if len(tasks) > 1:
     if not risky:
@@ -115,7 +176,8 @@ print(f"plan-route: {path}")
 print(f"  {len(tasks)} tasks routed" + (f", {unusable} unusable" if unusable else ""))
 for (model, effort, delegate), n in Counter(routed).most_common():
     label = f"{model}/{effort}" + ("+delegate" if delegate else "")
-    print(f"  {label:<24} {n:>3}")
+    tier = tier_of(model, effort)
+    print(f"  {label:<24} {n:>3}   {f'tier {tier}' if tier else ''}".rstrip())
 if risky:
     print(f"  riskiest: {', '.join(risky)}")
 

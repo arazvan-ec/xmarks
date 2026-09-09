@@ -1,0 +1,15 @@
+# flywheel route tiers (P27) — the single authority for what a tier is.
+#
+# Format, cheapest tier first:  <tier> <model> <effort> [delegate]
+#
+# scripts/plan-route.sh reads this file: the highest tier here is the one the
+# plan's `risk: highest` task must run at, and the models column is the ladder
+# /flywheel:work escalates along. Retune the tiers by editing this file — the
+# linter, its failure messages and the gate summary all follow it. Override the
+# path with FLYWHEEL_ROUTE_TIERS.
+#
+# Off-tier routes stay legal: raising effort within a tier is a judgment the
+# plan is allowed to make. Only the riskiest step is pinned to the top tier.
+1 haiku low delegate
+2 sonnet medium
+3 opus high

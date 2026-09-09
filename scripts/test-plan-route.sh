@@ -83,15 +83,44 @@ run "${WORK}/tworoutes.md"
 rc 1
 pass "two routes on one task → exit 1"
 
-echo "== the riskiest task may not run on the cheapest tier =="
-{ printf '# Plan\n\n'; task 1 "x" "sonnet/medium"; task 2 "risky but cheap" "haiku/low" "risk: highest"; } > "${WORK}/cheaprisk.md"
-run "${WORK}/cheaprisk.md"
+# risk <route> -> a 2-task plan whose riskiest task carries <route>
+risky_plan() {
+  { printf '# Plan\n\n'; task 1 "x" "sonnet/medium"; task 2 "the risky one" "$1" "risk: highest"; } > "${WORK}/risk.md"
+  run "${WORK}/risk.md"
+}
+
+echo "== the riskiest task must run at the top tier, not merely off the cheapest =="
+for r in haiku/low opus/low sonnet/high opus/medium inherit/high haiku/max; do
+  risky_plan "${r}"
+  rc 1
+  says "riskiest"
+  pass "riskiest routed ${r} → exit 1"
+done
+for r in opus/high opus/max; do
+  risky_plan "${r}"
+  rc 0
+  pass "riskiest routed ${r} → exit 0 (at or above the top tier)"
+done
+
+echo "== the riskiest task's effort must be nameable, so its tier is checkable =="
+risky_plan "opus/9"
 rc 1
-says "risk"
-{ printf '# Plan\n\n'; task 1 "x" "sonnet/medium"; task 2 "risky low effort" "opus/low" "risk: highest"; } > "${WORK}/lowrisk.md"
-run "${WORK}/lowrisk.md"
+says "named effort"
+pass "riskiest at an integer effort → exit 1 (integer cannot be ranked against the top tier)"
+
+echo "== the tier table is the authority, not a hardcoded route =="
+printf '1 haiku low delegate\n2 sonnet medium\n' > "${WORK}/tiers.txt"
+risky_plan "sonnet/medium"
 rc 1
-pass "riskiest task on haiku or at low effort → exit 1"
+FLYWHEEL_ROUTE_TIERS="${WORK}/tiers.txt" run "${WORK}/risk.md"
+rc 0
+pass "a table whose top tier is sonnet/medium accepts what the default table rejects"
+
+echo "== a missing tier table fails loudly, never a silent pass =="
+FLYWHEEL_ROUTE_TIERS="${WORK}/nope.txt" run "${WORK}/ok.md"
+rc 2
+says "route-tiers"
+pass "missing tier table → exit 2"
 
 echo "== a plan with no riskiest task marked fails =="
 { printf '# Plan\n\n'; task 1 "x" "sonnet/medium"; task 2 "y" "sonnet/medium"; } > "${WORK}/norisk.md"
