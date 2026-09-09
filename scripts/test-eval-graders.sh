@@ -38,8 +38,8 @@ run_grader() {
   bash "$(grader "${skill}")" "${id}" "${w}" >"${WORK}/out" 2>&1 || RC=$?
 }
 
-echo "== all four graders exist and are executable =="
-for s in process run verify work; do
+echo "== all five graders exist and are executable =="
+for s in loop process run verify work; do
   g="$(grader "${s}")"
   [ -f "${g}" ] || fail "${s}: no committed grader at skills/${s}/evals/check.sh"
   bash -n "${g}" || fail "${s}: grader is not valid bash"
@@ -47,7 +47,7 @@ for s in process run verify work; do
 done
 
 echo "== an unknown eval id exits 2 (the pillar-2 contract) =="
-for s in process run verify work; do
+for s in loop process run verify work; do
   w="${WORK}/unknown-${s}"; mkdir -p "${w}"
   run_grader "${s}" 99 "${w}"
   [ "${RC}" -eq 2 ] || fail "${s}: unknown eval id must exit 2, got ${RC}: $(cat "${WORK}/out")"
@@ -64,6 +64,7 @@ for spec in \
   "work:cart-bugfix:2" \
   "process:target-repo:1 2 3" \
   "run:demo-repo:1 2 3" \
+  "loop:inventory-repo:1 2" \
 ; do
   skill="${spec%%:*}"; rest="${spec#*:}"; fixture="${rest%%:*}"; ids="${rest#*:}"
   for id in ${ids}; do
@@ -267,6 +268,86 @@ log_case late-test      1 cart-feature 1 FAIL:final PASS:final
 # 2026-09-09 gate opened that way, and the red is at the pristine sha regardless.
 log_case baseline-first 2 cart-bugfix  0 PASS:base FAIL:base PASS:final
 log_case never-red      2 cart-bugfix  1 PASS:base PASS:final
+
+echo "== GREEN on an ideal loop outcome, and the two ways it must go red =="
+# loop_ideal <workdir> — a cycle's artifacts: the feature implemented, one commit
+# per task made with a pathspec, and a JSONL whose commit shas are those commits.
+# Built with real git objects, because "the sha resolves" is the assertion.
+loop_ideal() {
+  local w="$1" g=(git -C "$w" -c user.email=e@e -c user.name=e)
+  "${g[@]}" init -q -b main .; "${g[@]}" add -A; "${g[@]}" commit -qm seed
+  cat >> "${w}/inventory.py" <<'EOF'
+
+
+def restock(inv, name, qty):
+    if qty <= 0:
+        raise ValueError("qty must be positive")
+    for item in inv:
+        if item["name"] == name:
+            item["qty"] += qty
+            return inv
+    return inv + [{"name": name, "qty": qty}]
+EOF
+  "${g[@]}" commit -q -m "Add restock" -- inventory.py
+  local c1; c1="$("${g[@]}" rev-parse HEAD)"
+  cat >> "${w}/inventory.py" <<'EOF'
+
+
+def low_stock(inv, threshold):
+    return [item["name"] for item in inv if item["qty"] < threshold]
+EOF
+  "${g[@]}" commit -q -m "Add low_stock" -- inventory.py
+  local c2; c2="$("${g[@]}" rev-parse HEAD)"
+  mkdir -p "${w}/.claude/flywheel/runs/stock-levels"
+  { printf '{"ts":"2026-09-09T10:00:00Z","phase":"spec","state":"done"}\n'
+    printf '{"ts":"2026-09-09T10:05:00Z","task":"T1","state":"green","commit":"%s"}\n' "${c1}"
+    printf '{"ts":"2026-09-09T10:09:00Z","task":"T2","state":"green","commit":"%s"}\n' "${c2}"
+  } > "${w}/.claude/flywheel/runs/stock-levels/2026-09-09.jsonl"
+}
+
+w="$(fixture_copy loop inventory-repo ideal-loop)"
+loop_ideal "${w}"
+run_grader loop 1 "${w}"
+[ "${RC}" -eq 0 ] || fail "loop eval 1: grader FAILED an ideal outcome — it cannot pass: $(cat "${WORK}/out")"
+pass "loop eval 1: green on an ideal outcome"
+
+# A sha that looks right and was never made: the failure the cross-check exists for.
+w="$(fixture_copy loop inventory-repo fabricated-sha)"
+loop_ideal "${w}"
+j="${w}/.claude/flywheel/runs/stock-levels/2026-09-09.jsonl"
+python3 - "${j}" <<'EOF'
+import re, sys
+p = sys.argv[1]
+s = open(p).read()
+open(p, "w").write(re.sub(r'"commit":"[0-9a-f]{40}"',
+                          '"commit":"deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"', s, count=1))
+EOF
+run_grader loop 1 "${w}"
+[ "${RC}" -ne 0 ] || fail "loop: a fabricated commit sha must not pass"
+pass "a fabricated commit sha is graded red"
+
+# `git add -A` mid-cycle: source and flywheel state in one commit.
+w="$(fixture_copy loop inventory-repo swept-commit)"
+loop_ideal "${w}"
+echo "# note" >> "${w}/inventory.py"
+git -C "${w}" -c user.email=e@e -c user.name=e add -A
+git -C "${w}" -c user.email=e@e -c user.name=e commit -qm "sweep everything"
+run_grader loop 1 "${w}"
+[ "${RC}" -ne 0 ] || fail "loop: a commit sweeping flywheel state in with source must not pass"
+pass "a swept commit is graded red"
+
+# A commit that is ALL flywheel state is not a sweep, even when a helper the
+# cycle wrote there ends in .py — the first draft matched that one file on both
+# sides of the AND and failed a clean run (2026-09-09 eval 1).
+w="$(fixture_copy loop inventory-repo state-only-commit)"
+loop_ideal "${w}"
+mkdir -p "${w}/.claude/flywheel/bin"
+echo "print('render')" > "${w}/.claude/flywheel/bin/render-run.py"
+git -C "${w}" -c user.email=e@e -c user.name=e add .claude
+git -C "${w}" -c user.email=e@e -c user.name=e commit -qm "Track run telemetry and its renderer"
+run_grader loop 1 "${w}"
+[ "${RC}" -eq 0 ] || fail "loop: a commit holding only .claude/flywheel/ paths must not count as a sweep: $(cat "${WORK}/out")"
+pass "a state-only commit with a .py helper is not a sweep"
 
 echo "== verify: a PASS verdict on a planted-bug eval fails =="
 w="$(fixture_copy verify tally-sneaky rationalized)"
