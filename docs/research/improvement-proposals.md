@@ -47,6 +47,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P26 | Committed graders for `verify` and `work` | ✅ shipped (v0.37.0) | Done — `skills/{verify,work}/evals/check.sh` on the pillar-2 contract; `test-eval-graders.sh` requires all four graders red on an untouched fixture (and pillar 1 green on an ideal outcome); `check-fixture-leaks.sh` turns the manual leak grep into a CI gate with a per-path/per-pattern allowlist. Unblocks the pending `verify` iteration |
 | P25 | Close the gaps the P22 eval iteration exposed | ✅ shipped (v0.34.0) | Done — §5 format pinned + grader re-tightened (gate: 3/3 evals, 39/39); work kata de-hinted via a fixture guard; a hollow `run` eval-2 grader fixed. Baseline arm documented, still unrun |
 | P27 | Stage routing: per-task model + effort in the plan | ✅ shipped (v0.39.0) | Done — 3-tier rubric + pinned task block in `plan`, honor/escalate/record in `work`, `executor` agent (haiku/low) with an ESCALATE path, `effort:` on all agents, `plan-route.sh` lint in CI. Open: are the tiers the right tiers? `route_escalated_from` is the field that will say |
+| P28 | Atomic commits inside the loop | ✅ shipped (v0.40.0) | Done — `work` commits + pushes each task at its green edge (pathspec commit, force-free push, both already inside the P21 grant), `debug` commits fix + regression test, `ship` keeps the history and commits only the remainder. Skill text only; no new script, no widened permission surface. Open: does the per-task commit change what reviewers catch? |
 
 ## Priority overview
 
@@ -77,6 +78,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | **P24** | **Description budget as a CI ratchet** ⭐ cheapest of the three | Medium | Low | Low | Yes |
 | P25 | Close the gaps the P22 eval iteration exposed | Medium | Medium | Low | Partial |
 | **P27** | **Stage routing (model + effort per plan task)** ⭐ owner ask | High | Medium | Medium | Yes |
+| **P28** | **Atomic commits inside the loop** ⭐ owner ask | High | Low | Low | Yes |
 
 ---
 
@@ -931,6 +933,49 @@ that the instructions contradicted each other.
 
 ---
 
+## P28 — Atomic commits inside the loop (owner ask, 2026-09-09)
+
+**Why.** The loop committed exactly once per cycle, at `/flywheel:ship`.
+Everything between the spec gate and the PR was uncommitted working-tree state,
+which costs three things: a verified green task is not durable (a bad turn, a
+lost container, a stray revert takes it), the PR's reviewable unit is "the whole
+feature" rather than the change, and `git log` carries none of the loop's own
+evidence about what was proven when. The plumbing was already there and unused —
+`scripts/bash-allow.sh` has pre-approved `git add`/`commit`/`stash` and a
+force-free push of the current feature branch since v0.28.0 (P21).
+
+**What.** Commit at the **green edge of each task**, in `work` — the one place
+that knows a logical change just finished and was proven. `debug` does the same
+for a fix plus its regression test. `ship` stops being the commit point: it
+commits the remainder and preserves the per-task history.
+
+**Two mechanics that carry the design:**
+
+- **Pathspec, not `git add`.** `git commit -m … -- <paths>` commits exactly the
+  task's files and leaves the index untouched. A bare `git commit` would absorb
+  whatever `spec`/`compound` deliberately staged for `ship`; `git add -A`/`-u`
+  would sweep in whatever was dirty before the cycle started. Either one makes
+  the word "atomic" false.
+- **Fail-open, like the telemetry.** No repo (the eval fixtures are plain
+  directories), no remote, nothing to commit, or a rejected push → one line and
+  the inner loop continues. Git is never allowed to block the work it records.
+
+**Rejected: a `scripts/commit-task.sh` wrapper.** It would be unit-testable,
+which fits the repo's test-first rule better than prose does. But the P21 hook
+grants `git` as argv[0] only, so every wrapper call would hit a permission
+prompt unless the hook also learned to pre-approve the wrapper — widening the
+pre-approved surface to get worse ergonomics than the two plain commands the
+grant already covers. Skill text over an existing grant is the cheaper contract.
+
+**Not in scope, deliberately:** any history rewriting. No amend, rebase, squash
+or force push from any skill — the per-task history is what makes the PR
+reviewable, and collapsing it is the user's call.
+
+**Files:** `skills/{work,debug,ship,loop}/SKILL.md`, README, `/flywheel:help`,
+`upgrades/v0.40.0.md`, `.claude-plugin/plugin.json` → 0.40.0.
+
+---
+
 ## Decision log
 
 Append-only. Newest at the bottom.
@@ -1563,3 +1608,44 @@ Append-only. Newest at the bottom.
   applies: an unrouted transition is reported, not attributed, and a pre-P27 run
   — where no route exists anywhere — prints what it always did.
   All four findings from the cleanup pass are now closed.
+
+- **2026-09-09** — **P28 shipped as v0.40.0: the loop commits as it proves.**
+  The owner asked whether the framework made the AI dev flow commit and push
+  atomically; it did not — `ship` held the only commit in the cycle, and the
+  git grants added for P21 sat unused by every skill. `work` step 5 is now
+  **Commit**: the task that just went green is committed with an explicit
+  pathspec and pushed force-free, both forms exactly what `bash-allow.sh`
+  already pre-approves, so the discipline arrives without a new permission
+  surface, a new script, or a prompt. The pathspec is the whole argument — a
+  bare `git commit` would have swallowed the files `spec` and `compound` stage
+  on purpose, and `-A` would have swallowed the user's own dirty tree, so the
+  cheap version of this feature would have shipped commits that are atomic in
+  name only. `debug` gained the same step for fix + regression test; `ship`
+  became the remainder plus an explicit ban on squashing what the loop built.
+  Fail-open throughout (no repo, no remote, nothing staged, rejected push) and
+  never on the default branch. **Dogfooded:** this cycle's own branch is one
+  commit per operation in the spec's §O, which is the metric's fourth clause.
+
+- **2026-09-09** — **P28's release gate found a defect in the gate itself, and
+  v0.40.1 fixed it.** Running the `work` katas before releasing v0.40.0 returned
+  5/6 on the bugfix kata, three runs in a row. The tempting readings were both
+  wrong: it was neither noise (3/3) nor a regression from the new commit step.
+  The decisive run was the control — the same kata executed against the
+  **pre-P28 skill text from `origin/main`** failed identically, which located the
+  fault in the grader rather than the skill. Cause: the assertion mechanized
+  *"the test ran red before `cart.py` changed"* as *"the FIRST `.check-log` entry
+  is `FAIL` at the pristine sha"*, and 4/4 executors ran the suite once to
+  confirm a green baseline before writing the test — test-first behaviour that
+  the mechanization scored as test-after. Fixed as **v0.40.1**: a `FAIL` at the
+  pristine `IMPL_SHA` with no changed-sha entry before it, written test-first
+  (two new cases in `test-eval-graders.sh`, the leading-baseline one seen red),
+  still red on an untouched fixture, on test-after, and on a run that never went
+  red. All four gate workdirs re-grade green with no re-runs.
+  **The process point, which is the durable one:** the fix shipped as its own
+  release rather than inside v0.40.0. Loosening an assertion inside the release
+  that assertion is gating is precisely the move P26 exists to prevent, and the
+  only thing that made the distinction defensible was running the control arm
+  instead of arguing from the diff. A gate that fails is evidence about
+  *something*; which thing it is evidence about is a question with an experiment,
+  not an opinion.
+

@@ -1,0 +1,180 @@
+{
+  "metadata": {
+    "skill_name": "work",
+    "skill_path": "skills/work",
+    "executor_model": "session default (fresh-context general-purpose subagents)",
+    "timestamp": "2026-09-09",
+    "evals_run": [
+      1,
+      2
+    ],
+    "runs_per_configuration": "1 for eval 1, 3 for eval 2 (a failing assertion was re-run for stability), plus 1 pre-change control and 1 out-of-suite observation",
+    "configurations": [
+      "with_skill",
+      "control_pre_change"
+    ],
+    "release_gate_for": "P28 v0.40.0 (atomic commits in the loop)",
+    "assertion_count_note": "passed/total count the grader's own PASS:/FAIL: lines (7 for eval 1, 6 for eval 2). The 2026-07-30 benchmark counted the 4 coarser evals.json expectations per eval, so the totals are not directly comparable; the per-assertion outcomes below are.",
+    "token_note": "tokens are the harness-reported subagent totals for each Agent call, not a self-estimate by the executor (P18)."
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "feature-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "fixture_state": "clean copy of skills/work/evals/fixtures/cart-feature, non-git workdir",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 69.6,
+        "tokens": 57597,
+        "tool_calls": 10,
+        "errors": 0
+      },
+      "notes": [
+        "Red at IMPL_SHA=8b44f02e8e4f2e3b (== baseline-sha), then PASS.",
+        "P28 path exercised: reported the commit step failing open ('not a git repository') once, and did not treat it as a blocker."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "fixture_state": "clean copy of skills/work/evals/fixtures/cart-bugfix, non-git workdir",
+      "result": {
+        "pass_rate": 0.833,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 58.4,
+        "tokens": 56601,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "notes": [
+        "FAILED assertion: 'first .check-log entry is RESULT=FAIL with IMPL_SHA equal to baseline-sha'.",
+        "Cause: the executor ran ./run-tests.sh once as a baseline before writing the regression test, so entry 1 is PASS@baseline and the red is entry 2 (FAIL@baseline). The property the expectation states in prose — the test ran red before cart.py changed — holds; the first-entry mechanization does not.",
+        "P28 path exercised: commit step failed open on the non-git workdir, reported once."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "with_skill",
+      "run_number": 2,
+      "fixture_state": "clean copy, non-git workdir",
+      "result": {
+        "pass_rate": 0.833,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 68.9,
+        "tokens": 57872,
+        "tool_calls": 9,
+        "errors": 0
+      },
+      "notes": [
+        "Same baseline-run-first behaviour, same single failing assertion. Log: PASS@baseline → FAIL@baseline → PASS@changed."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "with_skill",
+      "run_number": 3,
+      "fixture_state": "clean copy, non-git workdir",
+      "result": {
+        "pass_rate": 0.833,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 71.0,
+        "tokens": 57452,
+        "tool_calls": 10,
+        "errors": 0
+      },
+      "notes": [
+        "Same again — 3/3, so the failure is stable behaviour, not n=1 noise."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "bugfix-regression-test-first",
+      "configuration": "control_pre_change",
+      "run_number": 1,
+      "fixture_state": "clean copy, non-git workdir; executor given skills/work/SKILL.md as of origin/main (v0.39.1, before P28)",
+      "result": {
+        "pass_rate": 0.833,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 74.2,
+        "tokens": 57547,
+        "tool_calls": 10,
+        "errors": 0
+      },
+      "notes": [
+        "THE DECISIVE RUN: the pre-P28 skill text fails the same single assertion, in the same way, for the same reason.",
+        "Therefore the red is not a regression introduced by v0.40.0 — it is pre-existing drift between the grader's mechanization and current executor behaviour."
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "feature-test-first",
+      "configuration": "with_skill",
+      "run_number": 2,
+      "fixture_state": "OUT-OF-SUITE OBSERVATION: cart-feature copy with `git init` + one baseline commit, so the P28 commit step can actually run",
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 113.8,
+        "tokens": 58832,
+        "tool_calls": 12,
+        "errors": 0
+      },
+      "notes": [
+        "Not part of the committed eval definition — added because the suite's fixtures are non-git workdirs and therefore only exercise P28's fail-open path.",
+        "Observed: on the default branch the executor created a feature branch first (`git checkout -b task3-apply-discount`) rather than committing to main.",
+        "Observed: pathspec commit `git commit -m ... -- cart.py test_cart.py` — the untracked .check-log and __pycache__/ stayed out of the commit, which is exactly what the pathspec rule exists to guarantee.",
+        "Push did not happen: no remote configured on the scratch repo, and the call was denied by the environment's classifier. The executor reported it once and finished the task — the fail-open path behaving as specified."
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "eval_1": {
+        "pass_rate": 1.0,
+        "runs": 2
+      },
+      "eval_2": {
+        "pass_rate": 0.833,
+        "runs": 3,
+        "stddev": 0.0
+      }
+    },
+    "control_pre_change": {
+      "eval_2": {
+        "pass_rate": 0.833,
+        "runs": 1
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00 vs the pre-change control on the same eval"
+    }
+  },
+  "notes": [
+    "REGRESSION GATE FOR v0.40.0: PASS. The one red assertion reproduces identically on the pre-P28 skill text, so P28 neither caused it nor masks it. The red→green inner loop still fires in every run (4/4 logs show FAIL at the pristine IMPL_SHA before any implementation change).",
+    "P28 BEHAVIOUR, OBSERVED: all five non-git runs took the fail-open path and said so once; the git-initialized observation run branched off the default branch, committed with the pathspec form, kept .check-log and __pycache__ out of the commit, and reported the impossible push once instead of blocking.",
+    "SUITE DEFECT FOUND (not caused by this release, not fixed by it): eval 2's first assertion mechanizes 'the regression test reproduced the bug BEFORE cart.py changed' as 'the FIRST .check-log entry is FAIL@baseline'. An executor that runs the suite once to confirm a green baseline before writing the test — reasonable, and what /flywheel:debug prescribes — breaks the mechanization while satisfying the property. 4/4 recent executors did exactly that. Recorded for the owner; changing eval ground truth inside a release that the same change is being gated by is precisely the move P26 exists to prevent.",
+    "COVERAGE LIMIT, unchanged from 2026-07-30: the suite does not exercise the cycle telemetry fields (work's JSONL applies only inside a /flywheel:loop cycle); every executor independently reported writing none. The new `commit` field is therefore unverified by this suite.",
+    "No baseline (without_skill) arm was run: the release gate needs only the with-skill regression signal, and 2026-07-30 already established these katas do not discriminate.",
+    "Six subagent runs, ~346k harness-reported subagent tokens.",
+    "RESOLUTION (same day, v0.40.1): the owner chose to fix the mechanization in its own release. check.sh now asserts a FAIL at the pristine IMPL_SHA with no changed-sha entry before it; all four eval-2 workdirs recorded above re-grade 6/6 green, and the red-on-untouched, test-after and never-red guards all still hold. See upgrades/v0.40.1.md and benchmark.md's addendum."
+  ]
+}

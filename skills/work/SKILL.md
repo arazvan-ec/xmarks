@@ -7,7 +7,7 @@ allowed-tools: Read, Edit, Write, Grep, Glob, Bash
 
 # /flywheel:work — the inner loop (iterate until green)
 
-**Progress, live:** materialize each plan task as a visible task in the host task system before starting, and flip its state the moment its local check goes green — never in bulk afterwards. Inside a `/flywheel:loop` cycle, also append **one JSON line** per task transition to the cycle's telemetry data file (`.claude/flywheel/runs/<spec-slug>/<date>.jsonl`, never secrets): `{"ts": "<ISO>", "task": …, "state": …, "route": "<model>/<effort>", "cost": {"bytes_out": …, "tool_calls": …, "elapsed_s": …}}` plus what the transition proved. Carry `"route_escalated_from": "<model>/<effort>"` on a transition that had to move up a tier — that pair is the only honest record of a mis-route. The `cost` fields are **observable proxies** — bytes you wrote, tool calls you made, seconds since the previous line. Never a `tokens` field: you cannot observe your own usage, and a guess is unverifiable evidence (P18). If a field cannot be computed, omit the whole `cost` object rather than estimating. Do **not** regenerate the HTML report here — the loop renders it from the JSONL at phase gates and at close; a transition costs one line, not a page. Fail-open: reporting never blocks the work.
+**Progress, live:** materialize each plan task as a visible task in the host task system before starting, and flip its state the moment its local check goes green — never in bulk afterwards. Inside a `/flywheel:loop` cycle, also append **one JSON line** per task transition to the cycle's telemetry data file (`.claude/flywheel/runs/<spec-slug>/<date>.jsonl`, never secrets): `{"ts": "<ISO>", "task": …, "state": …, "route": "<model>/<effort>", "commit": "<sha>", "cost": {"bytes_out": …, "tool_calls": …, "elapsed_s": …}}` plus what the transition proved. Carry `"route_escalated_from": "<model>/<effort>"` on a transition that had to move up a tier — that pair is the only honest record of a mis-route. The `cost` fields are **observable proxies** — bytes you wrote, tool calls you made, seconds since the previous line. Never a `tokens` field: you cannot observe your own usage, and a guess is unverifiable evidence (P18). If a field cannot be computed, omit the whole `cost` object rather than estimating. Do **not** regenerate the HTML report here — the loop renders it from the JSONL at phase gates and at close; a transition costs one line, not a page. Fail-open: reporting never blocks the work.
 
 **Prime from fixtures:** before building test data for an entity, `/flywheel:recall fixture <entity>` — if the ledger already has the recipe, use it instead of re-deriving it.
 
@@ -17,7 +17,15 @@ Execute the plan's tasks one at a time. For **each** task, run this loop and do 
 2. **Green** — implement the minimum to make it pass. No extra scope.
 3. **Check** — run the tests and the linter/formatter. When behavior is user-visible, also exercise the real thing (run the app / hit the endpoint / run the script).
 4. **Observe** — read the actual output. If not green, diagnose from the evidence and fix, then go back to step 2.
-5. **Advance** — only when the check is green, move to the next task.
+5. **Commit** — a green check is one finished logical change: commit it alone per **Commit discipline** below, then move to the next task.
+
+## Commit discipline
+
+`git commit -m "<imperative subject>" -- <the paths this task touched>`, then `git push -u origin <branch>`. Both are plain and force-free — exactly what the P21 hook pre-approves, so neither prompts. Take the sha for the transition line from the commit's own output; don't spend a `rev-parse` on it.
+
+- **Pathspec only.** It commits this task and leaves the index alone (`spec` and `compound` stage their files for `ship`). `git add -A`/`-u` is banned: it sweeps in whatever was already dirty when the cycle started.
+- **Never amend, rebase, squash or force-push.** Rewriting history is the user's call, not the loop's.
+- **Fails open, decided once.** Settle committability before the first task — no repo, no remote, or the **default branch** with a new feature branch declined (that one prompts) → skip the commits for the rest of the cycle and say so once, rather than paying a failing `git` pair per task. Per task, nothing to commit or a rejected push is reported once and the loop carries on; it never blocks on git.
 
 ## Honor the plan's route
 
@@ -33,7 +41,7 @@ A mis-route that cost real time — a T1 task that needed escalating, or a T3 ta
 
 **Standing rule:** "done" means the objective check is green *and you have seen it be green*. Never report a task complete on the basis of reasoning alone.
 
-**Prefer single commands over `&&` chains**: permission grants and allow rules match subcommand-by-subcommand, so `git add -A && npm test` re-prompts where two plain commands sail through.
+**Prefer single commands over `&&` chains**: permission grants and allow rules match subcommand-by-subcommand, so `git status && npm test` re-prompts where two plain commands sail through.
 
 **Anti-rationalization — these are banned:**
 
@@ -44,6 +52,7 @@ A mis-route that cost real time — a T1 task that needed escalating, or a T3 ta
 | "Linter warnings are just noise." | Fix them, or justify each one explicitly in the spec's Norms. |
 | "It's a small change, no test needed." | Small changes break things too — add the smallest check. |
 | "It works on my reasoning." | Reasoning is a hypothesis; the run is the evidence. |
+| "I'll commit it all at the end." | Commit each green task; one blob at the end is unreviewable and loses verified work to a bad turn. |
 
 ## When to delegate (keep the working context lean)
 

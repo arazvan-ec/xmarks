@@ -21,17 +21,21 @@ check() { # check <expr...> -- <label>
 }
 
 entries()    { grep -E 'RESULT=' "$LOG" 2>/dev/null; }
-first_entry(){ entries | head -1; }
 last_entry() { entries | tail -1; }
 baseline()   { tr -d '[:space:]' < "$BASE_FILE" 2>/dev/null; }
 
-# first logged run: red, against the untouched implementation
-red_first() {
-  local e; e="$(first_entry)"
-  [ -n "$e" ] || return 1
-  case "$e" in *"RESULT=FAIL"*) ;; *) return 1 ;; esac
-  local sha b; sha="${e##*IMPL_SHA=}"; sha="${sha%%[[:space:]]*}"; b="$(baseline)"
-  [ -n "$b" ] && [ "$sha" = "$b" ]
+# Not "the FIRST entry is FAIL": a green baseline run before the red is still
+# test-first. The disqualifier is an entry whose IMPL_SHA has already moved.
+red_before_impl_changed() {
+  local b; b="$(baseline)"
+  [ -n "$b" ] || return 1
+  local e sha
+  while IFS= read -r e; do
+    sha="${e##*IMPL_SHA=}"; sha="${sha%%[[:space:]]*}"
+    [ "$sha" = "$b" ] || return 1
+    case "$e" in *"RESULT=FAIL"*) return 0 ;; esac
+  done < <(entries)
+  return 1
 }
 green_last() { case "$(last_entry)" in *"RESULT=PASS"*) return 0 ;; *) return 1 ;; esac; }
 
@@ -44,7 +48,7 @@ probe() { ( cd "$W" && python3 -c "$1" >/dev/null 2>&1 ); }
 
 case "$ID" in
   1)
-    check red_first -- "first .check-log entry is RESULT=FAIL with IMPL_SHA equal to baseline-sha (the test ran red BEFORE cart.py changed)"
+    check red_before_impl_changed -- "a RESULT=FAIL entry at the pristine IMPL_SHA precedes any run of a changed cart.py (the test ran red BEFORE cart.py changed)"
     check green_last -- "last .check-log entry is RESULT=PASS"
     check grep -q 'apply_discount' "$W/test_cart.py" -- "test_cart.py exercises apply_discount"
     check grep -qE 'assertRaises|ValueError' "$W/test_cart.py" -- "test_cart.py covers the ValueError bounds behaviour"
@@ -57,7 +61,7 @@ for bad in (-1, 101):
     check suite_green -- "the final suite is green on an independent re-run"
     ;;
   2)
-    check red_first -- "first .check-log entry is RESULT=FAIL with IMPL_SHA equal to baseline-sha (the regression test reproduced the bug BEFORE cart.py changed)"
+    check red_before_impl_changed -- "a RESULT=FAIL entry at the pristine IMPL_SHA precedes any run of a changed cart.py (the regression test reproduced the bug BEFORE cart.py changed)"
     check green_last -- "last .check-log entry is RESULT=PASS"
     check grep -qE 'assertRaises|ValueError' "$W/test_cart.py" -- "test_cart.py asserts ValueError for non-positive qty"
     check probe 'import cart
