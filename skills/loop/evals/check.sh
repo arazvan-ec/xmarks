@@ -77,7 +77,9 @@ commits_resolve() {
 }
 
 # no commit mixes source with flywheel state: that pairing is what `git add -A`
-# mid-cycle produces and what a pathspec commit cannot
+# mid-cycle produces and what a pathspec commit cannot. Source means .py OUTSIDE
+# .claude/ — a helper the cycle writes to .claude/flywheel/bin/ is state that
+# happens to end in .py, and matching it on both sides fails a clean run.
 no_sweep() {
   local root c files
   git -C "$W" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
@@ -85,7 +87,7 @@ no_sweep() {
   [ -n "$root" ] || return 1
   for c in $(git -C "$W" rev-list HEAD ${root:+^$root} 2>/dev/null); do
     files="$(git -C "$W" show --name-only --format= "$c" 2>/dev/null)"
-    if grep -q '\.py$' <<< "$files" && grep -q '^\.claude/flywheel/' <<< "$files"; then
+    if grep -v '^\.claude/' <<< "$files" | grep -q '\.py$' && grep -q '^\.claude/flywheel/' <<< "$files"; then
       return 1
     fi
   done
