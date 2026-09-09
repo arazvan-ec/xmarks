@@ -17,10 +17,15 @@ Execute the plan's tasks one at a time. For **each** task, run this loop and do 
 2. **Green** — implement the minimum to make it pass. No extra scope.
 3. **Check** — run the tests and the linter/formatter. When behavior is user-visible, also exercise the real thing (run the app / hit the endpoint / run the script).
 4. **Observe** — read the actual output. If not green, diagnose from the evidence and fix, then go back to step 2.
-5. **Commit** — a green check means the task is one finished logical change, so commit it atomically: `git commit -m "<imperative subject>" -- <the paths this task touched>`. The pathspec form is deliberate — it commits exactly this task and leaves the index alone (`spec` and `compound` stage their files for `ship`), and `git add -A`/`-u` is banned because it sweeps in work that was already dirty when the cycle started. Then `git push -u origin <branch>` — plain, force-free, current branch: exactly what the P21 hook pre-approves, so neither command prompts. Never amend, rebase, squash or force-push: rewriting history is the user's call, not the loop's.
-6. **Advance** — move to the next task.
+5. **Commit** — a green check is one finished logical change: commit it alone per **Commit discipline** below, then move to the next task.
 
-**Committing fails open, always.** Not a git repo, no remote, nothing to commit, or a rejected push → say it once and keep working; the inner loop never blocks on git. On the **default branch**, create a feature branch before the first commit (that one prompts) — if that is declined, skip the commits for the rest of the cycle rather than committing to `main`, and say so once.
+## Commit discipline
+
+`git commit -m "<imperative subject>" -- <the paths this task touched>`, then `git push -u origin <branch>`. Both are plain and force-free — exactly what the P21 hook pre-approves, so neither prompts. Take the sha for the transition line from the commit's own output; don't spend a `rev-parse` on it.
+
+- **Pathspec only.** It commits this task and leaves the index alone (`spec` and `compound` stage their files for `ship`). `git add -A`/`-u` is banned: it sweeps in whatever was already dirty when the cycle started.
+- **Never amend, rebase, squash or force-push.** Rewriting history is the user's call, not the loop's.
+- **Fails open, decided once.** Settle committability before the first task — no repo, no remote, or the **default branch** with a new feature branch declined (that one prompts) → skip the commits for the rest of the cycle and say so once, rather than paying a failing `git` pair per task. Per task, nothing to commit or a rejected push is reported once and the loop carries on; it never blocks on git.
 
 ## Honor the plan's route
 
@@ -36,7 +41,7 @@ A mis-route that cost real time — a T1 task that needed escalating, or a T3 ta
 
 **Standing rule:** "done" means the objective check is green *and you have seen it be green*. Never report a task complete on the basis of reasoning alone.
 
-**Prefer single commands over `&&` chains**: permission grants and allow rules match subcommand-by-subcommand, so `git add -A && npm test` re-prompts where two plain commands sail through.
+**Prefer single commands over `&&` chains**: permission grants and allow rules match subcommand-by-subcommand, so `git status && npm test` re-prompts where two plain commands sail through.
 
 **Anti-rationalization — these are banned:**
 
