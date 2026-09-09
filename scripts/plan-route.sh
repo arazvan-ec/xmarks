@@ -5,13 +5,9 @@
 # running on the cheapest tier — then prints the tier summary the plan gate
 # shows. Cost is never claimed in tokens (P18/P23): the summary counts tasks.
 #
-# Pinned task block (the format skills/plan/SKILL.md writes):
-#   ### T<n> — <title>
-#   - route: `<model>/<effort>[+delegate]`
-#   - risk: highest          (exactly one task, plans with 2+ tasks)
-#   - changes: <files>
-#   - check: <what proves it done>
-#   - test-first: yes|no
+# The task block format is pinned by skills/plan/SKILL.md. Enforced here: one
+# `- route:` (`<model>/<effort>[+delegate]`), one `- check:`, and exactly one
+# `- risk: highest` in a plan with 2+ tasks.
 #
 # Usage: plan-route.sh <plan.md>
 # Exit: 0 OK · 1 lint failures · 2 unusable input (no file, no argument, no tasks)
@@ -28,6 +24,7 @@ MODELS = ("haiku", "sonnet", "opus", "inherit")
 EFFORTS = ("low", "medium", "high", "max")
 TASK_RE = re.compile(r"^###\s+T(\d+)\s*[—–-]*\s*(.*)$")
 FIELD_RE = re.compile(r"^\s*[-*]\s*([a-z-]+):\s*(.*)$", re.I)
+ROUTE_RE = re.compile(r"^([^/+]+)/([^+]+)(?:\+(.+))?$")
 
 path = sys.argv[1]
 if not os.path.isfile(path):
@@ -62,32 +59,21 @@ if not tasks:
 errors = []
 
 
-def parse_route(task, spec):
-    """-> (model, effort, delegate) or None, appending an error on bad syntax."""
-    s = spec.strip().strip("`").strip()
-    if "/" not in s:
-        errors.append(f"{task['id']}: route '{spec}' is not '<model>/<effort>[+delegate]'")
-        return None
-    model, rest = s.split("/", 1)
-    model = model.strip().lower()
-    delegate = False
-    if "+" in rest:
-        rest, suffix = rest.split("+", 1)
-        suffix = suffix.strip().lower()
-        if suffix == "delegate":
-            delegate = True
-        else:
-            errors.append(f"{task['id']}: unknown route suffix '+{suffix}' — the only suffix is '+delegate'")
-            return None
-    effort = rest.strip().lower()
-    ok = True
+def parse_route(spec):
+    """-> ((model, effort, delegate) | None, [unprefixed error messages])."""
+    m = ROUTE_RE.match(spec.strip().strip("`").strip().lower())
+    if not m:
+        return None, [f"route '{spec}' is not '<model>/<effort>[+delegate]'"]
+    model, effort = m.group(1).strip(), m.group(2).strip()
+    suffix = (m.group(3) or "").strip()
+    if suffix and suffix != "delegate":
+        return None, [f"unknown route suffix '+{suffix}' — the only suffix is '+delegate'"]
+    msgs = []
     if model not in MODELS:
-        errors.append(f"{task['id']}: invalid model '{model}' — one of {', '.join(MODELS)}")
-        ok = False
+        msgs.append(f"invalid model '{model}' — one of {', '.join(MODELS)}")
     if effort not in EFFORTS and not (effort.isdigit() and 1 <= int(effort) <= 100):
-        errors.append(f"{task['id']}: invalid effort '{effort}' — one of {', '.join(EFFORTS)} or an integer")
-        ok = False
-    return (model, effort, delegate) if ok else None
+        msgs.append(f"invalid effort '{effort}' — one of {', '.join(EFFORTS)} or an integer")
+    return (None if msgs else (model, effort, suffix == "delegate")), msgs
 
 
 def cheap(model, effort):
@@ -97,40 +83,41 @@ def cheap(model, effort):
 
 routed, risky = [], []
 for t in tasks:
-    if not t["routes"]:
-        errors.append(f"{t['id']}: no '- route:' line — every task carries its model/effort tier")
-    elif len(t["routes"]) > 1:
-        errors.append(f"{t['id']}: {len(t['routes'])} route lines — a task has exactly one route")
-    else:
-        r = parse_route(t, t["routes"][0])
-        if r:
-            routed.append((t, r))
+    hot = t["fields"].get("risk", "").lower().startswith("highest")
+    if hot:
+        risky.append(t["id"])
     if not t["fields"].get("check"):
         errors.append(f"{t['id']}: no '- check:' line — a route without a pass/fail check is not a task")
-    if t["fields"].get("risk", "").lower().startswith("highest"):
-        risky.append(t)
+    if not t["routes"]:
+        errors.append(f"{t['id']}: no '- route:' line — every task carries its model/effort tier")
+        continue
+    if len(t["routes"]) > 1:
+        errors.append(f"{t['id']}: {len(t['routes'])} route lines — a task has exactly one route")
+        continue
+    r, msgs = parse_route(t["routes"][0])
+    errors += [f"{t['id']}: {m}" for m in msgs]
+    if not r:
+        continue
+    routed.append(r)
+    if hot and cheap(r[0], r[1]):
+        errors.append(f"{t['id']} is the riskiest step but routed '{r[0]}/{r[1]}' — the riskiest "
+                      "step never runs on the cheapest tier (not haiku, not low effort)")
 
 if len(tasks) > 1:
     if not risky:
         errors.append("no task carries '- risk: highest' — the plan must name its single riskiest step")
     elif len(risky) > 1:
         errors.append("more than one task carries '- risk: highest' ("
-                      + ", ".join(t["id"] for t in risky) + ") — the plan names exactly one")
+                      + ", ".join(risky) + ") — the plan names exactly one")
 
-for t, (model, effort, _d) in routed:
-    if t in risky and cheap(model, effort):
-        errors.append(f"{t['id']} is the riskiest step but routed '{model}/{effort}' — the riskiest "
-                      "step never runs on the cheapest tier (not haiku, not low effort)")
-
+unusable = len(tasks) - len(routed)
 print(f"plan-route: {path}")
-print(f"  {len(tasks)} tasks routed" + (f", {len(tasks) - len(routed)} unusable" if len(routed) != len(tasks) else ""))
-counts = Counter(f"{m}/{e}" for _t, (m, e, _d) in routed)
-delegated = Counter(f"{m}/{e}" for _t, (m, e, d) in routed if d)
-for route, n in counts.most_common():
-    extra = f"  ({delegated[route]} delegated)" if delegated[route] else ""
-    print(f"  {route:<16} {n:>3}{extra}")
+print(f"  {len(tasks)} tasks routed" + (f", {unusable} unusable" if unusable else ""))
+for (model, effort, delegate), n in Counter(routed).most_common():
+    label = f"{model}/{effort}" + ("+delegate" if delegate else "")
+    print(f"  {label:<24} {n:>3}")
 if risky:
-    print(f"  riskiest: {', '.join(t['id'] for t in risky)}")
+    print(f"  riskiest: {', '.join(risky)}")
 
 if errors:
     print()
