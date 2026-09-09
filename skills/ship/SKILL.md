@@ -15,8 +15,8 @@ Pre-flight gates (stop if any fails):
 - You are on a feature branch, not the default branch. If on the default branch, create one first.
 
 Then:
-1. Review the diff (`git status`, `git diff`) — stage intentionally; do not sweep in unrelated files. Include the updated `.claude/flywheel/LEARNINGS.md` from `/flywheel:compound`.
-2. Commit with a clear message: **what** changed and **why** (imperative subject; body for rationale/trade-offs).
+1. Review what the branch already carries (`git log <base>..HEAD`, `git status`, `git diff`) — `/flywheel:work` and `/flywheel:debug` leave one atomic commit per task, and that history is the reviewable unit. **Never squash, rebase or amend it**; rewriting history is the user's call, and only on their explicit ask.
+2. Commit what remains with a clear message — **what** changed and **why** (imperative subject; body for rationale/trade-offs). That is typically the `/flywheel:compound` ledger (`.claude/flywheel/LEARNINGS.md`), the spec/plan, and docs. Stage intentionally; do not sweep in unrelated files. Nothing left to commit is a normal outcome, not an error.
 3. Push the branch (`git push -u origin <branch>`).
 4. Open a PR. Check for a PR template first (`.github/pull_request_template.md` and similar) and mirror its sections. Use whatever PR mechanism is available — the GitHub MCP `create_pull_request`, the `gh` CLI, or the web link git prints. Summarize the change and link the spec.
 5. Report the PR URL.
