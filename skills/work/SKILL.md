@@ -7,7 +7,7 @@ allowed-tools: Read, Edit, Write, Grep, Glob, Bash
 
 # /flywheel:work — the inner loop (iterate until green)
 
-**Progress, live:** materialize each plan task as a visible task in the host task system before starting, and flip its state the moment its local check goes green — never in bulk afterwards. Inside a `/flywheel:loop` cycle, also append **one JSON line** per task transition to the cycle's telemetry data file (`.claude/flywheel/runs/<spec-slug>/<date>.jsonl`, never secrets): `{"ts": "<ISO>", "task": …, "state": …, "cost": {"bytes_out": …, "tool_calls": …, "elapsed_s": …}}` plus what the transition proved. The `cost` fields are **observable proxies** — bytes you wrote, tool calls you made, seconds since the previous line. Never a `tokens` field: you cannot observe your own usage, and a guess is unverifiable evidence (P18). If a field cannot be computed, omit the whole `cost` object rather than estimating. Do **not** regenerate the HTML report here — the loop renders it from the JSONL at phase gates and at close; a transition costs one line, not a page. Fail-open: reporting never blocks the work.
+**Progress, live:** materialize each plan task as a visible task in the host task system before starting, and flip its state the moment its local check goes green — never in bulk afterwards. Inside a `/flywheel:loop` cycle, also append **one JSON line** per task transition to the cycle's telemetry data file (`.claude/flywheel/runs/<spec-slug>/<date>.jsonl`, never secrets): `{"ts": "<ISO>", "task": …, "state": …, "route": "<model>/<effort>", "cost": {"bytes_out": …, "tool_calls": …, "elapsed_s": …}}` plus what the transition proved. Carry `"route_escalated_from": "<model>/<effort>"` on a transition that had to move up a tier — that pair is the only honest record of a mis-route. The `cost` fields are **observable proxies** — bytes you wrote, tool calls you made, seconds since the previous line. Never a `tokens` field: you cannot observe your own usage, and a guess is unverifiable evidence (P18). If a field cannot be computed, omit the whole `cost` object rather than estimating. Do **not** regenerate the HTML report here — the loop renders it from the JSONL at phase gates and at close; a transition costs one line, not a page. Fail-open: reporting never blocks the work.
 
 **Prime from fixtures:** before building test data for an entity, `/flywheel:recall fixture <entity>` — if the ledger already has the recipe, use it instead of re-deriving it.
 
@@ -18,6 +18,18 @@ Execute the plan's tasks one at a time. For **each** task, run this loop and do 
 3. **Check** — run the tests and the linter/formatter. When behavior is user-visible, also exercise the real thing (run the app / hit the endpoint / run the script).
 4. **Observe** — read the actual output. If not green, diagnose from the evidence and fix, then go back to step 2.
 5. **Advance** — only when the check is green, move to the next task.
+
+## Honor the plan's route
+
+Each task carries `route: <model>/<effort>[+delegate]` from the approved plan (see `/flywheel:plan`). Execute it at that tier — the plan gate approved the route along with the task:
+
+- **`+delegate`** → hand the task to the **`executor`** agent (haiku, low effort), giving it the task's `changes` and its `check` verbatim. It returns the check output, or `ESCALATE: <reason>` when the task turns out to need a judgment call. Never argue with an escalation — take the task back at the next tier up.
+- **A route above the session's current tier** (typically `opus/high` on the riskiest step) → say so and switch, or ask once: `/model opus high`, or `--effort high` for the session. Running a T3 task at low effort because switching was inconvenient is the same failure as skipping its test.
+- **A route you could not honor** (no permission to switch, the agent is unavailable) → run the task at the tier you have and **say which route was not honored**. A silently downgraded route is an unverifiable cost claim in the other direction.
+
+**Escalate on the second red, don't grind.** If a task's local check fails twice for the same reason, the tier is wrong, not the code: move it one tier up (`haiku→sonnet→opus`, or raise effort), record `route_escalated_from` on the transition, and continue there. Two reds is the signal; a third red at the same tier is just paying twice for the same wrong answer.
+
+A mis-route that cost real time — a T1 task that needed escalating, or a T3 task that turned out mechanical — is worth a `decision` learning at compound time, so the next plan routes that kind of task right. Only when you observed it (P18): the escalation happened, or the task finished cheap.
 
 **Standing rule:** "done" means the objective check is green *and you have seen it be green*. Never report a task complete on the basis of reasoning alone.
 
