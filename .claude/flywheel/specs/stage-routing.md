@@ -104,4 +104,13 @@ All green, from a clean tree:
    `bash scripts/check-test-pairing.sh`, `bash scripts/test-install-vendored.sh`
    → all pass.
 4. `claude plugin validate . --strict` → passes with `effort:` present in agent
-   frontmatter (proves the knob is accepted, not assumed).
+   frontmatter. **Evidence limit, stated rather than glossed:** that command
+   validates the marketplace/plugin manifests, so it proves `effort:` is not
+   rejected — not that the loader consumes it. The direct evidence is the
+   shipped CLI itself (2.1.267): its agent-file schema carries
+   `effort: union(enum(low|medium|high|max), int).optional()` and its loader
+   emits `Agent file … has invalid effort …`. A headless `claude -p --debug`
+   probe with a deliberately invalid `effort:` surfaced no diagnostic either
+   way, so it is not counted as evidence. Because the field is optional, a CLI
+   that does not read it ignores it and routing still works through `model:`
+   plus session effort.
