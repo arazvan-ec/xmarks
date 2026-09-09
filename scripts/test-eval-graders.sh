@@ -336,6 +336,19 @@ run_grader loop 1 "${w}"
 [ "${RC}" -ne 0 ] || fail "loop: a commit sweeping flywheel state in with source must not pass"
 pass "a swept commit is graded red"
 
+# A commit that is ALL flywheel state is not a sweep, even when a helper the
+# cycle wrote there ends in .py — the first draft matched that one file on both
+# sides of the AND and failed a clean run (2026-09-09 eval 1).
+w="$(fixture_copy loop inventory-repo state-only-commit)"
+loop_ideal "${w}"
+mkdir -p "${w}/.claude/flywheel/bin"
+echo "print('render')" > "${w}/.claude/flywheel/bin/render-run.py"
+git -C "${w}" -c user.email=e@e -c user.name=e add .claude
+git -C "${w}" -c user.email=e@e -c user.name=e commit -qm "Track run telemetry and its renderer"
+run_grader loop 1 "${w}"
+[ "${RC}" -eq 0 ] || fail "loop: a commit holding only .claude/flywheel/ paths must not count as a sweep: $(cat "${WORK}/out")"
+pass "a state-only commit with a .py helper is not a sweep"
+
 echo "== verify: a PASS verdict on a planted-bug eval fails =="
 w="$(fixture_copy verify tally-sneaky rationalized)"
 report_ideal 2 "${w}"
