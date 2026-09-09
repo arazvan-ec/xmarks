@@ -46,6 +46,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P24 | Description budget as a CI ratchet | ✅ shipped (v0.33.0) | Done — `check-description-budget.sh` sums description values (3301) against `scripts/description-budget.txt` (3600); malformed frontmatter fails loudly; wired into CI |
 | P26 | Committed graders for `verify` and `work` | ✅ shipped (v0.37.0) | Done — `skills/{verify,work}/evals/check.sh` on the pillar-2 contract; `test-eval-graders.sh` requires all four graders red on an untouched fixture (and pillar 1 green on an ideal outcome); `check-fixture-leaks.sh` turns the manual leak grep into a CI gate with a per-path/per-pattern allowlist. Unblocks the pending `verify` iteration |
 | P25 | Close the gaps the P22 eval iteration exposed | ✅ shipped (v0.34.0) | Done — §5 format pinned + grader re-tightened (gate: 3/3 evals, 39/39); work kata de-hinted via a fixture guard; a hollow `run` eval-2 grader fixed. Baseline arm documented, still unrun |
+| P27 | Stage routing: per-task model + effort in the plan | ✅ shipped (v0.39.0) | Done — 3-tier rubric + pinned task block in `plan`, honor/escalate/record in `work`, `executor` agent (haiku/low) with an ESCALATE path, `effort:` on all agents, `plan-route.sh` lint in CI. Open: are the tiers the right tiers? `route_escalated_from` is the field that will say |
 
 ## Priority overview
 
@@ -75,6 +76,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P23 | Cycle-cost telemetry (the loop measures its own cost) | High | Medium | Low | Yes |
 | **P24** | **Description budget as a CI ratchet** ⭐ cheapest of the three | Medium | Low | Low | Yes |
 | P25 | Close the gaps the P22 eval iteration exposed | Medium | Medium | Low | Partial |
+| **P27** | **Stage routing (model + effort per plan task)** ⭐ owner ask | High | Medium | Medium | Yes |
 
 ---
 
@@ -1475,3 +1477,48 @@ Append-only. Newest at the bottom.
   **Next per the sequencing note, now unblocked:** the `verify` iteration on the
   cleaned fixtures (3 evals × 2 arms), whose bug-detection assertions have had no
   trustworthy measurement since the answer-key leak.
+
+- **2026-09-09** — **P27 shipped as v0.39.0: the plan, not the session, decides
+  what each task costs.** Owner ask: plans with stages that can change model and
+  effort, to optimize both results and tokens. v0.9.0's P1 had already routed by
+  *agent role* (verifier→haiku, reviewers→sonnet); what was missing is that the
+  main loop still ran every task of a plan at whatever model and effort the
+  session happened to be on — so a rename paid the top price and a migration
+  could run at low effort by accident.
+  **Design decision: route at plan time, not at run time.** The rejected
+  alternative was a runtime heuristic in `work` picking a model per task on its
+  own. That moves a cost/quality decision out of the gate the owner signs and
+  spends before anyone can review it. Instead the route is *data in the plan*
+  (`route: <model>/<effort>[+delegate]`, one line per task), the plan gate
+  approves the routing table along with the tasks, and `work` only executes and
+  reports deviations. Three tiers, deliberately few: T1 `haiku/low+delegate`
+  (fully specified, no design choice left), T2 `sonnet/medium` (ordinary
+  test-first work), T3 `opus/high` (judgment, and always the riskiest step).
+  **The two safeguards are what make it more than decoration.** A cheap tier
+  that guesses is worse than no cheap tier, so `agents/executor.md` must end
+  with `DONE:` or `ESCALATE: <the decision this task actually needs>` — declining
+  is a success, guessing is not — and `work` escalates one tier after a *second*
+  red on the same check rather than grinding. And `scripts/plan-route.sh` fails
+  a plan whose `risk: highest` task is routed to haiku or low effort: the
+  riskiest step being the cheapest was the obvious failure mode of letting a
+  planner assign its own prices.
+  **The task block had to be pinned** (`### T<n> — <title>` + route/risk/
+  changes/check/test-first) for the same reason P25 pinned §5's format: an
+  unpinned format means the linter grades prose variance, not routing. This
+  cycle's own plan is the first artifact in that format and is used as a fixture
+  in the test — if the format drifts, the test goes red before a user's plan does.
+  **Evidence, and its two honest limits.** `effort:` is a real knob: the shipped
+  CLI (2.1.267) carries `effort: union(enum(low|medium|high|max), int).optional()`
+  in its agent-file schema and rejects bad values by name. But `claude plugin
+  validate --strict` only proves the field is not rejected (it validates
+  manifests), and a headless `--debug` probe with a deliberately invalid value
+  surfaced no diagnostic either way — recorded as inconclusive rather than
+  counted. Second limit, the important one: **whether these tiers are the right
+  tiers is unmeasured.** The success metric is structural on purpose (routes
+  present, legal, lint-enforced, riskiest step protected) and no token saving is
+  claimed anywhere — P23's `cost` proxies plus the new `route_escalated_from`
+  field are what will produce that evidence over the next cycles, which is the
+  same discipline P18 applies to the ledger.
+  **Also fixed in passing:** `scripts/test-run-cost.sh` shipped with P23 in
+  v0.35.0 but was never wired into CI, so its coverage was decorative. One line
+  in the same workflow file this change already touched.
