@@ -1552,6 +1552,14 @@ Append-only. Newest at the bottom.
   with its test and CI guaranteeing that test runs close the loop between them.
   Per-test log groups keep the failure ergonomics the named steps gave, and the
   loop runs every test before failing so one red does not mask the rest.
-  One finding from the pass stays open: `route_escalated_from` has no reader in
-  `run-cost.sh` (`FIELDS` is fixed), so the evidence P27 promises for the tier
-  question is written by `work` and aggregated by nothing.
+  **And the reader, closing the last gap:** `route_escalated_from`
+  had no consumer — `run-cost.sh` had a fixed `FIELDS` and never looked at the
+  route keys, so the field the whole "are these the right tiers?" question rests
+  on was written by `work` and aggregated by nothing (a field with no reader
+  also drifts freely: nothing notices when it stops being emitted). `run-cost.sh`
+  now groups the proxies by route and reports escalations with their `from → to`
+  pairs and a rate, so the tier question is answered from the tool the loop
+  already runs at close. The same "never fold missing data in as 0" discipline
+  applies: an unrouted transition is reported, not attributed, and a pre-P27 run
+  — where no route exists anywhere — prints what it always did.
+  All four findings from the cleanup pass are now closed.
