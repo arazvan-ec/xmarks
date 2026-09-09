@@ -27,7 +27,7 @@ Each task carries `route: <model>/<effort>[+delegate]` from the approved plan (s
 - **A route above the session's current tier** (typically `opus/high` on the riskiest step) → say so and switch, or ask once: `/model opus high`, or `--effort high` for the session. Running a T3 task at low effort because switching was inconvenient is the same failure as skipping its test.
 - **A route you could not honor** (no permission to switch, the agent is unavailable) → run the task at the tier you have and **say which route was not honored**. A silently downgraded route is an unverifiable cost claim in the other direction.
 
-**Escalate on the second red, don't grind.** If a task's local check fails twice for the same reason, the tier is wrong, not the code: move it one tier up (`haiku→sonnet→opus`, or raise effort), record `route_escalated_from` on the transition, and continue there. Two reds is the signal; a third red at the same tier is just paying twice for the same wrong answer.
+**Escalate on the second red, don't grind.** If a task's local check fails twice for the same reason, the tier is wrong, not the code: move it one tier up the ladder in `scripts/route-tiers.txt` (`haiku→sonnet→opus`, or raise effort), record `route_escalated_from` on the transition, and continue there. Two reds is the signal; a third red at the same tier is just paying twice for the same wrong answer.
 
 A mis-route that cost real time — a T1 task that needed escalating, or a T3 task that turned out mechanical — is worth a `decision` learning at compound time, so the next plan routes that kind of task right. Only when you observed it (P18): the escalation happened, or the task finished cheap.
 

@@ -1522,3 +1522,30 @@ Append-only. Newest at the bottom.
   **Also fixed in passing:** `scripts/test-run-cost.sh` shipped with P23 in
   v0.35.0 but was never wired into CI, so its coverage was decorative. One line
   in the same workflow file this change already touched.
+
+- **2026-09-09** — **P27 follow-up: the riskiest-step safeguard was documented
+  but not enforced.** A cleanup pass over the P27 diff found the gap. The rubric
+  says the `risk: highest` task is *always* T3, but `plan-route.sh` only rejected
+  the cheapest tier — `cheap()` was three independent ORs (haiku, low effort, or
+  an undocumented `effort < 5`) with no notion of a tier — so `sonnet/high` and
+  `opus/medium` on the riskiest step linted clean. The safeguard this log calls
+  the reason routing is "more than decoration" was unenforced in the one
+  direction that matters: docs promising a guarantee the linter did not check.
+  **The fix is a tier table as data**, `scripts/route-tiers.txt`
+  (`<tier> <model> <effort> [delegate]`, cheapest first). The linter ranks a
+  route against the table's top tier, so the enforced rule *is* the documented
+  one, and the open question this log leaves — are these the right tiers? — is
+  now retuned by editing a three-line table rather than a predicate in python
+  plus prose in five files. `inherit` and integer efforts are rejected on the
+  riskiest step alone: neither can be ranked against the top tier, and
+  "whatever the session was left on" is precisely the accident P27 exists to
+  prevent. Off-tier routes stay legal elsewhere — raising effort within a tier
+  is a judgment the plan is allowed to make.
+  **Method note:** the tests were written first and seen red on `sonnet/high`,
+  which is the evidence the gap was real and not a reading of the code; one of
+  them proves the table is the authority by making a custom table accept what
+  the default rejects. Two findings from the same pass are recorded as open
+  rather than fixed: CI still enumerates its 13 test steps by hand (the
+  mechanism that left `test-run-cost.sh` decorative for four releases), and
+  `route_escalated_from` still has no reader in `run-cost.sh`, so the evidence
+  P27 promises for the tier question is not yet aggregated by anything.

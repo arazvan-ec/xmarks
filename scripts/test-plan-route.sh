@@ -2,8 +2,8 @@
 # flywheel — test for scripts/plan-route.sh (P27), the route linter over a plan's
 # pinned task blocks. Covers: a valid plan passes with a tier summary; invalid
 # model/effort values fail by name; a task with no route fails; two routes on one
-# task fail; the riskiest task on the cheapest tier fails (the safeguard that
-# makes routing more than decoration); `+delegate` is accepted and an unknown
+# task fail; the riskiest task below the top tier fails, and the tier table
+# drives that rule (the safeguard that makes routing more than decoration); `+delegate` is accepted and an unknown
 # suffix is not; a file with no task blocks, a missing file and no argument all
 # fail with a clear message and never a silent exit 0.
 

@@ -38,7 +38,8 @@ A whole plan run at one model/effort is wrong in both directions — a rename pa
 
 - `+delegate` means `work` hands the task to the `executor` agent (haiku, low effort) in its own context instead of spending this one.
 - Raise **effort** within a tier when the *check* is subtle (a tricky invariant) rather than when the code is large; `max` is for a genuinely hard proof, not for reassurance.
-- The riskiest task may never be routed to `haiku` or to `low` effort — `scripts/plan-route.sh` fails the plan for it.
+- The riskiest task runs at the **top tier or above** — `scripts/plan-route.sh` fails the plan otherwise, and rejects `inherit` or an integer effort there because neither can be ranked against it.
+- The tiers themselves live in `scripts/route-tiers.txt` (`<tier> <model> <effort> [delegate]`, cheapest first). That table is what the linter enforces and what the summary labels; retune tiers there, not in prose.
 - Route from evidence when the ledger has it: `/flywheel:recall routing <area>` — a past cycle that had to escalate a task like this one is a reason to plan it a tier up.
 
 **Lint the plan before the gate** (fail-open — skip silently if the script isn't there): `bash scripts/plan-route.sh .claude/flywheel/specs/<slug>.plan.md`, or `bash "${CLAUDE_PLUGIN_ROOT}/scripts/plan-route.sh" <same arg>` on a marketplace install (both forms are pre-approved). It checks every task carries one legal route and a check, and prints the tier summary to show at the gate.

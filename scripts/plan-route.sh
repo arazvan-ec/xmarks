@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # flywheel — route linter for a plan's task blocks (P27). A plan written by
 # /flywheel:plan routes every task to a model + effort tier; this checks the
-# routes are present, legal, and that the plan's riskiest step is not the one
-# running on the cheapest tier — then prints the tier summary the plan gate
+# routes are present, legal, and that the plan's riskiest step runs at the top
+# tier of route-tiers.txt — then prints the tier summary the plan gate
 # shows. Cost is never claimed in tokens (P18/P23): the summary counts tasks.
 #
 # The task block format is pinned by skills/plan/SKILL.md. Enforced here: one
