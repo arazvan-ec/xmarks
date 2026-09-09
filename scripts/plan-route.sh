@@ -162,7 +162,7 @@ for t in tasks:
         elif rm < top_rm or re_ < top_re:
             errors.append(f"{t['id']} is the riskiest step but routed '{r[0]}/{r[1]}' — the riskiest "
                           f"step runs at the top tier: tier {TOP} ({TOP_MODEL}/{TOP_EFFORT}) or above "
-                          "(scripts/route-tiers.txt)")
+                          f"({tiers_path})")
 
 if len(tasks) > 1:
     if not risky:

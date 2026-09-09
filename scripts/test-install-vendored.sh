@@ -66,6 +66,29 @@ pass "${AGENT_COUNT} agents vendored"
 [ -x "${TARGET}/.claude/flywheel/bin/write-allow.sh" ] || fail "write-allow.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/bash-allow.sh" ] || fail "bash-allow.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/gate.sh" ] || fail "gate.sh missing or not executable"
+# The analysis scripts the skills invoke, not just the hooks: without them a
+# vendored repo cannot lint its plan's routes or read its own run cost, and the
+# skills' fail-open turns that into silence rather than an error.
+[ -x "${TARGET}/.claude/flywheel/bin/plan-route.sh" ] || fail "plan-route.sh missing or not executable"
+[ -x "${TARGET}/.claude/flywheel/bin/run-cost.sh" ] || fail "run-cost.sh missing or not executable"
+[ -f "${TARGET}/.claude/flywheel/bin/route-tiers.txt" ] || fail "route-tiers.txt missing — plan-route.sh reads it beside itself"
+
+# End-to-end from the vendored location: the linter must find its tier table
+# there, and the riskiest-step rule must still bite.
+{ printf '# Plan\n\n### T1 — a\n- route: `sonnet/medium`\n- check: c\n\n'
+  printf '### T2 — b\n- route: `opus/high`\n- risk: highest\n- check: c\n'; } > "${WORK}/ok.plan.md"
+bash "${TARGET}/.claude/flywheel/bin/plan-route.sh" "${WORK}/ok.plan.md" > "${WORK}/pr-out.txt" 2>&1 \
+  || fail "vendored plan-route.sh must lint a good plan clean: $(cat "${WORK}/pr-out.txt")"
+grep -q "tier 3" "${WORK}/pr-out.txt" || fail "vendored plan-route.sh did not find route-tiers.txt: $(cat "${WORK}/pr-out.txt")"
+{ printf '# Plan\n\n### T1 — a\n- route: `sonnet/medium`\n- check: c\n\n'
+  printf '### T2 — b\n- route: `sonnet/high`\n- risk: highest\n- check: c\n'; } > "${WORK}/bad.plan.md"
+bash "${TARGET}/.claude/flywheel/bin/plan-route.sh" "${WORK}/bad.plan.md" > "${WORK}/pr-bad.txt" 2>&1 \
+  && fail "vendored plan-route.sh must reject a riskiest step below the top tier"
+
+printf '{"ts":"2026-09-09T10:00:00Z","task":"T1","state":"completed","route":"haiku/low+delegate","cost":{"bytes_out":10,"tool_calls":1,"elapsed_s":1}}\n' > "${WORK}/run.jsonl"
+bash "${TARGET}/.claude/flywheel/bin/run-cost.sh" "${WORK}/run.jsonl" > "${WORK}/rc-out.txt" 2>&1 \
+  || fail "vendored run-cost.sh must read a run: $(cat "${WORK}/rc-out.txt")"
+grep -q "haiku/low+delegate" "${WORK}/rc-out.txt" || fail "vendored run-cost.sh must group by route: $(cat "${WORK}/rc-out.txt")"
 CLAUDE_PROJECT_DIR="${TARGET}" FLYWHEEL_NO_UPDATE_CHECK=1 \
   bash "${TARGET}/.claude/flywheel/bin/session-start.sh" > "${WORK}/hook-out.txt"
 grep -q 'flywheel loaded' "${WORK}/hook-out.txt" || fail "session-start.sh does not run"

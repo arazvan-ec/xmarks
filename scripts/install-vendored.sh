@@ -219,17 +219,23 @@ for f in "${SRC}"/agents/*.md; do
 done
 echo "vendored $(ls "${SRC}"/agents/*.md | wc -l | tr -d ' ') agents into .claude/agents/"
 
-for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh; do
+# Hooks, plus the analysis scripts the skills invoke (plan-route, run-cost):
+# without those a vendored repo cannot lint its plan's routes or read its own
+# run cost, and the skills' fail-open makes that absence silent.
+for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh; do
   rewrite "${f}" | vendor_file ".claude/flywheel/bin/$(basename "${f}")"
   chmod +x "${BIN_DST}/$(basename "${f}")"
 done
+# plan-route.sh resolves its tier table beside itself, so the data file has to
+# travel with it. Not executable: it is data, not a script.
+rewrite "${SRC}/scripts/route-tiers.txt" | vendor_file ".claude/flywheel/bin/route-tiers.txt"
 # Smoke check: a vendored hook that doesn't parse breaks every future session
 # start. Abort before the manifest/VERSION swap so a broken refresh is never
 # recorded as installed (the rewrite sed above could itself introduce this).
 for f in "${BIN_DST}"/*.sh; do
   bash -n "${f}" || { echo "error: vendored ${f#"${TARGET}"/} fails bash -n — aborting install" >&2; exit 1; }
 done
-echo "vendored hook scripts into .claude/flywheel/bin/ (bash -n clean)"
+echo "vendored hook + analysis scripts into .claude/flywheel/bin/ (bash -n clean)"
 
 if [ "${AUTO_UPDATE}" = 1 ]; then
   if [ -f "${TARGET}/${UPDATE_WORKFLOW_REL}" ] && ! in_manifest "${UPDATE_WORKFLOW_REL}"; then
