@@ -17,5 +17,6 @@ Work the loop in order — do not jump to a fix:
 4. **Isolate.** Narrow to the smallest failing surface — `git bisect`, comment-out, or a minimal repro. Confirm the culprit.
 5. **Fix the root cause** — not the symptom. Then add a regression test that fails without the fix and passes with it.
 6. **Confirm.** Re-run the repro: it passes. Re-run the suite: still green.
+7. **Commit.** The fix and its regression test are one logical change: `git commit -m "<imperative subject>" -- <paths>`, then `git push -u origin <branch>`. Same rules as `/flywheel:work` step 5 — pathspec only, no history rewriting, fails open and never on the default branch.
 
 **Banned:** shotgun changes hoping something sticks; "fixing" by masking the symptom; declaring it fixed without re-running the repro. If the evidence kills your hypothesis, go back to step 2 with what you learned — don't cling to it.
