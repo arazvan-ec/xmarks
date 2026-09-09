@@ -1522,3 +1522,44 @@ Append-only. Newest at the bottom.
   **Also fixed in passing:** `scripts/test-run-cost.sh` shipped with P23 in
   v0.35.0 but was never wired into CI, so its coverage was decorative. One line
   in the same workflow file this change already touched.
+
+- **2026-09-09** — **P27 follow-up: the riskiest-step safeguard was documented
+  but not enforced.** A cleanup pass over the P27 diff found the gap. The rubric
+  says the `risk: highest` task is *always* T3, but `plan-route.sh` only rejected
+  the cheapest tier — `cheap()` was three independent ORs (haiku, low effort, or
+  an undocumented `effort < 5`) with no notion of a tier — so `sonnet/high` and
+  `opus/medium` on the riskiest step linted clean. The safeguard this log calls
+  the reason routing is "more than decoration" was unenforced in the one
+  direction that matters: docs promising a guarantee the linter did not check.
+  **The fix is a tier table as data**, `scripts/route-tiers.txt`
+  (`<tier> <model> <effort> [delegate]`, cheapest first). The linter ranks a
+  route against the table's top tier, so the enforced rule *is* the documented
+  one, and the open question this log leaves — are these the right tiers? — is
+  now retuned by editing a three-line table rather than a predicate in python
+  plus prose in five files. `inherit` and integer efforts are rejected on the
+  riskiest step alone: neither can be ranked against the top tier, and
+  "whatever the session was left on" is precisely the accident P27 exists to
+  prevent. Off-tier routes stay legal elsewhere — raising effort within a tier
+  is a judgment the plan is allowed to make.
+  **Method note:** the tests were written first and seen red on `sonnet/high`,
+  which is the evidence the gap was real and not a reading of the code; one of
+  them proves the table is the authority by making a custom table accept what
+  the default rejects. **CI enumeration fixed in the same pass:** the workflow
+  named its 13 test steps by hand, which is precisely the mechanism that let
+  `test-run-cost.sh` sit unrun for four releases — a test was executed because
+  someone remembered it, not because it existed. It now discovers
+  `scripts/test-*.sh`, so `check-test-pairing.sh` guaranteeing a script arrives
+  with its test and CI guaranteeing that test runs close the loop between them.
+  Per-test log groups keep the failure ergonomics the named steps gave, and the
+  loop runs every test before failing so one red does not mask the rest.
+  **And the reader, closing the last gap:** `route_escalated_from`
+  had no consumer — `run-cost.sh` had a fixed `FIELDS` and never looked at the
+  route keys, so the field the whole "are these the right tiers?" question rests
+  on was written by `work` and aggregated by nothing (a field with no reader
+  also drifts freely: nothing notices when it stops being emitted). `run-cost.sh`
+  now groups the proxies by route and reports escalations with their `from → to`
+  pairs and a rate, so the tier question is answered from the tool the loop
+  already runs at close. The same "never fold missing data in as 0" discipline
+  applies: an unrouted transition is reported, not attributed, and a pre-P27 run
+  — where no route exists anywhere — prints what it always did.
+  All four findings from the cleanup pass are now closed.

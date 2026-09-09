@@ -3,12 +3,12 @@
   "owner": {
     "name": "arazvan"
   },
-  "description": "Claude Code plugins by arazvan. Includes flywheel: a spec\u2192plan\u2192work\u2192verify\u2192review\u2192compound loop for disciplined AI-assisted development, plus an agent-native runtime pillar (/flywheel:process + /flywheel:run) where Claude executes and matures recurring domain operations that persist to the repo's own datastore.",
+  "description": "Claude Code plugins by arazvan. Includes flywheel: a spec→plan→work→verify→review→compound loop for disciplined AI-assisted development, plus an agent-native runtime pillar (/flywheel:process + /flywheel:run) where Claude executes and matures recurring domain operations that persist to the repo's own datastore.",
   "plugins": [
     {
       "name": "flywheel",
       "source": "./",
-      "description": "Nested spec\u2192plan\u2192work\u2192verify\u2192review\u2192compound loop for disciplined AI-assisted development, plus an agent-native runtime pillar (/flywheel:process + /flywheel:run) that turns recurring domain operations into self-improving, persistence-aware process contracts Claude executes as the backend. Also an autonomous metric-driven loop, parallel multi-specialist review, and spec\u2194code sync. Plans route each task to a model/effort tier so cheap work runs cheap and judgment runs strong.",
+      "description": "Nested spec→plan→work→verify→review→compound loop for disciplined AI-assisted development, plus an agent-native runtime pillar (/flywheel:process + /flywheel:run) that turns recurring domain operations into self-improving, persistence-aware process contracts Claude executes as the backend. Also an autonomous metric-driven loop, parallel multi-specialist review, and spec↔code sync. Plans route each task to a model/effort tier so cheap work runs cheap and judgment runs strong.",
       "category": "workflow",
       "keywords": [
         "ai-development",

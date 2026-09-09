@@ -68,7 +68,8 @@ observable payoff rides on the existing `cost` proxies.
 
 1. `scripts/test-plan-route.sh` — written first, seen red.
 2. `scripts/plan-route.sh` — parse task blocks, validate routes, enforce that
-   the riskiest task is not on the cheapest tier, print a tier summary.
+   the riskiest task runs at the top tier of `scripts/route-tiers.txt`, print a
+   tier summary.
 3. `skills/plan/SKILL.md` — rubric, pinned format, gate copy.
 4. `skills/work/SKILL.md` — route honoring, escalation, telemetry field.
 5. `agents/executor.md` + `effort:` on the four existing agents.
@@ -86,7 +87,9 @@ Script/test pair moves together in the diff (P22). Atomic commits.
 - **A cheap tier must never silently do expensive damage**: `executor` executes
   one fully-specified mechanical task and returns `ESCALATE: <reason>` rather
   than inventing a design decision; `work` escalates on a second red.
-- **The riskiest step can never be routed cheap** — lint failure, not advice.
+- **The riskiest step can never be routed below the top tier** — lint failure,
+  not advice, and ranked against `scripts/route-tiers.txt` rather than a
+  cheapness heuristic, so the rule the rubric documents is the rule enforced.
 - **No silent model switching**: honoring a T3 route asks once if the session
   cannot be raised; a route that could not be honored is reported, not ignored.
 - **Fail-open**: routing lint and telemetry never block the work.
