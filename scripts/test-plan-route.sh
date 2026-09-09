@@ -116,6 +116,14 @@ FLYWHEEL_ROUTE_TIERS="${WORK}/tiers.txt" run "${WORK}/risk.md"
 rc 0
 pass "a table whose top tier is sonnet/medium accepts what the default table rejects"
 
+echo "== the failure names the tier table it actually read =="
+printf '1 haiku low delegate\n2 sonnet medium\n3 opus high\n' > "${WORK}/custom-tiers.txt"
+risky_plan "sonnet/high"
+FLYWHEEL_ROUTE_TIERS="${WORK}/custom-tiers.txt" run "${WORK}/risk.md"
+rc 1
+says "custom-tiers.txt"
+pass "the message points at the table in use, not a hardcoded repo path"
+
 echo "== a missing tier table fails loudly, never a silent pass =="
 FLYWHEEL_ROUTE_TIERS="${WORK}/nope.txt" run "${WORK}/ok.md"
 rc 2
