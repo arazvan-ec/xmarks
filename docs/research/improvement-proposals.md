@@ -48,6 +48,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P25 | Close the gaps the P22 eval iteration exposed | ✅ shipped (v0.34.0) | Done — §5 format pinned + grader re-tightened (gate: 3/3 evals, 39/39); work kata de-hinted via a fixture guard; a hollow `run` eval-2 grader fixed. Baseline arm documented, still unrun |
 | P27 | Stage routing: per-task model + effort in the plan | ✅ shipped (v0.39.0) | Done — 3-tier rubric + pinned task block in `plan`, honor/escalate/record in `work`, `executor` agent (haiku/low) with an ESCALATE path, `effort:` on all agents, `plan-route.sh` lint in CI. Open: are the tiers the right tiers? `route_escalated_from` is the field that will say |
 | P28 | Atomic commits inside the loop | ✅ shipped (v0.40.0) | Done — `work` commits + pushes each task at its green edge (pathspec commit, force-free push, both already inside the P21 grant), `debug` commits fix + regression test, `ship` keeps the history and commits only the remainder. Skill text only; no new script, no widened permission surface. Open: does the per-task commit change what reviewers catch? |
+| P29 | A `loop` eval: the cycle telemetry gets graded | ✅ shipped (v0.41.0) | Done — `skills/loop/evals/`, the first suite that runs a whole cycle, so `work`'s JSONL exists to be graded at all. The decisive assertion resolves every recorded `commit` against git with `cat-file`. Found a real contract gap on its first run (prose in the `commit` field where the skill said nothing about absence). Open: it grades one cycle shape; a failing-gate cycle is untested |
 
 ## Priority overview
 
@@ -79,6 +80,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P25 | Close the gaps the P22 eval iteration exposed | Medium | Medium | Low | Partial |
 | **P27** | **Stage routing (model + effort per plan task)** ⭐ owner ask | High | Medium | Medium | Yes |
 | **P28** | **Atomic commits inside the loop** ⭐ owner ask | High | Low | Low | Yes |
+| **P29** | **A `loop` eval that grades cycle telemetry** ⭐ owner ask | High | Medium | Low | Yes |
 
 ---
 
@@ -973,6 +975,45 @@ reviewable, and collapsing it is the user's call.
 
 **Files:** `skills/{work,debug,ship,loop}/SKILL.md`, README, `/flywheel:help`,
 `upgrades/v0.40.0.md`, `.claude-plugin/plugin.json` → 0.40.0.
+
+---
+
+## P29 — A `loop` eval: the cycle telemetry gets graded (owner ask, 2026-09-09)
+
+**Why.** P28's release gate ended with a hole stated plainly rather than glossed:
+`work` writes its JSONL transition lines **only inside a `/flywheel:loop`
+cycle**, and every eval suite runs a skill standalone. All six executors in that
+gate independently reported writing no telemetry. So two-tier reporting and the
+new `"commit": "<sha>"` field were verified by nothing — and a `commit` field is
+the worst possible place for that, because it is the only value a flywheel skill
+writes down about something *outside* its own files. An unverified sha is not a
+formatting risk; it is a claim.
+
+**What.** `skills/loop/evals/` — a fixture (`inventory-repo`: a small module and
+a work item naming two additions), two evals, a committed `check.sh`, a README
+holding the ground truth. Eval 1 runs the cycle in a git repo; eval 2 runs it
+where committing is impossible.
+
+**The assertion that earns the suite:** every recorded `commit` is resolved with
+`git cat-file -e <sha>^{commit}`. Parsing proves the field is a 40-hex string; a
+fabricated one is also a 40-hex string. Only git can tell them apart. Around it:
+the sweep test (no commit mixes `.py` source with `.claude/flywheel/` state —
+the signature `git add -A` leaves and a pathspec commit cannot), the no-`tokens`
+rule (P18), behaviour probes and an independent suite re-run so "wrote plausible
+telemetry, built nothing" fails.
+
+**Deliberately not asserted: the number of commits.** Whether a two-function ask
+is one task or two is the skill's judgment. Mechanizing a guess about it is
+exactly how the `work` grader spent four releases failing correct runs, fixed
+one release earlier in v0.40.1. Assert the properties of whatever commits exist.
+
+**Why eval 2 needs its own workdir.** The absence of a field cannot be proven by
+a passing run: only where committing is impossible can you see whether the
+executor reports it or invents a sha.
+
+**Files:** `skills/loop/evals/{check.sh,evals.json,README.md,fixtures/inventory-repo/}`,
+`scripts/test-eval-graders.sh`, README, `upgrades/v0.41.0.md`,
+`.claude-plugin/plugin.json` → 0.41.0.
 
 ---
 
