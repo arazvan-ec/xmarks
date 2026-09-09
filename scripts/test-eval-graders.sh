@@ -246,6 +246,33 @@ run_grader work 1 "${w}"
 [ "${RC}" -ne 0 ] || fail "work: a red step taken AFTER the implementation must not pass"
 pass "test-after is graded red"
 
+echo "== work: a baseline run before the red is not test-after =="
+# The 2026-09-09 gate found 4/4 executors running the suite once to confirm a
+# green baseline before writing the test. That leading PASS is at the PRISTINE
+# sha, so the red still precedes any implementation change — the grader must not
+# call it test-after.
+w="$(fixture_copy work cart-bugfix baseline-first)"
+work_ideal 2 "${w}"
+base="$(tr -d '[:space:]' < "${w}/baseline-sha")"
+final="$(sha256sum "${w}/cart.py" | cut -c1-16)"
+{ echo "2026-09-09T10:00:00Z RESULT=PASS IMPL_SHA=${base}"
+  echo "2026-09-09T10:01:00Z RESULT=FAIL IMPL_SHA=${base}"
+  echo "2026-09-09T10:02:00Z RESULT=PASS IMPL_SHA=${final}"; } > "${w}/.check-log"
+run_grader work 2 "${w}"
+[ "${RC}" -eq 0 ] || fail "work: a green baseline run before the red must not be graded test-after: $(cat "${WORK}/out")"
+pass "a leading baseline run is graded green"
+
+echo "== work: a log with no red at all fails =="
+w="$(fixture_copy work cart-bugfix never-red)"
+work_ideal 2 "${w}"
+base="$(tr -d '[:space:]' < "${w}/baseline-sha")"
+final="$(sha256sum "${w}/cart.py" | cut -c1-16)"
+{ echo "2026-09-09T10:00:00Z RESULT=PASS IMPL_SHA=${base}"
+  echo "2026-09-09T10:02:00Z RESULT=PASS IMPL_SHA=${final}"; } > "${w}/.check-log"
+run_grader work 2 "${w}"
+[ "${RC}" -ne 0 ] || fail "work: a run that never saw red must not pass"
+pass "never-red is graded red"
+
 echo "== verify: a PASS verdict on a planted-bug eval fails =="
 w="$(fixture_copy verify tally-sneaky rationalized)"
 report_ideal 2 "${w}"
