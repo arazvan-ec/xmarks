@@ -25,6 +25,7 @@ Execute the plan's tasks one at a time. For **each** task, run this loop and do 
 
 - **Pathspec only.** It commits this task and leaves the index alone (`spec` and `compound` stage their files for `ship`). `git add -A`/`-u` is banned: it sweeps in whatever was already dirty when the cycle started.
 - **Never amend, rebase, squash or force-push.** Rewriting history is the user's call, not the loop's.
+- **No commit, no field.** When the cycle is not committing (or this task produced nothing to commit), **omit `commit` from the transition line** — never a placeholder, never prose explaining the absence. Same rule as the `cost` object above: an absent field is data a reader can act on, a filled-in excuse is not.
 - **Fails open, decided once.** Settle committability before the first task — no repo, no remote, or the **default branch** with a new feature branch declined (that one prompts) → skip the commits for the rest of the cycle and say so once, rather than paying a failing `git` pair per task. Per task, nothing to commit or a rejected push is reported once and the loop carries on; it never blocks on git.
 
 ## Honor the plan's route
