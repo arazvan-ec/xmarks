@@ -10,7 +10,7 @@
         "evals/fixtures/cart-feature"
       ],
       "expectations": [
-        "The first entry in .check-log has RESULT=FAIL and its IMPL_SHA equals the contents of baseline-sha (the test ran red BEFORE cart.py changed)",
+        "A .check-log entry has RESULT=FAIL with IMPL_SHA equal to baseline-sha, and no entry with a different IMPL_SHA precedes it (the test ran red BEFORE cart.py changed; a green baseline run first is allowed)",
         "The last entry in .check-log has RESULT=PASS",
         "test_cart.py contains a test exercising apply_discount, including the ValueError bounds behavior",
         "cart.py implements apply_discount and the final suite is green"
@@ -25,7 +25,7 @@
         "evals/fixtures/cart-bugfix"
       ],
       "expectations": [
-        "The first entry in .check-log has RESULT=FAIL and its IMPL_SHA equals the contents of baseline-sha (the regression test reproduced the bug BEFORE cart.py changed)",
+        "A .check-log entry has RESULT=FAIL with IMPL_SHA equal to baseline-sha, and no entry with a different IMPL_SHA precedes it (the regression test reproduced the bug BEFORE cart.py changed; a green baseline run first is allowed)",
         "The last entry in .check-log has RESULT=PASS",
         "test_cart.py contains a regression test asserting ValueError for non-positive qty",
         "add_item rejects qty <= 0 after the fix and the final suite is green"
