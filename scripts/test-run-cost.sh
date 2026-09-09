@@ -22,6 +22,14 @@ line() {
     "$1" "$1" "$2" "$3" "$4"
 }
 
+# rline <ts> <bytes> <calls> <elapsed> <route> [escalated-from]
+rline() {
+  local esc=""
+  [ -n "${6:-}" ] && esc=",\"route_escalated_from\":\"$6\""
+  printf '{"ts":"2026-07-30T10:%02d:00Z","task":"t%s","state":"completed","route":"%s"%s,"cost":{"bytes_out":%s,"tool_calls":%s,"elapsed_s":%s}}\n' \
+    "$1" "$1" "$5" "${esc}" "$2" "$3" "$4"
+}
+
 run() { RC=0; bash "${COST}" "$@" >"${WORK}/out" 2>&1 || RC=$?; }
 
 echo "== single-run totals =="
@@ -89,5 +97,48 @@ run "${WORK}/empty.jsonl"
 [ "${RC}" -ne 0 ] || fail "empty file must fail"
 grep -qi 'no transitions\|empty' "${WORK}/out" || fail "empty file needs a clear message: $(cat "${WORK}/out")"
 pass "missing → clear error; empty → clear error"
+
+echo "== cost proxies are grouped by route (P27) =="
+{ rline 0 100 2 5 "sonnet/medium"; rline 1 50 1 10 "sonnet/medium"
+  rline 2 20 1 1 "haiku/low+delegate"; } > "${WORK}/r.jsonl"
+run "${WORK}/r.jsonl"
+[ "${RC}" -eq 0 ] || fail "routed run must exit 0, got ${RC}: $(cat "${WORK}/out")"
+grep -qE "sonnet/medium.*150" "${WORK}/out" || fail "sonnet bucket must total 150 bytes: $(cat "${WORK}/out")"
+grep -qE "haiku/low\+delegate.*20" "${WORK}/out" || fail "haiku bucket must total 20 bytes: $(cat "${WORK}/out")"
+pass "per-route totals: sonnet/medium 150, haiku/low+delegate 20"
+
+echo "== a transition with no route is reported, never folded into one =="
+{ rline 0 100 2 5 "sonnet/medium"; line 1 50 1 10; } > "${WORK}/mixed.jsonl"
+run "${WORK}/mixed.jsonl"
+grep -qi "no route" "${WORK}/out" || fail "unrouted transitions must be named: $(cat "${WORK}/out")"
+pass "unrouted transition reported, not bucketed"
+
+echo "== escalations are counted with their from → to pair =="
+{ rline 0 10 1 1 "haiku/low+delegate"; rline 1 20 1 1 "sonnet/medium" "haiku/low+delegate"; } > "${WORK}/esc.jsonl"
+run "${WORK}/esc.jsonl"
+[ "${RC}" -eq 0 ] || fail "escalation run must exit 0, got ${RC}: $(cat "${WORK}/out")"
+grep -qiE "escalation.*1 of 2" "${WORK}/out" || fail "escalation count/rate missing: $(cat "${WORK}/out")"
+grep -qE "haiku/low\+delegate.*(→|->).*sonnet/medium" "${WORK}/out" || fail "the from → to pair must be shown: $(cat "${WORK}/out")"
+pass "1 of 2 routed transitions escalated, pair shown"
+
+echo "== zero escalations is stated, not omitted (the tiers held is evidence too) =="
+run "${WORK}/r.jsonl"
+grep -qiE "escalations: 0" "${WORK}/out" || fail "a run with no escalation must say so: $(cat "${WORK}/out")"
+pass "escalations: 0 stated explicitly"
+
+echo "== the delta reports the change in escalations =="
+run "${WORK}/esc.jsonl" "${WORK}/r.jsonl"
+[ "${RC}" -eq 0 ] || fail "compare must exit 0, got ${RC}: $(cat "${WORK}/out")"
+grep -qiE "escalations .*[+-][0-9]" "${WORK}/out" || fail "delta must carry a signed escalation change: $(cat "${WORK}/out")"
+pass "delta names the escalation change"
+
+echo "== a tokens key on a routed line still warns, and never enters the bucket =="
+printf '{"ts":"2026-07-30T10:00:00Z","task":"t0","state":"completed","route":"opus/high","cost":{"bytes_out":7,"tool_calls":1,"elapsed_s":1,"tokens":99999}}\n' > "${WORK}/rtok.jsonl"
+run "${WORK}/rtok.jsonl"
+[ "${RC}" -eq 0 ] || fail "a tokens key must warn, not fail: ${RC}"
+grep -qi "WARNING" "${WORK}/out" || fail "a tokens key on a routed line must still warn (P18): $(cat "${WORK}/out")"
+grep -q "99999" "${WORK}/out" && fail "the tokens value must never be reported: $(cat "${WORK}/out")"
+grep -qE "opus/high.*7 bytes" "${WORK}/out" || fail "the route bucket must total only the proxies: $(cat "${WORK}/out")"
+pass "tokens key warns; route bucket carries proxies only"
 
 echo "ALL PASS"
