@@ -73,3 +73,29 @@ fixture — is a separate decision, and a separate release.
   2026-07-30 already established these katas do not discriminate.
 - Run 6 is an observation, not part of the eval definition. It is reported as
   such and should not be counted as a suite result.
+
+## Addendum — the suite defect, resolved as v0.40.1 (same day)
+
+The owner's call on the finding above: fix the mechanization, in its own
+release, not in the one it was gating.
+
+`skills/work/evals/check.sh` now asserts **a `RESULT=FAIL` at the pristine
+`IMPL_SHA` with no changed-sha entry before it**, which is what the expectation
+always said in prose. Written test-first: two cases went into
+`scripts/test-eval-graders.sh` and the leading-baseline one was red before the
+grader changed.
+
+Re-graded under the fixed grader, with no re-runs — the same six workdirs this
+iteration produced:
+
+| Workdir | Eval | Before | After |
+| --- | --- | --- | --- |
+| eval1 | 1 with_skill | 7/7 | 7/7 |
+| eval2 | 2 with_skill | 5/6 | **6/6** |
+| eval2b | 2 with_skill | 5/6 | **6/6** |
+| eval2c | 2 with_skill | 5/6 | **6/6** |
+| eval2d | 2 control (pre-P28) | 5/6 | **6/6** |
+| obs-git | 1 observation | 7/7 | 7/7 |
+
+The guards that make the grader worth having are unchanged and still fire: red
+on an untouched fixture, red on test-after, red on a log that never went red.

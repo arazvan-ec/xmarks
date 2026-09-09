@@ -1625,3 +1625,27 @@ Append-only. Newest at the bottom.
   Fail-open throughout (no repo, no remote, nothing staged, rejected push) and
   never on the default branch. **Dogfooded:** this cycle's own branch is one
   commit per operation in the spec's §O, which is the metric's fourth clause.
+
+- **2026-09-09** — **P28's release gate found a defect in the gate itself, and
+  v0.40.1 fixed it.** Running the `work` katas before releasing v0.40.0 returned
+  5/6 on the bugfix kata, three runs in a row. The tempting readings were both
+  wrong: it was neither noise (3/3) nor a regression from the new commit step.
+  The decisive run was the control — the same kata executed against the
+  **pre-P28 skill text from `origin/main`** failed identically, which located the
+  fault in the grader rather than the skill. Cause: the assertion mechanized
+  *"the test ran red before `cart.py` changed"* as *"the FIRST `.check-log` entry
+  is `FAIL` at the pristine sha"*, and 4/4 executors ran the suite once to
+  confirm a green baseline before writing the test — test-first behaviour that
+  the mechanization scored as test-after. Fixed as **v0.40.1**: a `FAIL` at the
+  pristine `IMPL_SHA` with no changed-sha entry before it, written test-first
+  (two new cases in `test-eval-graders.sh`, the leading-baseline one seen red),
+  still red on an untouched fixture, on test-after, and on a run that never went
+  red. All four gate workdirs re-grade green with no re-runs.
+  **The process point, which is the durable one:** the fix shipped as its own
+  release rather than inside v0.40.0. Loosening an assertion inside the release
+  that assertion is gating is precisely the move P26 exists to prevent, and the
+  only thing that made the distinction defensible was running the control arm
+  instead of arguing from the diff. A gate that fails is evidence about
+  *something*; which thing it is evidence about is a question with an experiment,
+  not an opinion.
+
