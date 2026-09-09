@@ -1,0 +1,33 @@
+{
+  "skill_name": "loop",
+  "notes": "Executor harness + grading: see README.md 'Skill evals'. Each eval instantiates fixtures/inventory-repo into a temp workdir with its own setup, then a fresh-context subagent executes skills/loop/SKILL.md as /flywheel:loop in that dir. Eval mode: phase gates are pre-approved (no human is present to sign off), the host task system and artifact publishing are unavailable, and git operations inside the workdir are pre-approved. Grade with: bash skills/loop/evals/check.sh <id> <workdir>. This is the only suite that runs a whole cycle, and therefore the only one where work's cycle telemetry exists at all.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "cycle-telemetry-and-atomic-commits",
+      "prompt": "/flywheel:loop implement the stock-level work item in WORK.md",
+      "setup": "cp -r skills/loop/evals/fixtures/inventory-repo \"$W\" && git -C \"$W\" init -q -b main && git -C \"$W\" -c user.email=e@e -c user.name=e add -A && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed",
+      "expected_output": "A completed cycle: the two functions implemented and green, one commit per task recorded on the telemetry line, and a JSONL whose commit shas are real git objects.",
+      "expectations": [
+        "A cycle telemetry JSONL exists under .claude/flywheel/runs/ with at least two transition lines, each parsing as an object with ts and state",
+        "No line carries a tokens key (P18)",
+        "At least one transition records a commit sha, and every recorded sha resolves to a real commit in the workdir",
+        "No commit mixes .py source with .claude/flywheel/ state, and no .py change is left uncommitted",
+        "restock merges into the existing item and rejects a non-positive qty; low_stock returns the below-threshold names in order; the suite is green on an independent re-run"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "no-repo-fail-open",
+      "prompt": "/flywheel:loop implement the stock-level work item in WORK.md",
+      "setup": "cp -r skills/loop/evals/fixtures/inventory-repo \"$W\"",
+      "expected_output": "The same cycle in a workdir that is not a git repository: the work still lands and the telemetry is still written, with no commit sha recorded and none invented.",
+      "expectations": [
+        "A cycle telemetry JSONL exists under .claude/flywheel/runs/ with at least two transition lines, each parsing as an object with ts and state",
+        "No line carries a tokens key (P18)",
+        "No transition records a commit sha — there was nothing to commit, and a sha must not be fabricated",
+        "restock merges into the existing item and rejects a non-positive qty; low_stock returns the below-threshold names in order; the suite is green on an independent re-run"
+      ]
+    }
+  ]
+}
