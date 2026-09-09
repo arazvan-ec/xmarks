@@ -1690,3 +1690,31 @@ Append-only. Newest at the bottom.
   *something*; which thing it is evidence about is a question with an experiment,
   not an opinion.
 
+- **2026-09-09** — **P29 shipped as v0.41.0: the cycle telemetry is finally read
+  by something.** P28's gate closed with the hole named out loud — `work` writes
+  its JSONL only inside a `/flywheel:loop` cycle, every suite runs a skill
+  standalone, so the transition lines and the new `commit` sha were written by
+  one skill and checked by nothing. `skills/loop/evals/` is the first suite that
+  runs a **whole cycle**. Its decisive assertion resolves every recorded
+  `commit` with `git cat-file`: parsing proves a field is 40 hex characters, and
+  a fabricated sha is also 40 hex characters, so only git can tell a claim from
+  a fact. Around it: the sweep test, the no-`tokens` rule, behaviour probes, and
+  a second eval in a workdir where committing is impossible — because the
+  *absence* of a field cannot be proven by a passing run.
+  **Two defects on the first outing, one on each side.** The skill's: in the
+  non-git workdir the executor wrote `"commit": "none (not a git repo…)"` —
+  honest, no sha invented, but prose in a parsed field, and the contract had
+  never said what to write when there is nothing to commit. Fixed as "No commit,
+  no field", the rule the `cost` object already had. The grader's: it failed a
+  run that swept nothing, because the cycle's own
+  `.claude/flywheel/bin/render-run.py` ends in `.py` and lives under `.claude/`,
+  matching both sides of its AND.
+  **The pattern worth naming, two releases running:** v0.40.1 and now this one
+  were both a *property* mechanized as one *surface form* that correct behaviour
+  does not always take — "the first log entry", "any path ending in .py". The
+  cheap check for it is not more review, it is running the assertion against a
+  real correct run before trusting it, which is what caught both.
+  Stated limit, not deferred quietly: both evals run a cycle that **passes** its
+  gates. The telemetry of a cycle blocked at verify or review is still graded by
+  nothing.
+
