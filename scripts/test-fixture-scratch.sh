@@ -273,6 +273,22 @@ run demo 1 --solution wrong-eval --into "${WORK}/wrongeval"
 [ "${RC}" -ne 0 ] || fail "a solution that does not claim this eval id must not pass"
 pass "a solution not claiming this eval id is refused"
 
+clone_solution failing-apply
+printf '#!/usr/bin/env bash\nexit 7\n' > "${E}/solutions/failing-apply/apply.sh"
+run demo 1 --solution failing-apply --into "${WORK}/failapply"
+[ "${RC}" -ne 0 ] || fail "a non-zero apply.sh must redden the solution step, not be swallowed by the output pipeline"
+grep -q '^FAIL: solution' "${WORK}/out" || fail "the solution step must report FAIL when apply.sh fails: $(out)"
+pass "a failing apply.sh reddens the solution step"
+
+clone_solution steps-without-apply
+mkdir -p "${E}/solutions/steps-without-apply/steps"
+cp "${S}/patch/01-app.py.patch" "${E}/solutions/steps-without-apply/steps/01.patch"
+rm -f "${E}/solutions/steps-without-apply/apply.sh"
+run demo 1 --solution steps-without-apply --into "${WORK}/orphansteps"
+[ "${RC}" -ne 0 ] || fail "a steps/ directory with no apply.sh applies nothing and must not pass silently"
+grep -qi 'steps' "${WORK}/out" || fail "the failure must name steps/: $(out)"
+pass "a steps/ directory without apply.sh is refused"
+
 clone_solution shadowing
 printf 'a shadowing copy\n' > "${E}/solutions/shadowing/overlay/keep.txt"
 run demo 1 --solution shadowing --into "${WORK}/shadow"

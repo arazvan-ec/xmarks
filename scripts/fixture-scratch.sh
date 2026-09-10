@@ -42,9 +42,21 @@ ROOT="${FW_EVAL_ROOT:-${SELF_ROOT}}"
 die() { echo "fixture-scratch: $*" >&2; exit 2; }
 step_pass() { echo "PASS: $*"; }
 step_fail() { echo "FAIL: $*"; STEP_RC=1; }
-# Indented, so the helper's own result lines stay the only ones at column 0 and
-# `grep -cE '^(PASS|FAIL): '` counts steps rather than a grader's expectations.
-indent() { sed 's/^/  /'; }
+
+# run_in <dir> <cmd...> — run the command there, echo its output indented, and
+# return ITS status. Indented so the helper's own result lines stay the only
+# ones at column 0 and `grep -cE '^(PASS|FAIL): '` counts steps rather than a
+# grader's expectations. The status must come from the command and not from a
+# pipeline tail, or a failing step gets reported as a pass.
+run_in() {
+  local d="$1"; shift
+  local o rc=0
+  o="$(mktemp)"
+  ( cd "${d}" && "$@" ) >"${o}" 2>&1 || rc=$?
+  [ -s "${o}" ] && sed 's/^/  /' "${o}"
+  rm -f "${o}"
+  return "${rc}"
+}
 
 SKILL="" ID="" SOLUTION="" INTO="" MODE=""
 DO_SUITE=0 DO_CHECK=0 DO_PROMPT=0 PRISTINE=0 KEEP=0
@@ -160,6 +172,11 @@ if [ -n "${SOLUTION}" ]; then
   # whole-file overlay copy would shadow the original — for test_cart.py that
   # means shadowing its KATA_HARNESS guard, the thing that makes .check-log
   # trustworthy, and the ideal arm would stay green after the fixture moved.
+  # A steps/ directory is applied by the solution's own apply.sh; without one it
+  # would sit there applying nothing while the solution still reported success.
+  [ ! -d "${SOL_DIR}/steps" ] || [ -f "${SOL_DIR}/apply.sh" ] \
+    || die "solution '${SOLUTION}': steps/ is applied by the solution's apply.sh, and there is none — rename it to patch/ to have this script apply it, or add apply.sh"
+
   if [ -d "${SOL_DIR}/overlay" ]; then
     while IFS= read -r rel; do
       [ -n "${rel}" ] || continue
@@ -210,16 +227,23 @@ echo "workdir: ${W}"
 
 if [ -n "${SOL_DIR}" ]; then
   sol_rc=0
+  # patch/ is applied here, flat and in lexical order. steps/ is applied by the
+  # solution's own apply.sh, which needs to interleave commits between them —
+  # loop's ideal cycle must land restock in one commit and low_stock in the
+  # next. Two names because applying a steps/ patch here too would apply it
+  # twice, and the second attempt fails on an already-patched file.
   for p in "${SOL_DIR}"/patch/*.patch; do
     [ -f "${p}" ] || continue
     # --whitespace=nowarn keeps trailing-space noise quiet; never
     # --ignore-whitespace, which would disable the drift detection being bought.
-    ( cd "${W}" && git apply --whitespace=nowarn -p1 "${p}" ) 2>&1 | indent \
-      || { sol_rc=1; break; }
-    [ "${PIPESTATUS[0]}" -eq 0 ] || { sol_rc=1; break; }
+    run_in "${W}" git apply --whitespace=nowarn -p1 "${p}" || { sol_rc=1; break; }
   done
-  [ "${sol_rc}" -ne 0 ] || { [ ! -d "${SOL_DIR}/overlay" ] || cp -R "${SOL_DIR}/overlay/." "${W}/" || sol_rc=1; }
-  [ "${sol_rc}" -ne 0 ] || { [ ! -f "${SOL_DIR}/apply.sh" ] || bash "${SOL_DIR}/apply.sh" "${W}" 2>&1 | indent || sol_rc=1; }
+  if [ "${sol_rc}" -eq 0 ] && [ -d "${SOL_DIR}/overlay" ]; then
+    cp -R "${SOL_DIR}/overlay/." "${W}/" || sol_rc=1
+  fi
+  if [ "${sol_rc}" -eq 0 ] && [ -f "${SOL_DIR}/apply.sh" ]; then
+    run_in "${SOL_DIR}" bash ./apply.sh "${W}" || sol_rc=1
+  fi
   if [ "${sol_rc}" -eq 0 ]; then step_pass "solution ${SOLUTION}"; else step_fail "solution ${SOLUTION}"; fi
 fi
 
@@ -228,16 +252,12 @@ if [ "${DO_SUITE}" -eq 1 ]; then
   # appends to .check-log, the artifact the work grader reads.
   if [ "${SKILL}" = work ]; then suite=(env KATA_HARNESS=1 python3 -m unittest)
   else suite=(python3 -m unittest); fi
-  if ( cd "${W}" && "${suite[@]}" ) 2>&1 | indent && [ "${PIPESTATUS[0]}" -eq 0 ]; then
-    step_pass "suite"
-  else
-    step_fail "suite"
-  fi
+  if run_in "${W}" "${suite[@]}"; then step_pass "suite"; else step_fail "suite"; fi
 fi
 
 for p in "${PROBES[@]+"${PROBES[@]}"}"; do
   case "${p}" in *.sh) runner=(bash) ;; *) runner=(python3) ;; esac
-  if ( cd "${W}" && "${runner[@]}" "${p}" ) 2>&1 | indent && [ "${PIPESTATUS[0]}" -eq 0 ]; then
+  if run_in "${W}" "${runner[@]}" "$(cd "$(dirname "${p}")" && pwd)/$(basename "${p}")"; then
     step_pass "probe $(basename "${p}")"
   else
     step_fail "probe $(basename "${p}")"
@@ -248,7 +268,7 @@ if [ "${DO_CHECK}" -eq 1 ]; then
   GRADER="${EVALS_DIR}/check.sh"
   if [ ! -f "${GRADER}" ]; then
     step_fail "check ${ID} (no grader at ${GRADER#"${ROOT}"/})"
-  elif bash "${GRADER}" "${ID}" "${W}" 2>&1 | indent && [ "${PIPESTATUS[0]}" -eq 0 ]; then
+  elif run_in "${ROOT}" bash "${GRADER}" "${ID}" "${W}"; then
     step_pass "check ${ID}"
   else
     step_fail "check ${ID}"

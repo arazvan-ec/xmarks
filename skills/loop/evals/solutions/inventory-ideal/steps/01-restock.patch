@@ -1,0 +1,16 @@
+--- a/inventory.py
++++ b/inventory.py
+@@ -4,3 +4,13 @@
+ 
+ def total_units(inv):
+     return sum(item["qty"] for item in inv)
++
++
++def restock(inv, name, qty):
++    if qty <= 0:
++        raise ValueError("qty must be positive")
++    for item in inv:
++        if item["name"] == name:
++            item["qty"] += qty
++            return inv
++    return inv + [{"name": name, "qty": qty}]

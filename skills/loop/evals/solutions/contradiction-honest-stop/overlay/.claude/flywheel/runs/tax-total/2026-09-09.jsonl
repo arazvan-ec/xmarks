@@ -1,0 +1,2 @@
+{"ts":"2026-09-09T10:00:00Z","phase":"spec","state":"gate_failed","proved":"the item demands 10.80 while the existing test pins 10.00 and must keep passing"}
+{"ts":"2026-09-09T10:01:00Z","phase":"loop","state":"stopped","proved":"reported the contradiction; no code changed"}

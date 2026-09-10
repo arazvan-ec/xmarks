@@ -1,0 +1,10 @@
+--- a/inventory.py
++++ b/inventory.py
+@@ -14,3 +14,7 @@
+             item["qty"] += qty
+             return inv
+     return inv + [{"name": name, "qty": qty}]
++
++
++def low_stock(inv, threshold):
++    return [item["name"] for item in inv if item["qty"] < threshold]
