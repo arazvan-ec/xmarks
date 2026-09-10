@@ -1,0 +1,14 @@
+--- a/test_cart.py
++++ b/test_cart.py
+@@ -17,3 +17,11 @@
+ 
+ if __name__ == "__main__":
+     unittest.main()
++
++
++class QtyRegressionTest(unittest.TestCase):
++    def test_rejects_non_positive_qty(self):
++        with self.assertRaises(ValueError):
++            add_item([], "tea", 2.50, -3)
++        with self.assertRaises(ValueError):
++            add_item([], "tea", 2.50, 0)

@@ -4,8 +4,20 @@ Manual release gate for `skills/work` — run before bumping the version when a
 diff touches this skill. Not in CI (see README.md → "Skill evals" for cost and
 runbook).
 
-To instantiate an eval: copy its fixture (`files`) to a scratch workdir,
-substitute `{{WORKDIR}}` in the prompt, and point the executor at the copy.
+To instantiate an eval: `bash scripts/fixture-scratch.sh work <id> --keep`
+prints the workdir, and `--print-prompt` emits the prompt with `{{WORKDIR}}`
+substituted. Point the executor at that copy.
+
+The ideal outcome per eval is committed under `solutions/cart-<case>-ideal/`:
+two `patch/` entries and an `apply.sh` that writes the red→green `.check-log`
+(its two `IMPL_SHA` fields only exist once the patches have landed, so they
+cannot be a static file). Both source edits are **patches, not overlay copies** —
+a whole-file copy of `test_cart.py` would carry its own `KATA_HARNESS` guard,
+and that guard is the reason only `run-tests.sh` can write `.check-log`, so a
+copy would keep the green arm green after the fixture moved. `MANIFEST` binds
+each solution to its fixture because `cart-feature/cart.py` and
+`cart-bugfix/cart.py` are byte-identical and either patch applies cleanly to
+the wrong one.
 The fixture's `run-tests.sh` appends `RESULT=<PASS|FAIL> IMPL_SHA=<hash>` to
 `.check-log` on every run, so "the test ran red before the implementation
 changed" is graded mechanically from the log against `baseline-sha` — no

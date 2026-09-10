@@ -1,0 +1,27 @@
+--- a/test_cart.py
++++ b/test_cart.py
+@@ -6,7 +6,7 @@
+         "This suite runs only through ./run-tests.sh. Run: ./run-tests.sh"
+     )
+ 
+-from cart import add_item, total
++from cart import add_item, apply_discount, total
+ 
+ 
+ class CartTest(unittest.TestCase):
+@@ -17,3 +17,15 @@
+ 
+ if __name__ == "__main__":
+     unittest.main()
++
++
++class DiscountTest(unittest.TestCase):
++    def test_applies_pct(self):
++        cart = add_item([], "tea", 2.50, 2)
++        self.assertEqual(apply_discount(cart, 10), 4.5)
++
++    def test_rejects_out_of_range(self):
++        with self.assertRaises(ValueError):
++            apply_discount([], -1)
++        with self.assertRaises(ValueError):
++            apply_discount([], 101)

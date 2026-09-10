@@ -5,9 +5,16 @@ a diff touches this skill. Not in CI: one iteration (3 evals × with-skill vs
 baseline) costs roughly 300-800k tokens. Full runbook: README.md → "Skill
 evals".
 
-To instantiate an eval: copy its fixture (`files`) to a scratch workdir,
-substitute `{{WORKDIR}}` in the prompt with that path, and point the executor
-at a copy — never at the fixture template. Executors save `report.md` (verdict
+To instantiate an eval: `bash scripts/fixture-scratch.sh verify <id> --keep`
+prints the workdir, and `--print-prompt` emits the prompt with `{{WORKDIR}}`
+already substituted. Point the executor at that copy — never at the fixture
+template.
+
+The exemplary artifacts each eval's grader must be able to pass on are committed
+under `solutions/tally-<case>-ideal/` (pure `overlay/`, since the fixture has
+neither file). `fixture-scratch.sh verify <id> --solution tally-<case>-ideal
+--check` is the green side of the P26 property, and the one
+`scripts/test-eval-graders.sh` grades. Executors save `report.md` (verdict
 as last line) and `transcript.md` (commands + real output) **into the workdir
 root**, where the grader looks for them.
 
