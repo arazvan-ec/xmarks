@@ -95,6 +95,10 @@ sha256sum "${W}/app.py" | cut -c1-16 > "${W}/computed.txt"
 SH
 printf 'fixture: mini\nevals: 1 2 3\n' > "${S}/MANIFEST"
 
+export FW_EVAL_ROOT="${R}"
+export FW_SCRATCH_ROOT="${WORK}/scratch"
+mkdir -p "${FW_SCRATCH_ROOT}"
+
 # BASED-ON comes from the script itself, so the digest algorithm has exactly one
 # implementation. A test that recomputed it here would pass on a shared bug.
 run --digest demo 1
@@ -103,10 +107,6 @@ DIGEST="$(tail -1 "${WORK}/out")"
 [ -n "${DIGEST}" ] || fail "--digest printed nothing"
 printf '%s\n' "${DIGEST}" > "${S}/BASED-ON"
 pass "--digest prints a fixture digest"
-
-export FW_EVAL_ROOT="${R}"
-export FW_SCRATCH_ROOT="${WORK}/scratch"
-mkdir -p "${FW_SCRATCH_ROOT}"
 
 echo "== usage and addressing errors refuse to start =="
 run
@@ -288,8 +288,14 @@ FW_EVAL_ROOT="${DRIFT}" run demo 1 --solution mini-ideal --into "${WORK}/drift"
 [ "${RC}" -ne 0 ] || fail "a patch whose context moved must fail to apply, not apply at a guess"
 pass "context drift in the fixture reddens the apply"
 
-grep -q 'ignore-whitespace' "${SUT}" && fail "git apply must not be given --ignore-whitespace: it disables exactly the drift detection being bought"
-pass "git apply is never called with --ignore-whitespace"
+# Code only: the script's own comment explains why the flag is refused, and a
+# bare grep would read that explanation as the violation.
+if sed 's/#.*//' "${SUT}" | grep -q 'ignore-whitespace'; then
+  fail "git apply must not be given --ignore-whitespace: it disables exactly the drift detection being bought"
+fi
+sed 's/#.*//' "${SUT}" | grep -q 'git apply' \
+  || fail "no git apply call found — the patch step is what the drift assertion above is about"
+pass "git apply is called, and never with --ignore-whitespace"
 
 echo "== the committed tree: every eval resolves, and no answer key is in a fixture =="
 unset FW_EVAL_ROOT
