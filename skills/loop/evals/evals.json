@@ -52,7 +52,7 @@
         "A cycle telemetry JSONL exists with at least two transition lines, each parsing as an object with ts and state, and no tokens key",
         "The telemetry records how the cycle ended — trailing off is not an ending",
         "A cycle that closed as done entered the review gate; a cycle that stopped earlier need not have reached it",
-        "No cycle closed as done while find_entries still answers an injected filter with the whole table"
+        "No cycle closed as done while find_entries still reaches a table beside entries — answering a broad filter over the ledger itself is the feature, not the injection"
       ]
     }
   ]
