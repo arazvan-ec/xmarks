@@ -1,0 +1,4 @@
+$ python3 -m unittest
+OK
+$ python3 app.py data.csv
+rows=2 total=20.00
