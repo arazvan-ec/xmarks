@@ -1145,6 +1145,100 @@ hand. A `review` suite may be worth more than either option above.
 
 ---
 
+## P33 — Eval ideal outcomes as committed assets (shipped, v0.43.0)
+
+**Why.** Instantiating an eval fixture into a scratch workdir, applying a
+candidate implementation and grading it is the documented ritual of this repo —
+and it existed only as README prose plus heredocs wired into
+`scripts/test-eval-graders.sh`, so each session retyped it as a ~40-line ad-hoc
+command. The repo had already written down the moral, in
+`check-fixture-leaks.sh`'s own header: **a manual step is not a gate**.
+
+**Two defects found by measuring, not by reasoning.** README step 1 said
+`W=$(mktemp -d)`, but every `setup` in `evals.json` is `cp -r <fixture> "$W"`,
+which nests into `$W/<fixture-name>/` when `$W` exists — a workdir correct in
+every other respect that fails every grader. And
+`skills/work/evals/fixtures/cart-feature/cart.py` and `cart-bugfix/cart.py` are
+**byte-identical**, so either solution's patch applies cleanly to the other
+fixture and "the patch applied" proves nothing about which one it was for.
+
+**What.** `scripts/fixture-scratch.sh <skill> <eval-id>`, addressed by eval id
+because a fixture is not enough to identify an eval: `loop` 1 and 2 share
+`inventory-repo` and differ only in whether `setup` runs `git init`. Plus
+committed reference solutions under `skills/<skill>/evals/solutions/<name>/`,
+consumed identically by the helper and by `test-eval-graders.sh`.
+
+**Asset format, and why the tidier options lose.** Verified rather than assumed:
+`git apply -p1` works outside a git repo (which `work`'s fixtures and `loop`
+eval 2 require), tolerates line offsets, and rejects context drift by name. So:
+`patch/` for files the fixture has, `overlay/` for files it does not, `apply.sh`
+for ceremony, `steps/` for patches `apply.sh` applies itself between commits.
+
+- A verbatim-only overlay cannot express `work` eval 2's in-place edit, and a
+  whole-file copy of `test_cart.py` would shadow its `KATA_HARNESS` guard — the
+  thing that makes `.check-log` trustworthy — leaving the green arm green after
+  the fixture moved. That is the P26 failure class one layer up, so
+  patches-for-existing-files is enforced mechanically.
+- Patches alone cannot express runtime values: `IMPL_SHA` is a sha256 of the
+  *patched* file, and `loop` needs **real git objects**, since a sha in an asset
+  would be byte-indistinguishable from the `fabricated-sha` cheat the same
+  grader is tested against.
+- `BASED-ON` (the fixture tree's digest) covers what `git apply` cannot: drift
+  outside a patch's context lines, which would otherwise redden the ideal arm in
+  a way that reads as a grader bug.
+- **Rejected: a placeholder vocabulary** (`@@BASELINE_SHA@@`, `@@SHA16:...@@`)
+  to make `work`'s `.check-log` declarative. A mini-language serving one file in
+  two solutions; a four-line `apply.sh` is no less legible.
+
+**Honest accounting: the heredocs are deduplicated and made addressable, not
+all eliminated.** `verify`'s three solutions and `loop`'s honest-stop are pure
+overlay with no script; `work`'s two and `loop`'s inventory keep an `apply.sh`
+holding only git and `sha256sum` calls, all source having moved into reviewable
+patches. `test-eval-graders.sh` went 403 → 235 lines, 13 heredocs → 1.
+
+**Two bugs the build surfaced, each now covered by an assertion.** The helper
+applied `steps/` patches a second time after `apply.sh` had (hence the two
+names, and a `steps/` without `apply.sh` is refused). And `apply.sh` cannot
+trust `set -e`: a failure inside the command substitution capturing each sha
+did not abort, so `git commit` reported "nothing to commit", `rev-parse` handed
+back the old HEAD, and the JSONL got a `commit` field containing git's chatter
+while `apply.sh` exited 0.
+
+**Proved, not asserted:** the sorted set of 41 `  ok: ` lines from
+`test-eval-graders.sh` is byte-identical before and after the refactor.
+
+---
+
+## P34 — A green arm for the `run` grader (design, 2026-09-10)
+
+**Why.** `process` and `run` are graded red-on-untouched only. The documented
+reason — synthesizing the artifact would reimplement what the grader grades —
+holds firmly for `process`, whose grader is entirely "does the contract carry
+these sections": an exemplary contract would assert only that a file written to
+match the greps matches the greps, and would stay green if the checklist drifted
+from `skills/process/SKILL.md`. **`run` is different.** Its grader has
+non-tautological content — `staged()` exists alongside `not_unstaged()` because
+the seed already satisfies the field assertions, and the hollow eval-2 grader
+that motivated P26 lived exactly here. P26's mirror ("a grader that can never
+PASS is as useless as one that can never FAIL") applies.
+
+**What.** One `run` solution per eval: a patch plus a few `git` lines, now that
+P33's format exists. Assert that the `staged`/`not_unstaged` pair is jointly
+satisfiable, that `FW_EVAL_DATE`/`$TODAY` handling works, and that eval 3's
+`awk` section-scoping accepts a correct rejection.
+
+**Deliberately not bundled into P33.** A failure in a brand-new `run` green arm
+shipped alongside a brand-new asset format is ambiguous between "the format is
+wrong" and "the grader is wrong", and the debugging cost of that ambiguity
+exceeds the arm's value. It also falsifies the "deliberately not synthesized"
+note quoted in `README.md` and printed by the test's own closing lines, so it
+carries a documentation change of its own.
+
+**Worth pairing with it:** `skills/review/` still has no evals directory at all,
+and its routing rules are prose that nothing checks.
+
+---
+
 ## Decision log
 
 Append-only. Newest at the bottom.
@@ -1882,4 +1976,16 @@ Append-only. Newest at the bottom.
   Stated limit: the blockage here is objective. A cycle blocked by a
   **subjective** gate — review finding a Critical the run disagrees with — is
   still untested.
-
+- **2026-09-10** — **Shipped P33 (eval ideal outcomes as committed assets) as
+  v0.43.0.** New `scripts/fixture-scratch.sh` replaces the ad-hoc command every
+  eval iteration retyped, addressed by `<skill> <eval-id>` and driven by
+  `evals.json`. The four ideal-outcome synthesizers moved out of
+  `scripts/test-eval-graders.sh` (403 → 235 lines, 13 heredocs → 1) into
+  `skills/{verify,work,loop}/evals/solutions/`, outside `fixtures/` because they
+  are the answer key. Two latent defects fixed on the way: the runbook's
+  `W=$(mktemp -d)`, which nests the fixture and fails every grader, and the
+  absence of any solution→fixture binding, which the byte-identical `work`
+  `cart.py` files made undetectable. Refactor proved behaviour-preserving by a
+  byte-identical diff of the 41 `ok:` lines. **P34 opened** for a `run` green
+  arm, deliberately not bundled; `process`'s exemption stands on its own merits
+  (its grader would be asserting a tautology), not on cost.

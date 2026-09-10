@@ -1,6 +1,14 @@
 # Spec: P33 — `fixture-scratch.sh`, the eval bench as a mechanism
 
 **Slug:** `p33-fixture-scratch` · **Created:** 2026-09-10 · **Backlog:** P33
+**Status:** shipped as v0.43.0 — metric **PASS** (all ten clauses; 14/14
+`scripts/test-*.sh` green; `claude plugin validate . --strict` green). The
+anti-regression clause holds: the 41 `  ok: ` lines are byte-identical before
+and after, and `test-eval-graders.sh` went 403 → 241 lines with 13 heredocs → 1.
+No eval gate was required — the diff touches no `skills/*/SKILL.md`, agent or
+hook, so there is no skill behavior to regress. Requirement 9 says "all five
+eval READMEs"; only three exist (`process` and `run` carry their harness notes
+in `evals.json`), and all three were updated.
 **Prime:** `README.md` "Skill evals" → "How to run one iteration" (steps 1 and 3,
 the prose this replaces); `scripts/test-eval-graders.sh` (`fixture_copy`,
 `run_grader`, and the four `*_ideal` synthesizers this extracts);
