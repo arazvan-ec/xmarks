@@ -40,6 +40,14 @@ SELF_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ROOT="${FW_EVAL_ROOT:-${SELF_ROOT}}"
 
 die() { echo "fixture-scratch: $*" >&2; exit 2; }
+
+# sha256 of stdin. Probed rather than assumed: stock macOS ships `shasum`, not
+# `sha256sum`. Same fallback scripts/gate.sh already carries.
+sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum | cut -d' ' -f1
+  elif command -v shasum >/dev/null 2>&1; then shasum -a 256 | cut -d' ' -f1
+  else echo "fixture-scratch: need sha256sum or shasum" >&2; return 1; fi
+}
 step_pass() { echo "PASS: $*"; }
 step_fail() { echo "FAIL: $*"; STEP_RC=1; }
 
@@ -127,9 +135,21 @@ FIXTURE="${ROOT}/${FIXTURE_REL}"
 # Solutions pin it in BASED-ON: `git apply` detects drift in a patch's context
 # lines, and this covers the rest of the tree (run-tests.sh changing how it
 # computes IMPL_SHA, or baseline-sha going stale against cart.py).
+# The executable bit is part of the digest. Content alone is not enough:
+# dropping +x from a fixture's run-tests.sh leaves every byte identical, so
+# BASED-ON would still match while an executor can no longer run the
+# `./run-tests.sh` the eval requires. Only that bit — it is the only mode git
+# records.
+#
+# Plain `find | sort` rather than -print0/-z/-0r, and `sha256` rather than
+# sha256sum: BSD sort has no -z, BSD xargs no -r, and stock macOS ships shasum
+# instead of sha256sum. Fixture paths are committed files with no newlines.
 fixture_digest() {
-  ( cd "${FIXTURE}" && find . -type f -print0 | LC_ALL=C sort -z \
-      | xargs -0r sha256sum | sha256sum | cut -c1-64 )
+  ( cd "${FIXTURE}" || exit 1
+    find . -type f | LC_ALL=C sort | while IFS= read -r f; do
+      if [ -x "${f}" ]; then m=x; else m=-; fi
+      printf '%s %s %s\n' "$(sha256 < "${f}")" "${m}" "${f}"
+    done | sha256 | cut -c1-64 )
 }
 
 case "${MODE}" in
@@ -182,7 +202,7 @@ if [ -n "${SOLUTION}" ]; then
       [ -n "${rel}" ] || continue
       [ ! -e "${FIXTURE}/${rel}" ] \
         || die "solution '${SOLUTION}': overlay/${rel} shadows a fixture file — express an edit to an existing file as a patch/ entry instead"
-    done < <(cd "${SOL_DIR}/overlay" && find . -type f -printf '%P\n')
+    done < <(cd "${SOL_DIR}/overlay" && find . -type f | sed 's|^\./||')
   fi
 fi
 
@@ -252,7 +272,18 @@ if [ "${DO_SUITE}" -eq 1 ]; then
   # appends to .check-log, the artifact the work grader reads.
   if [ "${SKILL}" = work ]; then suite=(env KATA_HARNESS=1 python3 -m unittest)
   else suite=(python3 -m unittest); fi
-  if run_in "${W}" "${suite[@]}"; then step_pass "suite"; else step_fail "suite"; fi
+  o="$(mktemp)"
+  if ( cd "${W}" && "${suite[@]}" ) >"${o}" 2>&1; then suite_rc=0; else suite_rc=$?; fi
+  [ -s "${o}" ] && sed 's/^/  /' "${o}"
+  # "Ran 0 tests" exits 0, so without this a skill whose fixture carries no
+  # unittest suite at all (process, run) reports a green suite having verified
+  # nothing. Refusing a vacuous pass is what check-fixture-leaks.sh does for
+  # zero scanned files.
+  if grep -q '^Ran 0 tests' "${o}"; then
+    step_fail "suite (no tests ran — ${SKILL}'s fixture has no unittest suite; drop --suite, or use --check)"
+  elif [ "${suite_rc}" -eq 0 ]; then step_pass "suite"
+  else step_fail "suite"; fi
+  rm -f "${o}"
 fi
 
 for p in "${PROBES[@]+"${PROBES[@]}"}"; do
@@ -276,8 +307,15 @@ if [ "${DO_CHECK}" -eq 1 ]; then
 fi
 
 if [ "${DO_PROMPT}" -eq 1 ]; then
-  read_eval prompt | sed "s|{{WORKDIR}}|${W}|g"
-  echo
+  # Not sed: the path is data, and in a replacement `&` means the whole match
+  # while `|` closes the s/// expression. Both emitted a wrong prompt, and sed's
+  # error status was swallowed by the echo that followed.
+  if ! read_eval prompt | python3 -c '
+import sys
+sys.stdout.write(sys.stdin.read().replace("{{WORKDIR}}", sys.argv[1]) + "\n")
+' "${W}"; then
+    step_fail "print-prompt"
+  fi
 fi
 
 exit "${STEP_RC}"

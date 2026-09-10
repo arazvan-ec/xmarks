@@ -247,6 +247,19 @@ grep -qF "work in ${WORK}/prompt please" "${WORK}/out" \
   || fail "--print-prompt must emit the eval's prompt with the path substituted: $(out)"
 ! grep -q 'WORKDIR' "${WORK}/out" || fail "--print-prompt left the placeholder behind: $(out)"
 pass "--print-prompt resolves {{WORKDIR}} in the eval's prompt"
+# The path is data, not sed replacement syntax. `&` expands to the whole match
+# and `|` closes the s/// expression, and the error status was masked by the
+# following echo — so both produced a wrong prompt with exit 0.
+for weird in 'fw&a' 'fw|b' 'fw\\c'; do
+  wd="${WORK}/odd/${weird}"
+  run demo 1 --print-prompt --into "${wd}"
+  [ "${RC}" -eq 0 ] || fail "--print-prompt failed on a path containing '${weird}': $(out)"
+  grep -qF "work in ${wd} please" "${WORK}/out" \
+    || fail "--print-prompt mangled a path containing '${weird}' — it must substitute literally: $(out)"
+  ! grep -q 'WORKDIR' "${WORK}/out" || fail "placeholder survived for '${weird}': $(out)"
+done
+pass "--print-prompt substitutes the path literally (& | backslash)"
+
 
 echo "== a solution that could silently lie is refused =="
 # Each of these is a way an asset stops describing the fixture executors get,
@@ -313,6 +326,34 @@ sed 's/#.*//' "${SUT}" | grep -q 'git apply' \
   || fail "no git apply call found — the patch step is what the drift assertion above is about"
 pass "git apply is called, and never with --ignore-whitespace"
 
+echo "== the digest notices a mode change, not just content =="
+# BASED-ON is what catches fixture drift outside a patch's context. Content-only
+# hashing misses a tracked mode change: drop the executable bit from work's
+# run-tests.sh and executors can no longer run the ./run-tests.sh the eval
+# requires, while every solution check stays green.
+MODE="${R}-mode"
+rm -rf "${MODE}"; cp -R "${R}" "${MODE}"
+chmod +x "${MODE}/skills/demo/evals/fixtures/mini/keep.txt"
+FW_EVAL_ROOT="${MODE}" run --digest demo 1
+[ "${RC}" -eq 0 ] || fail "--digest failed on the mode-changed tree: $(out)"
+[ "$(tail -1 "${WORK}/out")" != "${DIGEST}" ] \
+  || fail "the digest is unchanged after chmod +x — a mode change would pass BASED-ON unnoticed"
+pass "a fixture mode change changes the digest"
+
+echo "== the digest and overlay walk use portable tools =="
+# Cannot be tested on this platform, so it is asserted as a convention: stock
+# macOS has no sha256sum, its sort lacks -z, its xargs lacks -r, and its find
+# lacks -printf. scripts/gate.sh:75-76 already carries the shasum -a 256
+# fallback this must match.
+for gnuism in 'sort -z' 'xargs -0r' -- '-printf'; do
+  [ "${gnuism}" = -- ] && continue
+  sed 's/#.*//' "${SUT}" | grep -q -- "${gnuism}" \
+    && fail "fixture-scratch.sh uses the GNU-only '${gnuism}'; scripts/gate.sh shows the portable pattern"
+done
+sed 's/#.*//' "${SUT}" | grep -q 'command -v sha256sum' \
+  || fail "fixture-scratch.sh must probe for sha256sum and fall back to shasum -a 256, as scripts/gate.sh does"
+pass "no GNU-only sort/xargs/find flags, and sha256 is probed with a fallback"
+
 echo "== the committed tree: every eval resolves, and no answer key is in a fixture =="
 unset FW_EVAL_ROOT
 COUNT=0
@@ -336,6 +377,16 @@ pass "all ${COUNT} committed evals resolve to a fixture directory that exists"
 STRAY="$(find "${SRC}/skills" -type d -name solutions -path '*/evals/fixtures/*' | head -5)"
 [ -z "${STRAY}" ] || fail "a solutions/ directory sits inside a fixture and would be copied into the executor's workdir: ${STRAY}"
 pass "no solutions/ directory sits inside any evals/fixtures/"
+
+# A suite that ran no tests is not a green suite. process/run fixtures carry no
+# unittest tests at all, and `python3 -m unittest` exits 0 on "Ran 0 tests", so
+# without this the helper reports PASS: suite having verified nothing — the
+# vacuous pass this repo refuses everywhere else (check-fixture-leaks.sh does
+# the same for zero scanned files).
+run run 1 --suite
+[ "${RC}" -ne 0 ] || fail "--suite must refuse a run that executed zero tests: $(out)"
+grep -qi 'no tests' "${WORK}/out" || fail "the refusal must say no tests ran: $(out)"
+pass "--suite refuses a zero-test run instead of passing vacuously"
 
 echo "== work's suite runs through unittest with KATA_HARNESS, never run-tests.sh =="
 # cart-bugfix's pristine suite is green with KATA_HARNESS=1 and red without it,
