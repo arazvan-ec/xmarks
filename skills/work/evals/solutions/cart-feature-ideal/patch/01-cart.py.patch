@@ -1,0 +1,12 @@
+--- a/cart.py
++++ b/cart.py
+@@ -5,3 +5,9 @@
+ 
+ def total(cart):
+     return round(sum(i["price"] * i["qty"] for i in cart), 2)
++
++
++def apply_discount(cart, pct):
++    if not 0 <= pct <= 100:
++        raise ValueError("pct must be between 0 and 100")
++    return round(total(cart) * (100 - pct) / 100, 2)

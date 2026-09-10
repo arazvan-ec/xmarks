@@ -1,0 +1,9 @@
+--- a/cart.py
++++ b/cart.py
+@@ -1,4 +1,6 @@
+ def add_item(cart, name, price, qty):
++    if qty <= 0:
++        raise ValueError("qty must be positive")
+     cart.append({"name": name, "price": price, "qty": qty})
+     return cart
+ 
