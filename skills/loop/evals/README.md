@@ -10,6 +10,10 @@ Not in CI (see the root README → "Skill evals" for cost and runbook).
 
 ## What each eval instantiates
 
+`bash scripts/fixture-scratch.sh loop <id> --keep` instantiates any of the
+three and prints the workdir; it runs each eval's own `setup`, which is what
+keeps evals 1 and 2 distinguishable at all.
+
 Evals 1 and 2 copy `fixtures/inventory-repo` into a scratch workdir. Eval 1's
 `setup` `git init`s it and makes a seed commit; **eval 2 deliberately does not**
 — a missing field cannot be proven by a passing run, so the fail-open path needs
@@ -27,6 +31,15 @@ git operations inside the workdir are pre-approved. Point it at
 ```bash
 bash skills/loop/evals/check.sh <eval-id> "$W"   # one PASS:/FAIL: line per expectation
 ```
+
+The ideal outcomes this grader must be able to pass on are committed under
+`solutions/`: `inventory-ideal` (eval 1) and `contradiction-honest-stop`
+(eval 3). `inventory-ideal` is the one solution whose git work is irreducibly a
+script — the decisive assertion here is that every recorded `commit` resolves
+against git, so a sha written into an asset would be exactly the fabricated
+value this grader rejects, and the commits have to be made at apply time. Its
+two patches live in `steps/` rather than `patch/` because `apply.sh` applies
+them itself, one per commit.
 
 Exit 0 only if all pass; exit 2 on an unknown id. Artifacts only — the telemetry
 the cycle wrote, the git objects it made, the behaviour of the code it left:
