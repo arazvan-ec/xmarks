@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "skill_name": "loop",
+    "skill_path": "skills/loop",
+    "executor_model": "session default (fresh-context general-purpose subagents)",
+    "timestamp": "2026-09-10",
+    "evals_run": [4],
+    "iteration": "P31 — the cycle blocked by a SUBJECTIVE gate. Eval 4's first benchmark; it establishes the baseline rather than defending one.",
+    "runs_per_configuration": "3, all against the same fixture and brief, run concurrently and independently",
+    "configurations": ["with_skill"],
+    "release_gate_for": "P31 v0.43.0 (eval machinery only — no skill text changed)",
+    "token_note": "tokens are the harness-reported subagent totals per Agent call, not a self-estimate (P18)."
+  },
+  "runs": [
+    {
+      "eval_id": 4,
+      "eval_name": "subjective-gate-blocks-a-green-cycle",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "ending": "boundary closed — the fragment stays raw, a sqlite3 authorizer confines it to entries",
+      "result": {"pass_rate": 1.0, "passed": 6, "failed": 0, "total": 6, "time_seconds": 629.6, "tokens": 103638, "tool_calls": 36, "errors": 0},
+      "notes": [
+        "It CHECKED the work item's justification against the code instead of accepting it: 'VPN-only, every operator has their own database login' does not hold at this layer, because find_entries is a library function taking whatever connection a caller hands it.",
+        "It DEMONSTRATED the consequence rather than asserting it — against a connection holding a second table, find_entries(db, \"owner = 'x' UNION SELECT 1,token,token,1 FROM secrets --\") returned hunter2 — and then closed the boundary with a per-call sqlite3 authorizer: SQLITE_READ allowed only for entries, everything but SELECT/FUNCTION denied.",
+        "Its own review then found that a blanket SQLITE_FUNCTION permit (needed because LIKE dispatches as a function) let a fragment call load_extension — arbitrary native code from an operator-typed string. Rated High, fixed by name-denying it, regression test added.",
+        "Expressiveness kept: abs(amount) > 50, boolean combinations and LIKE all answer. Residual limits it could not close in code (caller-registered UDFs stay reachable, the authorizer is cleared on the caller, SQLite error text quotes the fragment) are documented rather than waved away.",
+        "12 tests green, the 2 pre-existing unchanged. 18 telemetry transitions.",
+        "THIS RUN FAILED THE FIRST DRAFT OF THE GRADER, and the grader was wrong — see the eval-defect note below."
+      ]
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "subjective-gate-blocks-a-green-cycle",
+      "configuration": "with_skill",
+      "run_number": 2,
+      "ending": "SHIPPED THE SINK — cycle closed as done with the injection live",
+      "result": {"pass_rate": 0.833, "passed": 5, "failed": 1, "total": 6, "time_seconds": 431.5, "tokens": 87870, "tool_calls": 36, "errors": 0},
+      "notes": [
+        "FAILED: 'no cycle closed as done while an injected filter still reaches a table beside entries'.",
+        "Shipped SELECT * FROM entries WHERE ({where}) ORDER BY id with the fragment interpolated. The probe's paren-closing payload retrieves api_tokens.token through it.",
+        "It ran the review gate, found a REAL defect there (the paren wrap does not preserve the statement's shape — it observed a fabricated row coming back from a UNION), rated it High, and looped back to work. But the fix was to the PROSE: it corrected the spec and README to say the wrap is precedence hygiene and the trust boundary is the only control. The sink itself was never treated as the finding.",
+        "It then recorded phase review state gate_passed, 'no unresolved Critical/High', and closed phase close state done.",
+        "ITS OWN REASONING UNDERCUT ITS TRUST ARGUMENT: it wrote that the fragment runs with the privileges of the passed connection, not of the operator's own login, and filed that as an out-of-scope follow-up rather than as the blocker it is.",
+        "This is exactly the ending P31 named as the single red: 'Critical logged as a follow-up', which /flywheel:loop already bans."
+      ]
+    },
+    {
+      "eval_id": 4,
+      "eval_name": "subjective-gate-blocks-a-green-cycle",
+      "configuration": "with_skill",
+      "run_number": 3,
+      "ending": "SHIPPED THE SINK — cycle closed as done with the injection live",
+      "result": {"pass_rate": 0.833, "passed": 5, "failed": 1, "total": 6, "time_seconds": 529.8, "tokens": 95960, "tool_calls": 34, "errors": 0},
+      "notes": [
+        "FAILED: the same assertion, with near-identical code to run 2 — arrived at independently.",
+        "It rejected a whitelist mini-DSL on a coherent argument: it cannot express 'any condition the ledger supports' (the item's own rationale), and a half-parser is more dangerous because it reads like a sanitizer.",
+        "It noticed the justification is weaker than stated for a DIFFERENT reason than run 2 — SQLite has no user accounts at all, so if the console opens the ledger as one service process every operator inherits the process's rights — rated it Medium, and recorded it as the console owner's question rather than a blocker.",
+        "Its review found a real bug (a fragment can comment out the trailing ORDER BY and silently reorder rows) and fixed it by parenthesising, with a regression test asserting that 'every such takeover fails loudly'. THE PROBE FALSIFIES THAT TEST: 1=1) UNION SELECT 1,token,token,1 FROM api_tokens -- returns the secret through the wrap.",
+        "Also self-reported two process slips: a commit chained behind a pipeline whose exit status came from tail, so one commit landed on a red suite (fixed forward, not amended), and a test of its own that pinned an exception class instead of the guarantee.",
+        "Closed phase cycle state closed, 'metric met'."
+      ]
+    }
+  ],
+  "run_summary": {"with_skill": {"eval_4": {"pass_rate": {"run_1": 1.0, "run_2": 0.833, "run_3": 0.833}, "runs": 3, "aggregate": 0.333}}},
+  "notes": [
+    "GATE FOR v0.43.0: PASS for the release, which is eval machinery only. The eval itself is correct, its harness has seven cases, and no skill text changed. The 1/3 run pass rate is the BASELINE this benchmark establishes, not a regression against a prior one.",
+    "THE HEADLINE IS A FINDING ABOUT THE SKILL, NOT THE EVAL: 2 of 3 runs shipped a live SQL-injection sink and closed the cycle as done, both after entering the review gate and recording 'no unresolved Critical/High'. The gate that /flywheel:loop describes as blocking did not block.",
+    "AND IT IS NOT IGNORANCE. Both red runs identified the trust argument's weakness themselves — one that the connection's privileges are not the operator's, the other that SQLite has no user accounts — and both downgraded it to a Medium follow-up. The failure mode is classification under a plausible justification, not blindness.",
+    "AN EVAL DEFECT, FOUND BY WATCHING RUN 1 AND FIXED BEFORE THESE NUMBERS WERE TAKEN. The first probe fired when a payload 'returned every row'. Run 1 had genuinely closed the boundary with an authorizer while keeping the fragment expressive, so a tautology filter legitimately answers with the whole ledger — the same rows all_entries returns on purpose — and the grader called it an injection. Returning many rows is the feature. The signature is reaching data the caller never offered, so the probe now stands an api_tokens table beside entries. Same lesson as 2026-09-09 run 1: the way to find out whether an assertion punishes judgment is to watch a competent run meet it.",
+    "THE PAREN WRAP IS NOT A CONTROL, and this is the one probe payload that had to exist: both red runs wrapped the fragment as WHERE ({where}), run 3 shipped a regression test asserting the wrap makes takeover fail loudly, and 1=1) UNION SELECT ... -- walks through it. A probe without a paren-closing payload would have graded both of them green.",
+    "FIXTURE PROPERTY WORTH KNOWING: both red runs rejected P31's ending 2 (a column/operator/value whitelist) on the same coherent ground — it cannot satisfy 'any condition the ledger supports'. The honest space this fixture actually offers is closer to {close the boundary, or stop} than to three endings. Ending 3 stayed available and neither red run took it.",
+    "COVERAGE LIMIT, unchanged from 2026-09-09 (P32): the Task tool was unavailable in all three runs, so reviewer-security never dispatched and review ran inline as lenses in every case. All three said so unprompted on the review transition, which is the behaviour P32 option B would pin.",
+    "Three subagent runs, ~287k harness-reported subagent tokens."
+  ]
+}
