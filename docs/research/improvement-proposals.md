@@ -1194,7 +1194,7 @@ for ceremony, `steps/` for patches `apply.sh` applies itself between commits.
 all eliminated.** `verify`'s three solutions and `loop`'s honest-stop are pure
 overlay with no script; `work`'s two and `loop`'s inventory keep an `apply.sh`
 holding only git and `sha256sum` calls, all source having moved into reviewable
-patches. `test-eval-graders.sh` went 403 → 235 lines, 13 heredocs → 1.
+patches. `test-eval-graders.sh` went 403 → 241 lines, 13 heredocs → 1.
 
 **Two bugs the build surfaced, each now covered by an assertion.** The helper
 applied `steps/` patches a second time after `apply.sh` had (hence the two
@@ -1211,19 +1211,52 @@ while `apply.sh` exited 0.
 
 ## P34 — A green arm for the `run` grader (design, 2026-09-10)
 
-**Why.** `process` and `run` are graded red-on-untouched only. The documented
-reason — synthesizing the artifact would reimplement what the grader grades —
-holds firmly for `process`, whose grader is entirely "does the contract carry
-these sections": an exemplary contract would assert only that a file written to
-match the greps matches the greps, and would stay green if the checklist drifted
-from `skills/process/SKILL.md`. **`run` is different.** Its grader has
-non-tautological content — `staged()` exists alongside `not_unstaged()` because
-the seed already satisfies the field assertions, and the hollow eval-2 grader
-that motivated P26 lived exactly here. P26's mirror ("a grader that can never
-PASS is as useless as one that can never FAIL") applies.
+**Why.** `process` and `run` are graded red-on-untouched only. **The two arms
+catch opposite defects**, and that is the whole argument: red-on-untouched
+catches an assertion that is vacuously *green* (can never fail), green-on-ideal
+catches one that is vacuously *red* (can never pass). Only the second is
+ungated here.
 
-**What.** One `run` solution per eval: a patch plus a few `git` lines, now that
-P33's format exists. Assert that the `staged`/`not_unstaged` pair is jointly
+Vacuously-red is not hypothetical in this repo — it has cost three times:
+`improvement-proposals.md` P30 records a property mechanized as one surface form
+that "failed correct runs twice" (v0.40.1, v0.41.0); the `loop` grader's first
+draft "failed a clean run (2026-09-09 eval 1)" and **the green arm is what
+caught it** (`test-eval-graders.sh`, the `state-only-commit` case); and
+`process/check.sh`'s own comment records that its `## Improvement log` awk
+assertion was loosened in v0.32.0 and re-tightened — high churn, no gate.
+
+**Correction to the v0.43.0 note (2026-09-10).** That release said `process`'s
+exemption "stands on its own merits" because its grader is *entirely* structural
+greps. That over-generalized from evals 1 and 2 to the whole skill. Evals 1-2
+are genuinely tautological — roughly 11 of 14 assertions are `grep -Eq '^##
+Section'`, and a contract written to satisfy them satisfies them. **Eval 3 is
+not**: `^version: 2`, two section-scoped `awk` assertions (a dated `### ` heading
+under `## Improvement log`; `round_number` scoped inside `## Output schema`), and
+a markdown-bold literal (`\*\*Normalize\*\*`) are real mechanism that can break
+silently into always-red. The exemption belongs per **eval**, not per skill.
+
+**`run` needs it throughout.** `staged()` and `not_unstaged()` are logical
+complements on the same file, so only a green arm proves they are *jointly*
+satisfiable; the `${TODAY}` / `FW_EVAL_DATE` interpolation sits inside a regex;
+eval 3 scopes with `awk` under `## Rejections`. And the hollow eval-2 grader
+that motivated P26 lived exactly here.
+
+**Staleness is the shape of the risk.** `verify`'s grader was edited *after* its
+last benchmark and that is harmless, because its green arm gates it.
+`process`/`run` coincide today, so nothing is stale right now — but their only
+green evidence is a dated benchmark snapshot, so the *next* edit reproduces
+`verify`'s situation with no net. This is the repo's own maxim ("a manual step is
+not a gate") applied to the graders themselves.
+
+**Cost is asymmetric.** A green arm costs authoring once and **zero tokens per
+CI run**. What it protects costs 300-800k tokens per iteration, and a broken
+assertion reads as "the skill regressed" — blocking a release for a defect in
+the instrument.
+
+**What.** One `run` solution per eval (a patch plus a few `git` lines) plus one
+overlay contract for **`process` eval 3 only**, now that P33's format exists.
+The test must state why `process` 1-2 stay exempt, rather than exempting the
+skill and leaving the reason to be re-derived. Assert that the `staged`/`not_unstaged` pair is jointly
 satisfiable, that `FW_EVAL_DATE`/`$TODAY` handling works, and that eval 3's
 `awk` section-scoping accepts a correct rejection.
 
@@ -1980,7 +2013,7 @@ Append-only. Newest at the bottom.
   v0.43.0.** New `scripts/fixture-scratch.sh` replaces the ad-hoc command every
   eval iteration retyped, addressed by `<skill> <eval-id>` and driven by
   `evals.json`. The four ideal-outcome synthesizers moved out of
-  `scripts/test-eval-graders.sh` (403 → 235 lines, 13 heredocs → 1) into
+  `scripts/test-eval-graders.sh` (403 → 241 lines, 13 heredocs → 1) into
   `skills/{verify,work,loop}/evals/solutions/`, outside `fixtures/` because they
   are the answer key. Two latent defects fixed on the way: the runbook's
   `W=$(mktemp -d)`, which nests the fixture and fails every grader, and the
