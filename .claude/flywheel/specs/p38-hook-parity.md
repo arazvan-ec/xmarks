@@ -1,7 +1,11 @@
 # Spec: P38 — hook wiring parity gate
 
 **Slug:** `p38-hook-parity` · **Created:** 2026-09-13 · **Backlog:** P38
-**Status:** shipped
+**Status:** shipped as **v0.47.0** (PR #60) — the repo was in parity on arrival
+(8 registrations agree), proven by mutation in a repo copy and then by a fourth
+mutation its own suite does not make: narrowing a matcher on one side only,
+which the gate catches in both directions. So matchers are genuinely compared,
+not normalized away.
 **Prime:** `upgrades/v0.44.1.md`'s post-mortem — v0.44.0 added
 `delegation-guard.sh`/`delegation-record.sh` to `hooks/hooks.json` and stopped
 there; a vendored repo would have refreshed to 0.44.0 with the guard neither
