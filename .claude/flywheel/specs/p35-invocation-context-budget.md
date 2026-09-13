@@ -1,7 +1,7 @@
 # Spec: P35 — invocation-context budget (progressive disclosure for skill bodies)
 
 **Slug:** `p35-invocation-context-budget` · **Created:** 2026-09-13 · **Backlog:** P35
-**Status:** awaiting sign-off (owner) → next: `/flywheel:plan`
+**Status:** signed 2026-09-13 (owner) — ceiling 4,500 B confirmed (6 skills refactored); metric permission materialized per P21 → next: `/flywheel:plan`
 **Prime:** P24 (`p24-description-budget`) is the shape to copy — CI gate +
 committed budget file + paired test + logged escape hatch. P12
 (`p12-token-discipline`) already trimmed the *descriptions*; P23
