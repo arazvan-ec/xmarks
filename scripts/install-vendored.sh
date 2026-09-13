@@ -75,10 +75,17 @@ GATE_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh'
 # True if a previous install wrote this repo-relative path (so it is ours to
 # overwrite/remove without a backup).
 in_manifest() { [ -f "${MANIFEST}" ] && grep -qxF "$1" "${MANIFEST}"; }
-# Same question for a directory: did we vendor anything under this path?
-in_manifest_prefix() { [ -f "${MANIFEST}" ] && grep -qF "$1" "${MANIFEST}"; }
 
 if [ "${MODE}" = "uninstall" ]; then
+  remove_or_restore() {
+    local path="${TARGET}/$1"
+    if [ -f "${path}.pre-flywheel" ]; then
+      mv "${path}.pre-flywheel" "${path}"
+      echo "restored pre-flywheel backup of $1"
+    else
+      rm -f "${path}"
+    fi
+  }
   # Remove vendored skill dirs — manifest-driven, never glob-driven: a dir is
   # only ours to delete if the manifest says we wrote its SKILL.md. A dir whose
   # SKILL.md we backed up at install time belonged to the user first: restore
@@ -90,10 +97,18 @@ if [ "${MODE}" = "uninstall" ]; then
     if [ -f "${d}SKILL.md.pre-flywheel" ]; then
       mv "${d}SKILL.md.pre-flywheel" "${d}SKILL.md"
       echo "restored pre-flywheel backup of ${d#"${TARGET}"/}SKILL.md"
-      # The dir is the user's again, but any references/ in it is ours (P35):
-      # leaving it behind would orphan files beside a body that never cites them.
-      if [ -d "${d}references" ] && in_manifest_prefix ".claude/skills/${base}/references/"; then
-        rm -rf "${d}references"
+      # The dir is the user's again, but the references/ files we vendored into
+      # it are ours (P35). Remove them the way every other vendored file is
+      # removed — one at a time, manifest-driven, restoring any backup — and
+      # never the directory wholesale: it may hold the user's own files, and
+      # their .pre-flywheel backups, which an rm -rf would destroy.
+      if [ -f "${MANIFEST}" ]; then
+        while IFS= read -r rel; do
+          case "${rel}" in
+            ".claude/skills/${base}/references/"*) remove_or_restore "${rel}" ;;
+          esac
+        done < "${MANIFEST}"
+        rmdir "${d}references" 2>/dev/null || true
       fi
     elif in_manifest ".claude/skills/${base}/SKILL.md" || [ ! -f "${MANIFEST}" ]; then
       rm -rf "${d}"
@@ -104,15 +119,6 @@ if [ "${MODE}" = "uninstall" ]; then
 
   # Remove files we vendored (manifest when present, else the source listing
   # for pre-manifest installs), restoring any .pre-flywheel backups.
-  remove_or_restore() {
-    local path="${TARGET}/$1"
-    if [ -f "${path}.pre-flywheel" ]; then
-      mv "${path}.pre-flywheel" "${path}"
-      echo "restored pre-flywheel backup of $1"
-    else
-      rm -f "${path}"
-    fi
-  }
   if [ -f "${MANIFEST}" ]; then
     while IFS= read -r rel; do
       case "${rel}" in

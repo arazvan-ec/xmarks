@@ -31,6 +31,13 @@ echo "my own verifier" > "${TARGET}/.claude/agents/verifier.md"
 # on install, restored (dir kept) on uninstall.
 mkdir -p "${TARGET}/.claude/skills/flywheel-help"
 echo "my own help" > "${TARGET}/.claude/skills/flywheel-help/SKILL.md"
+# And inside it, a references/ dir of the user's own (P35): one file whose name
+# collides with a reference we vendor, one that is purely theirs. Uninstall must
+# restore the first from its backup and leave the second alone — the dir belongs
+# to the user, so removing it wholesale would destroy both.
+mkdir -p "${TARGET}/.claude/skills/flywheel-help/references"
+echo "MY OWN PRECIOUS NOTES" > "${TARGET}/.claude/skills/flywheel-help/references/good-to-know.md"
+echo "my private notes" > "${TARGET}/.claude/skills/flywheel-help/references/my-private-notes.md"
 git -C "${TARGET}" remote add origin git@github.com:acme/demo.git
 
 echo "== install (twice, must be idempotent) =="
@@ -248,6 +255,13 @@ pass "pre-existing skill restored from backup"
 [ "$(cat "${TARGET}/.claude/skills/flywheel-mine/SKILL.md")" = "mine" ] \
   || fail "uninstall deleted a user-owned flywheel-* dir it never vendored"
 pass "user-owned flywheel-* dirs preserved (manifest-driven uninstall)"
+HREF="${TARGET}/.claude/skills/flywheel-help/references"
+[ "$(cat "${HREF}/good-to-know.md" 2>/dev/null)" = "MY OWN PRECIOUS NOTES" ] \
+  || fail "uninstall did not restore the user's own references/good-to-know.md from its backup"
+[ ! -e "${HREF}/good-to-know.md.pre-flywheel" ] || fail "references backup file left behind"
+[ "$(cat "${HREF}/my-private-notes.md" 2>/dev/null)" = "my private notes" ] \
+  || fail "uninstall deleted a user file under references/ that flywheel never vendored"
+pass "user-owned references/ restored and preserved on uninstall"
 [ ! -e "${TARGET}/.claude/agents/reviewer-security.md" ] || fail "vendored agents survived uninstall"
 pass "vendored agents removed"
 [ "$(cat "${TARGET}/.claude/agents/verifier.md")" = "my own verifier" ] \
