@@ -1209,7 +1209,7 @@ while `apply.sh` exited 0.
 
 ---
 
-## P34 — A green arm for the `run` grader (design, 2026-09-10)
+## P34 — A green arm for the `run` grader (⚪ rejected for now, 2026-09-13)
 
 **Why.** `process` and `run` are graded red-on-untouched only. **The two arms
 catch opposite defects**, and that is the whole argument: red-on-untouched
@@ -2020,5 +2020,63 @@ Append-only. Newest at the bottom.
   absence of any solution→fixture binding, which the byte-identical `work`
   `cart.py` files made undetectable. Refactor proved behaviour-preserving by a
   byte-identical diff of the 41 `ok:` lines. **P34 opened** for a `run` green
-  arm, deliberately not bundled; `process`'s exemption stands on its own merits
-  (its grader would be asserting a tautology), not on cost.
+  arm, deliberately not bundled. *(Corrected 2026-09-13: this entry originally
+  said `process`'s exemption "stands on its own merits, not on cost". That
+  over-generalized from evals 1-2 to the whole skill — see the P34 section and
+  the entry below.)*
+- **2026-09-13** — **Priority review of the eval backlog, and P34 rejected.**
+  Measured rather than argued, before deciding what to build next:
+
+  - **Instrument/product ratio is 3.3:1.** Product — `skills/*/SKILL.md` (725
+    lines) + agents (124) + runtime hooks and scripts (1080) = 1929. Instrument —
+    `skills/*/evals/**` (3703) + `scripts/test-*.sh`/`check-*.sh` (2603) = 6306.
+    Plus 3760 lines of `docs/research/`.
+  - **Ten committed benchmark runs have found one skill defect** (`loop` eval 1,
+    "prose in a data field") **and at least three defects in the instrument
+    itself** (`loop`'s grader conflating source with state; `loop` eval 3's
+    fixture too weak — its own benchmark says "two defects, both mine"; `work`'s
+    grader carrying pre-existing drift, proven by a `control_pre_change` arm
+    scoring the same 0.833). **No release has ever been blocked by an eval
+    catching a regression.**
+  - **The strongest result in the repo is the value study, not a regression
+    gate.** `verify` scores 0.5–0.8 without the skill against 1.0 with it: without
+    it, a model rationalizes a FAIL into a PASS between a third and half the time.
+    The suites answer "did this regress?"; nothing answers "does this help?", and
+    only the second question can justify deleting a skill.
+  - **`/flywheel:update` — 56 lines of prose that run inside the user's repo —
+    has no test and no eval suite.** Bounded: only 2 of 39 upgrade notes are
+    `requires-action: true`, both old, and `install-vendored.sh` (415 lines) does
+    have a 278-line test. A low-frequency risk, but it is the only untested thing
+    that writes in someone else's repo.
+
+  **Retraction.** The first pass of this analysis also claimed the plugin was
+  barely used — the ledger dead since 2026-07-30, cycle telemetry written once,
+  pillar 2 holding a single self-referential contract. Those were all measured in
+  **this repo's own `.claude/flywheel/`**, which is the plugin's development repo
+  and the place where such silence means least. Flywheel does run in work repos,
+  each with its own ledger, runs and contracts, none of them visible from here.
+  The claim is withdrawn; the four measurements above stand, because they are
+  about the plugin's source tree and the eval suites themselves.
+
+  **Order this produces**, given that real repos depend on the skills:
+
+  1. **P31** — the only proposal whose failure has consequences outside this
+     repo. A review Critical waved through as a follow-up ships a vulnerability
+     into someone else's codebase. Everything else in this backlog is
+     bookkeeping.
+  2. **P32's README paragraph** — with real users, prose describing parallel
+     reviewer fan-out that no run has ever exercised is misleading them, not
+     merely uncovered. The suite can wait; the paragraph should not.
+  3. **The baseline arm on the remaining skills** — the one measurement with a
+     decisive track record.
+  4. **P34: no.** Instrument for the instrument, a third level. Its argument (the
+     two arms catch opposite defects — red-on-untouched catches an assertion that
+     can never fail, green-on-ideal one that can never pass) remains *correct*
+     and is irrelevant at this usage level: it would protect a grader that is
+     only exercised when someone spends 300–800k tokens by hand. Revisit if the
+     suites ever move into CI, or if a grader edit actually breaks a release.
+
+  Note for whoever picks up P31: `Task` dispatch has never been exercised in any
+  run (see P32), so a P31 run measures **inline** review, not the fan-out. That
+  does not invalidate it, but it must be said in the benchmark.
+

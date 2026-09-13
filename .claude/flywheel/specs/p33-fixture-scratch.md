@@ -9,11 +9,27 @@ No eval gate was required — the diff touches no `skills/*/SKILL.md`, agent or
 hook, so there is no skill behavior to regress. Requirement 9 says "all five
 eval READMEs"; only three exist (`process` and `run` carry their harness notes
 in `evals.json`), and all three were updated.
+
 **Prime:** `README.md` "Skill evals" → "How to run one iteration" (steps 1 and 3,
 the prose this replaces); `scripts/test-eval-graders.sh` (`fixture_copy`,
 `run_grader`, and the four `*_ideal` synthesizers this extracts);
 `scripts/check-fixture-leaks.sh` header ("a manual step is not a gate" — the
 moral this repo already wrote down); the five `skills/*/evals/README.md`.
+
+**Post-review (2026-09-10).** Code review before merge found four defects in
+`fixture-scratch.sh`, each reproduced before being fixed and each now covered by
+an assertion (the test went 45 → 49): GNU-only `sha256sum`/`sort -z`/`xargs
+-0r`/`find -printf` (now probed with the `shasum -a 256` fallback
+`scripts/gate.sh` carries); `BASED-ON` ignoring file modes, so dropping `+x`
+from a fixture's `run-tests.sh` left the digest identical while executors could
+no longer run it; `--suite` reporting a green suite on `Ran 0 tests`, which
+`python3 -m unittest` exits 0 for — requirement 7's "must not corrupt what is
+graded" now also means a zero-test run is a failure, matching the vacuous-pass
+refusal in `check-fixture-leaks.sh`; and `--print-prompt` treating the workdir
+as sed replacement syntax (`&` expanded to the whole match, `|` errored with its
+status masked, both exiting 0). Adding the mode bit changed the digest
+algorithm, so all seven committed `BASED-ON` files were regenerated — the
+tripwire refusing to proceed, which is the behaviour it exists for.
 
 ## R — Requirements
 
