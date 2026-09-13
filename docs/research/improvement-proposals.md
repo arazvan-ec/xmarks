@@ -1303,6 +1303,18 @@ did not catch it; a number would have.
   line vanished: `help` 8,395 → 4,342, `process` 8,280 → 4,458, `run` 5,703 →
   4,498, `update` 5,363 → 4,341, `compound` 4,716 → 4,231, `work` 8,385 → 5,259.
 
+**Follow-up left open by review (Low).** `install-vendored.sh`'s vendor loop
+reads `skills/<name>/references/*.md` without checking whether the entry is a
+symlink. A symlink in the *source* checkout pointing outside the repo would be
+read through and its contents vendored into a third-party repo under an
+innocuous `.md` name. It needs an attacker who already has commit access to
+xmarks, so it is not exploitable today — but this script runs inside other
+people's repositories with their write permissions, so the guard
+(`[ -L "${ref}" ] && continue`, or a `realpath` check against `${SRC}`) is worth
+having. Not bundled into v0.44.0: it needs its own paired-test scenario, and the
+same gap predates P35 for every other file the installer vendors, so fixing it
+for `references/` alone would be half a fix.
+
 **The open question is the ceiling.** Signed at 4,500 B; `work` did not reach it.
 After moving the transition line's JSON shape, the three routing cases, the
 delegation thresholds and the reasoning behind each commit rule, what remained
@@ -2133,3 +2145,16 @@ Append-only. Newest at the bottom.
   than move its anti-rationalization table, which would have been the silent
   weakening the spec's Safeguards name. The slack that buys the other sixteen is
   recorded in the spec's Revision, not glossed.
+- **2026-09-13** — **P35 review: two High findings, both mine, both fixed before
+  compound.** The installer's uninstall path `rm -rf`'d a `references/` directory
+  in the one branch where the code explicitly treats the parent as *not* ours,
+  destroying the user's own files and the `.pre-flywheel` backups it had just
+  restored; and the path had no coverage at all — deleting the three lines left
+  the suite printing "all installer tests passed". Fixed with the script's own
+  `remove_or_restore`, per-file and manifest-driven, and the coverage proved by
+  mutation. Separately, the P21 settings grant I wrote as
+  `Bash(bash scripts/*.sh:*)` broke the very convention the spec quotes, and per
+  the CLI's literal-prefix matcher would not even have approved the command it
+  was added for; it is six exact rules now. Both are the same class of mistake:
+  writing a rule that *reads* right instead of one that *is* right, in a change
+  whose whole subject is rules that bite.
