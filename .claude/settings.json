@@ -12,7 +12,12 @@
   },
   "permissions": {
     "allow": [
-      "Bash(bash scripts/*.sh:*)"
+      "Bash(bash scripts/check-invocation-budget.sh:*)",
+      "Bash(bash scripts/test-check-invocation-budget.sh:*)",
+      "Bash(bash scripts/check-description-budget.sh:*)",
+      "Bash(bash scripts/test-check-test-pairing.sh:*)",
+      "Bash(bash scripts/test-install-vendored.sh:*)",
+      "Bash(bash scripts/test-docs-consistency.sh:*)"
     ]
   }
 }
