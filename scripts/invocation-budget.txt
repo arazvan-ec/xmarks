@@ -10,9 +10,13 @@ body 4800
 worst 9200
 
 # Exceptions are DEBTS, not new normals — each one is a follow-up to pay down.
-# work: the anti-rationalization table must stay in the body (commit e4d552e),
-# and its one reference is cited from three steps a normal run reaches.
-work body=5400 worst=11400
+# work: P39 paid the worst-case debt (11,245 -> 6,359 B) by moving the argument
+# to docs/research and bringing the three routing rules back into the body. What
+# is left is a body of nothing but rules — the inner loop, commit discipline,
+# the route contract and the anti-rationalization table (e4d552e). 5700 is the
+# body's 5,396 plus the ~300 B rule this file applies everywhere, not the diff's
+# size: the ceiling follows the rule, never the occupant.
+work body=5700
 # process: contract-template and data-strategy are both cited from steps any
 # contract-writing run reaches, so both are charged on the hot path.
 process worst=10500
