@@ -78,6 +78,7 @@ pass "${AGENT_COUNT} agents vendored"
 # the silent half-install — the scripts sit there and never fire.
 [ -x "${TARGET}/.claude/flywheel/bin/delegation-guard.sh" ] || fail "delegation-guard.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/delegation-record.sh" ] || fail "delegation-record.sh missing or not executable"
+[ -x "${TARGET}/.claude/flywheel/bin/git-tracking-refs.sh" ] || fail "git-tracking-refs.sh missing or not executable"
 
 # End-to-end from the vendored location: the linter must find its tier table
 # there, and the riskiest-step rule must still bite.
@@ -167,6 +168,8 @@ assert pre.count((DELEG, '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-
 post = [(g.get("matcher"), h["command"]) for g in s["hooks"].get("PostToolUse", []) for h in g["hooks"]]
 assert post.count((DELEG, '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-record.sh')) == 1, \
     "flywheel PostToolUse delegation-record hook missing, duplicated, or missing its matcher"
+assert ss.count('"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/git-tracking-refs.sh') == 1, \
+    "flywheel SessionStart git-tracking-refs hook missing or duplicated"
 PY
 pass "settings.json merged once, pre-existing content preserved"
 

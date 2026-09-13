@@ -73,6 +73,7 @@ BASH_ALLOW_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/bash-allow.sh'
 GATE_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh'
 DELEGATION_GUARD_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-guard.sh'
 DELEGATION_RECORD_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-record.sh'
+GIT_TRACKING_REFS_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/git-tracking-refs.sh'
 
 # True if a previous install wrote this repo-relative path (so it is ours to
 # overwrite/remove without a backup).
@@ -126,6 +127,7 @@ if [ "${MODE}" = "uninstall" ]; then
     FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
     FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_BASH_ALLOW="${BASH_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
     FW_DELEGATION_GUARD="${DELEGATION_GUARD_CMD}" FW_DELEGATION_RECORD="${DELEGATION_RECORD_CMD}" \
+    FW_GIT_TRACKING_REFS="${GIT_TRACKING_REFS_CMD}" \
     python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
@@ -136,7 +138,7 @@ with open(path) as f:
 ours = {os.environ["FW_SESSION_START"], os.environ["FW_READ_PRIME"],
         os.environ["FW_WRITE_ALLOW"], os.environ["FW_BASH_ALLOW"],
         os.environ["FW_GATE"], os.environ["FW_DELEGATION_GUARD"],
-        os.environ["FW_DELEGATION_RECORD"]}
+        os.environ["FW_DELEGATION_RECORD"], os.environ["FW_GIT_TRACKING_REFS"]}
 hooks = settings.get("hooks", {})
 for event in list(hooks):
     groups = []
@@ -226,7 +228,7 @@ echo "vendored $(ls "${SRC}"/agents/*.md | wc -l | tr -d ' ') agents into .claud
 # Hooks, plus the analysis scripts the skills invoke (plan-route, run-cost):
 # without those a vendored repo cannot lint its plan's routes or read its own
 # run cost, and the skills' fail-open makes that absence silent.
-for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/delegation-guard.sh "${SRC}"/scripts/delegation-record.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh; do
+for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/delegation-guard.sh "${SRC}"/scripts/delegation-record.sh "${SRC}"/scripts/git-tracking-refs.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh; do
   rewrite "${f}" | vendor_file ".claude/flywheel/bin/$(basename "${f}")"
   chmod +x "${BIN_DST}/$(basename "${f}")"
 done
@@ -356,6 +358,7 @@ rm -f "${NEW_MANIFEST}"
 FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
 FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_BASH_ALLOW="${BASH_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
 FW_DELEGATION_GUARD="${DELEGATION_GUARD_CMD}" FW_DELEGATION_RECORD="${DELEGATION_RECORD_CMD}" \
+FW_GIT_TRACKING_REFS="${GIT_TRACKING_REFS_CMD}" \
 python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
@@ -399,6 +402,11 @@ wanted = [
     ("PostToolUse", "mcp__.*__create_session|Agent|Task", {
         "type": "command",
         "command": os.environ["FW_DELEGATION_RECORD"],
+        "timeout": 5,
+    }),
+    ("SessionStart", None, {
+        "type": "command",
+        "command": os.environ["FW_GIT_TRACKING_REFS"],
         "timeout": 5,
     }),
 ]
