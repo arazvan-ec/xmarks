@@ -1,7 +1,7 @@
 # Spec: P35 — invocation-context budget (progressive disclosure for skill bodies)
 
 **Slug:** `p35-invocation-context-budget` · **Created:** 2026-09-13 · **Backlog:** P35
-**Status:** verified PASS 2026-09-13 — metric exit 0 (six gates); eval release gate green before the bump (process 15/15, work 7/7, run 4/4, each at its committed rate); shipped as v0.44.0 on `claude/skill-context-optimization-l21ryh`. Ceiling revised to 5,300 B during work (see Revision below) → next: `/flywheel:review`, then `/flywheel:compound`
+**Status:** verified PASS 2026-09-13 — metric exit 0 (six gates); eval release gate green before the bump (process 15/15, work 7/7, run 4/4, each at its committed rate); shipped as v0.44.0 on `claude/skill-context-optimization-l21ryh`. Ceiling revised to 5,300 B during work (see Revision below) → cycle closed: review PASS (two High findings fixed, one Low logged), compound done. Remaining: PR and merge.
 **Prime:** P24 (`p24-description-budget`) is the shape to copy — CI gate +
 committed budget file + paired test + logged escape hatch. P12
 (`p12-token-discipline`) already trimmed the *descriptions*; P23
