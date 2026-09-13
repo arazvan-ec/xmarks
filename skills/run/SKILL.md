@@ -9,15 +9,15 @@ allowed-tools: Read, Edit, Write, Grep, Glob, Bash
 
 Run this process against the given input: **$ARGUMENTS**
 
-There is no static backend here — **you are the execution**. You follow the contract's fixed rules the way a service would, apply judgment only where the contract permits, and land the result in the repo's real datastore.
+You are the execution: follow the contract the way a service would.
 
 ## 0. Progress ledger (spans the whole run)
 
-At run start, materialize each contract Rule as a visible task in the host task system (one task per Rule, in order) and update states (`pending → in_progress → completed`, `blocked` on gates/failures) **at every transition**. Telemetry is two-tier: append **one JSON line per transition** to `.claude/flywheel/runs/<slug>/<date>.jsonl`, and render the HTML report `.claude/flywheel/runs/<slug>/<date>.html` from that JSONL only at gates/blockers and at the final report — declared repo extensions may adjust the filenames (e.g. a per-profile suffix) — (ledger + timings, gates, unit telemetry, outputs, verdict, and a **cost block labelled as proxies** — totals of the per-transition `cost` fields `bytes_out` / `tool_calls` / `elapsed_s`, never tokens — never secrets); republish the artifact to the same stable URL each time the HTML is rendered, never per Rule transition. Chat is for gates, blockers, and the final report only — routine progress lives in the ledger. If the task system or artifact publishing is unavailable, proceed anyway and say so in the final report (fail-open, never block the run).
+At run start, materialize each contract Rule as a visible task (one per Rule, in order) and update its state **at every transition**. Append one JSON line per transition to `.claude/flywheel/runs/<slug>/<date>.jsonl` — **never tokens, never secrets** — and render the HTML report from it only at gates/blockers and the final report. Chat is for gates, blockers and the final report. Fail-open: if the task system or publishing is unavailable, proceed and say so, never block the run. Mechanics: `skills/run/references/ledger-and-extensions.md`.
 
 ## 1. Load the contract and the data strategy
 
-Parse the first token as the process slug and the rest as input. Read `.claude/flywheel/processes/<slug>.md`. If it is missing, stop and point the user to `/flywheel:process <description>` — do not improvise a contract. Read `.claude/flywheel/DATA.md` for the persistence access/conventions, and the process's own **Persistence** section for any per-process override. If the contract's frontmatter declares `extensions:`, read each `.claude/flywheel/extensions/<name>.md` and honor it for the whole run — extensions may add inputs (parse their tokens, e.g. `profile=<id>`, with the extension's defaults), output namespacing, isolation rules, telemetry naming, or capability fallbacks. Extensions never override the contract's Rules, Output schema, or Guardrails.
+Parse the first token as the process slug and the rest as input. Read `.claude/flywheel/processes/<slug>.md`; if it is missing, stop and point the user to `/flywheel:process <description>` — do not improvise a contract. Read `.claude/flywheel/DATA.md` and the contract's own **Persistence** section, which overrides it. Honor every `extensions:` the frontmatter declares for the whole run — **an extension never overrides the contract's Rules, Output schema, or Guardrails**. They may add: `skills/run/references/ledger-and-extensions.md`.
 
 ## 2. Execute against the fixed rules
 
@@ -35,11 +35,7 @@ If the process declares a `metric`, dispatch the `evaluator` agent to independen
 
 ## 4. Reflect and mature the contract
 
-After a successful run, spend one short reflection on whether the contract should get sharper — but **only on evidence from this run**, at most one refinement, and never drift for its own sake:
-
-- A rule was ambiguous and you had to make a call → tighten the rule so the next run is deterministic.
-- A recurring input shape, edge case, or data-quality issue the Rules don't mention → note the guard.
-- A judgment heuristic that measurably improved the output → promote it from ad-hoc to written latitude.
+After a successful run, spend one short reflection on whether the contract should get sharper — but **only on evidence from this run**, at most one refinement, and never drift for its own sake. What qualifies: `skills/run/references/ledger-and-extensions.md`.
 
 If (and only if) something qualifies, append a dated entry to the contract's **Improvement log**:
 

@@ -71,6 +71,9 @@ jobs:
       - name: Check skill description budget (P24)
         run: bash scripts/check-description-budget.sh
 
+      - name: Check skill invocation budget (P35)
+        run: bash scripts/check-invocation-budget.sh
+
       - name: Check eval fixtures for grading leaks (P26)
         run: bash scripts/check-fixture-leaks.sh
 

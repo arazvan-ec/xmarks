@@ -79,6 +79,15 @@ DELEGATION_RECORD_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-rec
 in_manifest() { [ -f "${MANIFEST}" ] && grep -qxF "$1" "${MANIFEST}"; }
 
 if [ "${MODE}" = "uninstall" ]; then
+  remove_or_restore() {
+    local path="${TARGET}/$1"
+    if [ -f "${path}.pre-flywheel" ]; then
+      mv "${path}.pre-flywheel" "${path}"
+      echo "restored pre-flywheel backup of $1"
+    else
+      rm -f "${path}"
+    fi
+  }
   # Remove vendored skill dirs — manifest-driven, never glob-driven: a dir is
   # only ours to delete if the manifest says we wrote its SKILL.md. A dir whose
   # SKILL.md we backed up at install time belonged to the user first: restore
@@ -90,6 +99,19 @@ if [ "${MODE}" = "uninstall" ]; then
     if [ -f "${d}SKILL.md.pre-flywheel" ]; then
       mv "${d}SKILL.md.pre-flywheel" "${d}SKILL.md"
       echo "restored pre-flywheel backup of ${d#"${TARGET}"/}SKILL.md"
+      # The dir is the user's again, but the references/ files we vendored into
+      # it are ours (P35). Remove them the way every other vendored file is
+      # removed — one at a time, manifest-driven, restoring any backup — and
+      # never the directory wholesale: it may hold the user's own files, and
+      # their .pre-flywheel backups, which an rm -rf would destroy.
+      if [ -f "${MANIFEST}" ]; then
+        while IFS= read -r rel; do
+          case "${rel}" in
+            ".claude/skills/${base}/references/"*) remove_or_restore "${rel}" ;;
+          esac
+        done < "${MANIFEST}"
+        rmdir "${d}references" 2>/dev/null || true
+      fi
     elif in_manifest ".claude/skills/${base}/SKILL.md" || [ ! -f "${MANIFEST}" ]; then
       rm -rf "${d}"
     else
@@ -99,15 +121,6 @@ if [ "${MODE}" = "uninstall" ]; then
 
   # Remove files we vendored (manifest when present, else the source listing
   # for pre-manifest installs), restoring any .pre-flywheel backups.
-  remove_or_restore() {
-    local path="${TARGET}/$1"
-    if [ -f "${path}.pre-flywheel" ]; then
-      mv "${path}.pre-flywheel" "${path}"
-      echo "restored pre-flywheel backup of $1"
-    else
-      rm -f "${path}"
-    fi
-  }
   if [ -f "${MANIFEST}" ]; then
     while IFS= read -r rel; do
       case "${rel}" in
@@ -214,6 +227,18 @@ for dir in "${SRC}"/skills/*/; do
   rewrite "${dir}SKILL.md" \
     | sed "1,/^name: ${name}\$/s/^name: ${name}\$/name: flywheel-${name}/" \
     | vendor_file ".claude/skills/flywheel-${name}/SKILL.md"
+  # Progressive-disclosure references (P35) travel with the body that cites
+  # them: a vendored SKILL.md pointing at a references/ file nobody copied
+  # loses the rule silently, in someone else's repo. Manifest-recorded like
+  # every other vendored file, so pruning and uninstall already know them.
+  if [ -d "${dir}references" ]; then
+    mkdir -p "${SKILLS_DST}/flywheel-${name}/references"
+    for ref in "${dir}references"/*.md; do
+      [ -f "${ref}" ] || continue
+      rewrite "${ref}" \
+        | vendor_file ".claude/skills/flywheel-${name}/references/$(basename "${ref}")"
+    done
+  fi
   count=$((count + 1))
 done
 echo "vendored ${count} skills into .claude/skills/flywheel-*"
