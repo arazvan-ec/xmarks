@@ -77,6 +77,9 @@ jobs:
       - name: Check eval fixtures for grading leaks (P26)
         run: bash scripts/check-fixture-leaks.sh
 
+      - name: Check hook wiring parity (P38)
+        run: bash scripts/check-hook-parity.sh
+
       # Discovery, not a hand-written list. check-test-pairing.sh guarantees a
       # script arrives with its test; this guarantees the test is then run, so a
       # new one cannot sit in the tree never executed (which is what happened to

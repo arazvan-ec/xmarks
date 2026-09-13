@@ -53,6 +53,9 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P31 | Grade the cycle blocked by a *subjective* gate (review Critical) | 🟡 designed, not built | The last untested gate: verify goes GREEN and only the reviewer's judgment stands between the cycle and "done". Design below; the open risk is discrimination, not mechanization |
 | P32 | Parallel reviewer dispatch: test it, or stop implying it is tested | 🟡 designed, not built | A subagent cannot spawn subagents, so no suite has ever exercised `reviewer-*` dispatch. Two honest options below; the dishonest one is leaving the README implying coverage that does not exist |
 | P35 | Invocation-context budget: a ceiling on what a skill body costs | ✅ shipped | Done — `references/` as the progressive-disclosure convention, a per-skill byte ceiling in CI (the P24 shape, applied to what an invocation pays rather than what every session pays), and the installer fix that makes a vendored `references/` arrive at all. Bodies 69,065 → 55,352 B; worst case 8,395 → 5,259 |
+| P36 | What an invocation actually costs: worst case + per-skill ceilings | ✅ shipped (v0.47.0) | Done — the gate enforces `body` **and** `worst` (body + every reference it can reach, transitively, counted once); keyed budget file with named exceptions carrying their reason. Open: the two exceptions are debts — `work` at ~11.4 KB worst case argues for splitting the skill, not for a bigger number |
+| P37 | The guard must not ask about a tier the agent definition already fixed | ✅ shipped (v0.47.0) | Done — `delegation-guard.sh` resolves `subagent_type` to its agent frontmatter; a pinned `model:`/`effort:` satisfies TIER. CONTEXT and FANOUT untouched, `create_session` unchanged |
+| P38 | Hook parity: two wirings, one assertion | ✅ shipped (v0.47.0) | Done — `check-hook-parity.sh` runs the installer into a throwaway target and diffs the `(event, matcher, script)` triples it produced against `hooks/hooks.json`, both directions, plus a landed-and-executable check on `bin/`. Wired into CI. Open: proves the two agree, never that either is correct |
 
 ## Priority overview
 
@@ -89,6 +92,9 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | **P31** | **The subjective gate: review Critical blocks the cycle** | High | Medium | Medium | Yes |
 | **P32** | **Reviewer dispatch coverage (or an honest limitation)** | Medium | Low | Low | Partial |
 | **P35** | **Invocation-context budget (a ceiling on skill bodies)** | Medium | Low | Low | Yes |
+| **P36** | **Worst-case invocation cost + per-skill ceilings** (P35 measured the wrong number) | High | Low | Low | Yes |
+| **P37** | **A pinned agent tier satisfies the delegation guard** (false positive on flywheel's own path) | Medium | Low | Low | Yes |
+| **P38** | **Hook parity gate** (the root cause v0.44.1 fixed by hand) | High | Low | Low | Yes |
 
 ---
 
@@ -1326,6 +1332,124 @@ the other sixteen skills now hold 800–4,000 B of slack the ratchet no longer
 reports, and the drift this proposal exists to stop remains possible inside it.
 Revisit with per-skill exceptions, or by splitting `work`.
 
+## P36 — What an invocation actually costs: worst case, and per-skill ceilings (✅ shipped)
+
+**Why.** P35 budgeted the body and left the reference free. That is not what an
+invocation pays. Measured on v0.46.0, body vs body + every reference it cites:
+
+| skill | body before P35 | body now | refs | worst |
+| --- | --- | --- | --- | --- |
+| `work` | 8,385 | 5,259 | 5,986 | **11,245** |
+| `process` | 8,280 | 4,458 | 5,873 | 10,331 |
+| `help` | 8,395 | 4,342 | 4,537 | 8,879 |
+| `run` | 5,703 | 4,498 | 2,406 | 6,904 |
+| `update` | 5,363 | 4,341 | 1,708 | 6,049 |
+| `compound` | 4,716 | 4,231 | 1,059 | 5,290 |
+
+All six grew. The saving P35 booked is real only for a reference that is *not*
+read, and `skills/work/SKILL.md` cites its single reference three times — the
+transition line's shape, honoring the route, the delegation thresholds — on the
+hot path of any cycle. So a `work` invocation went 8,385 → ~11,245 B while the
+gate printed `OK — worst case work at 5,259/5,300`. An instrument that reports
+green while the thing it measures gets worse is worse than no instrument: P35's
+own argument, turned on P35.
+
+The ceiling compounded it. 5,300 with `work` at 5,259 is **41 B of headroom** —
+the next edit to that body reddens CI — and it was raised from the signed 4,500
+purely to fit its largest occupant, which is a description of the status quo
+rather than a budget. P35 closed by naming this: *"Revisit with per-skill
+exceptions, or by splitting `work`."* This is that revision.
+
+**What shipped.**
+
+- **Two enforced numbers per skill.** `body` (always paid, the P35 measure) and
+  `worst` = body + every distinct `references/*.md` reachable from it, resolved
+  **transitively** with cycle protection and counted once per file however many
+  times it is cited. `worst` is deliberately an upper bound: every citation
+  followed. It cannot be gamed by moving a hot-path rule out of the body, which
+  is the exact move the old gate rewarded.
+- **Conditionality is not inferred.** Whether a given run reaches a given
+  citation is not mechanically knowable from prose, and a heuristic over
+  "read it now" phrasing would be a guess dressed as a measurement (P18). So a
+  rarely-read reference is charged in full, and that cost is accepted and stated
+  rather than estimated away.
+- **Per-skill ceilings.** `scripts/invocation-budget.txt` becomes keyed:
+  defaults plus named exceptions, each carrying the reason it exists. The
+  exceptions are **debts**, not a new normal — `work` because its
+  anti-rationalization table must stay in the body (the guardrail against the
+  failure the skill exists to prevent), `process` because a contract-writing run
+  reaches both of its references. A bare legacy number now fails loudly instead
+  of being coerced, on the script's own principle that a coerced budget is a
+  budget nobody set.
+- **Dangling citations are chased one level down.** A reference citing a file
+  nobody wrote loses the rule as silently as a body doing it.
+
+**Open.** The two exceptions are the backlog this leaves: `work` at ~11.4 KB
+worst case is the honest argument for splitting the skill rather than for a
+larger number, and the split is the follow-up P35 also named.
+
+## P37 — The guard must not ask about a tier the agent definition already fixed (✅ shipped)
+
+**Why.** `delegation-guard.sh` (P-less, v0.44.0) asks whenever `model` is absent,
+on the premise that the child inherits the caller's. True for
+`create_session`. **False for a subagent**: every agent in `agents/` pins its own
+`model:` and `effort:` in frontmatter — `executor` haiku/low, `verifier`
+haiku/low, `reviewer-*` sonnet/high. So `Agent(subagent_type: "executor")` — the
+call `skills/work/SKILL.md` instructs for a `+delegate` task — tripped a TIER ask
+about a tier the plan and the agent definition had both already decided, unless
+the word "effort", "route", "tier" or "/model" happened to fall in the prompt.
+
+A guard that fires on its own project's hot path is a guard that gets clicked
+through. Alarm fatigue is not a cosmetic cost: it is how the *real* warning —
+the pasted contract, the duplicate child, the fan that grew on its own — stops
+being read.
+
+**What shipped.** The TIER family resolves `subagent_type` to its agent
+definition (`.claude/agents/<name>.md` in a vendored repo, then the plugin's own
+`agents/`) and treats a frontmatter `model:` / `effort:` as the decision it is.
+Everything else is untouched: no `subagent_type`, no file, no `model:` in it ⇒
+exactly the old behavior; `create_session` ⇒ unchanged, it really does inherit;
+and CONTEXT and FANOUT still apply in full, because a pinned model says nothing
+about whether the child was given an anchor or is the fourth of its kind.
+
+**Residual, intended.** An agent definition with no `model:` still asks. That is
+not a gap — an agent that pins no tier inherits, which is the case the guard was
+written for.
+
+## P38 — Hook parity: two wirings, one assertion (✅ shipped)
+
+**Why.** flywheel has two delivery paths and they are wired independently: an
+**installed** plugin reads `hooks/hooks.json`; a **vendored** repo — the
+documented path for Claude Code on the web, which does not install marketplace
+plugins — is wired by `install-vendored.sh`, whose hook list is hand-maintained.
+v0.44.0 updated the first and not the second, and shipped a delegation guard that
+a vendored repo would never have copied or registered. The failure mode is the
+worst available: a guard that never fires is indistinguishable from one with
+nothing to warn about.
+
+v0.44.1 fixed the instance **by hand** and said so, including why neither
+existing gate caught it (`check-test-pairing.sh` only asserts that a *changed*
+script moved with its test, and `install-vendored.sh` was not changed). The root
+cause — one list duplicated in two places with nothing asserting they agree —
+survived the fix. The next hook walks into it.
+
+**What shipped.** `scripts/check-hook-parity.sh`, a **behavioral** gate: it runs
+the installer into a throwaway target, reads the `.claude/settings.json` it
+actually produced, and compares the normalized `(event, matcher, script)` triples
+against `hooks/hooks.json` in both directions — a hook the installer forgot, and
+a hook it registers that `hooks.json` dropped. It also asserts each script
+**landed** in `bin/` and is executable, because `bin/*` is copied from a separate
+explicit list and a registration pointing at a file that was never copied is its
+own failure (both were present in 0.44.0).
+
+Static parsing of the installer's bash and its Python heredoc was rejected: that
+parser would be exactly as fragile as the drift it is meant to catch, and it
+would assert what the script *says* instead of what it *does*.
+
+**Residual, stated.** The gate proves the two wirings **agree**, never that
+either is correct. A hook registered on the wrong matcher in both places passes
+it.
+
 ---
 
 ## Decision log
@@ -2158,3 +2282,25 @@ Append-only. Newest at the bottom.
   was added for; it is six exact rules now. Both are the same class of mistake:
   writing a rule that *reads* right instead of one that *is* right, in a change
   whose whole subject is rules that bite.
+- **2026-09-13** — **P36/P37/P38 shipped as v0.47.0: three instruments that
+  were not measuring what they claimed.** All three came out of reviewing
+  v0.44.0–v0.46.0, and all three are the same defect at different layers. P35's
+  gate reported `OK — worst case work at 5,259/5,300` while a `work` invocation
+  had gone from 8,385 B to ~11,245 B, because the reference a step cites is read
+  by the very invocation that was credited for not having it inline; all six
+  extracted skills grew in total. The gate now charges `worst` = body + every
+  reference reachable from it, so the extraction that pays for itself is
+  distinguishable from the one that just moved the bytes, and ceilings are
+  per-skill with the exceptions named as debts. P37 is the guard that asked
+  about a tier the agent's own frontmatter had already pinned — a false positive
+  on the exact call `/flywheel:work` instructs, and alarm fatigue is how the
+  warnings that matter stop being read. P38 is the root cause v0.44.1 fixed by
+  hand: two hand-maintained hook lists with nothing asserting they agree.
+  No eval gate applies — the diff touches no `skills/*/SKILL.md`, agent or
+  prompt, so there is no skill behavior to regress.
+- **2026-09-13** — **The ceiling rule got applied to the ceiling that set it.**
+  P36's first cut put `worst` at a round 9,000, which left `help` (8,879) 121 B
+  of headroom — the same defect as P35's 5,300 with `work` at 5,259, one order
+  of magnitude smaller, and the next ordinary edit to that skill would have
+  reddened CI. Raised to 9,200 with the ~300 B rule written into the file. A
+  rule you state in a review and then break in the fix is not a rule.

@@ -77,9 +77,14 @@ plugin itself is no exception — "it's a small change" is the exact excuse
   bump `.claude-plugin/plugin.json` `version`, add `upgrades/v<version>.md`
   (frontmatter `version` / `requires-action: true|false` / `summary:`, a
   `## What changed`, and a `## Strategy` only when `requires-action: true`).
-- **A `SKILL.md` body is capped** (P35): a session loads the whole body of every
-  skill it invokes, so `scripts/check-invocation-budget.sh` fails when any
-  `skills/*/SKILL.md` exceeds the ceiling in `scripts/invocation-budget.txt`.
+- **A `SKILL.md` invocation is capped, twice** (P35, P36): a session loads the
+  whole body of every skill it invokes, plus whatever references that run reads.
+  So `scripts/check-invocation-budget.sh` enforces **two** numbers per skill
+  against `scripts/invocation-budget.txt` — `body` (the file itself) and `worst`
+  (body + every `references/*.md` reachable from it, transitively, counted once).
+  `worst` is the upper bound on purpose: moving a hot-path rule out of the body
+  buys nothing, because the byte still counts. The file carries defaults plus
+  named per-skill exceptions, and an exception is a debt with a reason on it.
   Detail that a step consults — templates, format catalogues, rationale,
   onboarding material — belongs in `skills/<name>/references/<topic>.md`, **cited
   by path from the step that needs it** so it loads only when that step is

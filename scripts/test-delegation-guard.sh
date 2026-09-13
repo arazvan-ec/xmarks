@@ -126,6 +126,66 @@ assert_ask "${out}" "TIER" || fail "a subagent without model must raise TIER"
 case "${out}" in *subagent*) pass "the subagent wording says subagent" ;;
   *) fail "the subagent ask calls it a session" ;; esac
 
+# --- subagent tier resolution (P37) -----------------------------------------
+# A subagent_type whose agent definition pins model+effort in frontmatter has
+# its tier already decided — TIER must stand aside for exactly those fields.
+
+out="$(payload s-exec-happy Agent \
+  '{"subagent_type":"executor","prompt":"Execute the mechanical rename from issue #29."}' | run_hook)"
+assert_silent "${out}" "executor's frontmatter pins model+effort; TIER must not ask"
+pass "subagent_type executor (real agents/executor.md, model+effort pinned) is silent"
+
+out="$(payload s-exec-noanchor Agent \
+  '{"subagent_type":"executor","prompt":"Execute the mechanical rename, no source given."}' | run_hook)"
+assert_ask "${out}" "CONTEXT" || fail "pinned agent with no anchor must still raise CONTEXT"
+case "${out}" in *"TIER —"*) fail "pinned agent must not raise TIER even without an anchor" ;;
+  *) pass "pinned agent without an anchor raises CONTEXT only, not TIER" ;; esac
+
+out="$(payload s-unknown-agent Agent \
+  '{"subagent_type":"definitely-not-a-real-agent","prompt":"issue #29, do the task."}' | run_hook)"
+assert_ask "${out}" "TIER" || fail "an unresolvable subagent_type must fail open to TIER"
+pass "unknown subagent_type fails open to TIER"
+
+# Project-dir fixture: .claude/agents/<name>.md, the vendored install path.
+PROJ1="${WORK}/proj1"
+mkdir -p "${PROJ1}/.claude/agents"
+cat > "${PROJ1}/.claude/agents/proj-pinned.md" <<'EOF'
+---
+name: proj-pinned
+model: opus
+effort: high
+---
+body
+EOF
+out="$(payload s-proj-pinned Agent \
+  '{"subagent_type":"proj-pinned","prompt":"issue #40, do the task."}' \
+  | CLAUDE_PROJECT_DIR="${PROJ1}" bash "${SCRIPT}")"
+assert_silent "${out}" "a project-dir agent definition (vendored path) with model+effort must be silent"
+pass "subagent_type resolved via \$CLAUDE_PROJECT_DIR/.claude/agents/ is silent"
+
+# Same fixture root, an agent pinning model only: effort is still undecided.
+cat > "${PROJ1}/.claude/agents/half-pinned.md" <<'EOF'
+---
+name: half-pinned
+model: sonnet
+---
+body
+EOF
+out="$(payload s-half-pinned Agent \
+  '{"subagent_type":"half-pinned","prompt":"issue #41, do the task."}' \
+  | CLAUDE_PROJECT_DIR="${PROJ1}" bash "${SCRIPT}")"
+assert_ask "${out}" "TIER" || fail "model pinned but no effort must still raise TIER"
+case "${out}" in
+  *"silently INHERITS"*) fail "model is pinned by the agent; the ask must not claim it inherits" ;;
+  *"you have not chosen the effort"*) pass "model-only agent asks for the effort only" ;;
+  *) fail "expected the ask to name only the effort as undecided" ;;
+esac
+
+out="$(payload s-create-session-tier mcp__Claude_Code_Remote__create_session \
+  '{"prompt":"issue #29, do the task."}' | run_hook)"
+assert_ask "${out}" "TIER" || fail "create_session without model must still raise TIER (unchanged)"
+pass "create_session without model still raises TIER"
+
 # --- fail-open -------------------------------------------------------------
 out="$(payload s-x Bash '{"command":"ls"}' | run_hook)"
 assert_silent "${out}" "an unrelated tool must pass through untouched"
