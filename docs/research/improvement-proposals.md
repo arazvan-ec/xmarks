@@ -2282,3 +2282,25 @@ Append-only. Newest at the bottom.
   was added for; it is six exact rules now. Both are the same class of mistake:
   writing a rule that *reads* right instead of one that *is* right, in a change
   whose whole subject is rules that bite.
+- **2026-09-13** — **P36/P37/P38 shipped as v0.47.0: three instruments that
+  were not measuring what they claimed.** All three came out of reviewing
+  v0.44.0–v0.46.0, and all three are the same defect at different layers. P35's
+  gate reported `OK — worst case work at 5,259/5,300` while a `work` invocation
+  had gone from 8,385 B to ~11,245 B, because the reference a step cites is read
+  by the very invocation that was credited for not having it inline; all six
+  extracted skills grew in total. The gate now charges `worst` = body + every
+  reference reachable from it, so the extraction that pays for itself is
+  distinguishable from the one that just moved the bytes, and ceilings are
+  per-skill with the exceptions named as debts. P37 is the guard that asked
+  about a tier the agent's own frontmatter had already pinned — a false positive
+  on the exact call `/flywheel:work` instructs, and alarm fatigue is how the
+  warnings that matter stop being read. P38 is the root cause v0.44.1 fixed by
+  hand: two hand-maintained hook lists with nothing asserting they agree.
+  No eval gate applies — the diff touches no `skills/*/SKILL.md`, agent or
+  prompt, so there is no skill behavior to regress.
+- **2026-09-13** — **The ceiling rule got applied to the ceiling that set it.**
+  P36's first cut put `worst` at a round 9,000, which left `help` (8,879) 121 B
+  of headroom — the same defect as P35's 5,300 with `work` at 5,259, one order
+  of magnitude smaller, and the next ordinary edit to that skill would have
+  reddened CI. Raised to 9,200 with the ~300 B rule written into the file. A
+  rule you state in a review and then break in the fix is not a rule.
