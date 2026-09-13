@@ -41,7 +41,14 @@ if [ "${SKIP_INVOCATION_BUDGET:-0}" = "1" ]; then
 fi
 
 python3 - "${FW_INVOCATION_BUDGET:-}" "${FW_INVOCATION_WORST:-}" <<'PY'
-import glob, os, re, sys
+import glob, os, re, signal, sys
+
+# A reader pipes this into `head`. Without this, Python turns the closed pipe
+# into a traceback on stderr and a non-zero exit, which reads as a gate failure.
+try:
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+except (AttributeError, ValueError):
+    pass
 
 body_override = sys.argv[1] if len(sys.argv) > 1 else ""
 worst_override = sys.argv[2] if len(sys.argv) > 2 else ""

@@ -150,6 +150,15 @@ run_check "${R4B}"
 grep -q "ghost" "${WORK}/out" || fail "the failure must name the stale exception"
 pass "a stale exception (renamed or deleted skill) fails and is named"
 
+echo "== a piped reader gets no traceback =="
+RP="${WORK}/rpipe"
+budget "${RP}" "body 4000" "worst 8000"
+skill "${RP}" alpha 100
+skill "${RP}" beta 100
+PIPED="$(cd "${RP}" && bash "${CHECK}" 2>&1 | head -1 || true)"
+case "${PIPED}" in *Traceback*|*BrokenPipe*) fail "piping stdout must not produce a traceback: ${PIPED}" ;; esac
+pass "a closed pipe (head) produces no traceback"
+
 echo "== a transitive citation is counted =="
 R5="${WORK}/r5"
 budget "${R5}" "body 2000" "worst 2500"
