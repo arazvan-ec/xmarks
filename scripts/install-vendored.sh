@@ -75,6 +75,8 @@ GATE_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh'
 # True if a previous install wrote this repo-relative path (so it is ours to
 # overwrite/remove without a backup).
 in_manifest() { [ -f "${MANIFEST}" ] && grep -qxF "$1" "${MANIFEST}"; }
+# Same question for a directory: did we vendor anything under this path?
+in_manifest_prefix() { [ -f "${MANIFEST}" ] && grep -qF "$1" "${MANIFEST}"; }
 
 if [ "${MODE}" = "uninstall" ]; then
   # Remove vendored skill dirs — manifest-driven, never glob-driven: a dir is
@@ -88,6 +90,11 @@ if [ "${MODE}" = "uninstall" ]; then
     if [ -f "${d}SKILL.md.pre-flywheel" ]; then
       mv "${d}SKILL.md.pre-flywheel" "${d}SKILL.md"
       echo "restored pre-flywheel backup of ${d#"${TARGET}"/}SKILL.md"
+      # The dir is the user's again, but any references/ in it is ours (P35):
+      # leaving it behind would orphan files beside a body that never cites them.
+      if [ -d "${d}references" ] && in_manifest_prefix ".claude/skills/${base}/references/"; then
+        rm -rf "${d}references"
+      fi
     elif in_manifest ".claude/skills/${base}/SKILL.md" || [ ! -f "${MANIFEST}" ]; then
       rm -rf "${d}"
     else
@@ -210,6 +217,18 @@ for dir in "${SRC}"/skills/*/; do
   rewrite "${dir}SKILL.md" \
     | sed "1,/^name: ${name}\$/s/^name: ${name}\$/name: flywheel-${name}/" \
     | vendor_file ".claude/skills/flywheel-${name}/SKILL.md"
+  # Progressive-disclosure references (P35) travel with the body that cites
+  # them: a vendored SKILL.md pointing at a references/ file nobody copied
+  # loses the rule silently, in someone else's repo. Manifest-recorded like
+  # every other vendored file, so pruning and uninstall already know them.
+  if [ -d "${dir}references" ]; then
+    mkdir -p "${SKILLS_DST}/flywheel-${name}/references"
+    for ref in "${dir}references"/*.md; do
+      [ -f "${ref}" ] || continue
+      rewrite "${ref}" \
+        | vendor_file ".claude/skills/flywheel-${name}/references/$(basename "${ref}")"
+    done
+  fi
   count=$((count + 1))
 done
 echo "vendored ${count} skills into .claude/skills/flywheel-*"
