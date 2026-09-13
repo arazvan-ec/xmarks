@@ -274,5 +274,34 @@ assert cmds == ["echo existing"], f"unexpected hooks after uninstall: {cmds}"
 PY
 pass "settings.json back to pre-existing content only"
 
+echo "== references/ travel with the body they belong to (P35) =="
+# A body that cites skills/<n>/references/<topic>.md is only correct in a
+# vendored repo if the referenced file travels with it; the vendor loop copies
+# SKILL.md alone. Installed from a COPY of this source tree carrying one added
+# reference, so the assertion is about the installer rather than about whichever
+# skills happen to carry references today.
+SRC2="${WORK}/src"
+mkdir -p "${SRC2}"
+tar -c --exclude=.git -C "${SRC}" . | tar -x -C "${SRC2}"
+mkdir -p "${SRC2}/skills/help/references"
+echo "step-scoped detail." > "${SRC2}/skills/help/references/detail.md"
+TARGET2="${WORK}/target2"
+mkdir -p "${TARGET2}/.claude"
+git init -q "${TARGET2}"
+REF="${TARGET2}/.claude/skills/flywheel-help/references/detail.md"
+
+bash "${SRC2}/scripts/install-vendored.sh" "${TARGET2}" > /dev/null
+[ -f "${REF}" ] || fail "references/ not vendored — every vendored body citing one would dangle"
+grep -q "step-scoped detail." "${REF}" || fail "vendored reference content differs from source"
+pass "references/ vendored alongside SKILL.md"
+
+bash "${SRC2}/scripts/install-vendored.sh" "${TARGET2}" > /dev/null
+[ -f "${REF}" ] || fail "references/ lost on a second, idempotent install"
+pass "references/ survive a re-install"
+
+bash "${SRC2}/scripts/install-vendored.sh" --uninstall "${TARGET2}" > /dev/null
+[ ! -e "${REF}" ] || fail "vendored reference survived uninstall — it is ours to remove"
+pass "references/ removed on uninstall"
+
 echo ""
 echo "all installer tests passed"
