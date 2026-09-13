@@ -56,6 +56,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P36 | What an invocation actually costs: worst case + per-skill ceilings | ✅ shipped (v0.47.0) | Done — the gate enforces `body` **and** `worst` (body + every reference it can reach, transitively, counted once); keyed budget file with named exceptions carrying their reason. Open: the two exceptions are debts — `work` at ~11.4 KB worst case argues for splitting the skill, not for a bigger number |
 | P37 | The guard must not ask about a tier the agent definition already fixed | ✅ shipped (v0.47.0) | Done — `delegation-guard.sh` resolves `subagent_type` to its agent frontmatter; a pinned `model:`/`effort:` satisfies TIER. CONTEXT and FANOUT untouched, `create_session` unchanged |
 | P38 | Hook parity: two wirings, one assertion | ✅ shipped (v0.47.0) | Done — `check-hook-parity.sh` runs the installer into a throwaway target and diffs the `(event, matcher, script)` triples it produced against `hooks/hooks.json`, both directions, plus a landed-and-executable check on `bin/`. Wired into CI. Open: proves the two agree, never that either is correct |
+| P39 | Pay `work`'s invocation debt: move the argument out of the loaded set | ✅ shipped (v0.48.0) | Done — ~3,300 B of `work-detail.md` was the body restated with its reasoning; the argument moved to an uncited `docs/research/work-loop-rationale.md`, the three routing rules came back into the body, the reference kept only the transition line. 11,245 → 6,241 B (−44%), `worst` exception deleted. Open: `process` (10,331) is now the most expensive invocation |
 
 ## Priority overview
 
@@ -95,6 +96,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | **P36** | **Worst-case invocation cost + per-skill ceilings** (P35 measured the wrong number) | High | Low | Low | Yes |
 | **P37** | **A pinned agent tier satisfies the delegation guard** (false positive on flywheel's own path) | Medium | Low | Low | Yes |
 | **P38** | **Hook parity gate** (the root cause v0.44.1 fixed by hand) | High | Low | Low | Yes |
+| **P39** | **Pay `work`'s invocation debt** (the follow-up P35 and P36 both named) | High | Medium | Medium | Yes |
 
 ---
 
@@ -1449,6 +1451,68 @@ would assert what the script *says* instead of what it *does*.
 **Residual, stated.** The gate proves the two wirings **agree**, never that
 either is correct. A hook registered on the wrong matcher in both places passes
 it.
+
+## P39 — Pay `work`'s invocation debt: move the argument out of the loaded set (✅ shipped)
+
+**Why.** P36 measured the debt and named it; this pays it. `work` cost 11,245 B
+per invocation (body 5,259 + a reference of 5,986 cited from three steps every
+cycle reaches). P35 had booked that extraction as a saving.
+
+**The finding that reframes it: most of `work-detail.md` was not detail.**
+Section by section — *why the git pair is force-free* (339 B) restated the body's
+own two commands; *the reasoning behind each commit rule* (1,101 B) restated all
+four bullets the body already carried imperatively; *why two reds and not three*
+(456 B) restated the body's rule plus one sentence of argument; *delegation
+thresholds* (1,416 B) restated the four thresholds the body already named inline
+and explained each. **~3,300 B was the body said twice, the second time with its
+reasoning** — and the copy is charged on every invocation that follows any of the
+three citations, which is every cycle.
+
+**What shipped: one rule, one place.** Every line answered one test — does a run
+executing the loop need this to *act*?
+
+- **Yes → the body, stated once.** Including the three routing cases `e4d552e`
+  had summarized into a pointer (`+delegate` → the `executor` agent, never argue
+  with an `ESCALATE`; a route above the session's tier; a route you could not
+  honor, which must be *said*). That was the one place the P35 extraction did
+  weaken the skill, and it is the reason the body got *bigger* by 137 B.
+- **It is a shape the run must reproduce → the reference.** What is left there is
+  the transition line's JSON, and nothing else: 5,986 → 845 B.
+- **It explains why the rule is right → `docs/research/work-loop-rationale.md`,
+  uncited by any skill**, so it is neither charged by the gate nor loaded at
+  execution. It is for the person deciding whether to change a rule, not for the
+  model following it.
+
+The same test was applied to the **body**, not only the reference — *"you cannot
+observe your own usage…"*, *"Long solo runs bloat context and bury signal"*,
+*"the plan gate approved the route along with the task"* all left. That is what
+bought the room for the returning rules without loosening anything.
+
+**Result: 11,245 → 6,241 B, a 44% cut.** The `worst=11400` exception is deleted;
+`work` is no longer the most expensive skill to invoke. The body exception moved
+5,400 → 5,700 *after* the body landed at 5,396 inside it — set by the file's own
+~300 B headroom rule, not by the diff, because 4 B of headroom is the exact
+defect this line of work exists to name.
+
+**Kept deliberately.** The anti-rationalization table, which is reasons but is
+not *explaining* a rule — it is the rule, and `e4d552e` was right to refuse to
+move it. And the one-clause reason attached to an imperative (`git add -A` is
+banned: it sweeps in whatever was already dirty): that clause is what makes the
+rule obeyable, and it costs a line, not a section.
+
+**Rejected: splitting the skill** (P35's other suggestion) — it is one inner loop
+with its commit and route obligations, and splitting would put a rule one
+invocation away from the step that must honor it: the defect being paid off,
+relocated. **Rejected: splitting the reference into four files** — it would make
+a run needing only the transition shape pay 1,255 B instead of 5,986, a real gain
+in practice and **zero** against `worst`, which charges every cited reference.
+Worth recording plainly: **P36's metric cannot tell a well-partitioned reference
+from a monolith.** That is the price of refusing to infer conditionality from
+prose, and it means the metric rewards deleting bytes, never organizing them.
+
+**Open.** `process` (10,331 B) inherits the title of most expensive invocation
+and holds the last `worst` exception. Its shape is the same: two references both
+reached by any contract-writing run.
 
 ---
 
