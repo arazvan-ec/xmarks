@@ -9,5 +9,10 @@
   },
   "enabledPlugins": {
     "flywheel@xmarks": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(bash scripts/*.sh:*)"
+    ]
   }
 }
