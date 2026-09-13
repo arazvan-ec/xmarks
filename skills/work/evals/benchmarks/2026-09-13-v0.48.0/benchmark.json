@@ -1,0 +1,36 @@
+{
+ "metadata": {
+  "skill_name": "work",
+  "skill_path": "skills/work",
+  "executor_model": "opus (fresh-context general-purpose subagent), the session default",
+  "timestamp": "2026-09-13",
+  "evals_run": [
+   1
+  ],
+  "runs_per_configuration": 1,
+  "configurations": [
+   "with_skill"
+  ],
+  "release_gate_for": "P39 v0.48.0 \u2014 work's invocation debt paid",
+  "baseline_note": "without_skill baseline intentionally skipped: this is regression detection for a re-partition, not a skill-value study."
+ },
+ "runs": [
+  {
+   "eval_id": 1,
+   "eval_name": "feature-test-first",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 7,
+    "failed": 0,
+    "total": 7
+   }
+  }
+ ],
+ "notes": [
+  "Release gate for P39, which re-partitioned skills/work/SKILL.md and its reference: the argument moved to an uncited docs/research file, the three routing cases returned to the body, the reference kept only the transition line. 11,245 -> 6,241 B per invocation.",
+  "TWO suites were run, not one, because work's own evals do not grade what this diff moved. work eval 1's workdir is not a git repository, so its commit path is exercised only as 'fail-open, reported once' and no commit, transition line or route is ever asserted. loop eval 1 is the suite that grades those.",
+  "Counts are the graders' own PASS:/FAIL: lines."
+ ]
+}

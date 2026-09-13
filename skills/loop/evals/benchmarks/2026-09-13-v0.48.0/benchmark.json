@@ -1,0 +1,38 @@
+{
+ "metadata": {
+  "skill_name": "loop",
+  "skill_path": "skills/loop",
+  "executor_model": "opus (fresh-context general-purpose subagent), the session default",
+  "timestamp": "2026-09-13",
+  "evals_run": [
+   1
+  ],
+  "runs_per_configuration": 1,
+  "configurations": [
+   "with_skill"
+  ],
+  "release_gate_for": "P39 v0.48.0 \u2014 the suite that grades what the re-partition moved",
+  "baseline_note": "without_skill baseline intentionally skipped: regression detection."
+ },
+ "runs": [
+  {
+   "eval_id": 1,
+   "eval_name": "cycle-telemetry-and-atomic-commits",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 11,
+    "failed": 0,
+    "total": 11
+   }
+  }
+ ],
+ "notes": [
+  "Release gate for P39, which re-partitioned skills/work/SKILL.md and its reference: the argument moved to an uncited docs/research file, the three routing cases returned to the body, the reference kept only the transition line. 11,245 -> 6,241 B per invocation.",
+  "TWO suites were run, not one, because work's own evals do not grade what this diff moved. work eval 1's workdir is not a git repository, so its commit path is exercised only as 'fail-open, reported once' and no commit, transition line or route is ever asserted. loop eval 1 is the suite that grades those.",
+  "Counts are the graders' own PASS:/FAIL: lines.",
+  "Deviation recorded rather than glossed: the executor reported that the Task tool was unavailable in its context, so it ran the review lens inline instead of dispatching reviewer-* subagents. Same caveat class as P31/P32 \u2014 this run measures inline review, not fan-out. It does not touch the assertions this gate turns on (telemetry, commits, behaviour).",
+  "The run surfaced a real domain finding it logged as a follow-up rather than fixing: add_stock appends duplicates, so restock fans out across every matching row. That is fixture behaviour, not a skill defect, and the grader does not assert on it."
+ ]
+}
