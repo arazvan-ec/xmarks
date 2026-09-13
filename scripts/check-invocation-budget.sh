@@ -30,6 +30,13 @@ override = sys.argv[1] if len(sys.argv) > 1 else ""
 BUDGET_FILE = "scripts/invocation-budget.txt"
 
 def die(msg, code=2):
+    # Flush stdout first. The breakdown is printed to stdout, the verdict to
+    # stderr, and CI redirects both into one stream: with stdout block-buffered
+    # (any environment that does not set PYTHONUNBUFFERED, GitHub's runners
+    # among them) the verdict would otherwise land BEFORE the breakdown it
+    # refers to. Output a reader has to reorder in their head is a defect, and
+    # one that only shows up on someone else's machine.
+    sys.stdout.flush()
     print(f"invocation-budget: {msg}", file=sys.stderr)
     sys.exit(code)
 

@@ -79,6 +79,19 @@ echo "== breakdown is ordered, largest first =="
   || fail "breakdown must list every skill in descending size order"
 pass "breakdown ordered largest first"
 
+echo "== the breakdown precedes the verdict it refers to =="
+# Regression: the breakdown goes to stdout and the verdict to stderr, and CI
+# redirects both into one stream. With stdout block-buffered — any environment
+# that does not set PYTHONUNBUFFERED, GitHub's runners among them — an unflushed
+# stdout puts the verdict first, and a reader has to reorder the output in their
+# head. Asserted with the buffering the runner actually has, not the one this
+# machine happens to have.
+(cd "${R2}" && env -u PYTHONUNBUFFERED bash "${CHECK}" >"${WORK}/buf" 2>&1) || true
+[ "$(grep -n "^  hoggy" "${WORK}/buf" | cut -d: -f1 | head -1)" -lt \
+  "$(grep -n "^invocation-budget:" "${WORK}/buf" | cut -d: -f1 | head -1)" ] \
+  || fail "the verdict landed before the breakdown: $(cat "${WORK}/buf")"
+pass "breakdown precedes the verdict under block-buffered stdout"
+
 echo "== a resolvable citation passes =="
 R3="${WORK}/r3"; mkdir -p "${R3}/scripts"
 echo 4500 > "${R3}/scripts/invocation-budget.txt"
