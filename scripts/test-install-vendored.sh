@@ -31,6 +31,13 @@ echo "my own verifier" > "${TARGET}/.claude/agents/verifier.md"
 # on install, restored (dir kept) on uninstall.
 mkdir -p "${TARGET}/.claude/skills/flywheel-help"
 echo "my own help" > "${TARGET}/.claude/skills/flywheel-help/SKILL.md"
+# And inside it, a references/ dir of the user's own (P35): one file whose name
+# collides with a reference we vendor, one that is purely theirs. Uninstall must
+# restore the first from its backup and leave the second alone — the dir belongs
+# to the user, so removing it wholesale would destroy both.
+mkdir -p "${TARGET}/.claude/skills/flywheel-help/references"
+echo "MY OWN PRECIOUS NOTES" > "${TARGET}/.claude/skills/flywheel-help/references/good-to-know.md"
+echo "my private notes" > "${TARGET}/.claude/skills/flywheel-help/references/my-private-notes.md"
 git -C "${TARGET}" remote add origin git@github.com:acme/demo.git
 
 echo "== install (twice, must be idempotent) =="
@@ -263,6 +270,13 @@ pass "pre-existing skill restored from backup"
 [ "$(cat "${TARGET}/.claude/skills/flywheel-mine/SKILL.md")" = "mine" ] \
   || fail "uninstall deleted a user-owned flywheel-* dir it never vendored"
 pass "user-owned flywheel-* dirs preserved (manifest-driven uninstall)"
+HREF="${TARGET}/.claude/skills/flywheel-help/references"
+[ "$(cat "${HREF}/good-to-know.md" 2>/dev/null)" = "MY OWN PRECIOUS NOTES" ] \
+  || fail "uninstall did not restore the user's own references/good-to-know.md from its backup"
+[ ! -e "${HREF}/good-to-know.md.pre-flywheel" ] || fail "references backup file left behind"
+[ "$(cat "${HREF}/my-private-notes.md" 2>/dev/null)" = "my private notes" ] \
+  || fail "uninstall deleted a user file under references/ that flywheel never vendored"
+pass "user-owned references/ restored and preserved on uninstall"
 [ ! -e "${TARGET}/.claude/agents/reviewer-security.md" ] || fail "vendored agents survived uninstall"
 pass "vendored agents removed"
 [ "$(cat "${TARGET}/.claude/agents/verifier.md")" = "my own verifier" ] \
@@ -288,6 +302,35 @@ cmds = [h["command"] for e in s.get("hooks", {}).values() for g in e for h in g[
 assert cmds == ["echo existing"], f"unexpected hooks after uninstall: {cmds}"
 PY
 pass "settings.json back to pre-existing content only"
+
+echo "== references/ travel with the body they belong to (P35) =="
+# A body that cites skills/<n>/references/<topic>.md is only correct in a
+# vendored repo if the referenced file travels with it; the vendor loop copies
+# SKILL.md alone. Installed from a COPY of this source tree carrying one added
+# reference, so the assertion is about the installer rather than about whichever
+# skills happen to carry references today.
+SRC2="${WORK}/src"
+mkdir -p "${SRC2}"
+tar -c --exclude=.git -C "${SRC}" . | tar -x -C "${SRC2}"
+mkdir -p "${SRC2}/skills/help/references"
+echo "step-scoped detail." > "${SRC2}/skills/help/references/detail.md"
+TARGET2="${WORK}/target2"
+mkdir -p "${TARGET2}/.claude"
+git init -q "${TARGET2}"
+REF="${TARGET2}/.claude/skills/flywheel-help/references/detail.md"
+
+bash "${SRC2}/scripts/install-vendored.sh" "${TARGET2}" > /dev/null
+[ -f "${REF}" ] || fail "references/ not vendored — every vendored body citing one would dangle"
+grep -q "step-scoped detail." "${REF}" || fail "vendored reference content differs from source"
+pass "references/ vendored alongside SKILL.md"
+
+bash "${SRC2}/scripts/install-vendored.sh" "${TARGET2}" > /dev/null
+[ -f "${REF}" ] || fail "references/ lost on a second, idempotent install"
+pass "references/ survive a re-install"
+
+bash "${SRC2}/scripts/install-vendored.sh" --uninstall "${TARGET2}" > /dev/null
+[ ! -e "${REF}" ] || fail "vendored reference survived uninstall — it is ours to remove"
+pass "references/ removed on uninstall"
 
 echo ""
 echo "all installer tests passed"

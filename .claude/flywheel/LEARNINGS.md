@@ -1,5 +1,37 @@
 # flywheel learnings
 
+## fixture: running a flywheel skill eval end to end
+
+<!-- fw: type=fixture; date=2026-09-13; files=scripts/fixture-scratch.sh,skills/process/evals/check.sh,skills/work/evals/check.sh; spec=p35-invocation-context-budget; branch=claude/skill-context-optimization-l21ryh; evidence=three suites run this way — process 15/15, work 7/7, run 4/4, each matching its committed benchmark; ~70k subagent tokens per eval, not the 300-800k the backlog assumed -->
+
+Three commands, no ritual. Instantiate: `bash scripts/fixture-scratch.sh <skill> <id> --into <dir>` (`--into` takes a dir you own, so it survives the run and can be graded afterwards; without it the scratch is a mktemp that gets torn down). Get the prompt with `--print-prompt`. Then dispatch a **fresh-context subagent**, giving it four things: the absolute path of the SKILL.md to follow, the workdir as "the repo you are operating on", the eval's prompt verbatim as `$ARGUMENTS`, and eval-mode rules (the sign-off GATE is pre-approved, ask no clarifying questions, stay inside the workdir). Grade with `bash skills/<skill>/evals/check.sh <id> <dir>`.
+
+Two things that will bite. The subagent must be told explicitly not to write into the xmarks checkout — the skill file lives there and it will otherwise treat it as the project root. And a run costs ~70k subagent tokens, an order of magnitude under the figure the backlog uses to argue evals are too expensive to run; one eval per touched skill is affordable as a release gate.
+
+## pattern: extraction behind a citation keeps the skill intact — when the rules stay in the body
+
+<!-- fw: type=pattern; date=2026-09-13; files=skills/process/SKILL.md,skills/process/references/contract-template.md,skills/work/SKILL.md; spec=p35-invocation-context-budget; branch=claude/skill-context-optimization-l21ryh; evidence=process eval 1 at 15/15 with the 54-line contract template moved behind a citation; work 7/7 reproducing the committed benchmark's own fail-open note; run 4/4 maturing its contract with the maturation detail cited -->
+
+Moving step-scoped detail out of a `SKILL.md` into `references/<topic>.md` did **not** degrade the skills: a fresh subagent following the shortened body reached the cited material and produced output the graders passed. The split that made it safe: the body keeps the rules that bite (what must never be got wrong, stated imperatively), the reference keeps shapes, procedures, catalogues and rationale, and the citation sits **at the step that needs it**, worded as an instruction to read it now rather than a "see also".
+
+The check that proves a given extraction, cheaply: diff every line removed from the body against the body plus its references (`grep -qxF -- "$line"` per line — note the `--`, or a line starting with `-` is read as an option). A removed line that lands in no reference is a lost rule. Run it before the commit, not after.
+
+## gotcha: a new branch in install-vendored.sh can land with zero coverage and the suite still says "all installer tests passed"
+
+<!-- fw: type=gotcha; date=2026-09-13; files=scripts/install-vendored.sh,scripts/test-install-vendored.sh; spec=p35-invocation-context-budget; branch=claude/skill-context-optimization-l21ryh; evidence=review deleted the three new lines and the suite still exited 0; after the added assertions, the same deletion turns it red -->
+
+`test-install-vendored.sh` installs into more than one target, and which uninstall branch a target exercises depends on whether its skill dir collided with a vendored name at setup time. A new branch added to the *collision* path is invisible to a test that only ever uninstalls from a *fresh* target — the suite passes, reports nothing, and the path could be deleted outright without a failure.
+
+The guard is a mutation check, and it is two commands: delete the branch you just wrote, run the suite, confirm it goes red, restore. Cheap enough to do every time, and it is the only thing that distinguishes "the test passes" from "the test tests this".
+
+## decision: a cost paid per invocation needs a per-skill ceiling, never a sum
+
+<!-- fw: type=decision; date=2026-09-13; files=scripts/check-invocation-budget.sh,scripts/invocation-budget.txt,scripts/check-description-budget.sh; spec=p35-invocation-context-budget; branch=claude/skill-context-optimization-l21ryh; evidence=measured over v0.39.0-v0.43.0 — the summed, gated cost (descriptions) held at 3,301→3,326/3,600 while the ungated per-invocation cost (bodies) grew 14%, 60,527→69,065 B -->
+
+P24 budgets the `description` fields as a **total** because every session pays all of them together. A `SKILL.md` body is paid alone, by whoever invokes that skill, so the same shape would measure a cost nobody pays and would let the largest skill grow as long as a small one shrank. The rule generalizes: match the invariant's shape to how the cost is actually incurred — sum what is always paid together, cap what is paid one at a time.
+
+Rejected alongside it: trusting spec-and-review discipline without a gate. The 14% drift above happened entirely inside diffs that passed both. Measure in bytes (`wc -c`), not characters — `wc -m` silently equals `wc -c` under `LC_ALL=C`, and a gate whose verdict depends on the runner's locale is not a gate.
+
 ## fixture: planted-bug mini-repo for grading a verifier (tally family)
 <!-- fw: type=fixture; date=2026-07-29; files=skills/verify/evals/fixtures/tally-fail/app.py,skills/verify/evals/fixtures/tally-sneaky/app.py,skills/verify/evals/fixtures/tally-pass/app.py,skills/verify/evals/evals.json; spec=p22-evals-pillar1; branch=claude/p22-evals-pillar1-23u4h7; evidence=sanity runs 2026-07-29: tally-fail unittest FAILED + CLI total=14.75, tally-sneaky unittest OK + CLI rows=2, tally-pass OK + rows=3 total=20.00 -->
 
