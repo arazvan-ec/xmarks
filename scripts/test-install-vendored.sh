@@ -71,7 +71,13 @@ pass "${AGENT_COUNT} agents vendored"
 # skills' fail-open turns that into silence rather than an error.
 [ -x "${TARGET}/.claude/flywheel/bin/plan-route.sh" ] || fail "plan-route.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/run-cost.sh" ] || fail "run-cost.sh missing or not executable"
-[ -f "${TARGET}/.claude/flywheel/bin/route-tiers.txt" ] || fail "route-tiers.txt missing — plan-route.sh reads it beside itself"
+[ -f "${TARGET}/.claude/flywheel/bin/route-tiers.txt" ] || fail "route-tiers.txt missing — plan-route.sh and delegation-guard.sh read it beside themselves"
+# The delegation hooks are the case this test did not cover when they landed:
+# hooks/hooks.json reached installed plugins, but a VENDORED repo is wired by
+# THIS script, and its hook list is hand-maintained. Copied but unregistered is
+# the silent half-install — the scripts sit there and never fire.
+[ -x "${TARGET}/.claude/flywheel/bin/delegation-guard.sh" ] || fail "delegation-guard.sh missing or not executable"
+[ -x "${TARGET}/.claude/flywheel/bin/delegation-record.sh" ] || fail "delegation-record.sh missing or not executable"
 
 # End-to-end from the vendored location: the linter must find its tier table
 # there, and the riskiest-step rule must still bite.
@@ -155,6 +161,12 @@ assert pre.count(("Bash", '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/bash-allow
     "flywheel PreToolUse bash-allow hook missing, duplicated, or missing its Bash matcher"
 assert stop.count('"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh') == 1, \
     "flywheel Stop hook missing or duplicated"
+DELEG = "mcp__.*__create_session|Agent|Task"
+assert pre.count((DELEG, '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-guard.sh')) == 1, \
+    "flywheel PreToolUse delegation-guard hook missing, duplicated, or missing its matcher"
+post = [(g.get("matcher"), h["command"]) for g in s["hooks"].get("PostToolUse", []) for h in g["hooks"]]
+assert post.count((DELEG, '"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-record.sh')) == 1, \
+    "flywheel PostToolUse delegation-record hook missing, duplicated, or missing its matcher"
 PY
 pass "settings.json merged once, pre-existing content preserved"
 
