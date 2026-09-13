@@ -77,6 +77,14 @@ plugin itself is no exception — "it's a small change" is the exact excuse
   bump `.claude-plugin/plugin.json` `version`, add `upgrades/v<version>.md`
   (frontmatter `version` / `requires-action: true|false` / `summary:`, a
   `## What changed`, and a `## Strategy` only when `requires-action: true`).
+- **A `SKILL.md` body is capped** (P35): a session loads the whole body of every
+  skill it invokes, so `scripts/check-invocation-budget.sh` fails when any
+  `skills/*/SKILL.md` exceeds the ceiling in `scripts/invocation-budget.txt`.
+  Detail that a step consults — templates, format catalogues, rationale,
+  onboarding material — belongs in `skills/<name>/references/<topic>.md`, **cited
+  by path from the step that needs it** so it loads only when that step is
+  reached. The rules that bite stay in the body. A citation that does not resolve
+  fails the same gate; the installer vendors `references/` with the body.
 - **A new skill must be listed in BOTH** the README command table **and** the
   `/flywheel:help` map — `scripts/test-docs-consistency.sh` fails otherwise. Every
   agent must be mentioned in the README.
