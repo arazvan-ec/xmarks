@@ -3,11 +3,11 @@
 #   worst — body + every distinct references/*.md reachable from it
 # body 4800 sits ~300 B above the tightest occupant of the default (run 4498,
 # loop 4474): a skill may grow a paragraph, a second one is a deliberate diff.
-# worst 9000 is a round 121 B above help (8879) — tighter, because the two
-# skills that need room already hold named exceptions below.
+# worst 9200 keeps the same ~300 B rule against the tightest occupant of the
+# default (help 8879); the two skills that need more hold named exceptions below.
 
 body 4800
-worst 9000
+worst 9200
 
 # Exceptions are DEBTS, not new normals — each one is a follow-up to pay down.
 # work: the anti-rationalization table must stay in the body (commit e4d552e),
