@@ -1,0 +1,56 @@
+{
+ "metadata": {
+  "skill_name": "run",
+  "skill_path": "skills/run",
+  "evals_run": [
+   1
+  ],
+  "executor_model": "session default (fresh-context general-purpose subagents)",
+  "timestamp": "2026-09-13",
+  "runs_per_configuration": 1,
+  "configurations": [
+   "with_skill"
+  ],
+  "release_gate_for": "P35 v0.44.0 \u2014 the invocation-context budget; these three skills' bodies were extracted behind skills/<name>/references/",
+  "baseline_note": "without_skill baseline intentionally skipped: this is the release-gate iteration (regression detection) for an extraction that moved reference material out of the body, not a skill-value study. The question asked here is exactly whether a model following the shortened body still reaches the material now behind a citation."
+ },
+ "runs": [
+  {
+   "eval_id": 1,
+   "eval_name": "plate-audit-run",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "fixture_state": "clean copy of skills/run/evals/fixtures/demo-repo per the eval's setup",
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "time_seconds": 207.6,
+    "tokens": 72738,
+    "tool_calls": 16,
+    "errors": 0
+   },
+   "notes": [
+    "Persisted, proved by read-back of the staged blob, and matured the contract v1 to v2 off this run's own evidence \u2014 the maturation rule survived its detail moving to references/.",
+    "The ledger rules held with the mechanics behind a citation: 18 transition lines with cost proxies and no tokens field, and the fail-open path taken and reported when no host task system was available.",
+    "Matches the committed 2026-07-30 benchmark for this eval: 4/4, pass_rate 1.0."
+   ]
+  }
+ ],
+ "run_summary": {
+  "with_skill": {
+   "eval_1": {
+    "pass_rate": 1.0,
+    "runs": 1
+   }
+  },
+  "delta": {
+   "pass_rate": "+0.00 vs the last committed benchmark for this eval"
+  }
+ },
+ "notes": [
+  "Only eval 1 of each suite was run. It is the eval that exercises the material the extraction moved; the release gate asked whether extraction regressed the skill, and one eval per touched skill answers that at the cost the suites actually carry.",
+  "Token counts are the subagent totals the harness reported, not an estimate."
+ ]
+}
