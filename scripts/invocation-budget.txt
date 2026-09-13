@@ -1,1 +1,18 @@
-5300
+# flywheel invocation budget (P36), bytes.
+#   body  — SKILL.md itself, paid at every invocation
+#   worst — body + every distinct references/*.md reachable from it
+# body 4800 sits ~300 B above the tightest occupant of the default (run 4498,
+# loop 4474): a skill may grow a paragraph, a second one is a deliberate diff.
+# worst 9000 is a round 121 B above help (8879) — tighter, because the two
+# skills that need room already hold named exceptions below.
+
+body 4800
+worst 9000
+
+# Exceptions are DEBTS, not new normals — each one is a follow-up to pay down.
+# work: the anti-rationalization table must stay in the body (commit e4d552e),
+# and its one reference is cited from three steps a normal run reaches.
+work body=5400 worst=11400
+# process: contract-template and data-strategy are both cited from steps any
+# contract-writing run reaches, so both are charged on the hot path.
+process worst=10500
