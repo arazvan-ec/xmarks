@@ -102,6 +102,15 @@ files = sorted(glob.glob("skills/*/SKILL.md"))
 if not files:
     die("no skills/*/SKILL.md found — run me from the repo root")
 
+# An exception for a skill that no longer exists is slack nobody is reporting —
+# the failure this gate was built to remove, arriving by rename instead of by
+# growth.
+stale = sorted(set(exceptions) - {os.path.basename(os.path.dirname(p)) for p in files})
+if stale:
+    die("exception(s) for " + ", ".join(stale) + f" in {BUDGET_FILE}, which name "
+        "no skill — a stale exception after a rename grants slack nobody reports",
+        code=1)
+
 # Any references/ path, however it is written: repo-relative (skills/<n>/…) or
 # bare (references/…), resolved against the citing FILE's own skill directory —
 # a bare path inside skills/work/references/x.md means skills/work/references/.

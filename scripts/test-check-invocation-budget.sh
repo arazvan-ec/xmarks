@@ -141,6 +141,15 @@ run_check "${R4}"
 [ "${RC}" -eq 1 ] || fail "an exception must raise only the key it names — worst 2000 still binds"
 pass "per-skill exception applies, and only to the key it names"
 
+echo "== an exception naming no skill is stale, and fails =="
+R4B="${WORK}/r4b"
+budget "${R4B}" "body 1000" "worst 2000" "ghost body=9000"
+skill "${R4B}" real 500
+run_check "${R4B}"
+[ "${RC}" -eq 1 ] || fail "an exception for a skill that does not exist must fail, got ${RC}: $(cat "${WORK}/out")"
+grep -q "ghost" "${WORK}/out" || fail "the failure must name the stale exception"
+pass "a stale exception (renamed or deleted skill) fails and is named"
+
 echo "== a transitive citation is counted =="
 R5="${WORK}/r5"
 budget "${R5}" "body 2000" "worst 2500"
