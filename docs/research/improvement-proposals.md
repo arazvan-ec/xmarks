@@ -2368,3 +2368,34 @@ Append-only. Newest at the bottom.
   of magnitude smaller, and the next ordinary edit to that skill would have
   reddened CI. Raised to 9,200 with the ~300 B rule written into the file. A
   rule you state in a review and then break in the fix is not a rule.
+- **2026-09-13** — **P39 shipped as v0.48.0: the debt P35 and P36 both named is
+  paid, and most of it was never detail.** `work` cost 11,245 B per invocation.
+  Section by section, ~3,300 B of its 5,986 B reference was the body restated
+  with its reasoning — the commit rules, the escalation rule, the delegation
+  thresholds, the git pair — all of which the body already carried imperatively.
+  P35 had booked that as an extraction; it was a copy, charged on every cycle.
+  The re-partition asked one question of every line — does a run executing the
+  loop need this to *act*? — and sent the answer to one of three places: the body
+  (stated once), the reference (a shape to reproduce), or an uncited
+  `docs/research/work-loop-rationale.md` that no invocation can reach. 11,245 →
+  6,241 B. The three routing rules came *back* into the body, which is why it
+  grew 137 B: summarizing them into a pointer was the one place the P35
+  extraction genuinely weakened the skill, and it took until now to say so with
+  a diff instead of a complaint.
+- **2026-09-13** — **The ceiling moved after the constraint was met, and that is
+  worth scrutiny.** The body landed at 5,396 inside the 5,400 exception the spec
+  held it to. The exception then moved to 5,700 — not to rescue a failing diff,
+  but because 4 B of headroom is the defect this line of work exists to name
+  (v0.45.0 shipped 41 B; the first P36 cut left `help` 121 B). The number comes
+  from the file's own ~300 B rule. Recorded in the spec, the commit and the
+  upgrade note, because *"I met the constraint and then loosened it"* is a shape
+  that should never be discovered by a reader rather than announced by the
+  author.
+- **2026-09-13** — **One eval would have been a green light that proved
+  nothing.** P22 phase 2 asks for `work`'s eval before a `work` change. But
+  `work` eval 1's workdir is not a git repository, so its commit path only ever
+  exercises "fail-open, reported once" — it never asserts a commit, a transition
+  line or a route, which is exactly what this diff moved. `loop` eval 1 is the
+  suite that grades those, so both ran (7/7 and 11/11). The rule to take from
+  it: the gate is the suite that can *see* the change, which is not always the
+  suite named after the skill.
