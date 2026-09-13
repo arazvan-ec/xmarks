@@ -123,11 +123,33 @@ the 6 `SKILL.md` bodies, `.github/workflows/validate-plugins.yml`, `CLAUDE.md`,
 `docs/research/improvement-proposals.md`, both `.claude-plugin/*.json`.
 **New dependencies:** none — bash, `python3` only where the existing gates already use it.
 
+## Amendment 2026-09-13 — the extraction check, hardened
+
+`main` recorded that no release has ever been blocked by an eval catching a
+regression, and that ten benchmark runs found one skill defect against at least
+three in the instrument itself. T12's eval gate is therefore **corroboration,
+not the safety net** T9-T11 were leaning on. The owner reaffirmed the full scope
+at 4,500 B with this known; the mitigation is to make each extraction prove
+itself mechanically instead:
+
+**Every extraction task (T6-T11) additionally checks, before its commit:**
+every line removed from the body appears verbatim in a `references/` file that
+the surviving body cites, and the citing step is the one that needed it.
+Concretely, with `<n>` the skill: `diff` the original body against
+`cat skills/<n>/SKILL.md skills/<n>/references/*.md` — the only permitted
+differences are the citation lines added and pure reformatting. A removed line
+that lands in no reference is a lost rule, and fails the task.
+
+`update` (T7) carries the weakest independent check of the six: `main` names
+`/flywheel:update` as the only untested thing that writes in a user's repo. Its
+extraction is therefore conservative — the install/uninstall procedure and every
+`requires-action` rule stay in the body; only rationale moves.
+
 ## Safeguards re-checked against the spec
 
 | Spec safeguard | Where the plan discharges it |
 | --- | --- |
-| Extraction must not lose a rule | T2's citation resolution · T12's eval gate · one commit per skill (T6–T11) so a regression bisects to one body |
+| Extraction must not lose a rule | T2's citation resolution · the line-conservation diff in the amendment above (primary) · T12's eval gate (corroboration only) · one commit per skill (T6–T11) so a regression bisects to one body |
 | `help`/`update`/`compound` have no evals | T6–T8 check structurally via `test-docs-consistency.sh`; T6 keeps the command map in the body |
 | Dangling citation in a vendored install | T4–T5 land *before* the first extraction; `requires-action: true` in T14 |
 | Ceiling is policy, not code | T2 puts the number in `invocation-budget.txt`, not the script |
