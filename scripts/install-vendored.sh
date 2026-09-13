@@ -71,6 +71,8 @@ READ_PRIME_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/read-prime.sh'
 WRITE_ALLOW_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/write-allow.sh'
 BASH_ALLOW_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/bash-allow.sh'
 GATE_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh'
+DELEGATION_GUARD_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-guard.sh'
+DELEGATION_RECORD_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-record.sh'
 
 # True if a previous install wrote this repo-relative path (so it is ours to
 # overwrite/remove without a backup).
@@ -136,6 +138,7 @@ if [ "${MODE}" = "uninstall" ]; then
   if [ -f "${SETTINGS}" ]; then
     FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
     FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_BASH_ALLOW="${BASH_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
+    FW_DELEGATION_GUARD="${DELEGATION_GUARD_CMD}" FW_DELEGATION_RECORD="${DELEGATION_RECORD_CMD}" \
     python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
@@ -145,7 +148,8 @@ with open(path) as f:
 
 ours = {os.environ["FW_SESSION_START"], os.environ["FW_READ_PRIME"],
         os.environ["FW_WRITE_ALLOW"], os.environ["FW_BASH_ALLOW"],
-        os.environ["FW_GATE"]}
+        os.environ["FW_GATE"], os.environ["FW_DELEGATION_GUARD"],
+        os.environ["FW_DELEGATION_RECORD"]}
 hooks = settings.get("hooks", {})
 for event in list(hooks):
     groups = []
@@ -247,12 +251,13 @@ echo "vendored $(ls "${SRC}"/agents/*.md | wc -l | tr -d ' ') agents into .claud
 # Hooks, plus the analysis scripts the skills invoke (plan-route, run-cost):
 # without those a vendored repo cannot lint its plan's routes or read its own
 # run cost, and the skills' fail-open makes that absence silent.
-for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh; do
+for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/delegation-guard.sh "${SRC}"/scripts/delegation-record.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh; do
   rewrite "${f}" | vendor_file ".claude/flywheel/bin/$(basename "${f}")"
   chmod +x "${BIN_DST}/$(basename "${f}")"
 done
-# plan-route.sh resolves its tier table beside itself, so the data file has to
-# travel with it. Not executable: it is data, not a script.
+# plan-route.sh and delegation-guard.sh both resolve the tier table beside
+# themselves, so the data file has to travel with them. Not executable: it is
+# data, not a script.
 rewrite "${SRC}/scripts/route-tiers.txt" | vendor_file ".claude/flywheel/bin/route-tiers.txt"
 # Smoke check: a vendored hook that doesn't parse breaks every future session
 # start. Abort before the manifest/VERSION swap so a broken refresh is never
@@ -375,6 +380,7 @@ rm -f "${NEW_MANIFEST}"
 # are matched by their command string.
 FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
 FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_BASH_ALLOW="${BASH_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
+FW_DELEGATION_GUARD="${DELEGATION_GUARD_CMD}" FW_DELEGATION_RECORD="${DELEGATION_RECORD_CMD}" \
 python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
@@ -409,6 +415,16 @@ wanted = [
         "type": "command",
         "command": os.environ["FW_GATE"],
         "timeout": 300,
+    }),
+    ("PreToolUse", "mcp__.*__create_session|Agent|Task", {
+        "type": "command",
+        "command": os.environ["FW_DELEGATION_GUARD"],
+        "timeout": 5,
+    }),
+    ("PostToolUse", "mcp__.*__create_session|Agent|Task", {
+        "type": "command",
+        "command": os.environ["FW_DELEGATION_RECORD"],
+        "timeout": 5,
     }),
 ]
 

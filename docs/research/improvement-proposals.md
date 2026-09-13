@@ -1311,7 +1311,7 @@ innocuous `.md` name. It needs an attacker who already has commit access to
 xmarks, so it is not exploitable today — but this script runs inside other
 people's repositories with their write permissions, so the guard
 (`[ -L "${ref}" ] && continue`, or a `realpath` check against `${SRC}`) is worth
-having. Not bundled into v0.44.0: it needs its own paired-test scenario, and the
+having. Not bundled into v0.45.0: it needs its own paired-test scenario, and the
 same gap predates P35 for every other file the installer vendors, so fixing it
 for `references/` alone would be half a fix.
 

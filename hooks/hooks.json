@@ -1,5 +1,5 @@
 {
-  "description": "flywheel: at session start, load the learnings ledger and surface the loop commands; before a file read, advisorily surface any prior learnings that touch it; before a file write or a bash command, pre-approve writes to flywheel's own state dir (.claude/flywheel/**) and single loop-advancing git commands (add/commit/stash, force-free push of the current feature branch) so the loop's spec/plan approvals aren't re-asked as tool permission prompts; at stop, run the project's opt-in verification gate.",
+  "description": "flywheel: at session start, load the learnings ledger and surface the loop commands; before a file read, advisorily surface any prior learnings that touch it; before a file write or a bash command, pre-approve writes to flywheel's own state dir (.claude/flywheel/**) and single loop-advancing git commands (add/commit/stash, force-free push of the current feature branch) so the loop's spec/plan approvals aren't re-asked as tool permission prompts; at stop, run the project's opt-in verification gate; before opening delegated work — a child session or a subagent — ask when its tier, its context or its very existence has not been decided (no `model`, no effort named, no anchor to read, a pasted contract, a re-delegated issue or a fan past four), and after it is created record it so the duplicate and width checks count facts rather than intentions.",
   "hooks": {
     "SessionStart": [
       {
@@ -42,6 +42,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "mcp__.*__create_session|Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/delegation-guard.sh",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "Stop": [
@@ -51,6 +61,18 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/gate.sh",
             "timeout": 300
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__.*__create_session|Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/delegation-record.sh",
+            "timeout": 5
           }
         ]
       }
