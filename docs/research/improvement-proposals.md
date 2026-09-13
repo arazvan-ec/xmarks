@@ -52,6 +52,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P30 | Grade the cycle that does not pass | ✅ shipped (v0.42.0) | Done — `loop` eval 3 on `contradiction-repo`: an unsatisfiable work item, graded on the artifact every cheap way out must touch. Neither route nor final suite colour asserted; each cheat (weakened test, claimed PASS) has its own red case in CI |
 | P31 | Grade the cycle blocked by a *subjective* gate (review Critical) | 🟡 designed, not built | The last untested gate: verify goes GREEN and only the reviewer's judgment stands between the cycle and "done". Design below; the open risk is discrimination, not mechanization |
 | P32 | Parallel reviewer dispatch: test it, or stop implying it is tested | 🟡 designed, not built | A subagent cannot spawn subagents, so no suite has ever exercised `reviewer-*` dispatch. Two honest options below; the dishonest one is leaving the README implying coverage that does not exist |
+| P35 | Invocation-context budget: a ceiling on what a skill body costs | ✅ shipped | Done — `references/` as the progressive-disclosure convention, a per-skill byte ceiling in CI (the P24 shape, applied to what an invocation pays rather than what every session pays), and the installer fix that makes a vendored `references/` arrive at all. Bodies 69,065 → 55,352 B; worst case 8,395 → 5,259 |
 
 ## Priority overview
 
@@ -87,6 +88,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | **P30** | **Grade the cycle that does not pass** ⭐ owner ask | High | Low | Low | Yes |
 | **P31** | **The subjective gate: review Critical blocks the cycle** | High | Medium | Medium | Yes |
 | **P32** | **Reviewer dispatch coverage (or an honest limitation)** | Medium | Low | Low | Partial |
+| **P35** | **Invocation-context budget (a ceiling on skill bodies)** | Medium | Low | Low | Yes |
 
 ---
 
@@ -1272,6 +1274,48 @@ and its routing rules are prose that nothing checks.
 
 ---
 
+## P35 — Invocation-context budget: a ceiling on what a skill body costs (✅ shipped)
+
+**Why.** P24 governs the `description` fields — the cost every session pays
+whether or not a skill is used. Nothing governed the **body**, which a session
+pays in full the moment it invokes the skill. A five-day natural experiment made
+the gap measurable: across v0.39.0–v0.43.0 descriptions held at 3,301 → 3,326 of
+a 3,600 budget while bodies grew 14% (60,527 → 69,065 B), `work` +74% and `plan`
++247%. Every one of those diffs shipped through a spec and a review. Discipline
+did not catch it; a number would have.
+
+**What shipped.**
+
+- `skills/<name>/references/<topic>.md` as the progressive-disclosure convention:
+  the body holds the procedure and the rules that bite, step-scoped detail is
+  cited by path from the step that needs it and loads only then.
+- `scripts/check-invocation-budget.sh` + `scripts/invocation-budget.txt`, wired
+  into CI. **Per-skill, not a total** — the P24 shape would measure a cost nobody
+  pays, since no session loads all 17 bodies, and would let the largest skill
+  grow as long as a small one shrank.
+- The same gate fails a `references/` citation that does not resolve. A body
+  pointing at a file nobody wrote is worse than the prose it replaced: the model
+  proceeds silently without the rule.
+- `install-vendored.sh` vendors `references/` with the body. Without it every
+  vendored repo — the Claude Code web path — would have received bodies citing
+  files that were never copied.
+- Six bodies extracted, one commit each, each proving by diff that no removed
+  line vanished: `help` 8,395 → 4,342, `process` 8,280 → 4,458, `run` 5,703 →
+  4,498, `update` 5,363 → 4,341, `compound` 4,716 → 4,231, `work` 8,385 → 5,259.
+
+**The open question is the ceiling.** Signed at 4,500 B; `work` did not reach it.
+After moving the transition line's JSON shape, the three routing cases, the
+delegation thresholds and the reasoning behind each commit rule, what remained
+was 759 B of nothing but rules — the five-step inner loop, the route contract,
+the standing rule, and the anti-rationalization table, which is the guardrail
+against the exact failure the skill exists to prevent. The ceiling was raised
+globally to 5,300 rather than carry a per-skill exception, with the cost stated:
+the other sixteen skills now hold 800–4,000 B of slack the ratchet no longer
+reports, and the drift this proposal exists to stop remains possible inside it.
+Revisit with per-skill exceptions, or by splitting `work`.
+
+---
+
 ## Decision log
 
 Append-only. Newest at the bottom.
@@ -2079,4 +2123,13 @@ Append-only. Newest at the bottom.
   Note for whoever picks up P31: `Task` dispatch has never been exercised in any
   run (see P32), so a P31 run measures **inline** review, not the fan-out. That
   does not invalidate it, but it must be said in the benchmark.
-
+- **2026-09-13** — **P35 shipped: the body is budgeted, and the ceiling is the
+  compromise.** The measurement that justified it is a natural experiment, not an
+  argument: over five days the gated cost (descriptions) held while the ungated
+  one (bodies) grew 14%, every growth diff having passed a spec and a review.
+  Extraction moved 13,713 B out of six bodies with a per-skill diff proving no
+  line was lost. `work` is the honest failure: its rules do not compress to the
+  signed 4,500 B, and the ceiling was raised to 5,300 for all seventeen rather
+  than move its anti-rationalization table, which would have been the silent
+  weakening the spec's Safeguards name. The slack that buys the other sixteen is
+  recorded in the spec's Revision, not glossed.
