@@ -1,7 +1,7 @@
 # Spec: P35 — invocation-context budget (progressive disclosure for skill bodies)
 
 **Slug:** `p35-invocation-context-budget` · **Created:** 2026-09-13 · **Backlog:** P35
-**Status:** signed 2026-09-13 (owner) — ceiling 4,500 B confirmed (6 skills refactored); metric permission materialized per P21 → next: `/flywheel:plan`
+**Status:** signed 2026-09-13 (owner); ceiling revised to 5,300 B 2026-09-13 during work (see Revision below) → next: `/flywheel:verify`
 **Prime:** P24 (`p24-description-budget`) is the shape to copy — CI gate +
 committed budget file + paired test + logged escape hatch. P12
 (`p12-token-discipline`) already trimmed the *descriptions*; P23
@@ -56,7 +56,7 @@ onboarding reference, read once, charged in full at each invocation.
 2. **Per-skill ceiling, not a sum.** A session pays *one* body per invocation,
    so the governing invariant is a per-skill maximum. (Contrast P24:
    descriptions are all paid together, so their invariant is a total.) Ceiling:
-   **4,500 bytes per `skills/*/SKILL.md`**.
+   **5,300 bytes per `skills/*/SKILL.md`**.
 3. **Refactor the 6 skills over the ceiling** — `help`, `work`, `process`,
    `run`, `update`, `compound` — by extraction into `references/`, **never by
    deleting a rule**. Every requirement, gate and guardrail that leaves a body
@@ -203,10 +203,29 @@ bash scripts/check-invocation-budget.sh \
   && bash scripts/test-docs-consistency.sh
 ```
 
-with `check-invocation-budget.sh` reporting **all 17 skills ≤ 4500 B** (worst
+with `check-invocation-budget.sh` reporting **all 17 skills ≤ 5300 B** (worst
 case down from 8,395 B), and the same command failing on `main` today by naming
-the 6 over-budget skills.
+the over-budget skills.
 
 **Release precondition** (`CLAUDE.md`, not part of the metric): the `work`,
 `process` and `run` evals pass at or above their committed rates before the
 version bump.
+
+## Revision 2026-09-13 — the ceiling is 5,300 B, not 4,500
+
+Signed at 4,500 B. Five of the six skills in scope reached it with room to
+spare; `work` did not. Extraction took it from 8,385 to 5,259 B — the transition
+line's JSON shape, the three routing cases, the delegation thresholds, the
+mis-route note and the reasoning behind each commit rule all moved — and what
+remained was 759 B of nothing but rules: the five-step inner loop, the commit
+rules stated imperatively, the route contract, the standing rule, and the
+anti-rationalization table. Reaching 4,500 would have meant moving that table,
+which is the guardrail against the exact failure the skill exists to prevent:
+the silent weakening this spec's Safeguards name as the failure mode.
+
+Owner chose to raise the ceiling globally to 5,300 rather than carry a per-skill
+exception, with the known cost stated at the time: the other sixteen skills gain
+between 800 and 4,000 B of slack the ratchet no longer reports. The measured
+drift this spec exists to stop — 14% in five days — remains possible inside that
+slack. A tighter ceiling, or per-skill exceptions, stays available as a
+follow-up once `work` is split or its rules shrink.

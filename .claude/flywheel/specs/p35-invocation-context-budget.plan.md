@@ -1,7 +1,7 @@
 # Plan — invocation-context budget (P35)
 
 Spec: [`p35-invocation-context-budget.md`](p35-invocation-context-budget.md) ·
-14 tasks · ceiling signed at **4,500 B**, 6 skills in scope.
+14 tasks · ceiling signed at 4,500 B, revised to **5,300 B** during T11 (see the spec's Revision).
 
 ## Routing
 
@@ -30,7 +30,7 @@ out where a mistake is cheap, before the eval-gated three (T9–T11).
 
 ### T2 — The gate: measure every body, resolve every citation
 - route: `sonnet/medium`
-- changes: `scripts/check-invocation-budget.sh` (new), `scripts/invocation-budget.txt` (new, `4500`)
+- changes: `scripts/check-invocation-budget.sh` (new), `scripts/invocation-budget.txt` (new, `5300`)
 - check: `bash scripts/test-check-invocation-budget.sh` prints `ALL PASS`
 - test-first: yes
 - notes: `wc -c` (bytes, locale-independent); breakdown largest-first; malformed input exits 2 loudly, never silently as zero; budget in its own file so retuning it does not trip `check-test-pairing.sh`
@@ -90,7 +90,7 @@ out where a mistake is cheap, before the eval-gated three (T9–T11).
 - route: `opus/high`
 - risk: highest
 - changes: `skills/work/SKILL.md`, `skills/work/references/*.md` (new)
-- check: `bash scripts/check-invocation-budget.sh` green for every one of the 17 skills; `work`'s eval at or above its committed pass rate
+- check: `bash scripts/check-invocation-budget.sh` green for every one of the 17 skills (at the revised 5,300 B ceiling); `work`'s eval at or above its committed pass rate
 - test-first: no
 - notes: the iterate-until-green contract, the telemetry line format and the P27 route-honoring rules are rules that bite — they stay in the body; the rationale behind them is what moves
 
