@@ -2,10 +2,15 @@
 # flywheel — PreToolUse hook: never open delegated work blind.
 #
 # A plan routes every task to a `<model>/<effort>` tier and `route-tiers.txt`
-# (next to this script) is the authority for what a tier is. But opening a child
-# session or a subagent WITHOUT passing `model` silently inherits the caller's:
-# on 2026-09-13 a coordinator on opus fanned out five jobs the plan routed to
-# sonnet, and nobody saw it until the cost was asked for out loud.
+# (next to this script) is the authority for what a tier is. Opening a child
+# session WITHOUT passing `model` silently inherits the caller's: on
+# 2026-09-13 a coordinator on opus fanned out five jobs the plan routed to
+# sonnet, and nobody saw it until the cost was asked for out loud. A subagent
+# is different when its `subagent_type` names an agents/*.md whose frontmatter
+# pins `model:`/`effort:` (every agent in this repo does, P37): the tier is
+# already decided there, so TIER stands aside for exactly those pinned fields
+# — it still asks when the definition is missing, unreadable, or leaves a
+# field unpinned.
 #
 # Three families of check, because delegating badly costs three ways and only
 # one of them is visible:
@@ -37,7 +42,12 @@ esac
 
 command -v python3 >/dev/null 2>&1 || exit 0
 
-FW_TIERS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/route-tiers.txt" \
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+
+FW_TIERS="${SCRIPT_DIR}/route-tiers.txt" \
+FW_SCRIPT_DIR="${SCRIPT_DIR}" \
+FW_PROJECT_DIR="${PROJECT_DIR}" \
 FW_HOOK_INPUT="${INPUT}" python3 - <<'PY' 2>/dev/null
 import hashlib, json, os, re, sys, tempfile
 
@@ -60,6 +70,32 @@ if not isinstance(tool_input, dict):
 # An empty `model` counts as absent: it would inherit just the same.
 model = (tool_input.get("model") or "").strip()
 
+# A subagent_type may name an agent definition that already pins its own
+# model/effort in frontmatter — search order matches how the plugin is found
+# at runtime: vendored install path first, then the plugin's own agents/ dir
+# beside this script. Fails open: no type, no file, unreadable, no field ⇒
+# that field stays undecided exactly as before.
+agent_model = agent_effort = ""
+subagent_type = str(tool_input.get("subagent_type") or "").strip() if is_subagent else ""
+if subagent_type:
+    frontmatter = ""
+    for candidate in (
+        os.path.join(os.environ.get("FW_PROJECT_DIR", ""), ".claude", "agents", subagent_type + ".md"),
+        os.path.join(os.environ.get("FW_SCRIPT_DIR", ""), "..", "agents", subagent_type + ".md"),
+    ):
+        try:
+            with open(candidate, encoding="utf-8") as fh:
+                frontmatter = fh.read()
+            break
+        except Exception:
+            continue
+    fm = re.match(r"^---\n(.*?)\n---", frontmatter, re.S)
+    if fm:
+        mm = re.search(r"(?m)^model:\s*(\S.*)$", fm.group(1))
+        agent_model = mm.group(1).strip() if mm else ""
+        me = re.search(r"(?m)^effort:\s*(\S.*)$", fm.group(1))
+        agent_effort = me.group(1).strip() if me else ""
+
 # Effort is a parameter of NEITHER tool. It travels in the text that does reach
 # the child, which then runs `/model <tier> <effort>`. Deliberately heuristic:
 # naming the tier or the route column is enough for the guard to stand aside.
@@ -70,9 +106,9 @@ text = " ".join(
 has_effort = any(w in text for w in ("effort", "route", "/model", "tier"))
 
 missing = []
-if not model:
+if not model and not agent_model:
     missing.append("`model`")
-if not has_effort:
+if not has_effort and not agent_effort:
     missing.append("the effort")
 
 # --- context ------------------------------------------------------------
@@ -165,7 +201,7 @@ if missing:
     why = (
         "Without `model` the child silently INHERITS this session's — which is "
         "how five jobs routed to sonnet ended up running on opus. "
-        if not model else
+        if "`model`" in missing else
         "Effort is not a parameter of this tool: unless you tell the child, it "
         "keeps its own default and the plan's `Route` column is not honoured. "
     )
