@@ -61,9 +61,12 @@ fi
 # exception (P41): agent discovery is session-start scoped and web sessions never
 # install marketplace plugins, so without registered copies flywheel's own dev
 # loop cannot honor the `+delegate` routes it prescribes to every other repo.
-if [ "${SRC}" = "${TARGET}" ] && [ "${AGENTS_ONLY}" = 0 ]; then
+# The exception is INSTALL-only: --uninstall --agents-only here would delete the
+# repo's own committed .claude/agents/ and run the hook-uninstall besides.
+if [ "${SRC}" = "${TARGET}" ] && ! { [ "${AGENTS_ONLY}" = 1 ] && [ "${MODE}" = install ]; }; then
   echo "error: target is the flywheel repo itself — run this against another repo" >&2
-  echo "       (--agents-only is allowed here: it registers agents/ and nothing else)" >&2
+  echo "       (only --agents-only, installing, is allowed here: it registers" >&2
+  echo "        agents/ and nothing else — never uninstalls)" >&2
   exit 1
 fi
 
@@ -271,9 +274,33 @@ if [ "${AGENTS_ONLY}" = 1 ]; then
   # "this version dropped every skill". No manifest at all means nothing was
   # ever vendored here, so none is written — the copies are then part of the
   # repo's own tree, which is exactly the flywheel-on-flywheel case.
+  # Non-agent entries are KEPT untouched (this run vendored none of them, so
+  # dropping them would read as "this version deleted every skill"), but an
+  # agent entry the plugin no longer ships is pruned like the full install
+  # prunes: the file would otherwise stay discoverable and be delegated to.
   if [ -f "${MANIFEST}" ]; then
-    sort -u "${MANIFEST}" "${NEW_MANIFEST}" > "${NEW_MANIFEST}.merged"
-    mv "${NEW_MANIFEST}.merged" "${MANIFEST}"
+    sort -u "${NEW_MANIFEST}" > "${NEW_MANIFEST}.sorted"
+    : > "${NEW_MANIFEST}.kept"
+    while IFS= read -r rel; do
+      case "${rel}" in
+        .claude/agents/*) ;;
+        *) printf '%s\n' "${rel}" >> "${NEW_MANIFEST}.kept"; continue ;;
+      esac
+      if grep -qxF "${rel}" "${NEW_MANIFEST}.sorted"; then
+        printf '%s\n' "${rel}" >> "${NEW_MANIFEST}.kept"
+        continue
+      fi
+      stale="${TARGET}/${rel}"
+      if [ -f "${stale}.pre-flywheel" ]; then
+        mv "${stale}.pre-flywheel" "${stale}"
+        echo "pruned ${rel} (no longer shipped; pre-flywheel backup restored)"
+      elif [ -e "${stale}" ]; then
+        rm -f "${stale}"
+        echo "pruned ${rel} (no longer shipped)"
+      fi
+    done < "${MANIFEST}"
+    sort -u "${NEW_MANIFEST}" "${NEW_MANIFEST}.kept" > "${MANIFEST}"
+    rm -f "${NEW_MANIFEST}.sorted" "${NEW_MANIFEST}.kept"
   fi
   rm -f "${NEW_MANIFEST}"
   exit 0

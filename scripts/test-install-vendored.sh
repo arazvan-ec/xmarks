@@ -373,5 +373,35 @@ RC=0; bash "${SRC2}/scripts/install-vendored.sh" "${SRC2}" >/dev/null 2>&1 || RC
 [ "${RC}" -ne 0 ] || fail "the FULL self-install must still be refused"
 pass "full self-install still refused"
 
+echo "== --uninstall is never allowed to self-target, not even with --agents-only =="
+RC=0; bash "${SRC2}/scripts/install-vendored.sh" --uninstall --agents-only "${SRC2}" >/dev/null 2>&1 || RC=$?
+[ "${RC}" -ne 0 ] || fail "--uninstall --agents-only must not be allowed to self-target"
+[ -f "${SRC2}/.claude/agents/executor.md" ] \
+  || fail "the refused uninstall DELETED the repo's committed agents"
+pass "self-targeted uninstall refused, committed agents intact"
+
+echo "== an agents-only refresh prunes an agent the plugin no longer ships =="
+SRC3="${WORK}/src3"
+cp -r "${SRC2}" "${SRC3}"
+rm -rf "${SRC3}/.claude/agents"
+TARGET5="${WORK}/target5"
+mkdir -p "${TARGET5}/.claude"
+git init -q "${TARGET5}"
+bash "${SRC3}/scripts/install-vendored.sh" "${TARGET5}" > /dev/null
+[ -f "${TARGET5}/.claude/agents/evaluator.md" ] || fail "setup: evaluator was not vendored"
+[ -f "${TARGET5}/.claude/skills/flywheel-help/SKILL.md" ] || fail "setup: skills were not vendored"
+rm "${SRC3}/agents/evaluator.md"            # the plugin drops an agent
+bash "${SRC3}/scripts/install-vendored.sh" --agents-only "${TARGET5}" > /dev/null
+[ ! -e "${TARGET5}/.claude/agents/evaluator.md" ] \
+  || fail "a dropped agent survived an --agents-only refresh — the loop would still delegate to it"
+grep -qxF ".claude/agents/evaluator.md" "${TARGET5}/.claude/flywheel/.manifest" \
+  && fail "the dropped agent is still listed in the manifest"
+[ -f "${TARGET5}/.claude/skills/flywheel-help/SKILL.md" ] \
+  || fail "the agents-only prune removed a SKILL — it must only ever touch agent entries"
+grep -qxF ".claude/skills/flywheel-help/SKILL.md" "${TARGET5}/.claude/flywheel/.manifest" \
+  || fail "the agents-only refresh dropped a non-agent manifest entry"
+pass "dropped agent pruned; skills and their manifest entries untouched"
+
 echo ""
-echo "all installer tests passed"
+echo "all installer tests passed
+"

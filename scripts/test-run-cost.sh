@@ -207,4 +207,13 @@ run "${WORK}/brt.jsonl"
 grep -qE "opus/high.*700" "${WORK}/out" || fail "the route bucket must carry bytes_in: $(cat "${WORK}/out")"
 pass "route bucket carries bytes_in"
 
+echo "== a route bucket marks a field it only partly covers =="
+{ bline 0 10 700 1 1 "opus/high"; rline 1 20 1 1 "opus/high"; } > "${WORK}/prt.jsonl"
+run "${WORK}/prt.jsonl"
+[ "${RC}" -eq 0 ] || fail "a partly covered bucket must exit 0, got ${RC}: $(cat "${WORK}/out")"
+grep -qE "opus/high.*700~" "${WORK}/out" \
+  || fail "a bucket covering bytes_in on only some of its transitions must mark it: $(cat "${WORK}/out")"
+grep -qE "~.*partial" "${WORK}/out" || fail "the ~ marker needs its legend: $(cat "${WORK}/out")"
+pass "partial bucket coverage marked and explained"
+
 echo "ALL PASS"

@@ -117,10 +117,15 @@ def report(r, label):
     if r["routes"]:
         print("  routes:")
         for route, b in sorted(r["routes"].items(), key=lambda kv: -kv[1]["n"]):
-            cells = "  ".join(f"{b[f]:>9,} {UNITS[f]}" if b["cov"][f]
-                              else f"{'—':>9} {UNITS[f]}" for f in FIELDS)
+            cells = "  ".join(
+                f"{'—':>9} {UNITS[f]}" if not b["cov"][f]
+                else f"{b[f]:>8,}~ {UNITS[f]}" if b["cov"][f] < b["measured"]
+                else f"{b[f]:>9,} {UNITS[f]}" for f in FIELDS)
             short = f" ({b['n'] - b['measured']} unmeasured)" if b["measured"] < b["n"] else ""
             print(f"    {route:<22} {plural(b['n'], 'transition'):<16}{cells}{short}")
+        if any(0 < b["cov"][f] < b["measured"] for b in r["routes"].values() for f in FIELDS):
+            print("    ~ = partial coverage: some transitions on that route do not"
+                  " carry the field")
         if r["unrouted"]:
             print(f"    {plural(r['unrouted'], 'transition')} carr"
                   + ("ies" if r["unrouted"] == 1 else "y")
