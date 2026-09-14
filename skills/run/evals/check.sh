@@ -32,6 +32,24 @@ case "$ID" in
     # the final report always renders, so require the HTML and accept the JSONL beside it
     check ls "$W"/.claude/flywheel/runs/plate-audit/*.html -- "telemetry report rendered in .claude/flywheel/runs/plate-audit/"
     check seed_intact -- "seeded 1234 BCD row untouched"
+    # The maturation must survive the session that made it. Read the contract AS
+    # GIT HAS IT: "the file changed" passes on the staged-and-lost behaviour this
+    # asserts against. Reachable only here, because step 4 matures after a
+    # SUCCESSFUL run — a blocked one never opens this path.
+    CONTRACT=".claude/flywheel/processes/plate-audit.md"
+    if git -C "$W" show "HEAD:$CONTRACT" 2>/dev/null | grep -qE '^### [0-9]{4}-[0-9]{2}-[0-9]{2} — '; then
+      ok "the maturation reached git (HEAD's contract carries the dated Improvement log entry)"
+    else
+      fail "the maturation reached git — HEAD's contract has no dated entry (staged is lost when the session ends)"
+    fi
+    if [ -z "$(git -C "$W" diff HEAD -- "$CONTRACT")" ] && [ -z "$(git -C "$W" diff --cached -- "$CONTRACT")" ]; then
+      ok "nothing about the contract left uncommitted or staged"
+    else
+      fail "nothing about the contract left uncommitted or staged"
+    fi
+    LAST="$(git -C "$W" log --format=%H -- "$CONTRACT" 2>/dev/null | head -1)"
+    TOUCHED="$(git -C "$W" show --name-only --format= "${LAST}" 2>/dev/null | grep -c . || true)"
+    if [ "${TOUCHED}" = "1" ]; then ok "the maturation commit touches the contract and nothing else"; else fail "the maturation commit touches the contract alone (carries ${TOUCHED} file(s))"; fi
     ;;
   2)
     # The seed already satisfies "one row, digit_sum=10", so those alone cannot

@@ -47,3 +47,23 @@ A probe that writes is a mutation the Guardrails did not approve, and one that
 would have to be undone. And a run that quietly switches store because the first
 was unreachable scatters a process's records across two places with nobody told
 — half the rows here, half there, and no way to know which half is where.
+
+## Why the maturation is committed rather than staged, and why it is not pushed
+
+A staged change dies with the session, and the datastore row the run learned
+from does not — so a run that stages its maturation keeps the result and forgets
+the lesson, which is the inversion of what a maturing runtime is for.
+
+It is not pushed, though, and that is deliberate: pushing needs a branch
+decision, and a run has no business making one alone. The honest consequence is
+stated rather than hidden — a committed-but-unpushed improvement is still lost
+when an ephemeral clone is reclaimed. This narrows the loss; it does not close
+it.
+
+## Why the commit carries the contract alone
+
+The run also wrote a datastore row and telemetry. Those belong to the repo's own
+conventions — for a git-native store, "staged" may *be* the declared proof of a
+landed write — so a skill that swept them into a commit labelled "mature the
+contract" would be overriding DATA.md with a habit. The contract is the plugin's
+artifact; the row is the repo's.
