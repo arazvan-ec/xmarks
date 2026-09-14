@@ -67,3 +67,11 @@ conventions — for a git-native store, "staged" may *be* the declared proof of 
 landed write — so a skill that swept them into a commit labelled "mature the
 contract" would be overriding DATA.md with a habit. The contract is the plugin's
 artifact; the row is the repo's.
+
+## Why there is no static backend
+
+There is no static backend — **Claude is the execution**. It follows the
+contract's fixed rules the way a service would, applies judgment only where the
+contract permits, and lands the result in the repo's real datastore. The body
+says this in one line ("You are the execution: follow the contract the way a
+service would"); the reference was repeating it with reasons attached.
