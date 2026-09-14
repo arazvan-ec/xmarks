@@ -53,7 +53,7 @@ the slice that spends it would be exactly the drift the ratchet exists to stop.
 
 ### T5 — docs, bump, upgrade note
 - route: `sonnet/medium`
-- changes: `docs/research/improvement-proposals.md`, `.claude-plugin/plugin.json`, `upgrades/v0.51.0.md`
+- changes: `docs/research/improvement-proposals.md`, `.claude-plugin/plugin.json`, `upgrades/v0.53.0.md`
 - check: the spec's success metric exits 0, 19/19 `scripts/test-*.sh`, every `check-*.sh`, `claude plugin validate . --strict`
 - test-first: no
 

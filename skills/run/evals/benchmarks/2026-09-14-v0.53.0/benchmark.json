@@ -14,7 +14,7 @@
   "configurations": [
    "with_skill"
   ],
-  "release_gate_for": "P14c v0.51.0 \u2014 a contract defect escalates instead of dead-ending",
+  "release_gate_for": "P14c v0.53.0 \u2014 a contract defect escalates instead of dead-ending",
   "baseline_note": "without_skill baseline intentionally skipped: regression detection plus one new eval."
  },
  "runs": [

@@ -59,7 +59,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P39 | Pay `work`'s invocation debt: move the argument out of the loaded set | ✅ shipped (v0.48.0) | Done — ~3,300 B of `work-detail.md` was the body restated with its reasoning; the argument moved to an uncited `docs/research/work-loop-rationale.md`, the three routing rules came back into the body, the reference kept only the transition line. 11,245 → 6,241 B (−44%), `worst` exception deleted. Open: `process` (10,331) is now the most expensive invocation |
 | P14a | Pillar-2 slice 1: the write-path probe + process discovery | ✅ shipped (v0.49.0) | Done — the probe is read-only and runs before Rule 1, a failure is a blocker and never a silent fallback; `process` proposes the git-native store when no DB signal hits; the banner lists the repo's contracts. Open: T5 (bare `/flywheel:run` listing) deferred to slice 2, and the rest of P14 is slices 2–3 |
 | P14b | Pillar-2 slice 2: the maturation survives the session | ✅ shipped (v0.50.0) | Done — a matured contract is committed pathspec-scoped rather than left staged (staged dies with the session while the datastore row survives); the bare `/flywheel:run` listing lands. Open: a run blocked by a defect in its OWN contract has no defined behaviour — two executors split on it |
-| P14c | Pillar-2 slice 3: a contract defect escalates | ✅ shipped (v0.51.0) | Done — step 2 names the two failures apart; a contract defect blocks, never rewrites the fixed rules, and stubs a spec from the run's evidence. Four eval paths, stub in exactly one. Open: step 0's task materialization has never fired in 8/8 runs; the contract metric has no rejection-path equivalent |
+| P14c | Pillar-2 slice 3: a contract defect escalates | ✅ shipped (v0.53.0) | Done — step 2 names the two failures apart; a contract defect blocks, never rewrites the fixed rules, and stubs a spec from the run's evidence. Four eval paths, stub in exactly one. Open: step 0's task materialization has never fired in 8/8 runs; the contract metric has no rejection-path equivalent |
 
 ## Priority overview
 
@@ -1612,7 +1612,7 @@ approval tiers, process composition, batch inputs, run→spec escalation, `sync`
 over contracts, and `status: active|deprecated` once a contract is actually
 retired.
 
-## P14 slice 3 — a contract that cannot be satisfied escalates (✅ shipped v0.51.0)
+## P14 slice 3 — a contract that cannot be satisfied escalates (✅ shipped v0.53.0)
 
 **Why, and the requirement came from evidence rather than a list.** Building
 slice 2's eval produced a contract that contradicted itself. Two fresh-context

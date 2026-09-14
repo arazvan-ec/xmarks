@@ -1,7 +1,7 @@
 # Spec: P14 slice 3 — a contract that cannot be satisfied escalates instead of dead-ending
 
 **Slug:** `p14c-contract-defect-escalates` · **Created:** 2026-09-14 · **Backlog:** P14 (third slice)
-**Status:** shipped as **v0.51.0** — signed at the gate 2026-09-14. Metric
+**Status:** shipped as **v0.53.0** — signed at the gate 2026-09-14. Metric
 **PASS**. Eval gate green on all four paths: `run` eval 1 (7/7), eval 3 (3/3,
 the guardrail half of the split sentence), eval 4 (7/7) and the new eval 5 (6/6,
 seen red at 2 FAIL before the escalation existed).
@@ -112,7 +112,7 @@ and the next reader could not tell the two apart.
   **reachable**: the contradiction must block the run, and the behaviour under
   test must be what the run does *at* the block. (v0.50.0's deleted eval graded
   a path behind the block; this one grades the block itself.)
-- `.claude-plugin/plugin.json` + `upgrades/v0.51.0.md`.
+- `.claude-plugin/plugin.json` + `upgrades/v0.53.0.md`.
 
 ## O — Operations
 
