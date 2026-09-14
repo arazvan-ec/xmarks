@@ -15,7 +15,7 @@ Then `/reload-plugins` and run `/flywheel:help`. To make flywheel **auto-activat
 
 > **Claude Code only** — the claude.ai chat app uses a different Skills system and does not run Claude Code plugins.
 
-> **Claude Code web** — web sessions do not auto-install marketplace plugins, so neither `/plugin install` nor the `settings.json` marketplace keys make `/flywheel:*` appear there. Instead, **vendor** flywheel into the target repo once with [`scripts/install-vendored.sh`](scripts/install-vendored.sh); the commands then work on every surface as `/flywheel-help`, `/flywheel-loop`, … See [docs/add-flywheel-to-a-repo.md](docs/add-flywheel-to-a-repo.md).
+> **Claude Code web** — web sessions do not auto-install marketplace plugins, so neither `/plugin install` nor the `settings.json` marketplace keys make `/flywheel:*` appear there. Instead, **vendor** flywheel into the target repo once with [`scripts/install-vendored.sh`](scripts/install-vendored.sh); the commands then work on every surface as `/flywheel-help`, `/flywheel-loop`, … See [docs/add-flywheel-to-a-repo.md](docs/add-flywheel-to-a-repo.md). The same gap applied to flywheel itself: with no registered agents its own dev loop could not honor the `+delegate` routes it prescribes. `install-vendored.sh --agents-only` is the one self-target the guard allows — it registers `agents/*.md` into `.claude/agents/` and nothing else (no skills, no hooks), and `scripts/check-agent-parity.sh` fails CI if the shipped and registered copies ever disagree in either direction.
 
 ## The idea: two nested loops
 
