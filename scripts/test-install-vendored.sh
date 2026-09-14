@@ -332,5 +332,46 @@ bash "${SRC2}/scripts/install-vendored.sh" --uninstall "${TARGET2}" > /dev/null
 [ ! -e "${REF}" ] || fail "vendored reference survived uninstall — it is ours to remove"
 pass "references/ removed on uninstall"
 
+# --- P41: the --agents-only mode -------------------------------------------
+# Why it exists: flywheel's own repo cannot take a full vendored install (17
+# duplicated skill bodies that drift), but without registered agents its dev
+# loop cannot honor the `+delegate` routes it tells every other repo to plan.
+
+echo ""
+echo "== --agents-only writes agents and nothing else =="
+TARGET3="${WORK}/target3"
+mkdir -p "${TARGET3}/.claude"
+git init -q "${TARGET3}"
+echo '{"permissions":{"allow":[]}}' > "${TARGET3}/.claude/settings.json"
+bash "${INSTALLER}" --agents-only "${TARGET3}" > /dev/null
+[ -f "${TARGET3}/.claude/agents/executor.md" ] || fail "--agents-only did not register the executor"
+[ ! -d "${TARGET3}/.claude/skills" ] || fail "--agents-only vendored skills — that is the mode's whole point"
+[ ! -d "${TARGET3}/.claude/flywheel/bin" ] || fail "--agents-only wrote hook scripts"
+grep -q flywheel "${TARGET3}/.claude/settings.json" && fail "--agents-only rewired settings.json"
+pass "agents registered; no skills, no bin, no settings rewiring"
+
+echo "== --agents-only never prunes an existing full install =="
+TARGET4="${WORK}/target4"
+mkdir -p "${TARGET4}/.claude"
+git init -q "${TARGET4}"
+bash "${INSTALLER}" "${TARGET4}" > /dev/null
+[ -f "${TARGET4}/.claude/skills/flywheel-help/SKILL.md" ] || fail "setup: full install did not vendor skills"
+bash "${INSTALLER}" --agents-only "${TARGET4}" > /dev/null
+[ -f "${TARGET4}/.claude/skills/flywheel-help/SKILL.md" ] \
+  || fail "--agents-only PRUNED the vendored skills — a narrowed manifest must never drive the prune"
+[ -f "${TARGET4}/.claude/flywheel/bin/plan-route.sh" ] || fail "--agents-only pruned the vendored bin scripts"
+pass "a narrowed run leaves the rest of a full install intact"
+
+echo "== the flywheel repo may register its own agents, but not vendor itself =="
+rm -rf "${SRC2}/.claude/agents"
+bash "${SRC2}/scripts/install-vendored.sh" --agents-only "${SRC2}" > /dev/null
+[ -f "${SRC2}/.claude/agents/executor.md" ] || fail "--agents-only must be allowed to self-target"
+[ ! -d "${SRC2}/.claude/skills" ] || fail "a self-targeted --agents-only vendored skills into the plugin repo"
+pass "self-targeted --agents-only registers the six agents"
+
+RC=0; bash "${SRC2}/scripts/install-vendored.sh" "${SRC2}" >/dev/null 2>&1 || RC=$?
+[ "${RC}" -ne 0 ] || fail "the FULL self-install must still be refused"
+pass "full self-install still refused"
+
 echo ""
 echo "all installer tests passed"
