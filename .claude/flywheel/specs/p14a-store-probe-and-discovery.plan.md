@@ -66,7 +66,7 @@ before the tasks that spend what it frees.
 
 ### T7 — the eval fixture with an unreachable declared store
 - route: `haiku/low+delegate`
-- changes: `skills/run/evals/fixtures/no-store-repo/` (copy of `demo-repo` with its DATA.md declaring a store that cannot be reached, and nothing else changed)
+- changes: `skills/run/evals/fixtures/unreachable-store-repo/` (copy of `demo-repo` whose DATA.md declares a Postgres on port 1 — reserved, never listening, so the refusal is deterministic and offline; nothing else differs)
 - check: `bash scripts/check-fixture-leaks.sh` green and `diff -r` against `demo-repo` shows DATA.md as the only difference
 - test-first: no
 
@@ -94,3 +94,16 @@ before the tasks that spend what it frees.
 - *No secrets in the banner* — T1's assertions print slug and Purpose only; the Access line, where a connection string lives, is never read.
 - *What this gate cannot see* — T4 narrows the window between check and write; it cannot close it, so step 3's read-back evidence stays exactly as it is. Stated in the skill, not just here.
 - *The stop path is a blocker, not a silent skip* — T8's grader asserts the distinction, since a run that "completes" with an empty result is the failure this slice exists to prevent.
+
+## Revision (2026-09-14, during work)
+
+**Execution order corrected: T7 and T8 run before T4.** T4 carries
+`test-first: yes` and its check is "the new eval goes green" — an eval that T8
+builds. Implementing T4 first and writing its test afterwards is precisely the
+inversion `/flywheel:work`'s anti-rationalization table bans ("I'll verify
+everything at the end"), and the plan's own ordering asked for it. The fixture
+and the grader now come first, are seen **red** against the current skill (the
+run proceeds into the Rules and fails late), and T4 is what turns them green.
+
+Task content is unchanged; only the order is. Recorded here rather than
+diverging silently, per `/flywheel:sync`'s rule that the plan is the contract.
