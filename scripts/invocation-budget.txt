@@ -23,6 +23,15 @@ work body=5700
 # the measured body plus the ~500 B a feature costs. The default 4,800 was never
 # sized for a skill that carries a five-step contract runtime.
 run body=5800
+# run worst: the first `worst` exception created since P36, and on the same
+# reasoning as process's. `run` is a five-step contract runtime: three references
+# (ledger mechanics, extensions, probe recipes, stub shape) plus a body of
+# nothing but rules. The 9,200 default was calibrated against skills that carry
+# none of that. 11000 is the measured 9,848 plus the ~500 B a feature costs.
+# Reached only after the recorded order was exhausted twice over: a stub section
+# that restated /flywheel:spec's own REASONS canvas (-559 B) and a reference
+# section repeating the body's framing (-260 B) both came out first.
+run worst=11000
 # process: contract-template and data-strategy are both cited from steps any
 # contract-writing run reaches, so both are charged on the hot path.
 # 11200 is 10,693 (after P14a T6, with every byte of argument already moved to
