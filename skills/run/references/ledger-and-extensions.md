@@ -20,3 +20,22 @@ If the contract's frontmatter declares `extensions:`, read each `.claude/flywhee
 - A rule was ambiguous and you had to make a call → tighten the rule so the next run is deterministic.
 - A recurring input shape, edge case, or data-quality issue the Rules don't mention → note the guard.
 - A judgment heuristic that measurably improved the output → promote it from ad-hoc to written latitude.
+
+## Probing the write path (step 1)
+
+Read-only, always: the probe proves the path is there, it never proves it by
+using it. A probe that writes is a mutation the Guardrails did not approve.
+
+| Store | Probe | Reached |
+| --- | --- | --- |
+| PostgreSQL / MySQL | `psql "$URL" -c '\d <table>'` (or `SELECT 1 FROM <table> LIMIT 0`) | connection opens **and** the target table exists |
+| Supabase / MCP | the server's list-tables or a `LIMIT 0` select | the project answers and the table is listed |
+| ORM / repo script | the script's own read path (`findFirst`, `SELECT … LIMIT 0`) | it returns without connecting errors |
+| Git-native file | the file's directory exists, is writable, and is inside the repo | `test -w`, and the path does not escape the worktree |
+
+The concrete tool is whatever DATA.md's **Access** names — the probe uses that
+one, never a different client that might succeed where the run's own would fail.
+
+On failure, the run appends one transition with a `blocked` state naming the
+check that failed and the command that would confirm it, then stops. It does not
+retry, and it does not choose another store.

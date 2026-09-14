@@ -34,3 +34,16 @@ Judgment latitude exists so the result is **better than a rote script would
 produce** — but only inside the fence. Rules, Output schema and Guardrails are
 where the contract is a contract; if judgment could override them, the process
 would be a suggestion with extra steps.
+
+## Why a missing data strategy stops the run instead of improvising
+
+A run never improvises where results go: that is what DATA.md exists to decide,
+once, with a person. A store chosen mid-run by the thing doing the writing is a
+store nobody can find afterwards.
+
+## Why the probe is read-only, and why a failure stops rather than falls back
+
+A probe that writes is a mutation the Guardrails did not approve, and one that
+would have to be undone. And a run that quietly switches store because the first
+was unreachable scatters a process's records across two places with nobody told
+— half the rows here, half there, and no way to know which half is where.

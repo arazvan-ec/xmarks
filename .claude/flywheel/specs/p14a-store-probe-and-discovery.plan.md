@@ -107,3 +107,25 @@ run proceeds into the Rules and fails late), and T4 is what turns them green.
 
 Task content is unchanged; only the order is. Recorded here rather than
 diverging silently, per `/flywheel:sync`'s rule that the plan is the contract.
+
+## Revision 2 (2026-09-14) — T5 deferred to slice 2
+
+T4's rules took the body to 4,819/4,800. The plan's own instruction at that point
+is to stop and report rather than raise the ceiling, and that is what happened;
+what unblocked it was the remedy the gate itself prints, not a bigger number:
+the store-tool catalogue in step 3 (`a psql/CLI command, a Postgres/Supabase MCP
+call, an ORM/repo script`) is a **catalogue**, which by the P35 convention
+belongs in `references/`. Moved there with the probe recipes.
+
+That lands the body at **4,746/4,800 — 54 B**, which fits T4 and does not fit
+T5. So **T5 moves to slice 2**. It is the least costly deferral available: T1
+already lists every contract in the session banner, so a repo can see its
+processes from the moment it starts; what T5 adds is the same list from a bare
+`/flywheel:run`.
+
+Stated plainly: **54 B is not comfortable**, and it is the same brittleness this
+line of work keeps naming. Slice 2 opens by buying room in `run` again — or by
+deciding, with the numbers in hand, that a body of nothing but rules has outgrown
+4,800 and the ceiling should move by the headroom rule, the way `work`'s did.
+That is a decision for the start of slice 2, made deliberately, not a side effect
+of needing space today.
