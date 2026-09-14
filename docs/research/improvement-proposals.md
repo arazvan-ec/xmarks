@@ -57,6 +57,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P37 | The guard must not ask about a tier the agent definition already fixed | ✅ shipped (v0.47.0) | Done — `delegation-guard.sh` resolves `subagent_type` to its agent frontmatter; a pinned `model:`/`effort:` satisfies TIER. CONTEXT and FANOUT untouched, `create_session` unchanged |
 | P38 | Hook parity: two wirings, one assertion | ✅ shipped (v0.47.0) | Done — `check-hook-parity.sh` runs the installer into a throwaway target and diffs the `(event, matcher, script)` triples it produced against `hooks/hooks.json`, both directions, plus a landed-and-executable check on `bin/`. Wired into CI. Open: proves the two agree, never that either is correct |
 | P39 | Pay `work`'s invocation debt: move the argument out of the loaded set | ✅ shipped (v0.48.0) | Done — ~3,300 B of `work-detail.md` was the body restated with its reasoning; the argument moved to an uncited `docs/research/work-loop-rationale.md`, the three routing rules came back into the body, the reference kept only the transition line. 11,245 → 6,241 B (−44%), `worst` exception deleted. Open: `process` (10,331) is now the most expensive invocation |
+| P14a | Pillar-2 slice 1: the write-path probe + process discovery | ✅ shipped (v0.49.0) | Done — the probe is read-only and runs before Rule 1, a failure is a blocker and never a silent fallback; `process` proposes the git-native store when no DB signal hits; the banner lists the repo's contracts. Open: T5 (bare `/flywheel:run` listing) deferred to slice 2, and the rest of P14 is slices 2–3 |
 
 ## Priority overview
 
@@ -1513,6 +1514,57 @@ prose, and it means the metric rewards deleting bytes, never organizing them.
 **Open.** `process` (10,331 B) inherits the title of most expensive invocation
 and holds the last `worst` exception. Its shape is the same: two references both
 reached by any contract-writing run.
+
+## P14 slice 1 — the write-path probe + process discovery (✅ shipped v0.49.0)
+
+**Why.** The first `/flywheel:run` in a repo whose declared store was not
+reachable crashed **mid-run**: the write path was first exercised at step 3,
+after step 2 had spent all the judgment work. And nothing listed a repo's
+contracts, so the first thing a user met was the guide's own "context
+starvation" — a bare `/flywheel:run` parsed an empty slug and told them to
+*define* a process even with five present.
+
+**The finding that shrank the slice.** P14 lists "file-based DATA.md fallback"
+as something to build. It already works: the `run` eval fixture has persisted to
+a git-native markdown store since v0.32.0. Nothing was built — the file store
+stopped being the unnamed fallback and became the **detected outcome** when no
+database signal is present, which is the common case, not an unclear one.
+
+**What shipped.**
+
+- **The probe, read-only, before Rule 1** (`run` step 1). Connection opens and
+  target exists; a file store, the path is writable and inside the repo. Never a
+  test row: a probe that writes is a mutation the Guardrails did not approve,
+  performed by the safety check itself. On failure the run appends a **blocker**
+  transition and stops — no Rule runs, nothing persists, and it **never falls
+  back to another store**, which would scatter a process's records with nobody
+  told.
+- **A missing data strategy stops the run at step 1**, instead of improvising a
+  store around step 3.
+- **`process` probes the Access before declaring it**, and proposes the
+  git-native store when no database signal hits.
+- **The session banner lists the repo's contracts** — name + the first sentence
+  of `## Purpose`, read at print time, never the persistence target (that line
+  is where a connection string lives).
+
+**The blocker line came from the test, not from the design.** The eval's grader
+was written as pure negatives — nothing persisted, nothing staged, no Rule
+completed — and P26's red-on-untouched invariant tumbled it: every one of those
+is satisfied by a workdir nobody ever ran. Separating "refused correctly" from
+"never started" required the run to leave a trace before stopping, so that
+became a rule.
+
+**Deferred: `T5`, the bare `/flywheel:run` listing.** `run`'s body hit its
+ceiling. The least costly deferral available, because the banner already lists
+every contract at session start.
+
+**The calibration finding.** This slice hit a ceiling **three times** — `run`'s
+body twice, `process`'s `worst` once — on ordinary feature work, with every byte
+of argument already moved out. The ~300 B headroom rule in
+`scripts/invocation-budget.txt` was a round number picked in P36; **~500 B is
+what a feature actually costs**, measured here. `process worst` was recalibrated
+to 11,200 on that basis and the finding written into the budget file itself. A
+ratchet that fires on ordinary work is not tight, it is miscalibrated.
 
 ---
 

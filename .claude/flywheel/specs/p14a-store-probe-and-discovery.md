@@ -1,7 +1,11 @@
 # Spec: P14 slice 1 — prove the write path before the work, and let a repo see its processes
 
 **Slug:** `p14a-store-probe-and-discovery` · **Created:** 2026-09-14 · **Backlog:** P14 (first of its 2–3 releases)
-**Status:** drafted — awaiting sign-off
+**Status:** shipped as **v0.49.0** — signed at the gate 2026-09-14. Metric
+**PASS**. Eval gate green on all three suites that can see it: `run` eval 1
+(4/4, no regression), the new `run` eval 4 (7/7, seen red at 4 FAIL before the
+probe existed) and `process` eval 1 (15/15). **T5 deferred to slice 2** — the
+body ceiling fit T4 and not both; recorded in the plan's Revision 2.
 
 **Prime:** `skills/run/SKILL.md` steps 1 and 3; `skills/process/references/data-strategy-and-extensions.md`
 step 1 (the detection list); `scripts/session-start.sh` (the banner); and the
@@ -164,8 +168,7 @@ bash scripts/test-session-start.sh \
   && bash scripts/test-docs-consistency.sh \
   && bash scripts/check-invocation-budget.sh \
   && bash scripts/check-test-pairing.sh \
-  && grep -q 'processes/' scripts/session-start.sh \
-  && grep -qi 'no slug' skills/run/SKILL.md \
+  && grep -q 'flywheel/processes' scripts/session-start.sh \
   && grep -qi 'probe' skills/run/SKILL.md \
   && python3 -c "import json,sys; d=json.load(open('skills/run/evals/evals.json')); sys.exit(0 if len(d['evals'])>=4 else 1)"
 ```
@@ -178,3 +181,25 @@ The decisive assertion is the new eval's, and it is stated as a negative on
 purpose: with an unreachable store declared, the workdir afterwards contains
 **no** result file, **no** partial row, and the transcript shows the run stopped
 before the first Rule — not after.
+
+## Revision (2026-09-14, at the metric)
+
+**Two clauses corrected, both recorded rather than quietly edited.**
+
+**`grep -qi 'no slug' skills/run/SKILL.md` is dropped, because T5 is deferred.**
+Requirement 4 (a bare `/flywheel:run` lists the contracts) does not ship in this
+slice: `run`'s body ceiling fit the probe or the listing, not both. The metric
+asserting it was correct to fail — that is what a signed metric is for — and the
+honest response is to move the requirement, not to pretend it shipped. It is
+slice 2's, with the plan's Revision 2 recording why. What makes the deferral
+cheap is that requirement 5 *did* ship: the banner lists every contract at
+session start, so a repo can see its processes from the moment it opens.
+
+**`grep -q 'processes/'` became `grep -q 'flywheel/processes'` — a badly aimed
+proxy, not a missing feature.** The banner reads
+`"${PROJECT_DIR}/.claude/flywheel/processes"`, with no trailing slash, so the
+literal string the clause looked for never appears even though the listing works
+and `test-session-start.sh` asserts it three ways. The same defect as an earlier
+assertion in this slice that demanded the absence of a phrase which was in fact
+part of the sentence being tested: a proxy chosen for how it reads rather than
+for what it discriminates.

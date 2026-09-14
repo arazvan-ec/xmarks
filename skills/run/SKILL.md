@@ -17,21 +17,23 @@ At run start, materialize each contract Rule as a visible task (one per Rule, in
 
 ## 1. Load the contract and the data strategy
 
-Parse the first token as the process slug and the rest as input. Read `.claude/flywheel/processes/<slug>.md`; if it is missing, stop and point the user to `/flywheel:process <description>` — do not improvise a contract. Read `.claude/flywheel/DATA.md` and the contract's own **Persistence** section, which overrides it. Honor every `extensions:` the frontmatter declares for the whole run — **an extension never overrides the contract's Rules, Output schema, or Guardrails**. They may add: `skills/run/references/ledger-and-extensions.md`.
+Parse the first token as the process slug and the rest as input. Read `.claude/flywheel/processes/<slug>.md`; if it is missing, stop and point the user to `/flywheel:process <description>` — do not improvise a contract. Read `.claude/flywheel/DATA.md` and the contract's own **Persistence** section, which overrides it — **if neither names a store, stop here** and point the user to `/flywheel:process`. Honor every `extensions:` the frontmatter declares for the whole run — **an extension never overrides the contract's Rules, Output schema, or Guardrails**. They may add: `skills/run/references/ledger-and-extensions.md`.
+
+**Probe the write path before Rule 1.** Prove the declared store reachable **read-only** — the connection opens and the target exists; a file store, the path is writable and inside the repo. Never a test row or a temp table. On failure, append one **blocker** transition to the ledger and stop: no Rule runs, nothing persists, and **never fall back to another store**. Probe commands per store: `skills/run/references/ledger-and-extensions.md`.
 
 ## 2. Execute against the fixed rules
 
-Follow **Rules (fixed contract)** step by step on the given input, under the conventions of every declared extension (namespacing, isolation, added inputs). Within **Judgment latitude** — and only there — apply reasoning to make the result better than a rote script would; never let judgment override Rules, Output schema, or Guardrails. Produce a result that conforms **exactly** to the **Output schema** (every field, correct type). If an input is invalid or a rule cannot be satisfied, follow the Guardrails' partial-failure path and record it — do not fabricate fields to make the output look complete.
+Follow **Rules (fixed contract)** step by step on the given input, under the conventions of every declared extension (namespacing, isolation, added inputs). Within **Judgment latitude** — and only there — apply reasoning; never let judgment override Rules, Output schema, or Guardrails. Produce a result that conforms **exactly** to the **Output schema** (every field, correct type). If an input is invalid or a rule cannot be satisfied, follow the Guardrails' partial-failure path and record it — do not fabricate fields to make the output look complete.
 
 ## 3. Persist per the repo's strategy — and prove it landed
 
-Write the result to the store named in DATA.md / the contract's Persistence section, using the concrete tool it specifies (a `psql`/CLI command, a Postgres/Supabase MCP call, an ORM/repo script). Rules:
+Write the result to the store named in DATA.md / the contract's Persistence section, using the concrete tool it specifies. Rules:
 
 - **Idempotent** — upsert on the declared idempotency key; re-running the same input must not create duplicate rows.
 - **Safe** — wrap multi-statement writes in a transaction; obey the destructive-operation ban (no `DROP`/`DELETE`/`TRUNCATE`/schema changes without explicit human confirmation).
-- **Verified** — show the actual write (the SQL/tool call) and confirm it with evidence: affected-row count or a read-back of the row. A persist you did not observe landing does not count as done — the same standard `/flywheel:work` holds for tests.
+- **Verified** — show the actual write (the SQL/tool call) and confirm it with evidence: affected-row count or a read-back of the row. A persist you did not observe landing does not count as done.
 
-If the process declares a `metric`, dispatch the `evaluator` agent to independently check the persisted result against it (as `/flywheel:autoloop` does) before reporting success, rather than trusting your own read.
+If the process declares a `metric`, dispatch the `evaluator` agent to independently check the persisted result against it before reporting success.
 
 ## 4. Reflect and mature the contract
 
@@ -44,7 +46,7 @@ If (and only if) something qualifies, append a dated entry to the contract's **I
 <why, from this run's evidence>
 ```
 
-If the refinement changes the fixed Rules, Output schema, or Persistence, also bump the contract's `version` and edit the relevant section — the Improvement log records *why*, the sections stay the source of truth. Most runs add nothing; that is correct. Stage the contract if you changed it.
+If the refinement changes the fixed Rules, Output schema, or Persistence, also bump the contract's `version` and edit the relevant section — the Improvement log records *why*, the sections stay the source of truth. Stage the contract if you changed it.
 
 ## 5. Report
 

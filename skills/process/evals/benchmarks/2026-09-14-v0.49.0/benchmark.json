@@ -1,0 +1,39 @@
+{
+ "metadata": {
+  "skill_name": "process",
+  "skill_path": "skills/process",
+  "executor_model": "opus (fresh-context general-purpose subagent), the session default",
+  "timestamp": "2026-09-14",
+  "evals_run": [
+   1
+  ],
+  "runs_per_configuration": 1,
+  "configurations": [
+   "with_skill"
+  ],
+  "release_gate_for": "P14a v0.49.0 \u2014 the define-time Access probe",
+  "baseline_note": "without_skill baseline intentionally skipped: regression detection."
+ },
+ "runs": [
+  {
+   "eval_id": 1,
+   "eval_name": "new-contract-shape",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 15,
+    "failed": 0,
+    "total": 15
+   }
+  }
+ ],
+ "notes": [
+  "Release gate for P14 slice 1: a read-only write-path probe before Rule 1 (run), and 'no database signal is a detection' plus a define-time Access probe (process).",
+  "run eval 4 is new in this release and was seen RED before T4 existed: the same fixture, run against the pre-probe skill, persisted a row, staged the datastore, recorded a Rule as completed and left no blocker \u2014 4 FAIL. It is the red->green pair, not a fresh green.",
+  "The probe was exercised on BOTH store shapes, which is what the gate needed to prove: a file store passed it (run eval 1 and process eval 1 both continued) and an unreachable Postgres failed it (run eval 4 stopped before Rule 1).",
+  "Counts are the graders' own PASS:/FAIL: lines.",
+  "The executor probed the declared Access read-only before touching DATA.md (directory exists, writable, inside the worktree) and extended the existing strategy rather than rewriting it \u2014 the T6 behaviour, exercised rather than asserted.",
+  "It also declined to create .claude/settings.json for the P21 permission rule, recording the offer instead: widening permissions unattended is what that gate exists to prevent."
+ ]
+}
