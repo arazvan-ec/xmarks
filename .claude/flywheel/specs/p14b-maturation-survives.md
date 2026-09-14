@@ -1,7 +1,9 @@
 # Spec: P14 slice 2 — the maturation survives the session, and the list answers
 
 **Slug:** `p14b-maturation-survives` · **Created:** 2026-09-14 · **Backlog:** P14 (second of its 2–3 releases)
-**Status:** drafted — awaiting sign-off
+**Status:** shipped as **v0.50.0** — signed at the gate 2026-09-14. Metric
+**PASS**. Eval gate green: `run` eval 1 (7/7, with the three new maturation
+assertions) and eval 4 (7/7, no regression from the step-1 listing).
 
 **Prime:** `skills/run/SKILL.md` step 4 ("Stage the contract if you changed it")
 and step 1; the P14a plan's Revision 2 (why T5 was deferred and what it costs);
@@ -137,15 +139,36 @@ bash scripts/check-invocation-budget.sh \
   && bash scripts/test-docs-consistency.sh \
   && grep -qi 'commit' skills/run/SKILL.md \
   && grep -qi 'no slug' skills/run/SKILL.md \
-  && python3 -c "import json,sys; d=json.load(open('skills/run/evals/evals.json')); sys.exit(0 if len(d['evals'])>=5 else 1)" \
   && grep -qE '^run body=[0-9]+$' scripts/invocation-budget.txt
 ```
 
 Plus the eval gate, which is the only thing that can see the behaviour: **`run`
-evals 1, 4 and 5 green** before the version bump.
+evals 1 and 4 green** before the version bump.
 
-The decisive assertion is eval 5's, and it is stated against **git**, not the
-working tree: after a run that matured its contract, `git log` shows a commit
-whose diff touches the contract file and nothing else. Asserting "the file
-changed" would pass on today's staged-and-lost behaviour, which is the whole
-defect.
+The decisive assertions live in **eval 1** (see the Revision below for why not a
+dedicated eval) and are stated against **git**, not the working tree: HEAD's copy
+of the contract carries the dated Improvement log entry, nothing about it is left
+staged, and the commit touching it carries one file. Asserting "the file changed"
+would pass on the staged-and-lost behaviour, which is the whole defect.
+
+## Revision (2026-09-14, during work) — the eval moved, and why
+
+**Eval 5 is gone; its assertions live in eval 1.** The fixture built for it made
+the run's own contract self-contradictory, and that **blocks** the run — while
+step 4 matures only *"after a successful run"*. So no assertion could have made
+eval 5 test the commit rule: the path it grades is one the skill never opens. The
+plan named this as T1's risk and it landed anyway.
+
+Eval 1 is where the rule is reachable, because its run succeeds, and two runs on
+that fixture matured spontaneously (a `|` in a markdown cell; an undefined
+insert position). Red→green is proven on real runs of the same skill: the pre-T3
+run matured and staged (3 FAIL), the post-T3 run matured and committed (7/7).
+
+**The finding that outlives this slice, recorded as a follow-up rather than
+fixed:** two competent executors split on the blocked fixture. One proceeded with
+the true value and matured the bound; the other refused to emit a
+non-conforming output *and* refused to mature, holding that a schema change with
+a version bump is not a blocked run's call. The second reading is the correct one
+on the skill as written — but the skill says **nothing** about a run blocked by a
+defect in its own contract, and that silence is a real gap. It is a new
+requirement, so it belongs to slice 3, not here.
