@@ -63,6 +63,65 @@ OUT="$(run_hook)"
 echo "${OUT}" | grep -q 'flywheel loaded' || fail "banner missing"
 pass "banner printed"
 
+echo "== the banner lists the repo's process contracts =="
+# A repo cannot run what it cannot see: a bare /flywheel:run used to dead-end on
+# an empty slug even with contracts present (P14 slice 1). Purpose is the FIRST
+# sentence under `## Purpose`, so a multi-line paragraph collapses to one line.
+PROC="${TARGET}/.claude/flywheel/processes"
+mkdir -p "${PROC}"
+cat > "${PROC}/plate-audit.md" <<'EOF'
+---
+name: plate-audit
+kind: process
+version: 1
+persistence: git-markdown:data/plate-audits.md
+---
+
+# Process: Plate audit
+
+## Purpose
+
+Audit a Spanish registration plate: validate its format and persist a
+deterministic breakdown. Replaces the backend function.
+
+## Rules (fixed contract)
+EOF
+cat > "${PROC}/invoice-check.md" <<'EOF'
+---
+name: invoice-check
+kind: process
+version: 2
+persistence: postgres://invoices
+---
+
+## Purpose
+
+Check an invoice against the ledger.
+EOF
+OUT="$(run_hook)"
+echo "${OUT}" | grep -q 'plate-audit' || fail "the banner must list plate-audit: ${OUT}"
+echo "${OUT}" | grep -q 'invoice-check' || fail "the banner must list invoice-check"
+echo "${OUT}" | grep -q 'Audit a Spanish registration plate' || fail "the banner must carry the Purpose one-liner"
+# "…persist a deterministic breakdown." IS the first sentence, so the second one
+# is the discriminator: a whole-paragraph print would carry it.
+echo "${OUT}" | grep -q 'Replaces the backend function' && fail "Purpose must collapse to its FIRST sentence, not the whole paragraph"
+# The Access line is where a connection string lives. It must never be printed.
+echo "${OUT}" | grep -q 'postgres://' && fail "the banner leaked a persistence target"
+pass "banner lists each contract's name + first Purpose sentence, and leaks no store target"
+
+echo "== a malformed contract never breaks the banner =="
+printf 'no frontmatter at all\n' > "${PROC}/broken.md"
+OUT="$(run_hook)" || fail "a malformed contract must not make the hook exit non-zero"
+echo "${OUT}" | grep -q 'flywheel loaded' || fail "the banner must still print with a malformed contract present"
+echo "${OUT}" | grep -q 'plate-audit' || fail "one malformed contract must not hide the readable ones"
+pass "malformed contract: skipped, hook still exits 0 and the rest still list"
+
+echo "== no contracts, no list =="
+rm -rf "${PROC}"
+OUT="$(run_hook)"
+echo "${OUT}" | grep -qi 'process contracts' && fail "with no contracts the banner must print no list header"
+pass "no contracts: nothing extra printed"
+
 echo "== blank-line-tolerant metadata beats the insertion-order decoy =="
 OUT1="$(run_hook 1)"
 echo "${OUT1}" | grep -q 'touches foo' \
