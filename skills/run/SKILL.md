@@ -17,7 +17,7 @@ At run start, materialize each contract Rule as a visible task (one per Rule, in
 
 ## 1. Load the contract and the data strategy
 
-Parse the first token as the process slug and the rest as input. Read `.claude/flywheel/processes/<slug>.md`; if it is missing, stop and point the user to `/flywheel:process <description>` — do not improvise a contract. Read `.claude/flywheel/DATA.md` and the contract's own **Persistence** section, which overrides it. Honor every `extensions:` the frontmatter declares for the whole run — **an extension never overrides the contract's Rules, Output schema, or Guardrails**. They may add: `skills/run/references/ledger-and-extensions.md`.
+Parse the first token as the process slug and the rest as input. Read `.claude/flywheel/processes/<slug>.md`; if it is missing, stop and point the user to `/flywheel:process <description>` — do not improvise a contract. Read `.claude/flywheel/DATA.md` and the contract's own **Persistence** section, which overrides it — **if neither names a store, stop here** and point the user to `/flywheel:process`. A run never improvises where results go: that is what DATA.md exists to decide, once, with a person. Honor every `extensions:` the frontmatter declares for the whole run — **an extension never overrides the contract's Rules, Output schema, or Guardrails**. They may add: `skills/run/references/ledger-and-extensions.md`.
 
 ## 2. Execute against the fixed rules
 
