@@ -8,18 +8,19 @@
 | --- | --- | --- |
 | T3 judgment | `opus/high` | T2 |
 | T2 default | `sonnet/medium` | T1, T5 |
-| T1 mechanical | `haiku/low` | T3, T4, T6, T7 |
+| T1 mechanical | `haiku/low+delegate` | T3, T4, T6, T7 |
 
 The riskiest step is **T2**, the per-field accounting rewrite in `run-cost.sh`:
 it is the one task that can silently break the three fields P23 already ships
 while adding the fourth, and the zero trap the spec exists to prevent lives
 inside it. T1 precedes it because the trap must be red before it is closed.
 
-**`+delegate` is deliberately absent** from the T1-tier routes: the `executor`
-agent is not registered as a subagent type in this session (the plugin is the
-work tree, not an install), so a `+delegate` route would be one the run cannot
-honor. The tier is still haiku/low — the work is mechanical — it just runs in
-this context.
+**`+delegate` restored (2026-09-14).** The first draft of this plan dropped it
+because the `executor` agent was not a registered subagent type here — which
+turned out to be a plugin defect, not a property of the task. P41 (v0.49.0) fixed
+it: the agents are committed at `.claude/agents/` and register at session start.
+These four routes are therefore honorable **from the next session onward**; the
+session that wrote them still cannot execute them, so `work` runs in a fresh one.
 
 ### T1 — Red: the bytes_in coverage cases
 - route: `sonnet/medium`
@@ -43,7 +44,7 @@ this context.
 - test-first: yes
 
 ### T3 — The schema's four sites say bytes_in
-- route: `haiku/low`
+- route: `haiku/low+delegate`
 - changes: `skills/loop/SKILL.md`, `skills/work/references/work-detail.md`,
   `skills/run/references/ledger-and-extensions.md`,
   `skills/process/references/contract-template.md` — add the fourth field to the
@@ -53,7 +54,7 @@ this context.
 - test-first: no
 
 ### T4 — README: the fourth proxy, and what it is not
-- route: `haiku/low`
+- route: `haiku/low+delegate`
 - changes: `README.md` P23 paragraph — name `bytes_in`, state it is a floor on
   read volume, state that pre-P40 runs report it unmeasured.
 - check: `bash scripts/test-docs-consistency.sh` green; `grep -q bytes_in README.md`.
@@ -70,7 +71,7 @@ this context.
 - test-first: no
 
 ### T6 — Release: bump + upgrade note
-- route: `haiku/low`
+- route: `haiku/low+delegate`
 - changes: `.claude-plugin/plugin.json` version → `0.49.0`;
   `upgrades/v0.49.0.md` with `requires-action: false`, `## What changed`.
 - check: `bash scripts/test-install-vendored.sh` green; the upgrade file's
@@ -78,7 +79,7 @@ this context.
 - test-first: no
 
 ### T7 — Run the spec's success metric
-- route: `haiku/low`
+- route: `haiku/low+delegate`
 - changes: none — run and report.
 - check: the spec's metric command exits 0, last clause included.
 - test-first: no
