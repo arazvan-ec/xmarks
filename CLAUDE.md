@@ -38,8 +38,10 @@ loop that Claude improves with each execution.
 
 ## Writing-token discipline (owner convention, 2026-07-29)
 
-Output tokens are the most expensive ones — generated code costs the same
-whether it lands in a file or in chat. Rules for every session in this repo:
+Output tokens are the most expensive ones *per token* — generated code costs the
+same whether it lands in a file or in chat. Reads are the expensive ones *by
+volume*: a cycle can pull far more context in than it ever writes out, and until
+P40a neither half was visible. Rules for every session in this repo:
 
 - **Terse code by default.** No redundant comments, no ceremonial docstrings,
   no speculative "just in case" blocks. A comment must state a constraint the
@@ -49,6 +51,9 @@ whether it lands in a file or in chat. Rules for every session in this repo:
   into the response. The diff is already in git; pasting pays for it twice.
 - **Edit over rewrite.** Change the lines that change; don't regenerate whole
   files for a partial modification.
+- **Read what the step needs.** Prefer a targeted read (a grep, a line range)
+  over a whole file, and a subagent's own context over this one's for work that
+  must read widely. `cost.bytes_in` is what makes the difference checkable.
 
 ## Dev-loop discipline: flywheel develops flywheel (owner decision, 2026-07-29)
 

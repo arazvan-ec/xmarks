@@ -19,7 +19,9 @@
       "Bash(bash scripts/test-install-vendored.sh:*)",
       "Bash(bash scripts/test-docs-consistency.sh:*)",
       "Bash(bash scripts/test-session-start.sh:*)",
-      "Bash(bash scripts/check-test-pairing.sh:*)"
+      "Bash(bash scripts/check-test-pairing.sh:*)",
+      "Bash(bash scripts/test-run-cost.sh:*)",
+      "Bash(bash scripts/run-cost.sh:*)"
     ]
   }
 }
