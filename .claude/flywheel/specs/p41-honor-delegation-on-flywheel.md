@@ -1,7 +1,7 @@
 # Spec: P41 — flywheel can honor its own `+delegate`
 
 **Slug:** `p41-honor-delegation-on-flywheel` · **Created:** 2026-09-14 · **Backlog:** P41
-**Status:** shipped as v0.49.0 — metric PASS (parity 6/6, both test suites green,
+**Status:** shipped as v0.51.0 — metric PASS (parity 6/6, both test suites green,
 self-install idempotent with no diff, full self-install still refused,
 `claude plugin validate --strict` passed). **Acceptance observation RECORDED**
 2026-09-14: the `executor` subagent type resolved and ran T6 of this plan, in the

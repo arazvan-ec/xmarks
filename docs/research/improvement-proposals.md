@@ -57,8 +57,10 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P37 | The guard must not ask about a tier the agent definition already fixed | ✅ shipped (v0.47.0) | Done — `delegation-guard.sh` resolves `subagent_type` to its agent frontmatter; a pinned `model:`/`effort:` satisfies TIER. CONTEXT and FANOUT untouched, `create_session` unchanged |
 | P38 | Hook parity: two wirings, one assertion | ✅ shipped (v0.47.0) | Done — `check-hook-parity.sh` runs the installer into a throwaway target and diffs the `(event, matcher, script)` triples it produced against `hooks/hooks.json`, both directions, plus a landed-and-executable check on `bin/`. Wired into CI. Open: proves the two agree, never that either is correct |
 | P39 | Pay `work`'s invocation debt: move the argument out of the loaded set | ✅ shipped (v0.48.0) | Done — ~3,300 B of `work-detail.md` was the body restated with its reasoning; the argument moved to an uncited `docs/research/work-loop-rationale.md`, the three routing rules came back into the body, the reference kept only the transition line. 11,245 → 6,241 B (−44%), `worst` exception deleted. Open: `process` (10,331) is now the most expensive invocation |
-| P40 | Measure what the loop reads, then route the reads | 🟡 P40a shipped (v0.50.0), P40b ungated | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
-| P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.49.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
+| P14a | Pillar-2 slice 1: the write-path probe + process discovery | ✅ shipped (v0.49.0) | Done — the probe is read-only and runs before Rule 1, a failure is a blocker and never a silent fallback; `process` proposes the git-native store when no DB signal hits; the banner lists the repo's contracts. Open: T5 (bare `/flywheel:run` listing) deferred to slice 2, and the rest of P14 is slices 2–3 |
+| P14b | Pillar-2 slice 2: the maturation survives the session | ✅ shipped (v0.50.0) | Done — a matured contract is committed pathspec-scoped rather than left staged (staged dies with the session while the datastore row survives); the bare `/flywheel:run` listing lands. Open: a run blocked by a defect in its OWN contract has no defined behaviour — two executors split on it |
+| P40 | Measure what the loop reads, then route the reads | 🟡 P40a shipped (v0.52.0), P40b ungated | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
+| P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.51.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
 
 ## Priority overview
 
@@ -1516,6 +1518,101 @@ prose, and it means the metric rewards deleting bytes, never organizing them.
 and holds the last `worst` exception. Its shape is the same: two references both
 reached by any contract-writing run.
 
+## P14 slice 1 — the write-path probe + process discovery (✅ shipped v0.49.0)
+
+**Why.** The first `/flywheel:run` in a repo whose declared store was not
+reachable crashed **mid-run**: the write path was first exercised at step 3,
+after step 2 had spent all the judgment work. And nothing listed a repo's
+contracts, so the first thing a user met was the guide's own "context
+starvation" — a bare `/flywheel:run` parsed an empty slug and told them to
+*define* a process even with five present.
+
+**The finding that shrank the slice.** P14 lists "file-based DATA.md fallback"
+as something to build. It already works: the `run` eval fixture has persisted to
+a git-native markdown store since v0.32.0. Nothing was built — the file store
+stopped being the unnamed fallback and became the **detected outcome** when no
+database signal is present, which is the common case, not an unclear one.
+
+**What shipped.**
+
+- **The probe, read-only, before Rule 1** (`run` step 1). Connection opens and
+  target exists; a file store, the path is writable and inside the repo. Never a
+  test row: a probe that writes is a mutation the Guardrails did not approve,
+  performed by the safety check itself. On failure the run appends a **blocker**
+  transition and stops — no Rule runs, nothing persists, and it **never falls
+  back to another store**, which would scatter a process's records with nobody
+  told.
+- **A missing data strategy stops the run at step 1**, instead of improvising a
+  store around step 3.
+- **`process` probes the Access before declaring it**, and proposes the
+  git-native store when no database signal hits.
+- **The session banner lists the repo's contracts** — name + the first sentence
+  of `## Purpose`, read at print time, never the persistence target (that line
+  is where a connection string lives).
+
+**The blocker line came from the test, not from the design.** The eval's grader
+was written as pure negatives — nothing persisted, nothing staged, no Rule
+completed — and P26's red-on-untouched invariant tumbled it: every one of those
+is satisfied by a workdir nobody ever ran. Separating "refused correctly" from
+"never started" required the run to leave a trace before stopping, so that
+became a rule.
+
+**Deferred: `T5`, the bare `/flywheel:run` listing.** `run`'s body hit its
+ceiling. The least costly deferral available, because the banner already lists
+every contract at session start.
+
+**The calibration finding.** This slice hit a ceiling **three times** — `run`'s
+body twice, `process`'s `worst` once — on ordinary feature work, with every byte
+of argument already moved out. The ~300 B headroom rule in
+`scripts/invocation-budget.txt` was a round number picked in P36; **~500 B is
+what a feature actually costs**, measured here. `process worst` was recalibrated
+to 11,200 on that basis and the finding written into the budget file itself. A
+ratchet that fires on ordinary work is not tight, it is miscalibrated.
+
+## P14 slice 2 — the maturation survives the session (✅ shipped v0.50.0)
+
+**Why.** `run` step 4 ended with *"Stage the contract if you changed it."* An
+ephemeral session — the documented Claude Code web path, and every agent run —
+discards a staged change when it ends, while the datastore row the run wrote
+survives, because DATA.md decides how results persist. **The process kept the
+answer and forgot what it learned producing it**, which is the inversion of what
+a maturing runtime is for. Observed three times on 2026-09-14, each executor
+staging and stopping because the skill said to.
+
+**What shipped.** The commit, pathspec-scoped to the contract alone — never the
+datastore row, never the telemetry, because those belong to the repo's
+conventions and for a git-native store "staged" may *be* the declared proof of a
+landed write. It fails open (the result outranks the lesson) and it deliberately
+does **not** push: that needs a branch decision a run should not make alone, and
+the consequence is stated in the skill — a committed-but-unpushed improvement is
+still lost when a clone is reclaimed. Plus the bare-`/flywheel:run` listing
+deferred from slice 1.
+
+**The ceiling, chosen last on purpose.** `run`'s body is 5,248 B of nothing but
+rules; slice 1 had already moved out every byte of argument and every catalogue,
+so the recorded order (argument → catalogue → number) genuinely reaches the
+number. 5,800 = the measured body + the ~500 B a feature costs. Setting it first
+would have been picking a number to fit a diff.
+
+**The eval that had to be deleted, and what it bought.** A dedicated eval was
+built on a fixture whose contract contradicted itself — and that **blocks** the
+run, while step 4 matures only after a *successful* one. No assertion could have
+made it test the commit rule: it graded a path the skill never opens. The
+assertions moved to eval 1, which is the suite that can *see* the change, and
+red→green was proven there on real runs.
+
+**The finding it produced, carried to slice 3.** Two competent executors split on
+the blocked fixture. One proceeded with the true value and matured the contract;
+the other refused to emit a non-conforming output **and** refused to mature,
+holding that a schema change with a version bump is not a blocked run's call. The
+second is right on the skill as written — and the skill says **nothing** about a
+run blocked by a defect in its own contract. That silence is the gap.
+
+**Open.** Slice 3: the contract-defect path above, `flywheel_runs` bookkeeping,
+approval tiers, process composition, batch inputs, run→spec escalation, `sync`
+over contracts, and `status: active|deprecated` once a contract is actually
+retired.
+
 ---
 
 ## Decision log
@@ -2425,7 +2522,7 @@ session happened to be on. This is P32's finding one layer down — coverage
 implied, never exercised — and it had been true since P27 shipped stage routing
 in v0.39.0.
 
-**What shipped (v0.49.0).** `--agents-only`: vendors `agents/*.md` into
+**What shipped (v0.51.0).** `--agents-only`: vendors `agents/*.md` into
 `.claude/agents/` and nothing else, the only mode allowed to target this repo.
 The six agents committed, because discovery happens at session start and a copy
 generated *by* a session loses the race for that session. `check-agent-parity.sh`
@@ -2465,7 +2562,7 @@ What *was* portable is the observation underneath: flywheel routes **tasks** by
 tier (P27) and never the **I/O inside a task**, so an `opus/high` task reads its
 twelve files at opus prices, and reading is not reasoning.
 
-**P40a — the instrument (shipped v0.50.0).** `cost.bytes_in`, a fourth proxy
+**P40a — the instrument (shipped v0.52.0).** `cost.bytes_in`, a fourth proxy
 beside P23's three. The design decision that mattered was not the field but the
 accounting: it moved from per-line to **per-field**. Every run written before
 today carries a cost object complete for three fields and absent for the fourth,

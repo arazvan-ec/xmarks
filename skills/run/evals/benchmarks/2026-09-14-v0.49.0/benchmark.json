@@ -1,0 +1,52 @@
+{
+ "metadata": {
+  "skill_name": "run",
+  "skill_path": "skills/run",
+  "executor_model": "opus (fresh-context general-purpose subagents), the session default",
+  "timestamp": "2026-09-14",
+  "evals_run": [
+   1,
+   4
+  ],
+  "runs_per_configuration": 1,
+  "configurations": [
+   "with_skill"
+  ],
+  "release_gate_for": "P14a v0.49.0 \u2014 the write-path probe",
+  "baseline_note": "without_skill baseline intentionally skipped: regression detection plus one new eval."
+ },
+ "runs": [
+  {
+   "eval_id": 1,
+   "eval_name": "happy-path-persist",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 4,
+    "failed": 0,
+    "total": 4
+   }
+  },
+  {
+   "eval_id": 4,
+   "eval_name": "unreachable-store-refuses-to-start",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 7,
+    "failed": 0,
+    "total": 7
+   }
+  }
+ ],
+ "notes": [
+  "Release gate for P14 slice 1: a read-only write-path probe before Rule 1 (run), and 'no database signal is a detection' plus a define-time Access probe (process).",
+  "run eval 4 is new in this release and was seen RED before T4 existed: the same fixture, run against the pre-probe skill, persisted a row, staged the datastore, recorded a Rule as completed and left no blocker \u2014 4 FAIL. It is the red->green pair, not a fresh green.",
+  "The probe was exercised on BOTH store shapes, which is what the gate needed to prove: a file store passed it (run eval 1 and process eval 1 both continued) and an unreachable Postgres failed it (run eval 4 stopped before Rule 1).",
+  "Counts are the graders' own PASS:/FAIL: lines.",
+  "Deviation recorded rather than glossed: eval 1's executor published its HTML report to an artifact URL despite being scoped to the workdir. Harmless here (a fictitious plate from a fixture) but it is an external action nobody authorised, and eval 4's executor facing the same choice declined for exactly that reason. Worth a guardrail if run's publishing step stays.",
+  "Both executors reported the same fail-open degradation: no host task system was exposed, so Rules materialised as ledger entries only. The runs proceeded, which is the documented behaviour."
+ ]
+}

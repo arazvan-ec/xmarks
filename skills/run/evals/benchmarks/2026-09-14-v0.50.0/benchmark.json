@@ -1,0 +1,52 @@
+{
+ "metadata": {
+  "skill_name": "run",
+  "skill_path": "skills/run",
+  "executor_model": "opus (fresh-context general-purpose subagents), the session default",
+  "timestamp": "2026-09-14",
+  "evals_run": [
+   1,
+   4
+  ],
+  "runs_per_configuration": 1,
+  "configurations": [
+   "with_skill"
+  ],
+  "release_gate_for": "P14b v0.50.0 \u2014 the maturation is committed, not staged",
+  "baseline_note": "without_skill baseline intentionally skipped: regression detection plus three new assertions on eval 1."
+ },
+ "runs": [
+  {
+   "eval_id": 1,
+   "eval_name": "happy-path-persist",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 7,
+    "failed": 0,
+    "total": 7
+   }
+  },
+  {
+   "eval_id": 4,
+   "eval_name": "unreachable-store-refuses-to-start",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 7,
+    "failed": 0,
+    "total": 7
+   }
+  }
+ ],
+ "notes": [
+  "Eval 1 gained three assertions read from git rather than the working tree: HEAD's contract carries the dated Improvement log entry, nothing about it is left staged, and the commit touching it carries one file. Red->green proven on real runs of the same skill \u2014 the pre-T3 run matured and staged (3 FAIL), the post-T3 run matured and committed (7/7, commit f0af9d0 carrying only the contract).",
+  "Eval 4 re-run because step 1 changed again (the no-slug listing): the probe still refuses before Rule 1, and the run still leaves data/plate-audits.md byte-intact \u2014 the fallback target the fixture keeps in place on purpose.",
+  "A dedicated eval 5 was built and then deleted. Its fixture made the contract self-contradictory, which BLOCKS the run, while step 4 matures only after a successful one \u2014 so no assertion could have made it test the commit rule. Recorded because the attempt produced the finding below.",
+  "FINDING, out of scope and carried to slice 3: two competent executors split on the blocked fixture. One proceeded with the true value and matured the contract; the other refused to emit a non-conforming output AND refused to mature, holding that a schema change with a version bump is not a blocked run's call. The second is right on the skill as written, but the skill says nothing about a run blocked by a defect in its OWN contract.",
+  "Both executors declined to publish their HTML report to an artifact URL, citing the workdir-only constraint \u2014 the deviation recorded in the v0.49.0 benchmark did not recur.",
+  "Counts are the grader's own PASS:/FAIL: lines."
+ ]
+}

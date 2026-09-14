@@ -15,6 +15,34 @@ echo "   Full cycle:  /flywheel:loop <feature>"
 echo "   Phases:      brainstorm → spec → plan → work → verify → review → compound → ship"
 echo "   Anytime:     /flywheel:debug (systematic) · /flywheel:autoloop (autonomous) · /flywheel:sync (spec↔code) · /flywheel:recall (search learnings)"
 echo "   Runtime:     /flywheel:process (define a domain operation) · /flywheel:run (execute as the backend + persist + mature)"
+
+# A repo cannot run what it cannot see. Name + the first Purpose sentence only:
+# never the persistence target, which is where a connection string lives.
+# Fail-open like everything else here — an unreadable contract is skipped, not
+# fatal.
+PROCESSES="${PROJECT_DIR}/.claude/flywheel/processes"
+if [ -d "${PROCESSES}" ]; then
+  LIST="$(
+    for f in "${PROCESSES}"/*.md; do
+      [ -f "${f}" ] || continue
+      awk '
+        NR==1 && $0 != "---" { exit }
+        NR>1 && $0 == "---" { infm=0 }
+        infm && /^name:[[:space:]]*/ { sub(/^name:[[:space:]]*/,""); name=$0 }
+        NR==1 && $0 == "---" { infm=1; next }
+        /^## Purpose[[:space:]]*$/ { inp=1; next }
+        inp && /^## / { inp=0 }
+        inp && NF { purpose = purpose (purpose ? " " : "") $0 }
+        END {
+          if (name == "") exit
+          if (match(purpose, /\./)) purpose = substr(purpose, 1, RSTART)
+          printf "   · %s — %s\n", name, purpose
+        }
+      ' "${f}" 2>/dev/null
+    done
+  )"
+  [ -n "${LIST}" ] && { echo "   Process contracts in this repo:"; echo "${LIST}"; }
+fi
 echo ""
 
 # Soft new-version notice for VENDORED installs only (the VERSION file exists

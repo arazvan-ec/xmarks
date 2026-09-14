@@ -364,3 +364,39 @@ Its blind spot, stated because that is now the rule: it proves the two **agree**
 The delegation guard asked whenever `model` was absent, on the premise that the child inherits the caller's. True for `create_session`, **false** for a subagent whose `subagent_type` names an agent that pins its own tier — which is every agent in this repo, and the call `work` itself instructs for a `+delegate` task.
 
 The cost is not the extra keystroke. An advisory that fires on a decision already made trains its reader to click through, and the warnings that matter — the pasted contract, the duplicate child, the fan that grew on its own — go with it. When adding an advisory check, enumerate the call sites your **own** project makes and confirm none of them trip it; a guard whose first firing is a false positive has already lost.
+
+## gotcha: a negative fixture must break the mechanism the code actually reads
+
+<!-- fw: type=gotcha; date=2026-09-14; files=skills/run/evals/fixtures/unreachable-store-repo/.claude/flywheel/processes/plate-audit.md,skills/run/SKILL.md; spec=p14a-store-probe-and-discovery; branch=claude/recent-changes-review-ic3hai; evidence=the fixture declared a dead Postgres in DATA.md, the run persisted a row anyway and was right to — step 1 says the contract's Persistence OVERRIDES DATA.md, and the contract named a reachable markdown store -->
+
+A fixture built to prove "the run refuses when its store is unreachable" broke the wrong lever: it made `DATA.md` unreachable while the contract's own **Persistence** section — which the skill says *overrides* DATA.md — still named a perfectly reachable file. The executor followed the skill exactly, persisted, and reported the conflict. **The fixture tested nothing, and the test run is what exposed it.**
+
+Before building a negative fixture, trace the **override chain** for the value you are breaking and break it at the level the code actually reads. Then confirm the red run fails for the reason you intended, not merely that it fails: a red arm passing for the wrong reason is indistinguishable from a working test until the day it matters.
+
+And leave the tempting wrong answer in place. `data/plate-audits.md` stays in that fixture, writable and shaped exactly like the output schema, precisely because it is what a desperate run would write to — which is what gives the "no silent fallback" assertion something to catch.
+
+## pattern: a grader of pure negatives is hollow — one positive has to prove the subject ran
+
+<!-- fw: type=pattern; date=2026-09-14; files=skills/run/evals/check.sh,scripts/test-eval-graders.sh,skills/run/SKILL.md; spec=p14a-store-probe-and-discovery; branch=claude/recent-changes-review-ic3hai; evidence=all five negative assertions passed on a pristine workdir; adding the blocker-line assertion turned it red on untouched and green only on a deliberate refusal (7/7) -->
+
+When the correct outcome of a test is that **nothing happened**, every assertion is a negative — nothing persisted, nothing staged, no step completed — and a workdir nobody ever touched satisfies all of them. That is P26's red-on-untouched invariant catching a hollow grader, and it catches it every time.
+
+The fix is one **positive** assertion proving the subject ran and *chose* to stop: here, that the run recorded a `blocked` transition before halting. Which means the design has to leave that trace — so the invariant did not just improve the test, it added a rule to the skill. A blocked run that leaves no evidence is indistinguishable from a run that never started, for a grader and for a person reading the repo afterwards.
+
+## gotcha: a metric clause must discriminate, not just read well
+
+<!-- fw: type=gotcha; date=2026-09-14; files=.claude/flywheel/specs/p14a-store-probe-and-discovery.md,scripts/test-session-start.sh; spec=p14a-store-probe-and-discovery; branch=claude/recent-changes-review-ic3hai; evidence=two in one cycle — an assertion demanding the absence of "deterministic breakdown" when that phrase IS the first sentence under test, and `grep -q 'processes/'` which never matches because the script writes `.../flywheel/processes` with no trailing slash -->
+
+Twice in one cycle a check failed while the code was correct, because the check was chosen for how it *reads* rather than for what it *discriminates*. One asserted the absence of a phrase that was part of the very sentence it was testing. One grepped a literal string that the working implementation never produces.
+
+Before committing a clause, name the **wrong state it would catch**. If you cannot name one, it is decoration; if the state you name is not the one the feature can actually reach, it is worse than decoration, because it will fail on correct code and train you to edit the test.
+
+The corollary is the one that saved this cycle: when a signed metric fails, find out **which** clause and why, before touching anything. One of the two failures here was a bad proxy — and the other was real, catching that a signed requirement had been deferred and not shipped. Editing the metric on the first sign of red would have buried the second.
+
+## decision: a ratchet that fires on ordinary work is miscalibrated, not tight
+
+<!-- fw: type=decision; date=2026-09-14; files=scripts/invocation-budget.txt,skills/run/SKILL.md,skills/process/references/data-strategy-and-extensions.md; spec=p14a-store-probe-and-discovery; branch=claude/recent-changes-review-ic3hai; evidence=three ceiling breaches in one slice — run body at 4,819/4,800 and again needing a catalogue moved, process worst at 11,025/10,500 — each AFTER every byte of argument had already been moved to uncited docs -->
+
+The per-skill byte ceilings (P36) are the right instrument, and the headroom I gave them was a number I made up: ~300 B, chosen because it was round. One ordinary feature — three rules added to one step — breached a ceiling **three times in a single slice**, every time with the argument already moved out and only rules and catalogues left.
+
+**~500 B is what a feature costs**, measured. Set headroom from that, and when a ceiling blocks work, try the moves in this order: move the *argument* to an uncited `docs/research/` note (it is never loaded, so it is free); move a *catalogue or procedure* to `references/` — but only when the ceiling is `body`, since `worst` charges the reference either way; and only then consider the number. Recalibrating after the first two are exhausted is engineering; reaching for it first is the drift the ratchet exists to stop.

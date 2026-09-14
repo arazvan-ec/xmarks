@@ -17,7 +17,7 @@ inside it. T1 precedes it because the trap must be red before it is closed.
 
 **`+delegate` restored (2026-09-14).** The first draft of this plan dropped it
 because the `executor` agent was not a registered subagent type here — which
-turned out to be a plugin defect, not a property of the task. P41 (v0.49.0) fixed
+turned out to be a plugin defect, not a property of the task. P41 (v0.51.0) fixed
 it: the agents are committed at `.claude/agents/` and register at session start.
 These four routes are therefore honorable **from the next session onward**; the
 session that wrote them still cannot execute them, so `work` runs in a fresh one.
@@ -72,8 +72,8 @@ session that wrote them still cannot execute them, so `work` runs in a fresh one
 
 ### T6 — Release: bump + upgrade note
 - route: `haiku/low+delegate`
-- changes: `.claude-plugin/plugin.json` version → `0.49.0`;
-  `upgrades/v0.49.0.md` with `requires-action: false`, `## What changed`.
+- changes: `.claude-plugin/plugin.json` version → `0.52.0`;
+  `upgrades/v0.52.0.md` with `requires-action: false`, `## What changed`.
 - check: `bash scripts/test-install-vendored.sh` green; the upgrade file's
   frontmatter version matches the manifest.
 - test-first: no

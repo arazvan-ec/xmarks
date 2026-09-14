@@ -1,7 +1,7 @@
 # Spec: P40a — the loop measures what it reads
 
 **Slug:** `p40a-read-volume-proxy` · **Created:** 2026-09-14 · **Backlog:** P40a
-**Status:** shipped as v0.50.0 — metric PASS (19/19 run-cost cases, five docs
+**Status:** shipped as v0.52.0 — metric PASS (19/19 run-cost cases, five docs
 gates green, and the decisive clause: a pre-P40a run prints `bytes_in UNMEASURED`
 rather than totalling it as 0). Built in the same session as P41 once delegation
 became honorable, not a fresh one.
@@ -54,7 +54,7 @@ Out of scope — this spec buys the instrument, not the intervention:
 | coverage | per-field count of lines that carry the field | `scripts/run-cost.sh` |
 | comparison tool | totals, per-route buckets, two-run delta | `scripts/run-cost.sh` |
 | paired test | the coverage cases, red first | `scripts/test-run-cost.sh` |
-| docs | the fourth proxy and what it is not | `README.md`, `upgrades/v0.50.0.md` |
+| docs | the fourth proxy and what it is not | `README.md`, `upgrades/v0.52.0.md` |
 
 ## A — Approach
 
@@ -88,7 +88,7 @@ hook, no widened permission surface.
    refused delta, route bucket, back-compat on a pre-P40 file).
 2. Green: per-field accounting in `scripts/run-cost.sh`.
 3. Schema text at the four sites + README, inside the invocation budget.
-4. Bump to `0.50.0` + `upgrades/v0.50.0.md` (`requires-action: false`).
+4. Bump to `0.52.0` + `upgrades/v0.52.0.md` (`requires-action: false`).
 5. P40 entry (a and b) in `docs/research/improvement-proposals.md`.
 6. CLAUDE.md: name the volume half of the token convention.
 
