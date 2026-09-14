@@ -58,7 +58,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P38 | Hook parity: two wirings, one assertion | ✅ shipped (v0.47.0) | Done — `check-hook-parity.sh` runs the installer into a throwaway target and diffs the `(event, matcher, script)` triples it produced against `hooks/hooks.json`, both directions, plus a landed-and-executable check on `bin/`. Wired into CI. Open: proves the two agree, never that either is correct |
 | P39 | Pay `work`'s invocation debt: move the argument out of the loaded set | ✅ shipped (v0.48.0) | Done — ~3,300 B of `work-detail.md` was the body restated with its reasoning; the argument moved to an uncited `docs/research/work-loop-rationale.md`, the three routing rules came back into the body, the reference kept only the transition line. 11,245 → 6,241 B (−44%), `worst` exception deleted. Open: `process` (10,331) is now the most expensive invocation |
 | P40 | Measure what the loop reads, then route the reads | 🟢 approved to build | P40a (instrument: a `bytes_in` proxy with field-level coverage) signed 2026-09-14, work pending. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) is **not approved**: it is gated on what P40a reports |
-| P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.49.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS. Open: the acceptance observation (`executor` resolves) belongs to the next session; and flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
+| P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.49.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
 
 ## Priority overview
 
@@ -2413,9 +2413,11 @@ execute one of them. Three causes stack, and each is invisible alone.
    since v0.17.0 — for *consuming* repos.
 2. `install-vendored.sh` **refused to self-target**, so the fix for (1) was
    closed to flywheel itself.
-3. Agent discovery for a new `.claude/agents/` is **session-start scoped**:
-   writing the files mid-session does not register them (`Agent type 'executor'
-   not found`, probed twice, before and after the watcher window).
+3. Agent discovery for a new `.claude/agents/` is **delayed**: two probes right
+   after creating the directory both returned `Agent type 'executor' not found`.
+   (Corrected later the same day — the types did appear mid-session after all.
+   The design stands: a delay of unknown length is not something a plan's routes
+   can depend on, and a fresh clone needs the copies at session start.)
 
 Net: the plugin prescribed a route its own dev loop was structurally unable to
 run, and every flywheel-on-flywheel plan silently degraded to whatever tier the
@@ -2441,8 +2443,10 @@ fresh clone's first session still could not delegate. Opening the full
 self-install: 17 duplicated skill bodies drifting on every edit, which is the
 reason the guard exists.
 
-**Open.** The acceptance observation — `executor` resolving as a subagent type —
-is the next session's to record; claiming it from the session that wrote the
-files would be exactly the unverifiable evidence P18 keeps out of the ledger.
-And flywheel's hooks remain inactive in its own repo: `delegation-guard.sh` does
+**Recorded.** The acceptance observation landed the same day: `executor`
+resolved and executed this plan's own T6, returning PASS on all six metric
+clauses — the first `+delegate` route this repo has ever honored, and the first
+evidence that the fix works rather than merely being present.
+
+**Open.** flywheel's hooks remain inactive in its own repo: `delegation-guard.sh` does
 not fire on flywheel-on-flywheel delegation. Stated, not fixed.

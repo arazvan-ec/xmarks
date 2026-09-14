@@ -3,8 +3,9 @@
 **Slug:** `p41-honor-delegation-on-flywheel` · **Created:** 2026-09-14 · **Backlog:** P41
 **Status:** shipped as v0.49.0 — metric PASS (parity 6/6, both test suites green,
 self-install idempotent with no diff, full self-install still refused,
-`claude plugin validate --strict` passed). The acceptance observation below is
-still unrecorded: this session cannot register the agents it wrote.
+`claude plugin validate --strict` passed). **Acceptance observation RECORDED**
+2026-09-14: the `executor` subagent type resolved and ran T6 of this plan, in the
+same session that wrote the files — see the correction under Requirements 3.
 **Prime:** P27 (stage routing — the thing that cannot be honored); P32 ("test it,
 or stop implying it is tested" — the same dishonesty, one layer down); P38
 (`check-hook-parity.sh`) — this reuses its shape and its lesson; the
@@ -22,9 +23,13 @@ probing, not by reading:
 2. `install-vendored.sh` — the mechanism that fixes (1) for every consuming repo
    — **refuses to self-target** (`error: target is the flywheel repo itself`).
    The one door out is closed for flywheel itself.
-3. Agent discovery for a **new** `.claude/agents/` directory is session-start
-   scoped: writing the files mid-session does not register them (probed twice,
-   `Agent type 'executor' not found` both times).
+3. Agent discovery for a **new** `.claude/agents/` directory is not immediate:
+   two probes right after creating it both returned `Agent type 'executor' not
+   found`. **Corrected 2026-09-14:** the types did appear later in the same
+   session, so registration is delayed, not strictly session-start scoped as
+   first written. The design does not change — a fresh clone must carry the
+   copies to have them at session start, and a delay of unknown length is not
+   something a plan's routes can depend on.
 
 Net effect: the plugin's own dev loop can never execute the route it tells every
 other repo to plan. P32 named this failure mode for reviewer dispatch; this is
@@ -122,9 +127,9 @@ change is a release.
 - **Known-remaining, stated not hidden:** flywheel's hooks are still inactive in
   its own repo, so `delegation-guard.sh` does not fire on flywheel-on-flywheel
   delegation. This spec does not fix that.
-- **This session cannot benefit.** Registration is session-start scoped; the
-  acceptance observation below belongs to the next session, and claiming it
-  earlier would be the unverifiable evidence P18 exists to keep out.
+- **The observation is the only proof.** Registration timing is not
+  contractual, so "the agents are registered" may never be claimed from the fact
+  that the files exist — only from a subagent invocation that actually resolved.
 
 ## Success metric
 
@@ -141,6 +146,7 @@ bash scripts/check-agent-parity.sh \
 Re-running the self-install produces **no diff** (idempotent and in sync), and
 the full self-install is still refused.
 
-**Acceptance observation (next session, recorded not assumed):** invoking the
-`executor` subagent type resolves instead of `Agent type 'executor' not found`.
-Until a session records that, this spec is implemented but unproven.
+**Acceptance observation — RECORDED 2026-09-14:** the `executor` subagent type
+resolved and executed T6 of this plan (the metric run itself), returning PASS on
+all six clauses with a clean tree. The route `haiku/low+delegate` was honored by
+the loop for the first time in this repo's history.
