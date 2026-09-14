@@ -1,38 +1,94 @@
 name: Release
 
-# When the plugin version in .claude-plugin/plugin.json changes on main,
-# create the matching vX.Y.Z tag and a GitHub release with auto-generated
-# notes. Vendored repos record this version in .claude/flywheel/VERSION, so
-# tags give every deployed copy a traceable, browsable source point.
+# Every release adds upgrades/v<version>.md, so the upgrade notes — not the
+# manifest's current version — are the list of releases in a push. Reading the
+# manifest tags only the LAST release when a PR carries several, which is how
+# v0.22.0, v0.27.0, v0.40.0 and v0.51.0 shipped untagged.
 
 on:
   push:
     branches: [main]
     paths:
       - ".claude-plugin/plugin.json"
+      - "upgrades/**"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List the missing tags without creating them"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
 
 jobs:
   tag-release:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Read plugin version
-        id: v
+      - name: Collect releases in this push
+        id: r
         run: |
-          echo "version=$(python3 -c 'import json; print(json.load(open(".claude-plugin/plugin.json"))["version"])')" >> "$GITHUB_OUTPUT"
+          BEFORE="${{ github.event.before }}"
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+             && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            NOTES=$(git diff --name-only --diff-filter=A "$BEFORE" "${{ github.sha }}" -- 'upgrades/v*.md')
+          else
+            # No usable range (first push, force-push, manual dispatch): fall back
+            # to the manifest, which is the pre-existing behaviour.
+            NOTES="upgrades/v$(python3 -c 'import json; print(json.load(open(".claude-plugin/plugin.json"))["version"])').md"
+          fi
+          VERSIONS=$(echo "$NOTES" | sed -n 's#^upgrades/\(v[0-9][0-9.]*\)\.md$#\1#p' | sort -V | tr '\n' ' ')
+          echo "versions=${VERSIONS}" >> "$GITHUB_OUTPUT"
+          echo "releases in this push: ${VERSIONS:-(none)}"
 
-      - name: Create tag and release if new
+      - name: Create tags and releases
+        if: steps.r.outputs.versions != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v${{ steps.v.outputs.version }}"
-          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
-            echo "tag ${TAG} already exists — nothing to do"
-          else
-            gh release create "${TAG}" --title "flywheel ${TAG}" --generate-notes
+          for TAG in ${{ steps.r.outputs.versions }}; do
+            if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+              echo "tag ${TAG} already exists — nothing to do"
+              continue
+            fi
+            gh release create "${TAG}" --target "${{ github.sha }}" \
+              --title "flywheel ${TAG}" --generate-notes
             echo "created release ${TAG}"
-          fi
+          done
+
+  # Manual safety net: tag any upgrade note that never got one, at the same
+  # commit the push job would have used — the first commit on main's
+  # first-parent history that carries the note. Verified to agree with every
+  # tag already in the repo.
+  backfill:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag every untagged release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          declare -A anchor
+          while read -r c; do
+            while read -r n; do
+              [ -n "$n" ] || continue
+              [ -n "${anchor[$n]:-}" ] || anchor[$n]=$c
+            done < <(git ls-tree --name-only "$c" upgrades/ | sed -n 's#^upgrades/\(v[0-9][0-9.]*\)\.md$#\1#p')
+          done < <(git rev-list --reverse --first-parent origin/main)
+          for TAG in $(printf '%s\n' "${!anchor[@]}" | sort -V); do
+            git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null && continue
+            echo "missing ${TAG} -> ${anchor[$TAG]}"
+            [ "$DRY_RUN" = "true" ] && continue
+            gh release create "${TAG}" --target "${anchor[$TAG]}" \
+              --title "flywheel ${TAG}" --generate-notes
+          done
