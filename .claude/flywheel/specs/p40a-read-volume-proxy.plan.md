@@ -93,3 +93,17 @@ session that wrote them still cannot execute them, so `work` runs in a fresh one
 | fail-open unchanged | no change to the skip/exit-2 paths; existing cases cover them |
 | no external egress | `bytes_in` is a local integer; no task adds a network call |
 | invocation budget | T3 and T5 both gate on `check-invocation-budget.sh` |
+
+## Execution record (2026-09-14)
+
+All seven tasks ran. T3, T4 and T7 were honored at `haiku/low+delegate` by the
+`executor` agent — the first cycle in this repo where that route was executable
+at all (P41).
+
+**One escalation.** T6 (`haiku/low+delegate`) delivered the version bump exactly
+as specified, but its half of the work that was prose — the upgrade note's
+`summary` — came back with an ungrammatical central clause and a claim about
+baselines that was wrong. Taken back to the caller's tier and rewritten, per
+`work`'s rule that an escalation is never argued with. The lesson is about the
+plan, not the agent: a task is only tier 1 if *every* part of it is mechanical,
+and "write the release summary" never was.

@@ -1,8 +1,10 @@
 # Spec: P40a — the loop measures what it reads
 
 **Slug:** `p40a-read-volume-proxy` · **Created:** 2026-09-14 · **Backlog:** P40a
-**Status:** signed 2026-09-14; `work` deferred to a fresh session so the plan's
-`+delegate` routes are honorable (see P41). Version moved to 0.50.0 — P41 took 0.49.0.
+**Status:** shipped as v0.50.0 — metric PASS (19/19 run-cost cases, five docs
+gates green, and the decisive clause: a pre-P40a run prints `bytes_in UNMEASURED`
+rather than totalling it as 0). Built in the same session as P41 once delegation
+became honorable, not a fresh one.
 **Prime:** P23 (`.claude/flywheel/specs/p23-cycle-cost.md`) — this extends its
 line schema and inherits its proxy-honesty rule verbatim; P18 (evidence-gated
 compounding), which is why no token field may appear; the Spotify Portal article
