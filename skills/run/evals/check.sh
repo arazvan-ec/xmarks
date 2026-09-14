@@ -45,20 +45,36 @@ case "$ID" in
     ;;
   5)
     CONTRACT=".claude/flywheel/processes/plate-audit.md"
-    # Against git, never against the tree: "the file changed" passes on the
-    # staged-and-lost behaviour this eval exists to catch. Only a commit proves
-    # the maturation survives the session that made it.
-    SHA="$(git -C "$W" log --format=%H -- "$CONTRACT" 2>/dev/null | head -1)"
-    if [ -n "${SHA}" ]; then ok "the maturation was committed (not left staged)"; else fail "the maturation was committed (no commit touches ${CONTRACT})"; fi
-    if [ -n "${SHA}" ]; then
-      TOUCHED="$(git -C "$W" show --name-only --format= "${SHA}" | grep -c .)"
-      if [ "${TOUCHED}" = "1" ]; then ok "the commit touches the contract and nothing else"; else fail "the commit touches ${TOUCHED} files — a pathspec commit must carry the contract alone"; fi
+    # Read the contract AS GIT HAS IT, not as the tree has it. `git log -- <path>`
+    # is not enough: the fixture's own seed commit created the file, so "a commit
+    # touches the contract" is true before the run starts. The discriminator is
+    # whether the MATURATION reached git.
+    INHEAD="$(git -C "$W" show "HEAD:$CONTRACT" 2>/dev/null)"
+    if printf '%s' "$INHEAD" | grep -qE '^### [0-9]{4}-[0-9]{2}-[0-9]{2} — '; then
+      ok "the maturation reached git (HEAD's contract carries the dated Improvement log entry)"
     else
-      fail "the commit touches the contract and nothing else (no commit to inspect)"
+      fail "the maturation reached git — HEAD's contract has no dated Improvement log entry (staged and lost is the defect)"
     fi
-    check grep -qE '^### [0-9]{4}-[0-9]{2}-[0-9]{2} — ' "$W/$CONTRACT" -- "Improvement log carries a dated entry"
-    if ! grep -qE '^version: 1$' "$W/$CONTRACT"; then ok "contract version bumped past 1 (the refinement changes the Output schema)"; else fail "contract version bumped past 1"; fi
-    if git -C "$W" diff --cached --name-only | grep -qx "$CONTRACT"; then fail "nothing left staged-but-uncommitted"; else ok "nothing left staged-but-uncommitted"; fi
+    if printf '%s' "$INHEAD" | grep -qE '^version: 1$'; then
+      fail "HEAD's contract version bumped past 1 (the refinement changes the Output schema)"
+    else
+      ok "HEAD's contract version bumped past 1"
+    fi
+    # Catches "committed something, left the rest staged".
+    if [ -z "$(git -C "$W" diff HEAD -- "$CONTRACT")" ] && [ -z "$(git -C "$W" diff --cached -- "$CONTRACT")" ]; then
+      ok "nothing about the contract left uncommitted or staged"
+    else
+      fail "nothing about the contract left uncommitted or staged"
+    fi
+    # Catches `git add -A` sweeping the datastore row into a commit labelled
+    # "mature the contract". Only meaningful once the maturation is in git.
+    LAST="$(git -C "$W" log --format=%H -- "$CONTRACT" 2>/dev/null | head -1)"
+    TOUCHED="$(git -C "$W" show --name-only --format= "${LAST}" 2>/dev/null | grep -c . || true)"
+    if printf '%s' "$INHEAD" | grep -qE '^### [0-9]{4}-[0-9]{2}-[0-9]{2} — ' && [ "${TOUCHED}" = "1" ]; then
+      ok "the maturation commit touches the contract and nothing else"
+    else
+      fail "the maturation commit touches the contract alone (last commit touching it carries ${TOUCHED} file(s))"
+    fi
     ;;
   4)
     # Every assertion is a NEGATIVE: the correct outcome of this eval is that
