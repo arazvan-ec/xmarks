@@ -60,6 +60,8 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P14a | Pillar-2 slice 1: the write-path probe + process discovery | ✅ shipped (v0.49.0) | Done — the probe is read-only and runs before Rule 1, a failure is a blocker and never a silent fallback; `process` proposes the git-native store when no DB signal hits; the banner lists the repo's contracts. Open: T5 (bare `/flywheel:run` listing) deferred to slice 2, and the rest of P14 is slices 2–3 |
 | P14b | Pillar-2 slice 2: the maturation survives the session | ✅ shipped (v0.50.0) | Done — a matured contract is committed pathspec-scoped rather than left staged (staged dies with the session while the datastore row survives); the bare `/flywheel:run` listing lands. Open: a run blocked by a defect in its OWN contract has no defined behaviour — two executors split on it |
 | P14c | Pillar-2 slice 3: a contract defect escalates | ✅ shipped (v0.53.0) | Done — step 2 names the two failures apart; a contract defect blocks, never rewrites the fixed rules, and stubs a spec from the run's evidence. Four eval paths, stub in exactly one. Open: step 0's task materialization has never fired in 8/8 runs; the contract metric has no rejection-path equivalent |
+| P40 | Measure what the loop reads, then route the reads | 🟡 P40a shipped (v0.52.0), P40b ungated | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
+| P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.51.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
 
 ## Priority overview
 
@@ -2533,3 +2535,93 @@ Append-only. Newest at the bottom.
   suite that grades those, so both ran (7/7 and 11/11). The rule to take from
   it: the gate is the suite that can *see* the change, which is not always the
   suite named after the skill.
+
+## P41 — flywheel can honor its own `+delegate`
+
+**Why.** Found by probing, not by reading, while planning P40a: the plan router
+assigned `haiku/low+delegate` to four mechanical tasks and the run could not
+execute one of them. Three causes stack, and each is invisible alone.
+
+1. Claude Code on the web **never installs marketplace plugins** declared in
+   `.claude/settings.json`. The `install-vendored.sh` header has documented this
+   since v0.17.0 — for *consuming* repos.
+2. `install-vendored.sh` **refused to self-target**, so the fix for (1) was
+   closed to flywheel itself.
+3. Agent discovery for a new `.claude/agents/` is **delayed**: two probes right
+   after creating the directory both returned `Agent type 'executor' not found`.
+   (Corrected later the same day — the types did appear mid-session after all.
+   The design stands: a delay of unknown length is not something a plan's routes
+   can depend on, and a fresh clone needs the copies at session start.)
+
+Net: the plugin prescribed a route its own dev loop was structurally unable to
+run, and every flywheel-on-flywheel plan silently degraded to whatever tier the
+session happened to be on. This is P32's finding one layer down — coverage
+implied, never exercised — and it had been true since P27 shipped stage routing
+in v0.39.0.
+
+**What shipped (v0.51.0).** `--agents-only`: vendors `agents/*.md` into
+`.claude/agents/` and nothing else, the only mode allowed to target this repo.
+The six agents committed, because discovery happens at session start and a copy
+generated *by* a session loses the race for that session. `check-agent-parity.sh`
+in CI, both directions.
+
+**The trap that needed its own test.** The prune at the end of a full install is
+manifest-driven. A narrowed run that wrote a narrowed manifest would have read as
+"this version dropped every skill" and deleted a consuming repo's entire vendored
+install. `--agents-only` merges into the manifest instead, and never prunes.
+
+**Rejected.** Symlinking `.claude/agents → ../agents`: symlinked discovery is
+documented for skills and **undocumented for agents**, and breaks on Windows
+checkouts. Generating the copies from the SessionStart hook: loses the race, so a
+fresh clone's first session still could not delegate. Opening the full
+self-install: 17 duplicated skill bodies drifting on every edit, which is the
+reason the guard exists.
+
+**Recorded.** The acceptance observation landed the same day: `executor`
+resolved and executed this plan's own T6, returning PASS on all six metric
+clauses — the first `+delegate` route this repo has ever honored, and the first
+evidence that the fix works rather than merely being present.
+
+**Open.** flywheel's hooks remain inactive in its own repo: `delegation-guard.sh` does
+not fire on flywheel-on-flywheel delegation. Stated, not fixed.
+
+## P40 — measure what the loop reads, then route the reads
+
+**Why.** Prompted by the Spotify Portal article (2026-09), which reports ~90%
+savings on bulk reads by intercepting large `Read`/`cat` calls and delegating
+them to a cheap model. The pattern is sound and the mechanism is not portable:
+Portal is an internal platform and the article's second half (`code-write`, a
+cheap model writing code Claude never sees) contradicts this repo's whole dev
+loop — its own authors note their workers missed thread-safety bugs Claude caught
+immediately.
+
+What *was* portable is the observation underneath: flywheel routes **tasks** by
+tier (P27) and never the **I/O inside a task**, so an `opus/high` task reads its
+twelve files at opus prices, and reading is not reasoning.
+
+**P40a — the instrument (shipped v0.52.0).** `cost.bytes_in`, a fourth proxy
+beside P23's three. The design decision that mattered was not the field but the
+accounting: it moved from per-line to **per-field**. Every run written before
+today carries a cost object complete for three fields and absent for the fourth,
+and totalling that absence as 0 would have made every pre-P40a baseline look like
+it read nothing — fabricating an improvement for the exact optimization the proxy
+exists to judge. So an uncovered field reports UNMEASURED, partial coverage is
+stated with its count, and the delta refuses a field either side never recorded
+rather than printing a meaningless +100%. This is P23's `unmeasured` rule one
+level down, and the level that bites first.
+
+`bytes_in` is a **floor**: charged once per read, nothing for the conversation
+itself, nothing for content re-entering context. Labelled as such wherever it
+surfaces, per the P23 rule.
+
+**P40b — not approved.** An `extractor` agent (haiku, read-only tools) plus a
+size threshold in `read-prime.sh` that returns `ask` rather than denying, keeping
+flywheel's hook contract. It stays unbuilt until P40a's numbers come back from
+real cycles: P18 forbids shipping on an unmeasured premise, and "reads are the
+peak here" is currently a hypothesis borrowed from someone else's Java monorepo.
+
+**Not taken.** The article's `code-write` path (a cheap model writing code that
+never enters the reviewing context) is incompatible with `/flywheel:work`'s TDD
+discipline and `/flywheel:review`. Its headline 90% is bulk-read savings averaged
+over four scenarios, not total session cost, and does not belong in this repo's
+claims.

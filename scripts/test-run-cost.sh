@@ -30,6 +30,14 @@ rline() {
     "$1" "$1" "$5" "${esc}" "$2" "$3" "$4"
 }
 
+# bline <ts> <bytes_out> <bytes_in> <calls> <elapsed> [route]
+bline() {
+  local route=""
+  [ -n "${6:-}" ] && route=",\"route\":\"$6\""
+  printf '{"ts":"2026-07-30T10:%02d:00Z","task":"t%s","state":"completed"%s,"cost":{"bytes_out":%s,"bytes_in":%s,"tool_calls":%s,"elapsed_s":%s}}\n' \
+    "$1" "$1" "${route}" "$2" "$3" "$4" "$5"
+}
+
 run() { RC=0; bash "${COST}" "$@" >"${WORK}/out" 2>&1 || RC=$?; }
 
 echo "== single-run totals =="
@@ -140,5 +148,72 @@ grep -qi "WARNING" "${WORK}/out" || fail "a tokens key on a routed line must sti
 grep -q "99999" "${WORK}/out" && fail "the tokens value must never be reported: $(cat "${WORK}/out")"
 grep -qE "opus/high.*7 bytes" "${WORK}/out" || fail "the route bucket must total only the proxies: $(cat "${WORK}/out")"
 pass "tokens key warns; route bucket carries proxies only"
+
+# --- P40a: bytes_in, the read-volume proxy ----------------------------------
+# The trap these cases exist for: every run written before this field has a cost
+# object with three keys and no bytes_in. Totalling those as 0 would make any
+# pre-P40 baseline look like it read nothing, and fabricate an improvement for
+# the very optimization this proxy was added to judge.
+
+echo "== bytes_in totals like the other proxies =="
+{ bline 0 100 900 2 5; bline 1 50 100 1 10; } > "${WORK}/bi.jsonl"
+run "${WORK}/bi.jsonl"
+[ "${RC}" -eq 0 ] || fail "a run with bytes_in must exit 0, got ${RC}: $(cat "${WORK}/out")"
+grep -qE "bytes_in.*1,000" "${WORK}/out" || fail "bytes_in total 1,000 missing: $(cat "${WORK}/out")"
+pass "bytes_in totals 1,000"
+
+echo "== a pre-P40 run reports bytes_in UNMEASURED, never 0 =="
+{ line 0 100 2 5; line 1 50 1 10; } > "${WORK}/old.jsonl"
+run "${WORK}/old.jsonl"
+[ "${RC}" -eq 0 ] || fail "a pre-P40 run must still exit 0, got ${RC}: $(cat "${WORK}/out")"
+grep -qi "bytes_in.*unmeasured" "${WORK}/out" \
+  || fail "bytes_in must be reported UNMEASURED on a pre-P40 run: $(cat "${WORK}/out")"
+grep -qE "bytes_in +0 " "${WORK}/out" && fail "bytes_in must never be totalled as 0: $(cat "${WORK}/out")"
+grep -q 150 "${WORK}/out" || fail "the three existing fields must still total: $(cat "${WORK}/out")"
+pass "bytes_in unmeasured; bytes_out still totals 150"
+
+echo "== partial coverage is stated with its count, not silently averaged =="
+{ bline 0 100 900 2 5; line 1 50 1 10; } > "${WORK}/mixed.jsonl"
+run "${WORK}/mixed.jsonl"
+grep -qiE "bytes_in.*(partial|1 of 2)" "${WORK}/out" \
+  || fail "a mixed run must state bytes_in coverage: $(cat "${WORK}/out")"
+grep -qE "bytes_in.*900" "${WORK}/out" || fail "the covered line must still be totalled: $(cat "${WORK}/out")"
+pass "bytes_in 900 over 1 of 2 transitions, stated"
+
+echo "== the delta REFUSES bytes_in when the baseline never recorded it =="
+run "${WORK}/bi.jsonl" "${WORK}/old.jsonl"
+[ "${RC}" -eq 0 ] || fail "the comparison must exit 0, got ${RC}: $(cat "${WORK}/out")"
+grep -qiE "bytes_in.*(not comparable|no coverage|refus)" "${WORK}/out" \
+  || fail "the bytes_in delta must be refused with a reason: $(cat "${WORK}/out")"
+grep -qE "bytes_in +\+1,000|bytes_in.*\+100\.0%|bytes_in.*-100\.0%" "${WORK}/out" \
+  && fail "a bytes_in delta against an uncovered baseline is a fabricated number: $(cat "${WORK}/out")"
+pass "bytes_in delta refused, no fabricated percentage"
+
+echo "== with coverage on both sides the bytes_in delta is reported normally =="
+{ bline 0 50 400 1 2; } > "${WORK}/bi2.jsonl"
+run "${WORK}/bi2.jsonl" "${WORK}/bi.jsonl"
+grep -qE "bytes_in +-600" "${WORK}/out" || fail "bytes_in delta -600 missing: $(cat "${WORK}/out")"
+pass "bytes_in delta -600 reported"
+
+echo "== the existing three fields are unaffected by a missing bytes_in =="
+run "${WORK}/old.jsonl"
+grep -qw 3 "${WORK}/out" || fail "tool_calls total 3 regressed: $(cat "${WORK}/out")"
+grep -qw 15 "${WORK}/out" || fail "elapsed_s total 15 regressed: $(cat "${WORK}/out")"
+pass "bytes_out/tool_calls/elapsed_s unchanged"
+
+echo "== a route bucket carries bytes_in under the same coverage rule =="
+{ bline 0 10 700 1 1 "opus/high"; } > "${WORK}/brt.jsonl"
+run "${WORK}/brt.jsonl"
+grep -qE "opus/high.*700" "${WORK}/out" || fail "the route bucket must carry bytes_in: $(cat "${WORK}/out")"
+pass "route bucket carries bytes_in"
+
+echo "== a route bucket marks a field it only partly covers =="
+{ bline 0 10 700 1 1 "opus/high"; rline 1 20 1 1 "opus/high"; } > "${WORK}/prt.jsonl"
+run "${WORK}/prt.jsonl"
+[ "${RC}" -eq 0 ] || fail "a partly covered bucket must exit 0, got ${RC}: $(cat "${WORK}/out")"
+grep -qE "opus/high.*700~" "${WORK}/out" \
+  || fail "a bucket covering bytes_in on only some of its transitions must mark it: $(cat "${WORK}/out")"
+grep -qE "~.*partial" "${WORK}/out" || fail "the ~ marker needs its legend: $(cat "${WORK}/out")"
+pass "partial bucket coverage marked and explained"
 
 echo "ALL PASS"

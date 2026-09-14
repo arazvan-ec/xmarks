@@ -12,6 +12,7 @@
 #
 # Usage (with an xmarks checkout available):
 #   bash /path/to/xmarks/scripts/install-vendored.sh [--auto-update] [target-repo-dir]
+#   bash /path/to/xmarks/scripts/install-vendored.sh --agents-only [target-repo-dir]
 #   bash /path/to/xmarks/scripts/install-vendored.sh --uninstall [target-repo-dir]
 #
 # target-repo-dir defaults to the current directory. Re-running is safe: the
@@ -36,10 +37,12 @@ set -euo pipefail
 
 MODE=install
 AUTO_UPDATE=0
+AGENTS_ONLY=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --uninstall) MODE=uninstall; shift ;;
     --auto-update) AUTO_UPDATE=1; shift ;;
+    --agents-only) AGENTS_ONLY=1; shift ;;
     --*) echo "error: unknown flag $1" >&2; exit 1 ;;
     *) break ;;
   esac
@@ -53,8 +56,17 @@ if [ ! -f "${SRC}/skills/help/SKILL.md" ]; then
   echo "error: ${SRC} does not look like an xmarks/flywheel checkout" >&2
   exit 1
 fi
-if [ "${SRC}" = "${TARGET}" ]; then
+# Self-targeting the full install would duplicate every skill body into
+# .claude/skills/flywheel-*, to drift on the next edit. --agents-only is the one
+# exception (P41): agent discovery is session-start scoped and web sessions never
+# install marketplace plugins, so without registered copies flywheel's own dev
+# loop cannot honor the `+delegate` routes it prescribes to every other repo.
+# The exception is INSTALL-only: --uninstall --agents-only here would delete the
+# repo's own committed .claude/agents/ and run the hook-uninstall besides.
+if [ "${SRC}" = "${TARGET}" ] && ! { [ "${AGENTS_ONLY}" = 1 ] && [ "${MODE}" = install ]; }; then
   echo "error: target is the flywheel repo itself — run this against another repo" >&2
+  echo "       (only --agents-only, installing, is allowed here: it registers" >&2
+  echo "        agents/ and nothing else — never uninstalls)" >&2
   exit 1
 fi
 
@@ -190,7 +202,11 @@ if [ ! -e "${TARGET}/.git" ]; then
   echo "warning: ${TARGET} is not a git repo root — vendoring anyway" >&2
 fi
 
-mkdir -p "${SKILLS_DST}" "${AGENTS_DST}" "${BIN_DST}"
+if [ "${AGENTS_ONLY}" = 1 ]; then
+  mkdir -p "${AGENTS_DST}"
+else
+  mkdir -p "${SKILLS_DST}" "${AGENTS_DST}" "${BIN_DST}"
+fi
 NEW_MANIFEST="$(mktemp)"
 
 # The version this repo carried BEFORE this refresh — read now, before anything
@@ -221,6 +237,7 @@ vendor_file() {
 }
 
 count=0
+if [ "${AGENTS_ONLY}" = 0 ]; then
 for dir in "${SRC}"/skills/*/; do
   name="$(basename "${dir}")"
   mkdir -p "${SKILLS_DST}/flywheel-${name}"
@@ -244,11 +261,50 @@ for dir in "${SRC}"/skills/*/; do
   count=$((count + 1))
 done
 echo "vendored ${count} skills into .claude/skills/flywheel-*"
+fi
 
 for f in "${SRC}"/agents/*.md; do
   rewrite "${f}" | vendor_file ".claude/agents/$(basename "${f}")"
 done
 echo "vendored $(ls "${SRC}"/agents/*.md | wc -l | tr -d ' ') agents into .claude/agents/"
+
+if [ "${AGENTS_ONLY}" = 1 ]; then
+  # Merge into the manifest, never replace it: the prune at the end of a full
+  # install is manifest-driven, and a narrowed run's manifest would read as
+  # "this version dropped every skill". No manifest at all means nothing was
+  # ever vendored here, so none is written — the copies are then part of the
+  # repo's own tree, which is exactly the flywheel-on-flywheel case.
+  # Non-agent entries are KEPT untouched (this run vendored none of them, so
+  # dropping them would read as "this version deleted every skill"), but an
+  # agent entry the plugin no longer ships is pruned like the full install
+  # prunes: the file would otherwise stay discoverable and be delegated to.
+  if [ -f "${MANIFEST}" ]; then
+    sort -u "${NEW_MANIFEST}" > "${NEW_MANIFEST}.sorted"
+    : > "${NEW_MANIFEST}.kept"
+    while IFS= read -r rel; do
+      case "${rel}" in
+        .claude/agents/*) ;;
+        *) printf '%s\n' "${rel}" >> "${NEW_MANIFEST}.kept"; continue ;;
+      esac
+      if grep -qxF "${rel}" "${NEW_MANIFEST}.sorted"; then
+        printf '%s\n' "${rel}" >> "${NEW_MANIFEST}.kept"
+        continue
+      fi
+      stale="${TARGET}/${rel}"
+      if [ -f "${stale}.pre-flywheel" ]; then
+        mv "${stale}.pre-flywheel" "${stale}"
+        echo "pruned ${rel} (no longer shipped; pre-flywheel backup restored)"
+      elif [ -e "${stale}" ]; then
+        rm -f "${stale}"
+        echo "pruned ${rel} (no longer shipped)"
+      fi
+    done < "${MANIFEST}"
+    sort -u "${NEW_MANIFEST}" "${NEW_MANIFEST}.kept" > "${MANIFEST}"
+    rm -f "${NEW_MANIFEST}.sorted" "${NEW_MANIFEST}.kept"
+  fi
+  rm -f "${NEW_MANIFEST}"
+  exit 0
+fi
 
 # Hooks, plus the analysis scripts the skills invoke (plan-route, run-cost):
 # without those a vendored repo cannot lint its plan's routes or read its own
