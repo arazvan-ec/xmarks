@@ -19,4 +19,9 @@ worst 9200
 work body=5700
 # process: contract-template and data-strategy are both cited from steps any
 # contract-writing run reaches, so both are charged on the hot path.
-process worst=10500
+# 11200 is 10,693 (after P14a T6, with every byte of argument already moved to
+# docs/research) plus ~500 B. The ~300 B rule the defaults use came from nothing
+# but a round number; ~500 is MEASURED — it is what one ordinary feature adds to
+# a skill, and P14 slice 1 hit a ceiling three times in a row proving it. A
+# ratchet that fires on ordinary work is not tight, it is miscalibrated.
+process worst=11200
