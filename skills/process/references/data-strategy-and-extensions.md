@@ -4,7 +4,9 @@ Reference for `/flywheel:process` steps 1 and 4.
 
 ## Step 1 — establishing DATA.md
 
-Read `.claude/flywheel/DATA.md`. **If it is missing, create it first** — a process that cannot say where its results go is not done. Detect how this repo persists data before asking the user, by looking for (in order): `DATABASE_URL`/`*_DATABASE_URL` env or `.env(.example)`, `prisma/schema.prisma`, `drizzle.config.*`, `knexfile.*`, `sequelize`/`typeorm` config, `supabase/config.toml`, a `postgres`/`mysql` service in `docker-compose*.yml`, `*.sql` migrations, or an ORM in `package.json`/`requirements.txt`/`pyproject.toml`. Confirm the finding with the user; only ask open-ended if nothing is detectable.
+Read `.claude/flywheel/DATA.md`. **If it is missing, create it first**. Detect how this repo persists data before asking the user, by looking for (in order): `DATABASE_URL`/`*_DATABASE_URL` env or `.env(.example)`, `prisma/schema.prisma`, `drizzle.config.*`, `knexfile.*`, `sequelize`/`typeorm` config, `supabase/config.toml`, a `postgres`/`mysql` service in `docker-compose*.yml`, `*.sql` migrations, or an ORM in `package.json`/`requirements.txt`/`pyproject.toml`. Confirm the finding with the user. **No signal is itself a detection**, not a failure to detect: propose the git-native store — durable records as committed markdown/JSON under `data/<process>/`, a write proven by the file carrying the row **and staged** — and ask only to confirm. Open-ended is for conflicting signals, never for none.
+
+**Probe the Access before you write it.** Read-only, with the very tool you are about to name: the connection opens and the target exists; a file store, the directory is writable and inside the repo. Never a test row. If the probe fails, DATA.md is **not written** — name the check that failed and offer the git-native store instead.
 
 Write `.claude/flywheel/DATA.md` with:
 - **Store** — the backend (e.g. `PostgreSQL`).
@@ -14,7 +16,7 @@ Write `.claude/flywheel/DATA.md` with:
 
 ## Step 4 — what an extension doc states
 
-A repo can extend *how* agents intervene in it beyond the fixed contract shape — runtime profiles for multiple competing AIs, branch/PR policy, review gates, capability fallbacks. These conventions are **repo-owned**: they live in `.claude/flywheel/extensions/<name>.md`, versioned and matured with the repo — never hardcoded in this plugin.
+A repo can extend *how* agents intervene in it beyond the fixed contract shape — runtime profiles for multiple competing AIs, branch/PR policy, review gates, capability fallbacks. These conventions are **repo-owned**: they live in `.claude/flywheel/extensions/<name>.md`,, repo-owned.
 
 - An extension doc states: `name`, `applies-to` (all processes or named slugs), the inputs/conventions it adds, its guardrails, and its own append-only Improvement log.
 - Before writing or revising a contract, read the repo's `extensions/`; declare the ones the contract honors in its frontmatter (`extensions: [profiles, …]`). The contract stays the source of truth for its Rules; the extension is the source of truth for the shared convention — don't duplicate its text into every contract.
@@ -24,7 +26,7 @@ A repo can extend *how* agents intervene in it beyond the fixed contract shape �
 
 If `$ARGUMENTS` names a process that already exists, do not recreate it — treat this as a **deliberate revision**: read the contract and its Improvement log, apply the requested change to Rules/Output schema/Persistence, bump `version`, and record the change in the Improvement log. Never silently rewrite the fixed rules.
 
-Append the entry in exactly this shape — the same one `/flywheel:run` uses, so a contract's log reads the same whether a revision or a run matured it:
+Append the entry in exactly this shape:
 
 ```
 ### <YYYY-MM-DD> — <one-line what changed>
