@@ -1,7 +1,10 @@
 # Spec: P14 slice 3 — a contract that cannot be satisfied escalates instead of dead-ending
 
 **Slug:** `p14c-contract-defect-escalates` · **Created:** 2026-09-14 · **Backlog:** P14 (third slice)
-**Status:** drafted — awaiting sign-off
+**Status:** shipped as **v0.51.0** — signed at the gate 2026-09-14. Metric
+**PASS**. Eval gate green on all four paths: `run` eval 1 (7/7), eval 3 (3/3,
+the guardrail half of the split sentence), eval 4 (7/7) and the new eval 5 (6/6,
+seen red at 2 FAIL before the escalation existed).
 
 **Prime:** `skills/run/SKILL.md` step 2, the sentence that caused the split —
 *"If an input is invalid **or a rule cannot be satisfied**, follow the

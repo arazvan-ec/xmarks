@@ -59,6 +59,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P39 | Pay `work`'s invocation debt: move the argument out of the loaded set | ✅ shipped (v0.48.0) | Done — ~3,300 B of `work-detail.md` was the body restated with its reasoning; the argument moved to an uncited `docs/research/work-loop-rationale.md`, the three routing rules came back into the body, the reference kept only the transition line. 11,245 → 6,241 B (−44%), `worst` exception deleted. Open: `process` (10,331) is now the most expensive invocation |
 | P14a | Pillar-2 slice 1: the write-path probe + process discovery | ✅ shipped (v0.49.0) | Done — the probe is read-only and runs before Rule 1, a failure is a blocker and never a silent fallback; `process` proposes the git-native store when no DB signal hits; the banner lists the repo's contracts. Open: T5 (bare `/flywheel:run` listing) deferred to slice 2, and the rest of P14 is slices 2–3 |
 | P14b | Pillar-2 slice 2: the maturation survives the session | ✅ shipped (v0.50.0) | Done — a matured contract is committed pathspec-scoped rather than left staged (staged dies with the session while the datastore row survives); the bare `/flywheel:run` listing lands. Open: a run blocked by a defect in its OWN contract has no defined behaviour — two executors split on it |
+| P14c | Pillar-2 slice 3: a contract defect escalates | ✅ shipped (v0.51.0) | Done — step 2 names the two failures apart; a contract defect blocks, never rewrites the fixed rules, and stubs a spec from the run's evidence. Four eval paths, stub in exactly one. Open: step 0's task materialization has never fired in 8/8 runs; the contract metric has no rejection-path equivalent |
 
 ## Priority overview
 
@@ -1610,6 +1611,42 @@ run blocked by a defect in its own contract. That silence is the gap.
 approval tiers, process composition, batch inputs, run→spec escalation, `sync`
 over contracts, and `status: active|deprecated` once a contract is actually
 retired.
+
+## P14 slice 3 — a contract that cannot be satisfied escalates (✅ shipped v0.51.0)
+
+**Why, and the requirement came from evidence rather than a list.** Building
+slice 2's eval produced a contract that contradicted itself. Two fresh-context
+executors ran it and did **opposite** things, neither breaking a stated rule: one
+proceeded with the true value and matured the contract to fit it; one refused to
+emit a non-conforming output *and* refused to mature, holding that a schema
+change with a version bump is not a blocked run's call. The second is right on
+the skill as written — and the skill then offered that run nothing to do, so the
+defect died in a transcript.
+
+**What shipped.** Step 2's single sentence — *"if an input is invalid **or a rule
+cannot be satisfied**"* — becomes two: **this input** cannot satisfy the contract
+(a Guardrails rejection, unchanged) versus **no input could** (a contract defect,
+which is not a rejection — filing it as one mislabels a valid input). A defect
+stops as a blocker on the path slice 1 built, never rewrites the fixed rules, and
+**escalates**: a spec stub seeded from the run's evidence, applying nothing.
+
+**The rejection worth keeping.** Letting the run fix the contract when the fix is
+"obvious". It *was* obvious, and one executor did it. *Obvious* is the runtime's
+judgment about the document whose purpose is to constrain that judgment; a
+contract a run may edit under pressure is a suggestion.
+
+**The gate proves the separation, and needed all four paths to do it**: happy
+path (7/7), invalid input (3/3), unreachable store (7/7), contradictory contract
+(6/6) — and the stub appears in **exactly one**. Eval 3 was in the gate although
+the release is not about it, because the split touched the sentence that routes
+ordinary rejections; leaking them into the new branch would have turned
+rejections into blocked runs.
+
+**Open, both observed rather than theorised.** `run` step 0 prescribes
+materializing each Rule as a visible task, and **eight runs out of eight this
+session had no host task system** — a primary path that has never once fired.
+And the contract `metric` covers only the success path, so a run ending in
+rejection has nothing to verify itself against.
 
 ---
 
