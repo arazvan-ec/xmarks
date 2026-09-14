@@ -43,6 +43,23 @@ case "$ID" in
     check grep -E "\|[ ]*1234 BCD[ ]*\|[ ]*1234[ ]*\|[ ]*BCD[ ]*\|[ ]*10[ ]*\|[ ]*${TODAY}[ ]*\|" "$AUD" -- "deterministic fields preserved, audited refreshed to the run date (digit_sum=10)"
     check staged -- "write landed (datastore staged as modified)"
     ;;
+  5)
+    CONTRACT=".claude/flywheel/processes/plate-audit.md"
+    # Against git, never against the tree: "the file changed" passes on the
+    # staged-and-lost behaviour this eval exists to catch. Only a commit proves
+    # the maturation survives the session that made it.
+    SHA="$(git -C "$W" log --format=%H -- "$CONTRACT" 2>/dev/null | head -1)"
+    if [ -n "${SHA}" ]; then ok "the maturation was committed (not left staged)"; else fail "the maturation was committed (no commit touches ${CONTRACT})"; fi
+    if [ -n "${SHA}" ]; then
+      TOUCHED="$(git -C "$W" show --name-only --format= "${SHA}" | grep -c .)"
+      if [ "${TOUCHED}" = "1" ]; then ok "the commit touches the contract and nothing else"; else fail "the commit touches ${TOUCHED} files — a pathspec commit must carry the contract alone"; fi
+    else
+      fail "the commit touches the contract and nothing else (no commit to inspect)"
+    fi
+    check grep -qE '^### [0-9]{4}-[0-9]{2}-[0-9]{2} — ' "$W/$CONTRACT" -- "Improvement log carries a dated entry"
+    if ! grep -qE '^version: 1$' "$W/$CONTRACT"; then ok "contract version bumped past 1 (the refinement changes the Output schema)"; else fail "contract version bumped past 1"; fi
+    if git -C "$W" diff --cached --name-only | grep -qx "$CONTRACT"; then fail "nothing left staged-but-uncommitted"; else ok "nothing left staged-but-uncommitted"; fi
+    ;;
   4)
     # Every assertion is a NEGATIVE: the correct outcome of this eval is that
     # nothing happened. A run that "completed" with an empty result is the exact

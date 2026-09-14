@@ -87,6 +87,7 @@ for spec in \
   "process:target-repo:1 2 3" \
   "run:demo-repo:1 2 3" \
   "run:unreachable-store-repo:4" \
+  "run:maturing-repo:5" \
   "loop:inventory-repo:1 2" \
   "loop:contradiction-repo:3" \
 ; do

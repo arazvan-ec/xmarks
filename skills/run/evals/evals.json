@@ -51,6 +51,20 @@
     "No transition line records a Rule as completed: the run stopped before executing the contract, not part-way through it",
     "No result file was created outside the declared store (no silent fallback to a second store)"
    ]
+  },
+  {
+   "id": 5,
+   "eval_name": "maturation-is-committed-not-staged",
+   "prompt": "/flywheel:run plate-audit 9999 XXX",
+   "expected_output": "The run hits a contradiction inside its own contract \u2014 Rule 3 computes a digit sum that reaches 36 while the Output schema constrains digit_sum to 0-27, and this input sums to 36 \u2014 and matures the contract on that evidence. The maturation is COMMITTED, not left staged, so an ephemeral session does not lose it.",
+   "setup": "cp -r skills/run/evals/fixtures/maturing-repo \"$W\" && git -C \"$W\" init -q && git -C \"$W\" -c user.email=e@e -c user.name=e add -A && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed",
+   "expectations": [
+    "A commit exists whose diff touches .claude/flywheel/processes/plate-audit.md",
+    "That commit touches the contract and nothing else \u2014 no datastore row, no telemetry swept in by git add -A",
+    "The contract's Improvement log carries a dated entry for this run",
+    "The contract's version was bumped, since the refinement changes the Output schema",
+    "Nothing about the contract is left staged-but-uncommitted, which is the defect this eval exists to catch"
+   ]
   }
  ]
 }
