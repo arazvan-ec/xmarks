@@ -400,3 +400,41 @@ The corollary is the one that saved this cycle: when a signed metric fails, find
 The per-skill byte ceilings (P36) are the right instrument, and the headroom I gave them was a number I made up: ~300 B, chosen because it was round. One ordinary feature — three rules added to one step — breached a ceiling **three times in a single slice**, every time with the argument already moved out and only rules and catalogues left.
 
 **~500 B is what a feature costs**, measured. Set headroom from that, and when a ceiling blocks work, try the moves in this order: move the *argument* to an uncited `docs/research/` note (it is never loaded, so it is free); move a *catalogue or procedure* to `references/` — but only when the ceiling is `body`, since `worst` charges the reference either way; and only then consider the number. Recalibrating after the first two are exhausted is engineering; reaching for it first is the drift the ratchet exists to stop.
+
+## gotcha: a fixture must leave the path under test REACHABLE, not merely break the right lever
+
+<!-- fw: type=gotcha; date=2026-09-14; files=skills/run/evals/check.sh,skills/run/SKILL.md; spec=p14b-maturation-survives; branch=claude/recent-changes-review-ic3hai; evidence=a fixture built to test "the maturation is committed" made the contract self-contradictory, which blocks the run — and step 4 matures only after a SUCCESSFUL run, so no assertion could reach the behaviour; the eval was deleted and its assertions moved to the happy-path suite, where red→green then proved on real runs -->
+
+The earlier entry says break the lever the code actually reads. This is the other half: **breaking it must not close the door you came through.** A fixture built to grade "the improvement is committed" made the contract contradict itself — which *blocks* the run, while the step that improves the contract runs only after a **successful** one. The fixture was well-aimed and still ungradeable, because the path under test was unreachable in it.
+
+Two questions before building one, and the second is the one that gets skipped: *what wrong state does this catch?* and *does the subject still reach the code I am grading?* Trace the route from the fixture's condition to the behaviour, and if a guard sits between them, the fixture is testing the guard.
+
+The corollary is cheap: the behaviour was already reachable in the **happy-path** suite, which is where the assertions ended up. Before building a fixture for a behaviour, check whether an existing suite already reaches it — a new fixture is surface, and surface that grades nothing is worse than none.
+
+## gotcha: "a commit touches this file" is true before the run starts — the fixture's own seed made it
+
+<!-- fw: type=gotcha; date=2026-09-14; files=skills/run/evals/check.sh; spec=p14b-maturation-survives; branch=claude/recent-changes-review-ic3hai; evidence=`git log --format=%H -- <contract>` returned the fixture's seed commit, so the assertion PASSED on the workdir where the maturation had been staged and lost — the exact defect it was written to catch -->
+
+A grader asserting "the change was committed" reached for `git log -- <path>`. Every eval fixture is seeded with `git add -A && git commit -qm seed`, so that path has a commit **before the subject does anything**. The assertion passed on the red run.
+
+Assert on **content in HEAD**, not on the existence of history: `git show HEAD:<path>` must carry the thing the change was supposed to add, and `git diff HEAD -- <path>` plus `git diff --cached -- <path>` must both be empty. Those three cannot be satisfied by a seed, and between them they separate "committed" from "staged", from "left dirty", from "never touched".
+
+Same family as *a metric clause must discriminate*, and worth its own entry because the trap is mechanical rather than a matter of care: the fixture's setup is what makes the naive assertion true, so reading the grader alone will never reveal it.
+
+## decision: when two competent runs disagree about what a skill requires, the skill is silent
+
+<!-- fw: type=decision; date=2026-09-14; files=skills/run/SKILL.md; spec=p14b-maturation-survives; branch=claude/recent-changes-review-ic3hai; evidence=given a contract whose Output schema contradicted its own Rules, one executor proceeded with the true value and matured the contract; another refused to emit a non-conforming output AND refused to mature, holding that a schema change with a version bump is not a blocked run's call — both reasoned explicitly and neither broke a stated rule -->
+
+Two fresh-context executors, same skill, same fixture, opposite behaviour — and reading both transcripts, neither violated anything the skill says. That is not one of them being wrong. **It is the skill being silent on a case it never anticipated**, and the disagreement is the cheapest detector of that silence anyone will ever get.
+
+So when eval runs diverge, resist grading one correct. Ask what rule would have made both act the same, and check whether the skill contains it. Here it did not: nothing covers a run blocked by a defect in **its own contract**, as opposed to bad input or an unreachable store. The gap went to the backlog as a requirement, not to the grader as a tiebreak.
+
+## pattern: when a skill writes into someone else's repo, split artifacts by who owns them
+
+<!-- fw: type=pattern; date=2026-09-14; files=skills/run/SKILL.md,skills/run/evals/check.sh; spec=p14b-maturation-survives; branch=claude/recent-changes-review-ic3hai; evidence=the maturation commit is pathspec-scoped to the contract and the eval asserts it carries exactly one file; the datastore row is left to DATA.md, whose git-native strategy declares "staged" to BE the proof of a landed write -->
+
+A run produces two kinds of output, and they are not the same kind of thing. The **contract** is the plugin's artifact: the plugin defines its shape, so the plugin decides it must be committed rather than left staged, where staged dies with the session. The **datastore row** is the repo's: DATA.md decides how results persist, and for a git-native store "staged" may *be* the declared proof that a write landed.
+
+So the commit is pathspec-scoped to the contract alone. A `git add -A` would sweep the row into a commit labelled "mature the contract" and, worse, override the repo's own persistence strategy with the plugin's habit. Assert the scope — the eval requires the commit to carry exactly one file — because the sweep is invisible in the happy case and only shows up as a confusing diff weeks later.
+
+The general rule for any tool that writes inside a repo it does not own: decide per artifact **who owns it**, act only on your own, and leave the host's conventions to the host.
