@@ -57,7 +57,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P37 | The guard must not ask about a tier the agent definition already fixed | ✅ shipped (v0.47.0) | Done — `delegation-guard.sh` resolves `subagent_type` to its agent frontmatter; a pinned `model:`/`effort:` satisfies TIER. CONTEXT and FANOUT untouched, `create_session` unchanged |
 | P38 | Hook parity: two wirings, one assertion | ✅ shipped (v0.47.0) | Done — `check-hook-parity.sh` runs the installer into a throwaway target and diffs the `(event, matcher, script)` triples it produced against `hooks/hooks.json`, both directions, plus a landed-and-executable check on `bin/`. Wired into CI. Open: proves the two agree, never that either is correct |
 | P39 | Pay `work`'s invocation debt: move the argument out of the loaded set | ✅ shipped (v0.48.0) | Done — ~3,300 B of `work-detail.md` was the body restated with its reasoning; the argument moved to an uncited `docs/research/work-loop-rationale.md`, the three routing rules came back into the body, the reference kept only the transition line. 11,245 → 6,241 B (−44%), `worst` exception deleted. Open: `process` (10,331) is now the most expensive invocation |
-| P40 | Measure what the loop reads, then route the reads | 🟢 approved to build | P40a (instrument: a `bytes_in` proxy with field-level coverage) signed 2026-09-14, work pending. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) is **not approved**: it is gated on what P40a reports |
+| P40 | Measure what the loop reads, then route the reads | 🟡 P40a shipped (v0.50.0), P40b ungated | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
 | P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.49.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
 
 ## Priority overview
@@ -2450,3 +2450,44 @@ evidence that the fix works rather than merely being present.
 
 **Open.** flywheel's hooks remain inactive in its own repo: `delegation-guard.sh` does
 not fire on flywheel-on-flywheel delegation. Stated, not fixed.
+
+## P40 — measure what the loop reads, then route the reads
+
+**Why.** Prompted by the Spotify Portal article (2026-09), which reports ~90%
+savings on bulk reads by intercepting large `Read`/`cat` calls and delegating
+them to a cheap model. The pattern is sound and the mechanism is not portable:
+Portal is an internal platform and the article's second half (`code-write`, a
+cheap model writing code Claude never sees) contradicts this repo's whole dev
+loop — its own authors note their workers missed thread-safety bugs Claude caught
+immediately.
+
+What *was* portable is the observation underneath: flywheel routes **tasks** by
+tier (P27) and never the **I/O inside a task**, so an `opus/high` task reads its
+twelve files at opus prices, and reading is not reasoning.
+
+**P40a — the instrument (shipped v0.50.0).** `cost.bytes_in`, a fourth proxy
+beside P23's three. The design decision that mattered was not the field but the
+accounting: it moved from per-line to **per-field**. Every run written before
+today carries a cost object complete for three fields and absent for the fourth,
+and totalling that absence as 0 would have made every pre-P40a baseline look like
+it read nothing — fabricating an improvement for the exact optimization the proxy
+exists to judge. So an uncovered field reports UNMEASURED, partial coverage is
+stated with its count, and the delta refuses a field either side never recorded
+rather than printing a meaningless +100%. This is P23's `unmeasured` rule one
+level down, and the level that bites first.
+
+`bytes_in` is a **floor**: charged once per read, nothing for the conversation
+itself, nothing for content re-entering context. Labelled as such wherever it
+surfaces, per the P23 rule.
+
+**P40b — not approved.** An `extractor` agent (haiku, read-only tools) plus a
+size threshold in `read-prime.sh` that returns `ask` rather than denying, keeping
+flywheel's hook contract. It stays unbuilt until P40a's numbers come back from
+real cycles: P18 forbids shipping on an unmeasured premise, and "reads are the
+peak here" is currently a hypothesis borrowed from someone else's Java monorepo.
+
+**Not taken.** The article's `code-write` path (a cheap model writing code that
+never enters the reviewing context) is incompatible with `/flywheel:work`'s TDD
+discipline and `/flywheel:review`. Its headline 90% is bulk-read savings averaged
+over four scenarios, not total session cost, and does not belong in this repo's
+claims.

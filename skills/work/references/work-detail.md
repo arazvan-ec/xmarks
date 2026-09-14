@@ -9,7 +9,7 @@ One JSON line per task transition, appended to
 `.claude/flywheel/runs/<spec-slug>/<date>.jsonl`:
 
 ```json
-{"ts": "<ISO>", "task": …, "state": …, "route": "<model>/<effort>", "commit": "<sha>", "cost": {"bytes_out": …, "tool_calls": …, "elapsed_s": …}}
+{"ts": "<ISO>", "task": …, "state": …, "route": "<model>/<effort>", "commit": "<sha>", "cost": {"bytes_out": …, "bytes_in": …, "tool_calls": …, "elapsed_s": …}}
 ```
 
 plus what the transition proved.

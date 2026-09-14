@@ -50,7 +50,7 @@ destructive-operation ban from DATA.md.
 ## Progress reporting
 How /flywheel:run shows this process live: one host-task per Rule updated at
 every state transition; one JSON line appended per transition (including its
-`cost` proxies: bytes_out, tool_calls, elapsed_s — never tokens) to
+`cost` proxies: bytes_out, bytes_in, tool_calls, elapsed_s — never tokens) to
 .claude/flywheel/runs/<slug>/<date>.jsonl; the HTML report at
 .claude/flywheel/runs/<slug>/<date>.html rendered from that JSONL only at
 gates and at the final report, republished to a stable artifact URL. Chat
