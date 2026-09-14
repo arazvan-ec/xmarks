@@ -4,7 +4,8 @@
 set -u
 
 ID="${1:?eval id}"; W="${2:?workdir}"
-AUD="$W/data/plate-audits.md"
+AUD_REL="data/plate-audits.md"
+AUD="$W/$AUD_REL"
 rc=0
 ok()   { echo "PASS: $1"; }
 fail() { echo "FAIL: $1"; rc=1; }
@@ -60,6 +61,37 @@ case "$ID" in
     if [ "$n" = "1" ]; then ok "exactly one row for 1234 BCD (idempotent upsert)"; else fail "exactly one row for 1234 BCD (found $n)"; fi
     check grep -E "\|[ ]*1234 BCD[ ]*\|[ ]*1234[ ]*\|[ ]*BCD[ ]*\|[ ]*10[ ]*\|[ ]*${TODAY}[ ]*\|" "$AUD" -- "deterministic fields preserved, audited refreshed to the run date (digit_sum=10)"
     check staged -- "write landed (datastore staged as modified)"
+    ;;
+  5)
+    CONTRACT=".claude/flywheel/processes/plate-audit.md"
+    # POSITIVE first, so an untouched workdir cannot pass (P26): escalating means
+    # something new exists that names the defect.
+    STUB="$(grep -rl "digit_sum" "$W"/.claude/flywheel/specs/*.md 2>/dev/null | head -1)"
+    if [ -n "${STUB}" ]; then ok "a spec stub exists naming the defective field"; else fail "a spec stub exists under .claude/flywheel/specs/ naming the defect (the run dead-ended instead of escalating)"; fi
+    if [ -n "${STUB}" ] && grep -qE '0.27|Output schema' "${STUB}" && grep -qiE 'rule 3|digit_sum' "${STUB}"; then
+      ok "the stub names both conflicting clauses"
+    else
+      fail "the stub names both conflicting clauses (the Rule that computes and the schema bound it violates)"
+    fi
+    # Escalating is not fixing. Byte-identical means: one commit touches it (the
+    # seed) and the tree still matches.
+    NCOMMITS="$(git -C "$W" log --format=%H -- "$CONTRACT" 2>/dev/null | grep -c . || true)"
+    if [ "${NCOMMITS}" = "1" ] && [ -z "$(git -C "$W" diff HEAD -- "$CONTRACT")" ] && [ -z "$(git -C "$W" diff --cached -- "$CONTRACT")" ]; then
+      ok "the contract is byte-identical (no version bump, no schema edit, no log entry)"
+    else
+      fail "the contract is byte-identical — a run that escalates must not also fix the thing"
+    fi
+    if ! awk '/^## Rejections/{f=1;next} f&&NF' "$W/$AUD_REL" 2>/dev/null | grep -q .; then
+      ok "## Rejections untouched (a contract defect is not an invalid input)"
+    else
+      fail "## Rejections untouched — the valid plate was mislabelled as a rejection"
+    fi
+    if ! grep -q "9999 XXX" "$AUD" 2>/dev/null; then ok "nothing persisted for 9999 XXX"; else fail "nothing persisted for 9999 XXX"; fi
+    if grep -hoE '"(state|status)"[[:space:]]*:[[:space:]]*"[a-z_]+"' "$W"/.claude/flywheel/runs/*/*.jsonl 2>/dev/null | grep -qE '"(blocked|blocker|stopped|refused)"'; then
+      ok "the run recorded a blocker before stopping"
+    else
+      fail "the run recorded a blocker before stopping"
+    fi
     ;;
   4)
     # Every assertion is a NEGATIVE: the correct outcome of this eval is that

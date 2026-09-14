@@ -51,6 +51,20 @@
     "No transition line records a Rule as completed: the run stopped before executing the contract, not part-way through it",
     "No result file was created outside the declared store (no silent fallback to a second store)"
    ]
+  },
+  {
+   "id": 5,
+   "eval_name": "contract-defect-escalates",
+   "prompt": "/flywheel:run plate-audit 9999 XXX",
+   "expected_output": "The contract contradicts itself \u2014 Rule 3 computes a digit sum reaching 36 while the Output schema caps digit_sum at 0-27 \u2014 so no input of this class has a conforming output. The run stops as a blocker, leaves the contract byte-identical, does not file the valid plate as a rejection, and stubs a spec naming both conflicting clauses.",
+   "setup": "cp -r skills/run/evals/fixtures/contradictory-contract-repo \"$W\" && git -C \"$W\" init -q && git -C \"$W\" -c user.email=e@e -c user.name=e add -A && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed",
+   "expectations": [
+    "A spec stub exists under .claude/flywheel/specs/ naming both conflicting clauses (the Rule that computes digit_sum and the Output schema bound)",
+    "The contract is byte-identical: no version bump, no schema edit, no Improvement log entry \u2014 escalating is not fixing",
+    "The ## Rejections section is untouched: a contract defect is not an invalid input, and filing it as one mislabels a valid plate",
+    "Nothing was persisted for 9999 XXX",
+    "The run recorded a blocker before stopping"
+   ]
   }
  ]
 }
