@@ -57,6 +57,8 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P37 | The guard must not ask about a tier the agent definition already fixed | ✅ shipped (v0.47.0) | Done — `delegation-guard.sh` resolves `subagent_type` to its agent frontmatter; a pinned `model:`/`effort:` satisfies TIER. CONTEXT and FANOUT untouched, `create_session` unchanged |
 | P38 | Hook parity: two wirings, one assertion | ✅ shipped (v0.47.0) | Done — `check-hook-parity.sh` runs the installer into a throwaway target and diffs the `(event, matcher, script)` triples it produced against `hooks/hooks.json`, both directions, plus a landed-and-executable check on `bin/`. Wired into CI. Open: proves the two agree, never that either is correct |
 | P39 | Pay `work`'s invocation debt: move the argument out of the loaded set | ✅ shipped (v0.48.0) | Done — ~3,300 B of `work-detail.md` was the body restated with its reasoning; the argument moved to an uncited `docs/research/work-loop-rationale.md`, the three routing rules came back into the body, the reference kept only the transition line. 11,245 → 6,241 B (−44%), `worst` exception deleted. Open: `process` (10,331) is now the most expensive invocation |
+| P40 | Measure what the loop reads, then route the reads | 🟢 approved to build | P40a (instrument: a `bytes_in` proxy with field-level coverage) signed 2026-09-14, work pending. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) is **not approved**: it is gated on what P40a reports |
+| P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.49.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS. Open: the acceptance observation (`executor` resolves) belongs to the next session; and flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
 
 ## Priority overview
 
@@ -2399,3 +2401,48 @@ Append-only. Newest at the bottom.
   suite that grades those, so both ran (7/7 and 11/11). The rule to take from
   it: the gate is the suite that can *see* the change, which is not always the
   suite named after the skill.
+
+## P41 — flywheel can honor its own `+delegate`
+
+**Why.** Found by probing, not by reading, while planning P40a: the plan router
+assigned `haiku/low+delegate` to four mechanical tasks and the run could not
+execute one of them. Three causes stack, and each is invisible alone.
+
+1. Claude Code on the web **never installs marketplace plugins** declared in
+   `.claude/settings.json`. The `install-vendored.sh` header has documented this
+   since v0.17.0 — for *consuming* repos.
+2. `install-vendored.sh` **refused to self-target**, so the fix for (1) was
+   closed to flywheel itself.
+3. Agent discovery for a new `.claude/agents/` is **session-start scoped**:
+   writing the files mid-session does not register them (`Agent type 'executor'
+   not found`, probed twice, before and after the watcher window).
+
+Net: the plugin prescribed a route its own dev loop was structurally unable to
+run, and every flywheel-on-flywheel plan silently degraded to whatever tier the
+session happened to be on. This is P32's finding one layer down — coverage
+implied, never exercised — and it had been true since P27 shipped stage routing
+in v0.39.0.
+
+**What shipped (v0.49.0).** `--agents-only`: vendors `agents/*.md` into
+`.claude/agents/` and nothing else, the only mode allowed to target this repo.
+The six agents committed, because discovery happens at session start and a copy
+generated *by* a session loses the race for that session. `check-agent-parity.sh`
+in CI, both directions.
+
+**The trap that needed its own test.** The prune at the end of a full install is
+manifest-driven. A narrowed run that wrote a narrowed manifest would have read as
+"this version dropped every skill" and deleted a consuming repo's entire vendored
+install. `--agents-only` merges into the manifest instead, and never prunes.
+
+**Rejected.** Symlinking `.claude/agents → ../agents`: symlinked discovery is
+documented for skills and **undocumented for agents**, and breaks on Windows
+checkouts. Generating the copies from the SessionStart hook: loses the race, so a
+fresh clone's first session still could not delegate. Opening the full
+self-install: 17 duplicated skill bodies drifting on every edit, which is the
+reason the guard exists.
+
+**Open.** The acceptance observation — `executor` resolving as a subagent type —
+is the next session's to record; claiming it from the session that wrote the
+files would be exactly the unverifiable evidence P18 keeps out of the ledger.
+And flywheel's hooks remain inactive in its own repo: `delegation-guard.sh` does
+not fire on flywheel-on-flywheel delegation. Stated, not fixed.

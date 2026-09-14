@@ -1,7 +1,10 @@
 # Spec: P41 — flywheel can honor its own `+delegate`
 
 **Slug:** `p41-honor-delegation-on-flywheel` · **Created:** 2026-09-14 · **Backlog:** P41
-**Status:** draft — awaiting sign-off. Blocks the `work` phase of `p40a-read-volume-proxy`.
+**Status:** shipped as v0.49.0 — metric PASS (parity 6/6, both test suites green,
+self-install idempotent with no diff, full self-install still refused,
+`claude plugin validate --strict` passed). The acceptance observation below is
+still unrecorded: this session cannot register the agents it wrote.
 **Prime:** P27 (stage routing — the thing that cannot be honored); P32 ("test it,
 or stop implying it is tested" — the same dishonesty, one layer down); P38
 (`check-hook-parity.sh`) — this reuses its shape and its lesson; the
