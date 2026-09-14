@@ -1,8 +1,13 @@
 # Spec: P39 — pay `work`'s invocation debt, by moving the argument out
 
 **Slug:** `p39-work-invocation-debt` · **Created:** 2026-09-13 · **Backlog:** P39
-**Status:** in progress — pays the debt P36 recorded and P35 named on the way out
-(*"Revisit with per-skill exceptions, or by splitting `work`"*).
+**Status:** shipped as **v0.48.0** (PR #61) — pays the debt P36 recorded and P35
+named on the way out (*"Revisit with per-skill exceptions, or by splitting
+`work`"*). Metric **PASS**: 11,245 → 6,241 B, the `worst` exception deleted,
+every clause of the success metric exit 0. Eval gate green on both suites that
+can see the change — `work` eval 1 (7/7) and `loop` eval 1 (11/11), benchmarks
+under `skills/{work,loop}/evals/benchmarks/2026-09-13-v0.48.0/`. 19/19
+`scripts/test-*.sh`, every `check-*.sh`, `claude plugin validate . --strict`.
 
 **Prime:** `skills/work/SKILL.md` and `skills/work/references/work-detail.md` (the
 two files this re-partitions); `scripts/invocation-budget.txt` (the exception

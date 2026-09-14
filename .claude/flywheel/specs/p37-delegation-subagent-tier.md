@@ -1,7 +1,10 @@
 # Spec: P37 — TIER stands aside for a subagent whose tier is already pinned
 
 **Slug:** `p37-delegation-subagent-tier` · **Created:** 2026-09-13 · **Backlog:** P37
-**Status:** guard + test implemented, verify gate green — version bump/upgrade note owned by the coordinator
+**Status:** shipped as **v0.47.0** (PR #60) — 19 assertions green, and verified
+independently of its own suite by running the pre-P37 script against the same
+payload: it asks, the new one is silent, while an unresolvable `subagent_type`
+and `create_session` both still ask.
 **Prime:** owner report: `Agent` + `subagent_type: executor` (skills/work/SKILL.md:35)
 trips a TIER ask on flywheel's own hot path even though every `agents/*.md`
 pins `model:`/`effort:` in frontmatter. A guard that fires on a decision

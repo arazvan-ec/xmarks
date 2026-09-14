@@ -1,9 +1,17 @@
 # Spec: P36 — invocation budget measures the worst case, not the body
 
 **Slug:** `p36-invocation-worst-case` · **Created:** 2026-09-13 · **Backlog:** P36
-**Status:** implemented — gate green against the real repo (worst body `work`
-5259/5400, worst total `work` 11245/11400), 21/21 test scenarios, test seen red
-against the P35 gate before the change
+**Status:** shipped as **v0.47.0** (PR #60) — gate green, 21/21 test scenarios,
+test seen red against the P35 gate before the change. Two corrections landed
+after the first cut: `worst` 9,000 left `help` 121 B of headroom, which is the
+defect this proposal exists to name, so it went to 9,200 by the file's own
+~300 B rule; and an exception naming no skill was silent, so a rename now fails
+as stale. A `SIGPIPE` defect in the gate — `| head` produced a traceback — was
+found and fixed during P39.
+
+The debt this recorded for `work` was paid the same day by **P39**: 11,245 →
+6,241 B, and the `worst=11400` exception is gone. `process` (10,331) inherits
+the last one.
 **Prime:** `.claude/flywheel/specs/p35-invocation-context-budget.md` (the gate
 this retargets); the "A `SKILL.md` body is capped (P35)" bullet in `CLAUDE.md`.
 

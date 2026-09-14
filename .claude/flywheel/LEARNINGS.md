@@ -318,3 +318,49 @@ all was a *committed* grader someone could run against an untouched fixture. So:
   because the one loose-enough-to-pass-`run-tests.sh` regex would also have passed
   the leak. Prove the allowlist is load-bearing by emptying it in a test and
   requiring the real fixtures to fail.
+
+## gotcha: a gate can report green while the cost it measures gets worse
+
+<!-- fw: type=gotcha; date=2026-09-13; files=scripts/check-invocation-budget.sh,scripts/invocation-budget.txt,skills/work/SKILL.md; spec=p36-invocation-worst-case; branch=claude/recent-changes-review-ic3hai; evidence=measured body+references for all six skills P35 extracted — every one grew in total; work 8,385 -> 11,245 B while the gate printed "OK — worst case work at 5,259/5,300" -->
+
+P35 capped the **body** and left the **reference** free, so an extraction that moved a hot-path rule behind a citation scored as a saving while the invocation that follows the citation pays both. Every one of the six extracted skills grew in total; `work` grew 34% under a green verdict.
+
+The general shape: **a gate measures a proxy, and the proxy can move opposite to the thing you care about.** The cheap defence is one sentence written at spec time — *what can this gate not see?* For P35 it would have been "it cannot see the cost of a reference that is read", which is the whole bug, found for free before any code. Write that sentence into the Safeguards of anything that introduces a `check-*.sh`.
+
+Corollary, learned the hard way twice in one day: a ceiling set to its largest occupant plus a few bytes is not a budget, it is a description of the status quo. P35 shipped 41 B of headroom; the first P36 cut left `help` 121 B; both redden CI on the next ordinary edit. Set it from a rule (~300 B above the tightest occupant) and put the rule in the file.
+
+## gotcha: the release gate is the suite that can SEE the change, not the one named after the skill
+
+<!-- fw: type=gotcha; date=2026-09-13; files=skills/work/evals/evals.json,skills/loop/evals/evals.json,skills/work/SKILL.md; spec=p39-work-invocation-debt; branch=claude/recent-changes-review-ic3hai; evidence=work eval 1 passed 7/7 while its executor reported "commit skipped: the workdir is not a git repository"; loop eval 1 (11/11) is what actually asserted the transition line, the absent tokens key and every sha resolving -->
+
+P22 phase 2 says run the skill's eval before bumping. Taken literally it would have gated a change to `work`'s commit discipline and telemetry on a suite that asserts **neither**: `work` eval 1's workdir is not a git repository, so its commit path is only ever exercised as "fail-open, reported once", and no commit, transition line or route is asserted at all.
+
+Before trusting an eval as a gate, check that its assertions actually touch what the diff moved — read the `expectations` array, not the suite's name. Here that meant running `loop` eval 1 as well, which grades the telemetry and resolves every recorded sha against git. Both suites cost ~70k subagent tokens each, so "run the one that can see it too" is affordable.
+
+## pattern: much of an "extraction" can be the body restated — measure before crediting it
+
+<!-- fw: type=pattern; date=2026-09-13; files=skills/work/SKILL.md,skills/work/references/work-detail.md,docs/research/work-loop-rationale.md; spec=p39-work-invocation-debt; branch=claude/recent-changes-review-ic3hai; evidence=section-by-section measurement of work-detail.md — ~3,300 of 5,986 B restated body rules with their reasoning; re-partitioning gave 11,245 -> 6,241 B with work eval 1 at 7/7 and loop eval 1 at 11/11 -->
+
+This qualifies the earlier *"extraction behind a citation keeps the skill intact"* entry. It does — but only if what moves is not already in the body. In `work-detail.md`, *why the git pair is force-free* (339 B) restated the body's two commands, *the reasoning behind each commit rule* (1,101 B) restated all four bullets, *why two reds and not three* (456 B) restated the rule plus a sentence, and *delegation thresholds* (1,416 B) restated the four the body already named. Roughly 3,300 B was the body said twice.
+
+The test that sorts every line, and the third bucket is the one people forget: does a run executing this skill need it **to act**? Yes → the body, stated once. It is a shape the run must reproduce exactly → the reference. It explains **why** the rule is right → a doc no skill cites, so it is never loaded. Design argument is for the person deciding whether to change a rule, not for the model following it.
+
+Two warnings. Apply the test to the **body** as well, or you move an argument while its twin stays. And a rule summarized into a pointer is the failure mode: `work`'s three routing cases were compressed to "all three: <reference>", which is the one place the P35 extraction genuinely weakened the skill — bringing them back grew the body 137 B and was the point of the exercise.
+
+## decision: two hand-maintained lists need a parity assertion, and the behavioral check beats the parser
+
+<!-- fw: type=decision; date=2026-09-13; files=scripts/check-hook-parity.sh,scripts/install-vendored.sh,hooks/hooks.json; spec=p38-hook-parity; branch=claude/recent-changes-review-ic3hai; evidence=gate built by running the installer into a throwaway target; caught a dropped registration, the reverse drift, a registered-but-never-copied script, and a matcher narrowed on one side only — each named, in both directions -->
+
+v0.44.0 updated `hooks/hooks.json` and not `install-vendored.sh`'s hand-maintained list, shipping a guard a vendored repo would never have registered. v0.44.1 fixed the instance **by hand** and left the duplication. Fixing an instance of a duplication bug without asserting the invariant just schedules the next one.
+
+The gate that works is **behavioral**: run the installer into a throwaway target, read the settings it actually produced, and diff normalized `(event, matcher, script)` triples against the source of truth, in both directions. A static parser for the installer's bash and its Python heredoc would be as fragile as the drift it guards and would assert what the script *says* rather than what it *does*. Same shape wherever two wirings must agree.
+
+Its blind spot, stated because that is now the rule: it proves the two **agree**, never that either is correct. A hook registered on the wrong matcher in both places passes.
+
+## gotcha: a guard that fires on its own project's hot path stops being read
+
+<!-- fw: type=gotcha; date=2026-09-13; files=scripts/delegation-guard.sh,agents/executor.md,skills/work/SKILL.md; spec=p37-delegation-subagent-tier; branch=claude/recent-changes-review-ic3hai; evidence=every agents/*.md pins model:/effort: in frontmatter, so Agent(subagent_type:"executor") — the call skills/work/SKILL.md instructs — tripped a TIER ask; confirmed by running the pre-P37 script against the same payload -->
+
+The delegation guard asked whenever `model` was absent, on the premise that the child inherits the caller's. True for `create_session`, **false** for a subagent whose `subagent_type` names an agent that pins its own tier — which is every agent in this repo, and the call `work` itself instructs for a `+delegate` task.
+
+The cost is not the extra keystroke. An advisory that fires on a decision already made trains its reader to click through, and the warnings that matter — the pasted contract, the duplicate child, the fan that grew on its own — go with it. When adding an advisory check, enumerate the call sites your **own** project makes and confirm none of them trip it; a guard whose first firing is a false positive has already lost.
