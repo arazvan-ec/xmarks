@@ -3,8 +3,8 @@ name: plate-audit
 kind: process
 version: 1
 created: 2026-07-29
-persistence: git-markdown:data/plate-audits.md
-metric: the audited plate's row greps back out of data/plate-audits.md with the exact computed fields
+persistence: postgres:plate_audits
+metric: the audited plate's row reads back out of the plate_audits table with the exact computed fields
 ---
 
 # Process: Plate audit — deterministic registration-plate analysis
@@ -31,9 +31,8 @@ deterministic breakdown. Replaces the backend function
    group; `digit_sum` = the arithmetic sum of the 4 digits (e.g. `9876` → 30);
    `audited` = today (`date +%F`).
 4. **Persist** — upsert the row keyed by the normalized plate into the
-   `## Audits` table of `data/plate-audits.md` per DATA.md, then `git add` it.
-5. **Prove** — grep the row back out of the file and show `git status --short`
-   for it.
+   `plate_audits` table, using the `psql` command DATA.md names.
+5. **Prove** — read the row back with a `SELECT` and show the result.
 
 ## Output schema
 
@@ -48,9 +47,14 @@ deterministic breakdown. Replaces the backend function
 
 ## Persistence
 
-Target: `data/plate-audits.md` `## Audits` table (see DATA.md). Mapping: one
-column per schema field, in order. **Idempotency key:** `plate` — a re-audit
-updates the existing row. **Proof:** Rule 5's read-back grep + staged status.
+Target: the `plate_audits` table in the PostgreSQL store DATA.md names, reached
+only by the `psql` command it gives. Mapping: one column per schema field.
+**Idempotency key:** `plate` — a re-audit updates the existing row.
+**Proof:** Rule 5's read-back `SELECT`.
+
+`data/plate-audits.md` is **not** a store for this process. It is the previous
+one, left in place deliberately: it is the obvious thing to write to when the
+database will not answer, and writing to it would be a silent fallback.
 
 ## Judgment latitude
 
