@@ -63,6 +63,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P40 | Measure what the loop reads, then route the reads | 🟡 P40a shipped (v0.52.0), P40b ungated | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
 | P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.51.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
 | P42 | The telemetry duty gets an owner that runs | ✅ shipped (v0.54.0) | Done — `work` writes its transition line every run, not only inside a `/flywheel:loop` cycle; `check-telemetry.sh` gates conformance + coverage in CI; `telemetry-baseline.txt` opens with **29 debts**, one per cycle that shipped unmeasured. Nothing backfilled (P18). The cycle wrote the repo's first conforming telemetry, and `work` eval 1 graded 7/7. Open: the 29 debts can only be paid by real cycles, and P40b still needs several runs' worth of `bytes_in` before it can be judged |
+| P43 | flywheel's hooks run on flywheel | ✅ shipped (v0.55.0) | Done — `install-vendored.sh --hooks-only` (self-target only, registrations point at `scripts/` so there are no copies to drift), the eight hooks committed in this repo's `.claude/settings.json`, and `check-hook-parity.sh` gained its third direction: what `hooks.json` declares must also be registered here. Pays the debt P41 declared. Open: the acceptance observation is **not** recorded — the guard did not fire on an `Agent` call minutes after wiring, so registration is no sooner than agents' was |
 
 ## Priority overview
 
@@ -2667,3 +2668,31 @@ failed it permanently — missed because the verification piped the gate to
 `tail -1` and never read `$?`. And the version was bumped *before* the eval ran,
 inverting the CLAUDE.md rule; the gate passed, so the release stands, but the
 order was wrong.
+
+## P43 — flywheel's hooks run on flywheel
+
+**Why.** P41 registered the agents and left the hooks as declared debt. The cost
+was concrete: `.claude/settings.json` had no `hooks` key at all, so
+`delegation-guard.sh` never asked about a single delegation across the P40a, P41
+and P42 cycles, `session-start.sh` never injected the ledger that those cycles
+were writing entries into, and `read-prime.sh` never primed a read.
+
+**What shipped (v0.55.0).** `--hooks-only`, self-target only, pointing the eight
+registrations at `scripts/` rather than vendoring `bin/` copies — the scripts are
+already in this repo, and copying them would have recreated P41's duplication and
+needed a parity gate of its own. Plus `check-hook-parity.sh`'s third direction:
+what `hooks.json` declares must also be registered in flywheel's own settings.
+Nine versions of that drift went unnoticed because nothing asserted it, which is
+this session's ledger lesson applied to its own author.
+
+**Checked before wiring**, because hooks change every future session in this repo
+rather than one: the `Stop` gate is inert without a project `gate.sh`,
+`delegation-record.sh` writes to the system temp dir rather than the project, and
+the allow-hooks only remove prompts. The single behavioral change is the guard's
+`ask` before `Agent`/`Task`.
+
+**Open, and not glossed.** The acceptance observation is missing. An `Agent` call
+made minutes after wiring did not trigger the guard, so hook registrations are
+picked up no sooner than agent definitions were in P41. Implemented and unproven
+until a later session records the guard actually asking — the same bar P41 met
+and this has not.

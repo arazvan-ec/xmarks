@@ -1,7 +1,11 @@
 # Spec: P43 — flywheel's hooks run on flywheel
 
 **Slug:** `p43-hooks-run-on-flywheel` · **Created:** 2026-09-15 · **Backlog:** P43
-**Status:** draft
+**Status:** shipped as v0.55.0 — metric PASS. **Acceptance observation NOT yet
+recorded:** the delegation guard did not fire on the `Agent` call made minutes
+after wiring, so hook registrations are picked up no sooner than agents were
+(P41). Whether the guard actually asks belongs to a later session; until one
+records it, this is implemented and unproven.
 **Prime:** P41, which declared this debt in its own "known-remaining" and shipped
 `--agents-only`; P38 (`check-hook-parity.sh`), whose comparison this reuses; and
 this session's ledger entry *"an instruction nothing can observe failing is not
