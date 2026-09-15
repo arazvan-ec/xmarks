@@ -26,11 +26,13 @@ Generalizes past this schema: whenever a metric gains a dimension, the old data 
 
 ## pattern: a gate you have never seen fail is not a verified gate
 
-<!-- fw: type=pattern; date=2026-09-15; files=scripts/check-telemetry.sh,scripts/test-check-telemetry.sh; spec=p42-telemetry-has-an-owner; pr=74; branch=claude/flywheel-token-optimization-7ywqoz; evidence=the gate shipped broken because its check was piped to `tail -1` with $? unread; the probe that caught it — add an uncovered spec slug, assert exit 1 and the slug named, remove it, assert green again — is now the spec's decisive metric clause -->
+<!-- fw: type=pattern; date=2026-09-15; files=scripts/check-telemetry.sh,scripts/test-check-telemetry.sh; spec=p42-telemetry-has-an-owner; pr=74; branch=claude/flywheel-token-optimization-7ywqoz; evidence=the gate shipped broken twice — once because its check was piped to `tail -1` with $? unread, once because a review bot reproduced `{"state":"completed","tokens":123}` slipping past a ban three documents already promised was unexemptable -->
 
 A new gate was written, its unit tests passed, and it was still exiting 1 on the real tree: the baseline exempted coverage but not conformance, so one historical file failed it permanently. The verification had piped the gate to `tail -1` and never read `$?`, so the summary line looked fine while the exit code said otherwise.
 
 Two habits fix this and both are cheap. Read the exit code, never the tail of the output. And before trusting a gate, make it fail on purpose against the real tree — introduce the exact condition it exists to catch, assert it exits non-zero *and names the thing*, then remove it and assert green again. Unit tests prove the logic; only the probe proves the wiring.
+
+The sharper version came from the same gate a day later. Its upgrade note, its PR body and a ledger entry all stated that the baseline exempts a line's *shape* but never the `tokens` ban — and a malformed line on a baselined slug hit `continue` on the shape check and never reached the ban. **A guarantee is not a guarantee until a test fails without it.** Writing it down three times only made the gap harder to see: for every rule of the form "X never happens", the test that proves it is the one where X is attempted through the exemption, not the one where X is attempted head-on.
 
 ## decision: a task is tier 1 only if EVERY part of it is mechanical
 
