@@ -42,3 +42,4 @@ p9-read-priming-real               shipped before the duty had an owner that run
 stage-routing                      shipped before the duty had an owner that runs (P42)
 p22-evals-pillar2                  its runs/ file is a hand-written phase summary, not the contract's per-transition line
 p23-cycle-cost                     the cycle that ADDED the cost object wrote none of its own
+p14c-contract-defect-escalates     shipped in parallel from a branch that predates this gate (P42)
