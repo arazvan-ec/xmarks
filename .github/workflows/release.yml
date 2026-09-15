@@ -71,14 +71,29 @@ jobs:
           fi
           for TAG in "${MISSING[@]}"; do
             if [ "${anchor[$TAG]}" != "$GITHUB_SHA" ]; then
-              # A tag at a historical commit cannot be created by GITHUB_TOKEN at
-              # all: the ref makes that tree's .github/workflows/ reachable, and
-              # the push is refused for want of a `workflows` permission that
-              # GITHUB_TOKEN cannot be granted. Report and carry on rather than
-              # fail, so a release in this push still gets its tag.
-              echo "::warning::${TAG} is untagged and belongs to ${anchor[$TAG]}, not this push. GITHUB_TOKEN cannot tag a historical commit; create it with credentials that carry the workflows scope."
-              continue
+              # A historical anchor cannot be tagged by pushing: the ref makes
+              # that tree's .github/workflows/ reachable and receive-pack
+              # refuses it for want of a `workflows` permission GITHUB_TOKEN
+              # cannot hold. Creating the ref through the Git Data API
+              # transfers no objects, so that check has nothing to fire on.
+              # Left non-fatal: a release in this push must still get tagged.
+              if gh api "repos/${GITHUB_REPOSITORY}/git/refs" -X POST \
+                   -f "ref=refs/tags/${TAG}" -f "sha=${anchor[$TAG]}" >/dev/null 2>&1; then
+                echo "created tag ${TAG} at ${anchor[$TAG]} via the refs API"
+              else
+                echo "::warning::${TAG} is untagged and belongs to ${anchor[$TAG]}, not this push; the refs API refused it too. Create it with credentials carrying the workflows scope."
+                continue
+              fi
             fi
             gh release create "${TAG}" --title "flywheel ${TAG}" --generate-notes
             echo "created release ${TAG}"
           done
+
+      # One-off: a probe branch pushed from a session that then found branch
+      # deletion blocked on its side. Remove with this step.
+      - name: Remove stray probe branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/git/refs/heads/tmp-probe-historical" -X DELETE \
+            && echo "deleted tmp-probe-historical" || echo "not present"
