@@ -7,7 +7,7 @@ allowed-tools: Read, Edit, Write, Grep, Glob, Bash
 
 # /flywheel:work — the inner loop
 
-**Progress, live:** materialize each plan task as a visible task before starting and flip its state the moment its local check goes green — never in bulk afterwards. Inside a `/flywheel:loop` cycle, append **one JSON line per transition** to `.claude/flywheel/runs/<spec-slug>/<date>.jsonl`: **never secrets, never a `tokens` field**, and omit a field you cannot compute rather than estimating it. Do not render the HTML report here; the loop does it at gates and close. Fail-open: reporting never blocks the work. The line's exact shape: `skills/work/references/work-detail.md`.
+**Progress, live:** materialize each plan task as a visible task before starting and flip its state the moment its local check goes green — never in bulk afterwards. **Every run, in a cycle or standalone**, append **one JSON line per transition** to `.claude/flywheel/runs/<spec-slug>/<date>.jsonl`: **never secrets, never a `tokens` field**, and omit a field you cannot compute rather than estimating it. Do not render the HTML report here; the loop does it at gates and close. Fail-open: reporting never blocks the work. The line's exact shape: `skills/work/references/work-detail.md`.
 
 **Prime from fixtures:** before building test data for an entity, `/flywheel:recall fixture <entity>` — use the ledger's recipe instead of re-deriving it.
 
