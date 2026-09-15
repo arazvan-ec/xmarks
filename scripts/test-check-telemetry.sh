@@ -92,6 +92,24 @@ RC=0; SKIP_TELEMETRY_CHECK=1 bash "${GATE}" "${R}" >"${WORK}/out" 2>&1 || RC=$?
 grep -qi "skip" "${WORK}/out" || fail "the skip must announce itself: $(cat "${WORK}/out")"
 pass "skip exits 0 with a logged notice"
 
+echo "== a baselined slug's non-conforming lines are a notice, not a failure =="
+R="$(repo exemptbad)"; spec "${R}" alpha; telemetry "${R}" alpha "${GOOD}"; spec "${R}" legacy
+telemetry "${R}" legacy '{"phase":"spec","state":"completed","note":"hand-written"}'
+printf 'legacy  its runs/ file predates the contract\n' >> "${R}/scripts/telemetry-baseline.txt"
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "a baselined slug's old shape must not fail the gate forever, got ${RC}: $(cat "${WORK}/out")"
+grep -qi "legacy" "${WORK}/out" || fail "the notice must still name it — exempt is not invisible: $(cat "${WORK}/out")"
+pass "baselined non-conforming lines are a notice"
+
+echo "== but a tokens key fails even on a baselined slug (P18 has no exemption) =="
+R="$(repo exempttok)"; spec "${R}" alpha; telemetry "${R}" alpha "${GOOD}"; spec "${R}" legacy
+telemetry "${R}" legacy '{"ts":"2026-09-15T10:00:00Z","state":"completed","cost":{"tokens":4200}}'
+printf 'legacy  its runs/ file predates the contract\n' >> "${R}/scripts/telemetry-baseline.txt"
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a tokens field must fail regardless of the baseline, got ${RC}: $(cat "${WORK}/out")"
+grep -qi "tokens" "${WORK}/out" || fail "the failure must name the tokens field: $(cat "${WORK}/out")"
+pass "tokens is never exempt"
+
 echo "== the real repo is green =="
 run "${SRC}"
 [ "${RC}" -eq 0 ] || fail "this repo must pass its own telemetry gate, got ${RC}: $(cat "${WORK}/out")"

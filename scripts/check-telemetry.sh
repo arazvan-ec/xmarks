@@ -59,13 +59,17 @@ if os.path.isfile(baseline):
 slugs = sorted(f[:-3] for f in os.listdir(specs)
                if f.endswith(".md") and not f.endswith(".plan.md"))
 
-bad, covered = [], set()
+# A baselined slug's file predates the contract, so its shape is part of the
+# debt, not a new violation: reported, never fatal. The tokens ban is the one
+# rule with no exemption — P18 is about what may enter the ledger at all.
+bad, notices, covered = [], [], set()
 for dirpath, _, files in os.walk(runs):
     for f in files:
         if not f.endswith(".jsonl"):
             continue
         path = os.path.join(dirpath, f)
         slug = os.path.relpath(dirpath, runs)
+        shape = bad if slug not in exempt else notices
         ok_lines = 0
         for n, raw in enumerate(open(path), 1):
             raw = raw.strip()
@@ -75,18 +79,18 @@ for dirpath, _, files in os.walk(runs):
             try:
                 rec = json.loads(raw)
             except ValueError:
-                bad.append(f"{where}: not JSON")
+                shape.append(f"{where}: not JSON")
                 continue
             if not isinstance(rec, dict):
-                bad.append(f"{where}: not a JSON object")
+                shape.append(f"{where}: not a JSON object")
                 continue
             missing = [k for k in REQUIRED if k not in rec]
             if missing:
-                bad.append(f"{where}: missing {', '.join(missing)}")
+                shape.append(f"{where}: missing {', '.join(missing)}")
                 continue
             cost = rec.get("cost")
             if cost is not None and not isinstance(cost, dict):
-                bad.append(f"{where}: cost is not an object")
+                shape.append(f"{where}: cost is not an object")
                 continue
             if "tokens" in rec or (isinstance(cost, dict) and "tokens" in cost):
                 bad.append(f"{where}: carries a tokens field — banned (P18)")
@@ -99,6 +103,8 @@ gaps = [s for s in slugs if s not in covered and s not in exempt]
 
 for b in bad:
     print(f"telemetry: {b}")
+for n in notices:
+    print(f"telemetry: note — {n} (baselined; its shape is part of the debt)")
 for g in gaps:
     print(f"telemetry: {g} has no conforming telemetry and no baseline entry."
           f"\n           Either the cycle wrote none, or the debt needs a reason in"
