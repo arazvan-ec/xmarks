@@ -402,6 +402,41 @@ grep -qxF ".claude/skills/flywheel-help/SKILL.md" "${TARGET5}/.claude/flywheel/.
   || fail "the agents-only refresh dropped a non-agent manifest entry"
 pass "dropped agent pruned; skills and their manifest entries untouched"
 
+echo "== --hooks-only wires the repo's own settings.json and writes nothing else (P43) =="
+rm -rf "${SRC2}/.claude/skills" "${SRC2}/.claude/flywheel/bin"
+bash "${SRC2}/scripts/install-vendored.sh" --hooks-only "${SRC2}" > /dev/null
+python3 - "${SRC2}/.claude/settings.json" <<'PYCHK' || fail "--hooks-only did not register the hooks correctly"
+import json, sys
+d = json.load(open(sys.argv[1]))
+cmds = [h["command"] for ev in d.get("hooks", {}).values() for g in ev for h in g["hooks"]]
+assert len(cmds) >= 8, f"expected 8+ registrations, got {len(cmds)}"
+assert all("/scripts/" in c for c in cmds), f"self-wiring must point at scripts/, got {cmds}"
+assert not any("flywheel/bin" in c for c in cmds), "self-wiring must not point at vendored bin/"
+PYCHK
+[ ! -d "${SRC2}/.claude/skills" ] || fail "--hooks-only vendored skills"
+[ ! -d "${SRC2}/.claude/flywheel/bin" ] || fail "--hooks-only wrote bin/ copies — the scripts are already there"
+pass "hooks registered against scripts/; no skills, no bin/"
+
+echo "== --hooks-only preserves unrelated settings keys =="
+python3 - "${SRC2}/.claude/settings.json" <<'PYCHK' || fail "--hooks-only clobbered pre-existing settings"
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d.get("permissions", {}).get("allow"), "permissions.allow was lost"
+assert "enabledPlugins" in d, "enabledPlugins was lost"
+PYCHK
+pass "permissions and marketplace keys survive"
+
+echo "== --hooks-only is idempotent =="
+cp "${SRC2}/.claude/settings.json" "${WORK}/settings-before.json"
+bash "${SRC2}/scripts/install-vendored.sh" --hooks-only "${SRC2}" > /dev/null
+cmp -s "${WORK}/settings-before.json" "${SRC2}/.claude/settings.json" \
+  || fail "a second --hooks-only run changed settings.json"
+pass "re-running changes nothing"
+
+echo "== --hooks-only refuses a foreign target (the full install covers those) =="
+RC=0; bash "${SRC2}/scripts/install-vendored.sh" --hooks-only "${TARGET3}" >/dev/null 2>&1 || RC=$?
+[ "${RC}" -ne 0 ] || fail "--hooks-only must refuse a repo that is not the flywheel checkout"
+pass "foreign target refused"
+
 echo ""
-echo "all installer tests passed
-"
+echo "all installer tests passed"

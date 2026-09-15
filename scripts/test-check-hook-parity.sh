@@ -115,6 +115,33 @@ grep -q 'delegation-guard.sh' "${WORK}/out" || fail "the report must name delega
 grep -q 'not an executable file' "${WORK}/out" || fail "the report must say it is not an executable file in bin/: $(cat "${WORK}/out")"
 pass "registered-but-not-vendored is caught as its own failure mode"
 
+echo "== a hook this repo declares but never registered on ITSELF is caught (P43) =="
+SELF="${WORK}/self"
+copy_repo "${SELF}"
+bash "${SELF}/scripts/install-vendored.sh" --hooks-only "${SELF}" >/dev/null 2>&1 \
+  || fail "setup: --hooks-only must wire the copy's own settings.json"
+RC=0
+bash "${SELF}/scripts/check-hook-parity.sh" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -eq 0 ] || fail "a self-wired repo must pass parity, got ${RC}: $(cat "${WORK}/out")"
+FW_SETTINGS="${SELF}/.claude/settings.json" python3 - <<'PYDROP'
+import json, os
+p = os.environ["FW_SETTINGS"]
+d = json.load(open(p))
+# Drop one registration the way a hand-edit or a stale install would.
+for ev in list(d["hooks"]):
+    for grp in list(d["hooks"][ev]):
+        grp["hooks"] = [h for h in grp["hooks"] if "delegation-guard" not in h.get("command", "")]
+    d["hooks"][ev] = [g for g in d["hooks"][ev] if g["hooks"]]
+    if not d["hooks"][ev]:
+        del d["hooks"][ev]
+json.dump(d, open(p, "w"), indent=2)
+PYDROP
+RC=0
+bash "${SELF}/scripts/check-hook-parity.sh" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -ne 0 ] || fail "a missing self-registration must fail parity: $(cat "${WORK}/out")"
+grep -q "delegation-guard" "${WORK}/out" || fail "the report must name the missing hook: $(cat "${WORK}/out")"
+pass "an unregistered hook in the repo's own settings.json is caught and named"
+
 echo "== a real repo was never touched by any of the above =="
 ( cd "${SRC}" && git diff --quiet -- hooks/hooks.json scripts/install-vendored.sh ) \
   || fail "the real repo's hooks.json/install-vendored.sh must be untouched by this test"
