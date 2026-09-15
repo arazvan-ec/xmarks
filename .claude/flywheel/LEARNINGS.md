@@ -438,3 +438,29 @@ A run produces two kinds of output, and they are not the same kind of thing. The
 So the commit is pathspec-scoped to the contract alone. A `git add -A` would sweep the row into a commit labelled "mature the contract" and, worse, override the repo's own persistence strategy with the plugin's habit. Assert the scope — the eval requires the commit to carry exactly one file — because the sweep is invisible in the happy case and only shows up as a confusing diff weeks later.
 
 The general rule for any tool that writes inside a repo it does not own: decide per artifact **who owns it**, act only on your own, and leave the host's conventions to the host.
+
+## pattern: when you split a rule, the gate must run the half you did NOT change
+
+<!-- fw: type=pattern; date=2026-09-15; files=skills/run/SKILL.md,skills/run/evals/check.sh; spec=p14c-contract-defect-escalates; branch=claude/recent-changes-review-ic3hai; evidence=step 2's single sentence routed both invalid inputs and unsatisfiable contracts; the release added the second branch, and eval 3 — the ordinary-rejection case, which the release is not about — was put in the gate and stayed 3/3, so rejections did not leak into the new branch -->
+
+Splitting one sentence into two paths is the cheapest place to break the path that already worked. The new branch gets the attention and the eval; the old half silently starts catching cases it should not, and nothing notices until an ordinary input turns into a blocked run.
+
+So the gate for a split includes the **old** case, not just the new one — even when the release has nothing to do with it and running it costs an extra execution. Here that was eval 3, the invalid-input rejection: it stayed green, and its executor described the distinction in the release's own words without being shown them (*"the contract is coherent; this input just cannot satisfy it"*), which is the strongest signal available that the split reads the way it was meant to.
+
+## pattern: a separation is only proven by running every path it separates
+
+<!-- fw: type=pattern; date=2026-09-15; files=skills/run/evals/evals.json,skills/run/evals/check.sh; spec=p14c-contract-defect-escalates; branch=claude/recent-changes-review-ic3hai; evidence=four paths run for one release — happy 7/7, invalid input 3/3, unreachable store 7/7, contradictory contract 6/6 — and the new artifact (a spec stub) appeared in exactly one of the four -->
+
+The claim was not "the new branch works". It was "**four outcomes are distinguishable**": a run that succeeds, one whose input is rejected, one whose store is unreachable, and one whose contract contradicts itself. No single eval can show that, because each one alone proves only that its own path does something — never that the others do something *different*.
+
+The shape that proves it is a table with one column per path and a mark in exactly one cell. Build the gate to fill that table, and read the empty cells as assertions: three runs producing **no** stub is what makes the fourth one's stub mean anything.
+
+## gotcha: a fail-open that fires every single time means the primary path is fiction
+
+<!-- fw: type=gotcha; date=2026-09-15; files=skills/run/SKILL.md; spec=p14c-contract-defect-escalates; branch=claude/recent-changes-review-ic3hai; evidence=EIGHT of eight fresh-context runs this session reported no host task system, so step 0's "materialize each contract Rule as a visible task" degraded to the JSONL ledger every time — never once did the written primary path execute -->
+
+`run` step 0 tells a run to materialize each contract Rule as a visible task in the host task system, and to fall open to the ledger if that is unavailable. Across eight independent executions, the fallback fired **eight times**. The documented primary path has never once run.
+
+Fail-open is the right behaviour and it worked perfectly — which is exactly why this hid. A degradation that always happens produces no failures, no alerts and no complaints; it simply means the rule everyone reads is not the rule anyone executes, and the fallback quietly became the real specification.
+
+The check is cheap and nobody runs it: **count how often the fallback fires**. Always is a defect — either the primary path should be removed and the fallback promoted to the rule, or the capability it assumes should be made real. Writing it as the primary path is the one option the evidence rules out.
