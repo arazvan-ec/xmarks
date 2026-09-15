@@ -70,6 +70,22 @@ jobs:
             exit 0
           fi
           for TAG in "${MISSING[@]}"; do
+            # When the anchor is already claimed by another version's tag, that
+            # merge shipped two releases and the anchor describes the later one.
+            # Prefer the commit where the manifest actually held this version;
+            # -m --full-history is needed because such a bump is often itself a
+            # merge, which git log -S skips by default.
+            if [ -n "$(git tag --points-at "${anchor[$TAG]}")" ]; then
+              for c in $(git log --full-history -m --format=%H \
+                           -S"\"version\": \"${TAG#v}\"" -- .claude-plugin/plugin.json | sort -u); do
+                [ "$(git show "$c:.claude-plugin/plugin.json" | python3 -c 'import sys,json; print(json.load(sys.stdin)["version"])')" = "${TAG#v}" ] || continue
+                git merge-base --is-ancestor "$c" origin/main || continue
+                [ -n "$(git tag --points-at "$c")" ] && continue
+                echo "${TAG}: anchor ${anchor[$TAG]} is taken; using ${c} where the manifest read ${TAG#v}"
+                anchor[$TAG]=$c
+                break
+              done
+            fi
             if [ "${anchor[$TAG]}" != "$GITHUB_SHA" ]; then
               # A historical anchor cannot be tagged by pushing: the ref makes
               # that tree's .github/workflows/ reachable and receive-pack
