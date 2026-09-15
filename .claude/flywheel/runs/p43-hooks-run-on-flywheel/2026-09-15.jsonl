@@ -1,0 +1,4 @@
+{"ts": "2026-09-15T01:03:43+00:00", "task": "spec", "state": "completed", "route": "opus/high", "commit": "14bda42", "cost": {"bytes_out": 5858}}
+{"ts": "2026-09-15T01:09:01+00:00", "task": "plan", "state": "completed", "route": "opus/high", "commit": "f98eca6", "cost": {"bytes_out": 2751, "elapsed_s": 318}}
+{"ts": "2026-09-15T01:09:01+00:00", "task": "T1-T2", "state": "completed", "route": "opus/high", "commit": "e4dfc51", "cost": {"bytes_out": 8691, "elapsed_s": 0}}
+{"ts": "2026-09-15T01:09:17+00:00", "task": "T3", "state": "completed", "route": "sonnet/medium", "commit": "4f42e5a", "cost": {"bytes_out": 1861, "elapsed_s": 16}}
