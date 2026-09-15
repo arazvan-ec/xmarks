@@ -1,0 +1,44 @@
+# flywheel telemetry baseline (P42) — the cycles exempt from the coverage check.
+#
+# Format: <spec-slug>  <reason it is exempt>
+#
+# This file lists what is EXEMPT, never what is expected: a new spec is covered
+# by default, so forgetting to add one fails the gate instead of passing silently.
+# That inversion is the whole point — the rule this replaces needed someone to
+# remember, and for twenty-nine cycles nobody did.
+#
+# Every entry is a DEBT. It is paid by deleting the line, which can only be done
+# by a cycle that actually wrote its telemetry. Nothing here may be paid by
+# writing a runs/ file after the fact: a cycle nobody measured stays visibly
+# unmeasured (P18), and inventing one would be the fabricated evidence the
+# ledger exists to keep out.
+
+atomic-commits                     shipped before the duty had an owner that runs (P42)
+blocked-cycle-eval                 shipped before the duty had an owner that runs (P42)
+loop-telemetry-eval                shipped before the duty had an owner that runs (P42)
+p10-portability-installer          shipped before the duty had an owner that runs (P42)
+p11-gate-hardening                 shipped before the duty had an owner that runs (P42)
+p12-token-discipline               shipped before the duty had an owner that runs (P42)
+p14a-store-probe-and-discovery     shipped before the duty had an owner that runs (P42)
+p14b-maturation-survives           shipped before the duty had an owner that runs (P42)
+p16-live-progress                  shipped before the duty had an owner that runs (P42)
+p17-fixture-knowledge              shipped before the duty had an owner that runs (P42)
+p18-evidence-gated-compounding     shipped before the duty had an owner that runs (P42)
+p19-update-postprocess             shipped before the duty had an owner that runs (P42)
+p21-rule-suffix-form               shipped before the duty had an owner that runs (P42)
+p22-evals-pillar1                  shipped before the duty had an owner that runs (P42)
+p24-description-budget             shipped before the duty had an owner that runs (P42)
+p25-eval-gaps                      shipped before the duty had an owner that runs (P42)
+p26-pillar1-graders                shipped before the duty had an owner that runs (P42)
+p33-fixture-scratch                shipped before the duty had an owner that runs (P42)
+p35-invocation-context-budget      shipped before the duty had an owner that runs (P42)
+p36-invocation-worst-case          shipped before the duty had an owner that runs (P42)
+p37-delegation-subagent-tier       shipped before the duty had an owner that runs (P42)
+p38-hook-parity                    shipped before the duty had an owner that runs (P42)
+p39-work-invocation-debt           shipped before the duty had an owner that runs (P42)
+p40a-read-volume-proxy             shipped before the duty had an owner that runs (P42)
+p41-honor-delegation-on-flywheel   shipped before the duty had an owner that runs (P42)
+p9-read-priming-real               shipped before the duty had an owner that runs (P42)
+stage-routing                      shipped before the duty had an owner that runs (P42)
+p22-evals-pillar2                  its runs/ file is a hand-written phase summary, not the contract's per-transition line
+p23-cycle-cost                     the cycle that ADDED the cost object wrote none of its own
