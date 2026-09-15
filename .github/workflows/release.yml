@@ -69,8 +69,15 @@ jobs:
             echo "dry run — no tags created"
             exit 0
           fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           for TAG in "${MISSING[@]}"; do
-            gh release create "${TAG}" --target "${anchor[$TAG]}" \
-              --title "flywheel ${TAG}" --generate-notes
+            # The tag is pushed with git rather than created by `gh release
+            # create --target`: that flag sets target_commitish to a historical
+            # commit, which the Actions token is refused (403) even with
+            # contents: write. With the tag already in place gh needs no target.
+            git tag -a "${TAG}" "${anchor[$TAG]}" -m "flywheel ${TAG}"
+            git push origin "refs/tags/${TAG}"
+            gh release create "${TAG}" --title "flywheel ${TAG}" --generate-notes
             echo "created release ${TAG}"
           done
