@@ -40,7 +40,6 @@ FW_SPECS="${SPECS}" FW_RUNS="${RUNS}" FW_BASELINE="${BASELINE}" python3 - <<'PY'
 import json, os, sys
 
 specs, runs, baseline = os.environ["FW_SPECS"], os.environ["FW_RUNS"], os.environ["FW_BASELINE"]
-REQUIRED = ("ts", "state")
 
 exempt = {}
 if os.path.isfile(baseline):
@@ -84,16 +83,32 @@ for dirpath, _, files in os.walk(runs):
             if not isinstance(rec, dict):
                 shape.append(f"{where}: not a JSON object")
                 continue
-            missing = [k for k in REQUIRED if k not in rec]
-            if missing:
-                shape.append(f"{where}: missing {', '.join(missing)}")
+            # The tokens ban is checked FIRST and never routed through `shape`:
+            # a malformed line on a baselined slug would otherwise carry one past
+            # the exemption, which is the opposite of the stated rule.
+            if "tokens" in rec or (isinstance(rec.get("cost"), dict) and "tokens" in rec["cost"]):
+                bad.append(f"{where}: carries a tokens field — banned (P18), and no"
+                           " baseline entry exempts it")
                 continue
+            problem = None
+            for k in ("ts", "state"):
+                if not isinstance(rec.get(k), str) or not rec[k].strip():
+                    problem = f"{k} is missing or not a non-empty string"
+                    break
+            # Identification: pillar 1 names a task, pillar 2 a Rule phase. One or
+            # the other, or the line cannot say which transition it is.
+            if problem is None and not any(
+                    isinstance(rec.get(k), str) and rec[k].strip() for k in ("task", "phase")):
+                problem = "names neither a task nor a phase"
             cost = rec.get("cost")
-            if cost is not None and not isinstance(cost, dict):
-                shape.append(f"{where}: cost is not an object")
-                continue
-            if "tokens" in rec or (isinstance(cost, dict) and "tokens" in cost):
-                bad.append(f"{where}: carries a tokens field — banned (P18)")
+            if problem is None:
+                if not isinstance(cost, dict):
+                    problem = "has no cost object"
+                elif not any(isinstance(v, (int, float)) and not isinstance(v, bool)
+                             for v in cost.values()):
+                    problem = "cost carries no numeric proxy"
+            if problem:
+                shape.append(f"{where}: {problem}")
                 continue
             ok_lines += 1
         if ok_lines:

@@ -110,6 +110,46 @@ run "${R}"
 grep -qi "tokens" "${WORK}/out" || fail "the failure must name the tokens field: $(cat "${WORK}/out")"
 pass "tokens is never exempt"
 
+echo "== a tokens field is checked BEFORE shape, so a broken line cannot smuggle it =="
+R="$(repo tokfirst)"; spec "${R}" alpha; telemetry "${R}" alpha "${GOOD}"; spec "${R}" legacy
+telemetry "${R}" legacy '{"state":"completed","tokens":123}'
+printf 'legacy  its runs/ file predates the contract\n' >> "${R}/scripts/telemetry-baseline.txt"
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a malformed line carrying tokens must still fail on a baselined slug, got ${RC}: $(cat "${WORK}/out")"
+grep -qi "tokens" "${WORK}/out" || fail "the tokens ban must be what reports: $(cat "${WORK}/out")"
+pass "tokens is checked before shape, never skipped by a shape exemption"
+
+echo "== a present-but-empty key does not count as a key =="
+R="$(repo emptykeys)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":null,"state":[],"task":"T1","cost":{"bytes_out":1}}'
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "ts=null / state=[] must fail, got ${RC}: $(cat "${WORK}/out")"
+pass "null/empty values are not values"
+
+echo "== a transition that identifies nothing fails (no task and no phase) =="
+R="$(repo noid)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-15T10:00:00Z","state":"completed","cost":{"bytes_out":1}}'
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a line naming no task or phase must fail, got ${RC}: $(cat "${WORK}/out")"
+pass "a transition must say which transition it is"
+
+echo "== phase satisfies identification too (pillar 2 runs are Rule-based) =="
+R="$(repo phaseok)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-15T10:00:00Z","state":"completed","phase":"spec","cost":{"elapsed_s":3}}'
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "phase must satisfy identification, got ${RC}: $(cat "${WORK}/out")"
+pass "phase is accepted where task would be"
+
+echo "== a transition that measures nothing fails =="
+R="$(repo nocost)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-15T10:00:00Z","state":"completed","task":"T1"}'
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a line with no cost object must fail, got ${RC}: $(cat "${WORK}/out")"
+telemetry "${R}" alpha '{"ts":"2026-09-15T10:00:00Z","state":"completed","task":"T1","cost":{"note":"n/a"}}'
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a cost object with no numeric proxy must fail, got ${RC}: $(cat "${WORK}/out")"
+pass "cost must carry at least one numeric proxy"
+
 echo "== the real repo is green =="
 run "${SRC}"
 [ "${RC}" -eq 0 ] || fail "this repo must pass its own telemetry gate, got ${RC}: $(cat "${WORK}/out")"
