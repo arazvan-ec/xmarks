@@ -69,15 +69,16 @@ jobs:
             echo "dry run — no tags created"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           for TAG in "${MISSING[@]}"; do
-            # The tag is pushed with git rather than created by `gh release
-            # create --target`: that flag sets target_commitish to a historical
-            # commit, which the Actions token is refused (403) even with
-            # contents: write. With the tag already in place gh needs no target.
-            git tag -a "${TAG}" "${anchor[$TAG]}" -m "flywheel ${TAG}"
-            git push origin "refs/tags/${TAG}"
+            if [ "${anchor[$TAG]}" != "$GITHUB_SHA" ]; then
+              # A tag at a historical commit cannot be created by GITHUB_TOKEN at
+              # all: the ref makes that tree's .github/workflows/ reachable, and
+              # the push is refused for want of a `workflows` permission that
+              # GITHUB_TOKEN cannot be granted. Report and carry on rather than
+              # fail, so a release in this push still gets its tag.
+              echo "::warning::${TAG} is untagged and belongs to ${anchor[$TAG]}, not this push. GITHUB_TOKEN cannot tag a historical commit; create it with credentials that carry the workflows scope."
+              continue
+            fi
             gh release create "${TAG}" --title "flywheel ${TAG}" --generate-notes
             echo "created release ${TAG}"
           done
