@@ -1,38 +1,106 @@
 name: Release
 
-# When the plugin version in .claude-plugin/plugin.json changes on main,
-# create the matching vX.Y.Z tag and a GitHub release with auto-generated
-# notes. Vendored repos record this version in .claude/flywheel/VERSION, so
-# tags give every deployed copy a traceable, browsable source point.
+# Every release adds upgrades/v<version>.md, so the upgrade notes are the list
+# of releases — not the manifest, which only ever shows the last one and so
+# left v0.22.0, v0.27.0, v0.40.0 and v0.51.0 untagged. Reconciling notes
+# against tags covers both cases with one pass: a new release is just the
+# missing tag whose anchor happens to be the commit that was pushed.
 
 on:
   push:
     branches: [main]
     paths:
       - ".claude-plugin/plugin.json"
+      - "upgrades/**"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List the missing tags without creating them"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
 
+env:
+  # A rule regression would report every release as untagged. Normal pushes add
+  # one or two; the backlog this job was written for is four. Past this, stop
+  # and report rather than write dozens of permanent refs.
+  MAX_NEW_TAGS: 10
+
 jobs:
-  tag-release:
+  reconcile-tags:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Read plugin version
-        id: v
-        run: |
-          echo "version=$(python3 -c 'import json; print(json.load(open(".claude-plugin/plugin.json"))["version"])')" >> "$GITHUB_OUTPUT"
-
-      - name: Create tag and release if new
+      - name: Tag every release that has none
         env:
           GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: |
-          TAG="v${{ steps.v.outputs.version }}"
-          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
-            echo "tag ${TAG} already exists — nothing to do"
-          else
+          declare -A anchor
+          while read -r c; do
+            while read -r n; do
+              [ -n "$n" ] || continue
+              [ -n "${anchor[$n]:-}" ] || anchor[$n]=$c
+            done < <(git ls-tree --name-only "$c" upgrades/ | sed -n 's#^upgrades/\(v[0-9][0-9.]*\)\.md$#\1#p')
+          done < <(git rev-list --reverse --first-parent origin/main)
+
+          MISSING=()
+          for TAG in $(printf '%s\n' "${!anchor[@]}" | sort -V); do
+            git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null || MISSING+=("$TAG")
+          done
+
+          if [ ${#MISSING[@]} -eq 0 ]; then
+            echo "every release note has a tag — nothing to do"
+            exit 0
+          fi
+          for TAG in "${MISSING[@]}"; do echo "missing ${TAG} -> ${anchor[$TAG]}"; done
+
+          if [ ${#MISSING[@]} -gt "$MAX_NEW_TAGS" ]; then
+            echo "::error::${#MISSING[@]} untagged releases exceeds MAX_NEW_TAGS=${MAX_NEW_TAGS}; refusing to create tags. Check the anchor rule before raising the cap."
+            exit 1
+          fi
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "dry run — no tags created"
+            exit 0
+          fi
+          for TAG in "${MISSING[@]}"; do
+            # When the anchor is already claimed by another version's tag, that
+            # merge shipped two releases and the anchor describes the later one.
+            # Prefer the commit where the manifest actually held this version;
+            # -m --full-history is needed because such a bump is often itself a
+            # merge, which git log -S skips by default.
+            if [ -n "$(git tag --points-at "${anchor[$TAG]}")" ]; then
+              for c in $(git log --full-history -m --format=%H \
+                           -S"\"version\": \"${TAG#v}\"" -- .claude-plugin/plugin.json | sort -u); do
+                [ "$(git show "$c:.claude-plugin/plugin.json" | python3 -c 'import sys,json; print(json.load(sys.stdin)["version"])')" = "${TAG#v}" ] || continue
+                git merge-base --is-ancestor "$c" origin/main || continue
+                [ -n "$(git tag --points-at "$c")" ] && continue
+                echo "${TAG}: anchor ${anchor[$TAG]} is taken; using ${c} where the manifest read ${TAG#v}"
+                anchor[$TAG]=$c
+                break
+              done
+            fi
+            if [ "${anchor[$TAG]}" != "$GITHUB_SHA" ]; then
+              # A historical anchor cannot be tagged by pushing: the ref makes
+              # that tree's .github/workflows/ reachable and receive-pack
+              # refuses it for want of a `workflows` permission GITHUB_TOKEN
+              # cannot hold. Creating the ref through the Git Data API
+              # transfers no objects, so that check has nothing to fire on.
+              # Left non-fatal: a release in this push must still get tagged.
+              if ERR=$(gh api "repos/${GITHUB_REPOSITORY}/git/refs" -X POST \
+                   -f "ref=refs/tags/${TAG}" -f "sha=${anchor[$TAG]}" 2>&1 >/dev/null); then
+                echo "created tag ${TAG} at ${anchor[$TAG]} via the refs API"
+              else
+                echo "::warning::${TAG} is untagged and belongs to ${anchor[$TAG]}, not this push; the refs API refused it: ${ERR//$'\n'/ }"
+                continue
+              fi
+            fi
             gh release create "${TAG}" --title "flywheel ${TAG}" --generate-notes
             echo "created release ${TAG}"
-          fi
+          done

@@ -1,0 +1,80 @@
+{
+ "metadata": {
+  "skill_name": "run",
+  "skill_path": "skills/run",
+  "executor_model": "opus (fresh-context general-purpose subagents), the session default",
+  "timestamp": "2026-09-14",
+  "evals_run": [
+   1,
+   3,
+   4,
+   5
+  ],
+  "runs_per_configuration": 1,
+  "configurations": [
+   "with_skill"
+  ],
+  "release_gate_for": "P14c v0.53.0 \u2014 a contract defect escalates instead of dead-ending",
+  "baseline_note": "without_skill baseline intentionally skipped: regression detection plus one new eval."
+ },
+ "runs": [
+  {
+   "eval_id": 1,
+   "eval_name": "happy-path-persist",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 7,
+    "failed": 0,
+    "total": 7
+   }
+  },
+  {
+   "eval_id": 3,
+   "eval_name": "guardrail-invalid-input",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 3,
+    "failed": 0,
+    "total": 3
+   }
+  },
+  {
+   "eval_id": 4,
+   "eval_name": "unreachable-store-refuses-to-start",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 7,
+    "failed": 0,
+    "total": 7
+   }
+  },
+  {
+   "eval_id": 5,
+   "eval_name": "contract-defect-escalates",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 6,
+    "failed": 0,
+    "total": 6
+   }
+  }
+ ],
+ "notes": [
+  "FOUR paths, four behaviours, and the stub appears in exactly one. That separation is what this release buys and it cannot be verified without running all four: happy path persists/matures/commits (no stub); invalid input is a Guardrails rejection (no stub); unreachable store is a blocker (no stub); a self-contradicting contract is a blocker WITH a stub.",
+  "Eval 3 is in this gate although the release is not about it: T2 split the single sentence that routed ordinary rejections, and a split that leaked them into the new branch would turn rejections into blocked runs. It did not. Its executor reasoned it in the release's own terms without being prompted: 'the contract is coherent; this input just cannot satisfy it'.",
+  "Eval 5 was seen red before T2 existed: the run blocked correctly and had nowhere to put its evidence (2 FAIL on the escalation assertions, 4 PASS on the refusals).",
+  "The stub the green run wrote quotes both conflicting clauses verbatim and derives the real range from Rule 2, proving the conflict is structural rather than particular to the input. A and O left open; status line 'blocked, nothing applied'.",
+  "Every executor was given an explicit no-external-state constraint this time, and none published to an artifact URL. The two earlier deviations (v0.49.0, and this slice's red run) were a missing instruction, not model caprice \u2014 worth knowing before treating such a deviation as a model problem.",
+  "OBSERVED IN ALL FOUR RUNS, and in every run this session: no host task system was available, so step 0's 'materialize each contract Rule as a visible task' never happened and the JSONL ledger served as the only task surface. The skill prescribes a surface that has not once existed in practice. Not a defect of this release; recorded because eight-for-eight is evidence, not noise.",
+  "Eval 3's executor reported a second real gap it deliberately did not act on (the skill caps maturation at one refinement per run): the contract's frontmatter `metric` covers only the success path, so a run ending in rejection has nothing declared to verify itself against.",
+  "Counts are the grader's own PASS:/FAIL: lines."
+ ]
+}

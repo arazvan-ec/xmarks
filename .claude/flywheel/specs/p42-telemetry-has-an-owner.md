@@ -1,7 +1,7 @@
 # Spec: P42 — the telemetry duty gets an owner that runs
 
 **Slug:** `p42-telemetry-has-an-owner` · **Created:** 2026-09-15 · **Backlog:** P42
-**Status:** shipped as v0.53.0 — metric PASS, probe confirmed (an uncovered slug
+**Status:** shipped as v0.54.0 — metric PASS, probe confirmed (an uncovered slug
 exits 1 and is named), and the `work` release gate green: eval 1 graded 7/7 with
 the decisive observation alongside it — a STANDALONE invocation wrote four
 transition lines, the behavior P29 recorded as absent on 2026-09-09. This cycle's

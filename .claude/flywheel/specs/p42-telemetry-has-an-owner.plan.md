@@ -57,7 +57,7 @@ are cycles and which are design notes is the same shape.
 ### T5 — CI, docs, release
 - route: `haiku/low+delegate`
 - changes: the gate wired into `.github/workflows/validate-plugins.yml`; README;
-  `.claude-plugin/plugin.json` → `0.53.0`; `upgrades/v0.53.0.md`.
+  `.claude-plugin/plugin.json` → `0.54.0`; `upgrades/v0.54.0.md`.
 - check: `bash scripts/test-docs-consistency.sh` and
   `bash scripts/check-test-pairing.sh` green; upgrade frontmatter matches manifest.
 - test-first: no

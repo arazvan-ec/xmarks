@@ -23,7 +23,7 @@ Parse the first token as the process slug and the rest as input. **No slug → l
 
 ## 2. Execute against the fixed rules
 
-Follow **Rules (fixed contract)** step by step on the given input, under the conventions of every declared extension (namespacing, isolation, added inputs). Within **Judgment latitude** — and only there — apply reasoning; never let judgment override Rules, Output schema, or Guardrails. Produce a result that conforms **exactly** to the **Output schema** (every field, correct type). If an input is invalid or a rule cannot be satisfied, follow the Guardrails' partial-failure path and record it — do not fabricate fields to make the output look complete.
+Follow **Rules (fixed contract)** step by step on the given input, under the conventions of every declared extension (namespacing, isolation, added inputs). Within **Judgment latitude** — and only there — apply reasoning; never let judgment override Rules, Output schema, or Guardrails. Produce a result that conforms **exactly** to the **Output schema** (every field, correct type). Two failures, and they are not the same. **This input cannot satisfy the contract** → the Guardrails' partial-failure path, recorded there; never fabricate a field to make the output look complete. **No input could** — Rules, Output schema and Persistence contradict each other → a **contract defect**, which is not a rejection: filing it as one mislabels a valid input. Stop as a blocker, **never rewrite the fixed rules** to make this input pass, and **escalate**: stub a spec from your evidence per `skills/run/references/ledger-and-extensions.md` and name it in the report.
 
 ## 3. Persist per the repo's strategy — and prove it landed
 
