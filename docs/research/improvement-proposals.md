@@ -63,7 +63,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P40 | Measure what the loop reads, then route the reads | 🟡 P40a shipped (v0.52.0), P40b ungated | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
 | P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.51.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
 | P42 | The telemetry duty gets an owner that runs | ✅ shipped (v0.54.0) | Done — `work` writes its transition line every run, not only inside a `/flywheel:loop` cycle; `check-telemetry.sh` gates conformance + coverage in CI; `telemetry-baseline.txt` opens with **29 debts**, one per cycle that shipped unmeasured. Nothing backfilled (P18). The cycle wrote the repo's first conforming telemetry, and `work` eval 1 graded 7/7. Open: the 29 debts can only be paid by real cycles, and P40b still needs several runs' worth of `bytes_in` before it can be judged |
-| P43 | flywheel's hooks run on flywheel | ✅ shipped (v0.55.0) | Done — `install-vendored.sh --hooks-only` (self-target only, registrations point at `scripts/` so there are no copies to drift), the eight hooks committed in this repo's `.claude/settings.json`, and `check-hook-parity.sh` gained its third direction: what `hooks.json` declares must also be registered here. Pays the debt P41 declared. Open: the acceptance observation is **not** recorded — the guard did not fire on an `Agent` call minutes after wiring, so registration is no sooner than agents' was |
+| P43 | flywheel's hooks run on flywheel | ✅ shipped (v0.55.0) | Done — `install-vendored.sh --hooks-only` (self-target only, registrations point at `scripts/` so there are no copies to drift), the eight hooks committed in this repo's `.claude/settings.json`, and `check-hook-parity.sh` gained its third direction: what `hooks.json` declares must also be registered here. Pays the debt P41 declared. **Acceptance observation recorded** by artifact: `delegation-record.sh` wrote its state file for the T4 `Agent` call and SessionStart injected the ledger — both hooks live |
 
 ## Priority overview
 
@@ -2691,8 +2691,12 @@ rather than one: the `Stop` gate is inert without a project `gate.sh`,
 the allow-hooks only remove prompts. The single behavioral change is the guard's
 `ask` before `Agent`/`Task`.
 
-**Open, and not glossed.** The acceptance observation is missing. An `Agent` call
-made minutes after wiring did not trigger the guard, so hook registrations are
-picked up no sooner than agent definitions were in P41. Implemented and unproven
-until a later session records the guard actually asking — the same bar P41 met
-and this has not.
+**Recorded — and the first reading of it was wrong.** The cycle closed claiming
+the observation was missing, because no permission prompt appeared on the `Agent`
+call made minutes after wiring. That inference was invalid: `delegation-record.sh`
+had written `/tmp/flywheel-delegation-<hash>.jsonl` for that exact call
+(`ts` 2026-09-15T01:10:36Z, `tool` Agent, `title` "P43 T4 README and bump"), and
+this repo's SessionStart later injected the ledger. Both hooks were live the whole
+time. An `ask` can be resolved by the session's permission mode without surfacing,
+so **absence of a prompt is not absence of a hook** — verify a hook by the artifact
+it leaves, never by the interruption you expected to see.

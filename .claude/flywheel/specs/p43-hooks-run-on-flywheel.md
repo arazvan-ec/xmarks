@@ -1,11 +1,15 @@
 # Spec: P43 — flywheel's hooks run on flywheel
 
 **Slug:** `p43-hooks-run-on-flywheel` · **Created:** 2026-09-15 · **Backlog:** P43
-**Status:** shipped as v0.55.0 — metric PASS. **Acceptance observation NOT yet
-recorded:** the delegation guard did not fire on the `Agent` call made minutes
-after wiring, so hook registrations are picked up no sooner than agents were
-(P41). Whether the guard actually asks belongs to a later session; until one
-records it, this is implemented and unproven.
+**Status:** shipped as v0.55.0 — metric PASS. **Acceptance observation RECORDED
+2026-09-15T01:10:36Z**, by artifact rather than by prompt: `delegation-record.sh`
+wrote `/tmp/flywheel-delegation-<hash>.jsonl` for the T4 `Agent` call, and this
+session's SessionStart injected the ledger. Both hooks fire.
+**Correction:** an earlier note in this file claimed the guard "did not fire"
+because no prompt appeared. That inference was invalid — an `ask` can be resolved
+by the session's permission mode without ever surfacing. Run directly on that
+call's payload, `delegation-guard.sh` does return `ask` (a CONTEXT finding).
+
 **Prime:** P41, which declared this debt in its own "known-remaining" and shipped
 `--agents-only`; P38 (`check-hook-parity.sh`), whose comparison this reuses; and
 this session's ledger entry *"an instruction nothing can observe failing is not

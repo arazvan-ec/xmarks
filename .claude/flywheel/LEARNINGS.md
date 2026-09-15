@@ -8,6 +8,8 @@ Two rules in this repo were dead for months and neither left a trace. `+delegate
 
 The guard is not better wording: it is asking, for every rule that matters, *what would be different if this never ran?* If the answer is "nothing", the rule needs an artifact and a gate, or it is a suggestion. Prefer removing a precondition over documenting it — and when you must keep one, state its opposite out loud, because a silent condition is what caused both of these.
 
+The mirror error is just as easy, and I made it the same day: concluding a hook had *not* fired because no permission prompt appeared. An `ask` can be resolved by the session's permission mode without ever surfacing, so the prompt was never the evidence. `delegation-record.sh` had written its state file for that exact call all along. **Verify a rule by the artifact it leaves, never by the interruption you expected to see** — in both directions, the observable trace is the only thing that counts.
+
 ## decision: a ratchet's baseline lists what is EXEMPT, never what is expected
 
 <!-- fw: type=decision; date=2026-09-15; files=scripts/telemetry-baseline.txt,scripts/check-telemetry.sh,scripts/invocation-budget.txt; spec=p42-telemetry-has-an-owner; pr=74; branch=claude/flywheel-token-optimization-7ywqoz; evidence=on first contact with an unrelated cycle the gate failed immediately — merging main surfaced p14c-contract-defect-escalates with no telemetry, which an expected-list would have passed in silence -->
