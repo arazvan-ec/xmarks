@@ -1,7 +1,11 @@
 # Spec: P42 — the telemetry duty gets an owner that runs
 
 **Slug:** `p42-telemetry-has-an-owner` · **Created:** 2026-09-15 · **Backlog:** P42
-**Status:** draft — proceeding on the owner's "A + gate" go-ahead
+**Status:** shipped as v0.53.0 — metric PASS, probe confirmed (an uncovered slug
+exits 1 and is named), and the `work` release gate green: eval 1 graded 7/7 with
+the decisive observation alongside it — a STANDALONE invocation wrote four
+transition lines, the behavior P29 recorded as absent on 2026-09-09. This cycle's
+own telemetry is the repo's first conforming run.
 **Prime:** P23 (`cost` proxies) and P40a (`bytes_in`) — the schema this makes real;
 P29 / `.claude/flywheel/specs/loop-telemetry-eval.md`, where this exact failure was
 observed on 2026-09-09 and filed as an eval-coverage problem; P41, for the habit

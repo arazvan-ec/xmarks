@@ -61,6 +61,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P14b | Pillar-2 slice 2: the maturation survives the session | ✅ shipped (v0.50.0) | Done — a matured contract is committed pathspec-scoped rather than left staged (staged dies with the session while the datastore row survives); the bare `/flywheel:run` listing lands. Open: a run blocked by a defect in its OWN contract has no defined behaviour — two executors split on it |
 | P40 | Measure what the loop reads, then route the reads | 🟡 P40a shipped (v0.52.0), P40b ungated | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
 | P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.51.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
+| P42 | The telemetry duty gets an owner that runs | ✅ shipped (v0.53.0) | Done — `work` writes its transition line every run, not only inside a `/flywheel:loop` cycle; `check-telemetry.sh` gates conformance + coverage in CI; `telemetry-baseline.txt` opens with **29 debts**, one per cycle that shipped unmeasured. Nothing backfilled (P18). The cycle wrote the repo's first conforming telemetry, and `work` eval 1 graded 7/7. Open: the 29 debts can only be paid by real cycles, and P40b still needs several runs' worth of `bytes_in` before it can be judged |
 
 ## Priority overview
 
@@ -2588,3 +2589,44 @@ never enters the reviewing context) is incompatible with `/flywheel:work`'s TDD
 discipline and `/flywheel:review`. Its headline 90% is bulk-read savings averaged
 over four scenarios, not total session cost, and does not belong in this repo's
 claims.
+
+## P42 — the telemetry duty gets an owner that runs
+
+**Why.** P40a shipped an instrument and P42's diagnosis found it had nothing to
+read. Not "telemetry stopped in July": the schema had **zero conforming instances
+in the repo's entire history**. `work` gated the duty on being *"inside a
+`/flywheel:loop` cycle"*, the only unconditional owner was `loop`'s body, and
+CLAUDE.md has instructed every session since 2026-07-29 (`10a4e43`) to run
+`spec → work → verify` — a sequence that never names `loop`. The owner never
+loaded; the clause self-disabled on its own precondition; nothing noticed.
+
+Twenty-nine cycles shipped unmeasured, including P23 itself — the cycle that
+added `cost` to the schema wrote none of its own. `run-cost.sh` had been a reader
+with nothing to read since v0.35.0, always green because its tests use synthetic
+JSONL.
+
+**What shipped (v0.53.0).** The precondition replaced with its opposite stated out
+loud — a silent condition caused this, so the absence of one is not enough. Plus
+`check-telemetry.sh`: conformance over every runs line, coverage over every spec
+slug, with the baseline listing what is **exempt** rather than what is expected,
+so a new cycle is covered by default and silencing one is a line in the diff.
+
+**Two design points worth keeping.** The exemption covers *shape*, never the
+`tokens` ban — P18 governs what may enter the ledger at all, not how a line is
+formed. And nothing was backfilled: a cycle nobody measured stays visibly
+unmeasured, because inventing its telemetry is the fabricated evidence the ledger
+exists to keep out.
+
+**The proof.** The cycle wrote its own telemetry (the repo's first conforming
+run), and reading it back fired every P40a honesty rule on real data —
+`bytes_in`/`tool_calls` UNMEASURED rather than zero, `elapsed_s` PARTIAL 4 of 5.
+The `work` eval then reproduced it independently: a standalone invocation, no
+`/flywheel:loop` anywhere, wrote four transition lines — the behavior P29 recorded
+as absent on 2026-09-09, when all six executors in that gate reported writing none.
+
+**Recorded, not hidden.** Two process failures in this cycle. The gate's first
+version exempted coverage but not conformance, so the one historical `runs/` file
+failed it permanently — missed because the verification piped the gate to
+`tail -1` and never read `$?`. And the version was bumped *before* the eval ran,
+inverting the CLAUDE.md rule; the gate passed, so the release stands, but the
+order was wrong.
