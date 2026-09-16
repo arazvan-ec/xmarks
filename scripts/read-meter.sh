@@ -9,7 +9,9 @@
 # It measures `tool_response`, not `tool_input`: the ask is cheap, the answer is
 # what costs. Every string leaf counts, with no per-tool extractor — the shape
 # differs per tool (Bash returns stdout/stderr, Read a nested file object) and a
-# tool that does not exist yet must still be counted, not silently skipped.
+# tool that does not exist yet must still be counted, not silently skipped. The
+# one exception is a write tool, whose response echoes the file it changed
+# without that text ever reaching context; the call counts, the bytes do not.
 #
 # bytes_in stays a FLOOR (P23/P40a): tool responses only, never the conversation
 # and never content re-entering context.
@@ -78,6 +80,11 @@ resp = payload.get("tool_response")
 if resp is None:
     sys.exit(0)
 
+# A write tool's response carries the file it just changed (Edit returns the
+# whole `originalFile`) while what reaches context is a one-line confirmation.
+# The call is real and counts; those bytes never entered context and must not.
+WRITE_TOOLS = {"Write", "Edit", "MultiEdit", "NotebookEdit"}
+
 def leaves(node):
     if isinstance(node, str):
         return len(node.encode("utf-8"))
@@ -87,16 +94,15 @@ def leaves(node):
         return sum(leaves(v) for v in node)
     return 0
 
-n = leaves(resp)
-if n <= 0:
-    sys.exit(0)
+tool = str(payload.get("tool_name") or "")
+n = 0 if tool in WRITE_TOOLS else leaves(resp)
 
 sid = str(payload.get("session_id") or "no-session")
 path = os.path.join(tempfile.gettempdir(),
                     "flywheel-reads-" + hashlib.sha256(sid.encode()).hexdigest()[:16] + ".jsonl")
 row = {
     "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    "tool": str(payload.get("tool_name") or ""),
+    "tool": tool,
     "bytes": n,
 }
 try:

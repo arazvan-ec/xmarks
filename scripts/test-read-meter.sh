@@ -91,13 +91,38 @@ case "$(meter_for s2)" in "${WORK}"/*) : ;; *) fail "state is not under TMPDIR" 
   || fail "the meter wrote counter state inside the project"
 pass "state is per session, under the temp dir, and never in the project"
 
+# --- a write tool's response never entered context: counted, not charged ---
+# Probed 2026-09-16: an Edit response carries `originalFile`, the WHOLE file
+# before the edit, while what reaches context is a one-line confirmation.
+# Charging it would let edit echoes dominate bytes_in and invert P40b.
+feed s1 Edit '{"filePath":"/p/a.txt","oldString":"a","newString":"b","originalFile":"0123456789ABCDEFGHIJ"}'
+FW_R="$(rows "${M1}")" python3 - <<'EDIT_CASE' || fail "a write tool was mis-metered"
+import json, os, sys
+r = json.loads(os.environ["FW_R"])[-1]
+if r["tool"] != "Edit":
+    print("the write call was not recorded at all: %r" % (r,), file=sys.stderr); sys.exit(1)
+if r["bytes"] != 0:
+    print("originalFile was charged to bytes_in: %r" % (r["bytes"],), file=sys.stderr); sys.exit(1)
+EDIT_CASE
+pass "a write tool is counted as a call and charged zero bytes"
+
 # --- nothing measurable: silent, no line, exit 0 ---------------------------
 BEFORE="$(wc -l < "${M1}")"
 printf 'not json at all' | bash "${SCRIPT}" || fail "malformed input must exit 0"
 feed s1 Read ''                        || fail "a missing tool_response must exit 0"
-feed s1 Read '{"stdout":""}'           || fail "an empty response must exit 0"
 [ "$(wc -l < "${M1}")" -eq "${BEFORE}" ] || fail "an unmeasurable call left a line"
 pass "unmeasurable input is silent, writes nothing, and never fails the call"
+
+# --- a real call that returned nothing is still a call ---------------------
+feed s1 Bash '{"stdout":"","stderr":""}'
+FW_R="$(rows "${M1}")" python3 - <<'EMPTY_CASE' || fail "an empty response was dropped"
+import json, os, sys
+r = json.loads(os.environ["FW_R"])[-1]
+if r["tool"] != "Bash" or r["bytes"] != 0:
+    print("an empty-but-real response must count as a 0-byte call: %r" % (r,), file=sys.stderr)
+    sys.exit(1)
+EMPTY_CASE
+pass "a call that returned nothing counts as a call, at zero bytes"
 
 # --- --since totals only what came after -----------------------------------
 CUT="$(FW_M="${M1}" python3 -c '
@@ -106,21 +131,21 @@ rows=[json.loads(l) for l in open(os.environ["FW_M"], encoding="utf-8") if l.str
 print(rows[-1]["ts"])')"
 OUT="$(CLAUDE_CODE_SESSION_ID=s1 bash "${SCRIPT}" --since "${CUT}")" || fail "--since failed"
 case "${OUT}" in
-  *bytes_in=*|*tool_calls=*) : ;;
-  *) fail "--since printed no fields: ${OUT}" ;;
+  *bytes_in=*tool_calls=*) : ;;
+  *) fail "--since printed neither field: ${OUT}" ;;
 esac
 pass "--since reports bytes_in and tool_calls"
 
 ALL="$(CLAUDE_CODE_SESSION_ID=s1 bash "${SCRIPT}" --since 1970-01-01T00:00:00Z)"
 case "${ALL}" in
-  *"bytes_in=34"*) : ;;   # 22 + 7 + 5
+  *"bytes_in=34"*) : ;;   # 22 + 7 + 5; the write and empty calls add 0
   *) fail "--since over everything did not total the rows: ${ALL}" ;;
 esac
 case "${ALL}" in
-  *"tool_calls=3"*) : ;;
-  *) fail "--since did not count the calls: ${ALL}" ;;
+  *"tool_calls=5"*) : ;;  # every call counts, including the 0-byte ones
+  *) fail "--since did not count every call: ${ALL}" ;;
 esac
-pass "--since totals every row when the cut precedes them all"
+pass "--since totals the bytes and counts every call"
 
 # --- an OBSERVED zero is not UNMEASURED ------------------------------------
 ZERO="$(CLAUDE_CODE_SESSION_ID=s1 bash "${SCRIPT}" --since 2999-01-01T00:00:00Z)"
