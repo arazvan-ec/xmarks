@@ -156,9 +156,15 @@ Each build step is one release: code change → `plugin.json` bump →
 `upgrades/vX.Y.Z.md` → README/help sync → `scripts/test-docs-consistency.sh` +
 `scripts/test-install-vendored.sh` green → `claude plugin validate . --strict`.
 
-**Async execution:** each remaining proposal has a self-contained kickoff in
-[`briefs/`](briefs/README.md) so it can be built in its own fresh, bounded session
-(with a copy-paste starter prompt + collision-avoidance guidance).
+**Async execution.** [`briefs/`](briefs/README.md) holds self-contained kickoffs
+for P2, P3, P4, P6, P7 and P8 — **all of them shipped**. Nothing open has one, so
+a fresh bounded session for P13, P20 or P30 needs its brief written first; the
+line that used to sit here claimed otherwise and was carried forward unchecked.
+
+A parallel session on this repo also has to be handed its **version number up
+front**: every build step bumps `plugin.json`, and two branches that pick the
+next number independently both collide on merge — which happened twice in one
+day on 2026-09-15.
 
 ## P1 — Model routing by agent role ⭐
 
