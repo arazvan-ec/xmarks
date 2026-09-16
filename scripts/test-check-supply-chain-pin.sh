@@ -57,8 +57,8 @@ jobs:
         run: |
           SHA="${{ inputs.flywheel_sha }}"
           printf '%s' "$SHA" | grep -Eq '^[0-9a-fA-F]{40}$' || exit 1
-          git -C "$RUNNER_TEMP/xmarks" fetch --depth 1 origin "$SHA"
-          git -C "$RUNNER_TEMP/xmarks" checkout --detach "$SHA"
+          git -C "$RUNNER_TEMP/xmarks" fetch -q --depth 1 origin "$SHA"
+          git -C "$RUNNER_TEMP/xmarks" checkout -q --detach "$SHA"
       - name: Refresh vendored copy
         run: bash "$RUNNER_TEMP/xmarks/scripts/install-vendored.sh" "$GITHUB_WORKSPACE"
       - uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
@@ -92,6 +92,35 @@ R="$(sandbox clean)"
 run_check "${R}"
 [ "${RC}" -eq 0 ] || fail "clean sandbox must pass: $(cat "${WORK}/out")"
 pass "clean sandbox green"
+
+echo "== prose about the hole is not the hole (comments and descriptions) =="
+# All three of these were real defects, found when the fixed workflow's own
+# header comment — which explains the `git clone` it removed and the `uses:` pin
+# it added — was reported as an unpinned clone. A gate that cannot survive being
+# documented is a gate nobody can fix.
+R="$(sandbox prose)"
+python3 - "${R}/.github/workflows/flywheel-update.yml" <<'PY'
+import sys
+p = sys.argv[1]
+t = open(p).read()
+header = (
+    "# This workflow used to `git clone` the default branch and bash the result.\n"
+    "# Pinning the caller's `uses:` alone does not close that.\n"
+)
+open(p, "w").write(header + t)
+PY
+python3 - "${R}/.github/workflows/flywheel-update.yml" <<'PY'
+import sys
+p = sys.argv[1]
+t = open(p).read()
+t = t.replace("        type: string\n",
+              "        type: string\n"
+              "        description: must match the caller's `uses:` pin\n")
+open(p, "w").write(t)
+PY
+run_check "${R}"
+[ "${RC}" -eq 0 ] || fail "comments and descriptions must not be read as behaviour: $(cat "${WORK}/out")"
+pass "comments and description strings ignored"
 
 echo "== revert 1: the caller template goes back to @main =="
 R="$(sandbox revert1)"

@@ -163,16 +163,23 @@ if workflow is None:
 
 wf_lines = workflow.splitlines()
 
-clone_lines = [n for n, l in enumerate(wf_lines, 1) if re.search(r"\bgit\s+clone\b", l)]
+def code_only(lines):
+    """Comment lines are prose, not behaviour. This file's own header explains the
+    clone it removed, and a gate that reads that as a clone would be unfixable."""
+    return [(n, l) for n, l in enumerate(lines, 1) if not l.lstrip().startswith("#")]
+
+wf_code = code_only(wf_lines)
+
+clone_lines = [n for n, l in wf_code if re.search(r"\bgit\s+clone\b", l)]
 for n in clone_lines:
     problems.append(
         f"{WORKFLOW_REL}:{n}: a clone step resolves a branch at run time, so the tree"
         f" this workflow executes is whatever that branch points at then — not the"
         f" commit the caller pinned. Fetch and check out the pinned commit instead.")
 
-detach = [n for n, l in enumerate(wf_lines, 1) if re.search(r"checkout\s+--detach", l)]
-execs = [n for n, l in enumerate(wf_lines, 1)
-         if re.search(r"\bbash\s+\"?\$\{?RUNNER_TEMP", l)]
+# `git checkout -q --detach "$SHA"` is the shipped form, so flags may sit between.
+detach = [n for n, l in wf_code if re.search(r"checkout\s+(?:-\S+\s+)*--detach", l)]
+execs = [n for n, l in wf_code if re.search(r"\bbash\s+\"?\$\{?RUNNER_TEMP", l)]
 
 if execs and not detach:
     problems.append(
@@ -183,12 +190,13 @@ elif execs and detach and min(detach) > min(execs):
         f"{WORKFLOW_REL}:{min(detach)}: the pinned checkout runs after line"
         f" {min(execs)} has already executed the fetched tree. It must come before it.")
 
-if not re.search(r"\[0-9a-fA-F\]\{40\}|\[0-9a-f\]\{40\}", workflow):
+wf_code_text = "\n".join(l for _, l in wf_code)
+if not re.search(r"\[0-9a-fA-F\]\{40\}|\[0-9a-f\]\{40\}", wf_code_text):
     problems.append(
         f"{WORKFLOW_REL}: nothing validates that flywheel_sha is a full 40-hex commit."
         f" An absent or malformed input must stop the run before anything executes,"
         f" not fall through to a default.")
-elif "exit 1" not in workflow:
+elif "exit 1" not in wf_code_text:
     problems.append(
         f"{WORKFLOW_REL}: the 40-hex validation never exits non-zero, so it reports"
         f" rather than refuses.")
@@ -205,7 +213,10 @@ if os.path.isdir(wf_dir):
             problems.append(f"{rel}: unreadable (fail-closed)")
             continue
         for n, line in enumerate(text.splitlines(), 1):
-            m = re.search(r"uses:\s*(\S+)", line)
+            # Anchored: `uses:` must be the YAML key, optionally the first key of a
+            # list item. Unanchored, this read every mention of `uses:` in a comment
+            # or a description string as a reference and demanded a SHA for it.
+            m = re.match(r"\s*-?\s*uses:\s*(\S+)", line)
             if not m:
                 continue
             spec = m.group(1)
