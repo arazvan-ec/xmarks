@@ -60,10 +60,12 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P14a | Pillar-2 slice 1: the write-path probe + process discovery | ✅ shipped (v0.49.0) | Done — the probe is read-only and runs before Rule 1, a failure is a blocker and never a silent fallback; `process` proposes the git-native store when no DB signal hits; the banner lists the repo's contracts. Open: T5 (bare `/flywheel:run` listing) deferred to slice 2, and the rest of P14 is slices 2–3 |
 | P14b | Pillar-2 slice 2: the maturation survives the session | ✅ shipped (v0.50.0) | Done — a matured contract is committed pathspec-scoped rather than left staged (staged dies with the session while the datastore row survives); the bare `/flywheel:run` listing lands. Open: a run blocked by a defect in its OWN contract has no defined behaviour — two executors split on it |
 | P14c | Pillar-2 slice 3: a contract defect escalates | ✅ shipped (v0.54.0) | Done — step 2 names the two failures apart; a contract defect blocks, never rewrites the fixed rules, and stubs a spec from the run's evidence. Four eval paths, stub in exactly one. Open: step 0's task materialization has never fired in 8/8 runs; the contract metric has no rejection-path equivalent |
-| P40 | Measure what the loop reads, then route the reads | 🟡 P40a shipped (v0.52.0), P40b ungated | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
+| P40 | Measure what the loop reads, then route the reads | ✅ P40a (v0.52.0) · ⚪ P40b rejected as designed | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
 | P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.51.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
 | P42 | The telemetry duty gets an owner that runs | ✅ shipped (v0.54.0) | Done — `work` writes its transition line every run, not only inside a `/flywheel:loop` cycle; `check-telemetry.sh` gates conformance + coverage in CI; `telemetry-baseline.txt` opens with **29 debts**, one per cycle that shipped unmeasured. Nothing backfilled (P18). The cycle wrote the repo's first conforming telemetry, and `work` eval 1 graded 7/7. Open: the 29 debts can only be paid by real cycles, and P40b still needs several runs' worth of `bytes_in` before it can be judged |
 | P43 | flywheel's hooks run on flywheel | ✅ shipped (v0.55.0) | Done — `install-vendored.sh --hooks-only` (self-target only, registrations point at `scripts/` so there are no copies to drift), the eight hooks committed in this repo's `.claude/settings.json`, and `check-hook-parity.sh` gained its third direction: what `hooks.json` declares must also be registered here. Pays the debt P41 declared. **Acceptance observation recorded** by artifact: `delegation-record.sh` wrote its state file for the T4 `Agent` call and SessionStart injected the ledger — both hooks live |
+| P44 | The meter: read volume is observed, not reconstructed | ✅ shipped (v0.56.0) | Done — `read-meter.sh` on `PostToolUse` records the bytes of `tool_response` that entered context; `bytes_in`/`tool_calls` had zero instances in the repo's whole history before it |
+| P45 | The first transition has a start | ✅ shipped (v0.57.0) | Done — `elapsed_s` comes from the meter's cut, and `--since first` gives a cycle's opening line the start a commit delta could never supply; first run in the repo with no PARTIAL field |
 
 ## Priority overview
 
@@ -106,6 +108,57 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | **P39** | **Pay `work`'s invocation debt** (the follow-up P35 and P36 both named) | High | Medium | Medium | Yes |
 
 ---
+
+## What to build next (refreshed 2026-09-16)
+
+**State lives in the `## Status` table above** — it is current through P45 and
+carries a `Next action` per row. This section is only about *order*, and it
+replaces a sequencing block that still recommended P1 → P2 → P3, all shipped
+long ago. A stale order does not merely fail to inform, it misdirects, and it
+survived because nothing ever failed on account of it.
+
+### Suggested order
+
+1. **Nothing new for a few cycles.** P44/P45 just made cost observable end to
+   end. The one thing that would change the next decision — real data across
+   varied work — accrues for free while other work happens. Building now spends
+   the measurement before it has measured anything.
+2. **P13 — pillar-2 security-by-design.** Highest consequence of everything
+   open. The rest of the list makes the loop tidier; this one decides what
+   happens when a contract or a ledger entry is hostile, and pillar 2 writes to
+   a real datastore.
+3. **P30 — grade the cycle that does not pass.** The most repeated lesson in the
+   ledger is that a gate never seen fail is not verified. Both `loop` evals
+   exercise only the passing path: the same defect, one layer up.
+4. **P40b, re-decided rather than rebuilt.** After several metered cycles, re-run
+   the distribution. Confirming the rejection is a result, not a wasted step.
+5. **P20 — state-write pre-approval.** Real, lower consequence.
+
+**Close as superseded: P15** (dogfooding). Its premise — "no LEARNINGS.md, no
+specs/" — is now false: 51 ledger entries, a spec per cycle, telemetry gated in
+CI, and CLAUDE.md requires the loop on this repo.
+
+**Not a todo:** the 30 exemptions in `scripts/telemetry-baseline.txt` are
+permanent by design. They name cycles that shipped before the duty had an owner,
+and P18 forbids backfilling them. They stay visible so the gap is legible, not so
+it can be closed.
+
+### If the table and a title disagree, trust the table
+
+Only 15 of 46 proposal headings carry a status marker, and a heading is the one
+place nobody updates. Order of reliability: the `## Status` table, then
+`.claude/flywheel/specs/<slug>.md` → its `**Status:**` line (authoritative for
+any cycle run through the loop, naming the version and whether the metric
+passed), then `upgrades/v*.md`. A proposal named in several upgrade notes is
+usually a *rule being cited*, not a feature shipping repeatedly.
+
+Each build step is one release: code change → `plugin.json` bump →
+`upgrades/vX.Y.Z.md` → README/help sync → `scripts/test-docs-consistency.sh` +
+`scripts/test-install-vendored.sh` green → `claude plugin validate . --strict`.
+
+**Async execution:** each remaining proposal has a self-contained kickoff in
+[`briefs/`](briefs/README.md) so it can be built in its own fresh, bounded session
+(with a copy-paste starter prompt + collision-avoidance guidance).
 
 ## P1 — Model routing by agent role ⭐
 
@@ -770,45 +823,6 @@ branch (`add`, `commit`, `push -u origin <branch>` from work/ship/compound;
   become one more thing to remember to run. If a retrofit need appears
   (contracts signed before this ships), `/flywheel:sync` can flag the
   missing rules as drift — no new surface needed.
-
-## Suggested sequencing
-
-1. **P1** (clean, self-contained win; validates the release flow end-to-end).
-2. **P2** then **P3** (the ledger/token-efficiency theme, biggest long-term payoff).
-3. **P4 / P5** (loop rigor + token discipline).
-4. **P6** (largest new surface; start as a doc).
-
-Each build step is one release: code change → `plugin.json` bump →
-`upgrades/vX.Y.Z.md` → README/help sync → `scripts/test-docs-consistency.sh` +
-`scripts/test-install-vendored.sh` green → `claude plugin validate . --strict`.
-
-**Async execution:** each remaining proposal has a self-contained kickoff in
-[`briefs/`](briefs/README.md) so it can be built in its own fresh, bounded session
-(with a copy-paste starter prompt + collision-avoidance guidance).
-
-**Post-audit sequencing (2026-07-13, P9–P15):** P10 first (cheapest, unbreaks
-macOS installs), then P9 (restores a shipped-but-inert feature), P12 (immediate
-token savings), P11 and P13 (security posture), P15 (dogfooding), and P14 last
-(largest surface; split into integration + lifecycle releases when built).
-
-**Post-audit sequencing (2026-07-30, P23–P26 and the eval follow-ups):** the
-order is a dependency, not a preference — **P26 before re-running any pillar-1
-eval.** `verify`'s expectations are prose applied by hand, so an iteration run
-today spends ~250k subagent tokens on assertions nobody can audit for a vacuous
-pass. That is exactly how the `run` eval-2 grader stayed incapable of failing
-until a committed `check.sh` let someone run it against an untouched fixture.
-Build the instrument, then measure.
-
-After P26: the `verify` iteration on the cleaned fixtures (3 evals × 2 arms — its
-bug-detection assertions currently have **no** trustworthy measurement), then the
-pillar-2 baseline arm (meaningful only now that v0.36.0 removed the
-`demo-repo`/`target-repo` leak that would have poisoned it), then P23's open
-question — whether the cost proxies track real token spend, which needs two
-comparable real cycles and therefore a session with the plugin actually
-installed. Smallest last: pin whether `run_end` carries its own cost, and the
-per-skill cap left out of P24.
-
----
 
 ## P22 — Dev-loop discipline on the plugin itself: dogfooded TDD + skill evals (owner ask, 2026-07-29)
 
@@ -2538,7 +2552,7 @@ Append-only. Newest at the bottom.
   it: the gate is the suite that can *see* the change, which is not always the
   suite named after the skill.
 
-## P41 — flywheel can honor its own `+delegate`
+## P41 — flywheel can honor its own `+delegate` (✅ shipped v0.51.0)
 
 **Why.** Found by probing, not by reading, while planning P40a: the plan router
 assigned `haiku/low+delegate` to four mechanical tasks and the run could not
@@ -2587,7 +2601,7 @@ evidence that the fix works rather than merely being present.
 **Open.** flywheel's hooks remain inactive in its own repo: `delegation-guard.sh` does
 not fire on flywheel-on-flywheel delegation. Stated, not fixed.
 
-## P40 — measure what the loop reads, then route the reads
+## P40 — measure what the loop reads, then route the reads (P40a ✅ v0.52.0 · P40b ⚪ rejected as designed)
 
 **Why.** Prompted by the Spotify Portal article (2026-09), which reports ~90%
 savings on bulk reads by intercepting large `Read`/`cat` calls and delegating
@@ -2652,7 +2666,7 @@ discipline and `/flywheel:review`. Its headline 90% is bulk-read savings average
 over four scenarios, not total session cost, and does not belong in this repo's
 claims.
 
-## P42 — the telemetry duty gets an owner that runs
+## P42 — the telemetry duty gets an owner that runs (✅ shipped v0.54.0)
 
 **Why.** P40a shipped an instrument and P42's diagnosis found it had nothing to
 read. Not "telemetry stopped in July": the schema had **zero conforming instances
@@ -2693,7 +2707,7 @@ failed it permanently — missed because the verification piped the gate to
 inverting the CLAUDE.md rule; the gate passed, so the release stands, but the
 order was wrong.
 
-## P43 — flywheel's hooks run on flywheel
+## P43 — flywheel's hooks run on flywheel (✅ shipped v0.55.0)
 
 **Why.** P41 registered the agents and left the hooks as declared debt. The cost
 was concrete: `.claude/settings.json` had no `hooks` key at all, so
@@ -2724,3 +2738,53 @@ this repo's SessionStart later injected the ledger. Both hooks were live the who
 time. An `ask` can be resolved by the session's permission mode without surfacing,
 so **absence of a prompt is not absence of a hook** — verify a hook by the artifact
 it leaves, never by the interruption you expected to see.
+
+## P44 — the meter: read volume is observed, not reconstructed (✅ shipped v0.56.0)
+
+**Why.** P40a added `cost.bytes_in` and P23 had added `tool_calls` before it.
+Counted across every telemetry file in the repo a day later: **18 lines, none
+carrying either field.** The instrument had never received a data point, and the
+coverage accounting worked perfectly on nothing.
+
+Structural, not negligence: conforming lines were written at the end of a cycle
+and derived from git, where bytes written and elapsed time survive and read
+volume does not. `work` asked a session to "sum what you actually read" — a
+running total it was never given anywhere to keep.
+
+**Shipped.** `scripts/read-meter.sh` on `PostToolUse` for every tool, appending
+one line per call with the bytes of `tool_response` that entered context;
+`--since <ts>` totals it. Registered in all three wirings `check-hook-parity.sh`
+asserts. Two design calls came from probes rather than the docs: the response is
+always a **dict with a per-tool shape**, so the meter sums every string leaf
+instead of extracting per tool (an extractor returns silence the first time an
+unknown tool appears); and an `Edit` response carries `originalFile` — the whole
+file before the change — while what reaches context is a one-line confirmation,
+so a write tool's call counts and its bytes do not.
+
+**An observed zero is not UNMEASURED.** A meter that ran and read nothing reports
+`0`; no meter at all reports UNMEASURED and the caller omits the fields.
+
+## P45 — the first transition has a start (✅ shipped v0.57.0)
+
+**Why.** `elapsed_s` came from commit-time deltas, and a delta needs a previous
+commit. The **first** transition of a cycle has none, so every run in the repo
+was permanently PARTIAL by exactly one line — p42 4/5, p43 3/4, p44 3/4, always
+the opening line. The same method measures nothing at all where the workdir is
+not a git repo, as `work`'s own eval fixture is not.
+
+**Shipped.** `read-meter.sh --since` also prints `elapsed_s` (`now - cut`, the
+transition's wall clock, exact when the line is written at the transition as the
+duty requires), and `--since first` cuts at the earliest call the session
+recorded. A cycle-start marker was rejected: state that can drift from the run it
+labels. The caveat is written into `work`'s rule — `first` equals the cycle start
+only when the cycle began with the session.
+
+**Verified where the gate was not aimed.** The release-gate executor, in a fresh
+context, hit that caveat unprompted — reported that `first` would have cut at
+18:11:16Z, predating its cycle and sweeping in 110 unrelated calls — and passed
+the explicit start the clause prescribes. Better evidence for the wording than
+the eval's 7/7.
+
+Result: `run-cost.sh` reports all four cost fields at **full coverage, line 1
+included, with no PARTIAL marker** — the first run in the repo's history with no
+hole in it.
