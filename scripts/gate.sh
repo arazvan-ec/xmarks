@@ -36,7 +36,6 @@
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 GATE="${PROJECT_DIR}/.claude/flywheel/gate.sh"
-STATE="${PROJECT_DIR}/.claude/flywheel/.gate-state"
 MAX=3
 MODE="${1:-}"
 
@@ -45,15 +44,16 @@ MODE="${1:-}"
 INPUT=""
 [ "${MODE}" = "seal" ] || INPUT="$(cat 2>/dev/null)"
 
-# Not opted in → allow (no-op), and clear any leftover state.
-if [ ! -x "${GATE}" ]; then
-  rm -f "${STATE}" 2>/dev/null
-  exit 0
-fi
-
-# --- Trust check (fail-safe) --------------------------------------------------
+# --- Where our own state lives (outside the repo) -----------------------------
 # Consent store lives outside the repo tree so a PR that adds the gate cannot
 # also authorize it. FLYWHEEL_STATE_DIR overrides the location (used by tests).
+#
+# The cost cache lives out here too, and that is not cosmetic: written inside
+# the project it is an untracked file that reappears the moment it is deleted,
+# so every `git status` reports changes that correspond to no change, and the
+# Stop hook's own advice ("commit your work") fights a file that must never be
+# committed — it is one machine's cache, not repo content. The signature this
+# script computes already excludes `.claude/flywheel` for the same reason.
 STATE_DIR="${FLYWHEEL_STATE_DIR:-${XDG_STATE_HOME:-${HOME}/.local/state}/flywheel}"
 TRUSTED="${STATE_DIR}/trusted-gates"
 
@@ -70,6 +70,30 @@ case "${SD_ABS}/" in
     echo "flywheel gate: consent store resolves inside the repo — refusing to run (trust must live outside the project)." >&2
     exit 0 ;;
 esac
+
+# One cache file per project, keyed by its absolute path: a single shared file
+# would make each repo evict the previous one's entry and the cache would never
+# hit. The key is hashed so the filename carries no path separators; without a
+# sha tool it degrades to a flattened path, which is uglier but still unique.
+state_key() {
+  if command -v sha256sum >/dev/null 2>&1; then printf '%s' "${PROJ_ABS}" | sha256sum | cut -d' ' -f1
+  elif command -v shasum >/dev/null 2>&1; then printf '%s' "${PROJ_ABS}" | shasum -a 256 | cut -d' ' -f1
+  else printf '%s' "${PROJ_ABS}" | tr -c 'A-Za-z0-9._-' '_'
+  fi
+}
+STATE="${STATE_DIR}/gate-state/$(state_key)"
+mkdir -p "${STATE_DIR}/gate-state" 2>/dev/null
+
+# Not opted in → allow (no-op), and clear any leftover state. It runs here and
+# not before the block above because `STATE` is derived from a `STATE_DIR` that
+# has to be validated first: inheriting an unvalidated one would inherit its
+# threat.
+if [ ! -x "${GATE}" ]; then
+  rm -f "${STATE}" 2>/dev/null
+  exit 0
+fi
+
+# --- Trust check (fail-safe) --------------------------------------------------
 
 gate_hash() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" 2>/dev/null | cut -d' ' -f1
