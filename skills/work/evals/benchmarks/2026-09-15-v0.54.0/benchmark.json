@@ -1,0 +1,37 @@
+{
+ "metadata": {
+  "skill_name": "work",
+  "skill_path": "skills/work",
+  "executor_model": "opus (fresh-context general-purpose subagent), the session default",
+  "timestamp": "2026-09-15",
+  "evals_run": [
+   1
+  ],
+  "runs_per_configuration": 1,
+  "configurations": [
+   "with_skill"
+  ],
+  "release_gate_for": "P42 v0.54.0 \u2014 the telemetry duty is ungated in work",
+  "baseline_note": "without_skill baseline intentionally skipped: this is regression detection for a one-clause behavior change, not a skill-value study. Eval 2 not run \u2014 the change is orthogonal to the bugfix path, and the suite is a manual, costly gate."
+ },
+ "runs": [
+  {
+   "eval_id": 1,
+   "eval_name": "feature-test-first",
+   "configuration": "with_skill",
+   "run_number": 1,
+   "result": {
+    "pass_rate": 1.0,
+    "passed": 7,
+    "failed": 0,
+    "total": 7
+   }
+  }
+ ],
+ "notes": [
+  "Release gate for P42, which removed the `Inside a /flywheel:loop cycle` precondition from work's telemetry duty. The decisive observation is not the grader's 7/7 but what the run produced alongside it: the executor, invoked STANDALONE with no /flywheel:loop anywhere, wrote four transition lines to .claude/flywheel/runs/apply-discount/2026-09-15.jsonl. That is the behavior P29 recorded as absent on 2026-09-09, when all six executors in that gate independently reported writing no telemetry.",
+  "Per-field omission held under real conditions rather than only in the unit tests: `commit` is omitted on every line because the eval workdir is not a git repo; `bytes_out` appears only on the lines that wrote files; `elapsed_s` is omitted on the `started` line, whose true start predates the executor's first timestamp; `bytes_in` appears only where it was actually measured. No line carries a tokens field, and none was zeroed to look complete.",
+  "No leak: `git status` on the plugin repo was clean after the run \u2014 the ungated write landed in the workdir, never in flywheel's own tree. check-fixture-leaks.sh stayed green.",
+  "Process deviation, recorded not hidden: the version was bumped to 0.54.0 BEFORE this gate ran, which inverts the CLAUDE.md rule that a work behavior change runs its eval before the bump. The gate passed, so the release stands, but the order was wrong."
+ ]
+}

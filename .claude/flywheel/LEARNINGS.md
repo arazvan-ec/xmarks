@@ -1,5 +1,57 @@
 # flywheel learnings
 
+## gotcha: an instruction nothing can observe failing is not enforced
+
+<!-- fw: type=gotcha; date=2026-09-15; files=skills/work/SKILL.md,skills/plan/SKILL.md,scripts/check-telemetry.sh,scripts/check-agent-parity.sh; spec=p42-telemetry-has-an-owner; pr=74; branch=claude/flywheel-token-optimization-7ywqoz; evidence=two independent instances found by probing, not reading — `Agent type 'executor' not found` twice on a plan routing four tasks to `haiku/low+delegate` (unhonored since v0.39.0, nine versions), and zero conforming telemetry across the repo's entire history despite the rule sitting in work's body the whole time -->
+
+Two rules in this repo were dead for months and neither left a trace. `+delegate` routes degraded to whatever tier the session was on because the `executor` agent was never registered; `work`'s telemetry line was never written because its clause read *"inside a `/flywheel:loop` cycle"* and CLAUDE.md tells every session to run `spec → work → verify`, which never names `loop`. Both were found by trying to execute them, never by reading them — a skipped fail-open rule produces exactly the same artifacts as a satisfied one.
+
+The guard is not better wording: it is asking, for every rule that matters, *what would be different if this never ran?* If the answer is "nothing", the rule needs an artifact and a gate, or it is a suggestion. Prefer removing a precondition over documenting it — and when you must keep one, state its opposite out loud, because a silent condition is what caused both of these.
+
+The mirror error is just as easy, and I made it the same day: concluding a hook had *not* fired because no permission prompt appeared. An `ask` can be resolved by the session's permission mode without ever surfacing, so the prompt was never the evidence. `delegation-record.sh` had written its state file for that exact call all along. **Verify a rule by the artifact it leaves, never by the interruption you expected to see** — in both directions, the observable trace is the only thing that counts.
+
+## decision: a ratchet's baseline lists what is EXEMPT, never what is expected
+
+<!-- fw: type=decision; date=2026-09-15; files=scripts/telemetry-baseline.txt,scripts/check-telemetry.sh,scripts/invocation-budget.txt; spec=p42-telemetry-has-an-owner; pr=74; branch=claude/flywheel-token-optimization-7ywqoz; evidence=on first contact with an unrelated cycle the gate failed immediately — merging main surfaced p14c-contract-defect-escalates with no telemetry, which an expected-list would have passed in silence -->
+
+A list of what is *expected* to be covered has the same failure mode as the rule it replaces: it needs someone to remember to add the new entry. Inverting it — the file names what is **exempt**, with a reason — makes a new spec covered by default, so forgetting fails the gate and silencing one is a visible line in the diff. It proved itself the same day: merging `main` brought in a cycle from another branch with no telemetry and the gate caught it immediately.
+
+Two rules keep the list honest. An exemption with no reason is unusable input, because an exemption is a debt and the reason is what makes it payable. And the exemption covers *shape* only — the `tokens` ban fails regardless of the baseline, since P18 governs what may enter the ledger at all rather than how a line is formed.
+
+## gotcha: a missing field is not a zero, and the zero fabricates the win
+
+<!-- fw: type=gotcha; date=2026-09-15; files=scripts/run-cost.sh,scripts/test-run-cost.sh; spec=p40a-read-volume-proxy; pr=65; branch=claude/flywheel-token-optimization-7ywqoz; evidence=run-cost.sh on this cycle's real telemetry prints bytes_in and tool_calls as UNMEASURED and elapsed_s as PARTIAL 4 of 5, rather than totalling absent fields as 0 -->
+
+Adding `bytes_in` to the telemetry schema meant every run written earlier carried a `cost` object complete for three fields and absent for the fourth. Totalling that absence as 0 would have made every pre-existing baseline look as though it read nothing — handing the next optimization a fabricated improvement, for the very measurement the field was added to judge. The accounting had to move from per-line to **per-field**: an uncovered field reports UNMEASURED, partial coverage prints its count, and a two-run delta refuses a field either side never recorded instead of printing a meaningless percentage.
+
+Generalizes past this schema: whenever a metric gains a dimension, the old data is not zero on it, it is silent on it. Any comparison that treats the two as the same is a lie with a number attached.
+
+## pattern: a gate you have never seen fail is not a verified gate
+
+<!-- fw: type=pattern; date=2026-09-15; files=scripts/check-telemetry.sh,scripts/test-check-telemetry.sh; spec=p42-telemetry-has-an-owner; pr=74; branch=claude/flywheel-token-optimization-7ywqoz; evidence=the gate shipped broken twice — once because its check was piped to `tail -1` with $? unread, once because a review bot reproduced `{"state":"completed","tokens":123}` slipping past a ban three documents already promised was unexemptable -->
+
+A new gate was written, its unit tests passed, and it was still exiting 1 on the real tree: the baseline exempted coverage but not conformance, so one historical file failed it permanently. The verification had piped the gate to `tail -1` and never read `$?`, so the summary line looked fine while the exit code said otherwise.
+
+Two habits fix this and both are cheap. Read the exit code, never the tail of the output. And before trusting a gate, make it fail on purpose against the real tree — introduce the exact condition it exists to catch, assert it exits non-zero *and names the thing*, then remove it and assert green again. Unit tests prove the logic; only the probe proves the wiring.
+
+The sharper version came from the same gate a day later. Its upgrade note, its PR body and a ledger entry all stated that the baseline exempts a line's *shape* but never the `tokens` ban — and a malformed line on a baselined slug hit `continue` on the shape check and never reached the ban. **A guarantee is not a guarantee until a test fails without it.** Writing it down three times only made the gap harder to see: for every rule of the form "X never happens", the test that proves it is the one where X is attempted through the exemption, not the one where X is attempted head-on.
+
+## decision: a task is tier 1 only if EVERY part of it is mechanical
+
+<!-- fw: type=decision; date=2026-09-15; files=skills/plan/SKILL.md,skills/work/SKILL.md,scripts/route-tiers.txt; spec=p40a-read-volume-proxy; pr=65; branch=claude/flywheel-token-optimization-7ywqoz; evidence=T6 routed haiku/low+delegate delivered the version bump exactly as specified and returned a release summary with an ungrammatical central clause and a false claim about baselines; taken back a tier and rewritten -->
+
+"Bump the version and write the upgrade note" reads mechanical and is not: the bump is, the note is judgment. The delegated run got the bump exactly right and the prose wrong in a way that would have shipped a false statement about baselines into a release note.
+
+Route by the *hardest* part of a task, not its average, and when a task mixes a mechanical half with a written one, split it rather than routing the pair. The escalation itself was cheap and correct — `work`'s rule that an escalation is never argued with worked — but the plan should not have needed it.
+
+## gotcha: a long-lived branch is behind main long before git says "conflict"
+
+<!-- fw: type=gotcha; date=2026-09-15; files=.claude-plugin/plugin.json,upgrades; spec=p42-telemetry-has-an-owner; pr=74; branch=claude/flywheel-token-optimization-7ywqoz; evidence=`git diff --stat main..HEAD` showed 1,232 deletions of other people's work because local main was stale; and twice a release number this branch had taken (0.49.0/0.50.0, then 0.53.0) was claimed on main first, forcing a renumber of note, manifest, spec, plan and benchmark dir -->
+
+Twice in one session this branch was silently behind: once with a stale *local* `main` that made the diff look like it deleted 1,232 lines of someone else's work, and twice with a release number already claimed on real `main`. Neither showed up as a conflict — git was happy, the branch was just wrong.
+
+Before opening a PR: `git fetch origin main`, then diff against `origin/main` rather than the local ref, and re-check the version and `upgrades/` filename after any merge. In this repo a version number is a claim on a shared namespace, so it is only actually yours once it is on `main`.
+
 ## fixture: running a flywheel skill eval end to end
 
 <!-- fw: type=fixture; date=2026-09-13; files=scripts/fixture-scratch.sh,skills/process/evals/check.sh,skills/work/evals/check.sh; spec=p35-invocation-context-budget; branch=claude/skill-context-optimization-l21ryh; evidence=three suites run this way — process 15/15, work 7/7, run 4/4, each matching its committed benchmark; ~70k subagent tokens per eval, not the 300-800k the backlog assumed -->

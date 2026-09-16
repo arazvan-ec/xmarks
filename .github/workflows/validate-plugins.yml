@@ -17,6 +17,7 @@ on:
       - "upgrades/**"
       - "README.md"
       - "docs/**"
+      - ".claude/flywheel/**"
       - ".github/workflows/validate-plugins.yml"
   pull_request:
     paths:
@@ -29,6 +30,7 @@ on:
       - "upgrades/**"
       - "README.md"
       - "docs/**"
+      - ".claude/flywheel/**"
       - ".github/workflows/validate-plugins.yml"
 
 jobs:
@@ -84,6 +86,9 @@ jobs:
 
       - name: Check agent registration parity (P41)
         run: bash scripts/check-agent-parity.sh
+
+      - name: Check cycle telemetry (P42)
+        run: bash scripts/check-telemetry.sh
 
       # Discovery, not a hand-written list. check-test-pairing.sh guarantees a
       # script arrives with its test; this guarantees the test is then run, so a

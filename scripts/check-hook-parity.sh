@@ -57,10 +57,10 @@ fi
 SETTINGS="${TARGET}/.claude/settings.json"
 [ -f "${SETTINGS}" ] || { echo "hook-parity: installer produced no ${SETTINGS}" >&2; exit 2; }
 
-python3 - "${HOOKS_JSON}" "${SETTINGS}" "${TARGET}/.claude/flywheel/bin" <<'PY'
+python3 - "${HOOKS_JSON}" "${SETTINGS}" "${TARGET}/.claude/flywheel/bin" "${SRC}/.claude/settings.json" <<'PY'
 import json, os, sys
 
-hooks_json_path, settings_path, bin_dir = sys.argv[1:4]
+hooks_json_path, settings_path, bin_dir, self_settings_path = sys.argv[1:5]
 
 def die(msg, code=2):
     print(f"hook-parity: {msg}", file=sys.stderr)
@@ -120,7 +120,29 @@ for name in not_landed:
     print(f"hook-parity: hooks.json names {name}, but it is not an executable file in {bin_dir}", file=sys.stderr)
     rc = 1
 
+# Third direction (P43): flywheel's OWN repo must register what it ships. For
+# nine versions it declared eight hooks and registered none of them on itself,
+# so the delegation guard never asked about a single delegation here. A wiring
+# nothing asserts is a wiring that drifts — this repo has now proved that twice.
+self_missing = []
+if os.path.isfile(self_settings_path):
+    try:
+        self_reg = triples(load_hooks(self_settings_path))
+    except SystemExit:
+        raise
+    except Exception:
+        self_reg = set()
+    self_missing = sorted(hooks_json - self_reg)
+else:
+    self_missing = sorted(hooks_json)
+for t in self_missing:
+    print(f"hook-parity: hooks.json registers {fmt(t)}, but flywheel's own"
+          f" .claude/settings.json does not — the hook never fires in this repo"
+          f"\n             fix: bash scripts/install-vendored.sh --hooks-only .", file=sys.stderr)
+    rc = 1
+
 if rc == 0:
-    print(f"hook-parity: OK — {len(hooks_json)} hook registration(s) agree, all landed in {bin_dir}")
+    print(f"hook-parity: OK — {len(hooks_json)} hook registration(s) agree, all landed in {bin_dir},"
+          f" and all registered in this repo's own settings.json")
 sys.exit(rc)
 PY

@@ -38,11 +38,13 @@ set -euo pipefail
 MODE=install
 AUTO_UPDATE=0
 AGENTS_ONLY=0
+HOOKS_ONLY=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --uninstall) MODE=uninstall; shift ;;
     --auto-update) AUTO_UPDATE=1; shift ;;
     --agents-only) AGENTS_ONLY=1; shift ;;
+    --hooks-only) HOOKS_ONLY=1; shift ;;
     --*) echo "error: unknown flag $1" >&2; exit 1 ;;
     *) break ;;
   esac
@@ -63,10 +65,11 @@ fi
 # loop cannot honor the `+delegate` routes it prescribes to every other repo.
 # The exception is INSTALL-only: --uninstall --agents-only here would delete the
 # repo's own committed .claude/agents/ and run the hook-uninstall besides.
-if [ "${SRC}" = "${TARGET}" ] && ! { [ "${AGENTS_ONLY}" = 1 ] && [ "${MODE}" = install ]; }; then
+if [ "${SRC}" = "${TARGET}" ] \
+   && ! { { [ "${AGENTS_ONLY}" = 1 ] || [ "${HOOKS_ONLY}" = 1 ]; } && [ "${MODE}" = install ]; }; then
   echo "error: target is the flywheel repo itself — run this against another repo" >&2
-  echo "       (only --agents-only, installing, is allowed here: it registers" >&2
-  echo "        agents/ and nothing else — never uninstalls)" >&2
+  echo "       (only --agents-only / --hooks-only, installing, are allowed here:" >&2
+  echo "        they register agents/ and this repo's own hooks, nothing else)" >&2
   exit 1
 fi
 
@@ -74,18 +77,110 @@ SKILLS_DST="${TARGET}/.claude/skills"
 AGENTS_DST="${TARGET}/.claude/agents"
 FLYWHEEL_DST="${TARGET}/.claude/flywheel"
 BIN_DST="${FLYWHEEL_DST}/bin"
+# --hooks-only is a SELF-target mode: it wires the hooks to the scripts/ that
+# already exist in this repo. A consuming repo is wired by the full install,
+# where those scripts are vendored; a narrowed run there would point the
+# registrations at files nobody copied.
+if [ "${HOOKS_ONLY}" = 1 ] && [ "${SRC}" != "${TARGET}" ]; then
+  echo "error: --hooks-only only targets the flywheel repo itself" >&2
+  echo "       (a consuming repo is wired by the full install)" >&2
+  exit 1
+fi
+
 SETTINGS="${TARGET}/.claude/settings.json"
+if [ "${HOOKS_ONLY}" = 1 ]; then HOOK_BASE="scripts"; else HOOK_BASE=".claude/flywheel/bin"; fi
 MANIFEST="${FLYWHEEL_DST}/.manifest"
 UPDATE_WORKFLOW_REL=".github/workflows/flywheel-update.yml"
 
-SESSION_START_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/session-start.sh'
-READ_PRIME_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/read-prime.sh'
-WRITE_ALLOW_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/write-allow.sh'
-BASH_ALLOW_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/bash-allow.sh'
-GATE_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/gate.sh'
-DELEGATION_GUARD_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-guard.sh'
-DELEGATION_RECORD_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/delegation-record.sh'
-GIT_TRACKING_REFS_CMD='"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/git-tracking-refs.sh'
+SESSION_START_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/session-start.sh"
+READ_PRIME_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/read-prime.sh"
+WRITE_ALLOW_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/write-allow.sh"
+BASH_ALLOW_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/bash-allow.sh"
+GATE_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/gate.sh"
+DELEGATION_GUARD_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/delegation-guard.sh"
+DELEGATION_RECORD_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/delegation-record.sh"
+GIT_TRACKING_REFS_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/git-tracking-refs.sh"
+
+merge_hook_settings() {
+# Merge the SessionStart/PreToolUse/Stop hooks into the target's
+# .claude/settings.json, keeping everything already there. Idempotent: entries
+# are matched by their command string.
+FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
+FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_BASH_ALLOW="${BASH_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
+FW_DELEGATION_GUARD="${DELEGATION_GUARD_CMD}" FW_DELEGATION_RECORD="${DELEGATION_RECORD_CMD}" \
+FW_GIT_TRACKING_REFS="${GIT_TRACKING_REFS_CMD}" \
+python3 - "${SETTINGS}" <<'PY'
+import json, os, sys
+
+path = sys.argv[1]
+settings = {}
+if os.path.exists(path):
+    with open(path) as f:
+        settings = json.load(f)
+
+wanted = [
+    ("SessionStart", None, {
+        "type": "command",
+        "command": os.environ["FW_SESSION_START"],
+        "timeout": 15,
+    }),
+    ("PreToolUse", "Read", {
+        "type": "command",
+        "command": os.environ["FW_READ_PRIME"],
+        "timeout": 5,
+    }),
+    ("PreToolUse", "Write|Edit|MultiEdit|NotebookEdit", {
+        "type": "command",
+        "command": os.environ["FW_WRITE_ALLOW"],
+        "timeout": 5,
+    }),
+    ("PreToolUse", "Bash", {
+        "type": "command",
+        "command": os.environ["FW_BASH_ALLOW"],
+        "timeout": 10,
+    }),
+    ("Stop", None, {
+        "type": "command",
+        "command": os.environ["FW_GATE"],
+        "timeout": 300,
+    }),
+    ("PreToolUse", "mcp__.*__create_session|Agent|Task", {
+        "type": "command",
+        "command": os.environ["FW_DELEGATION_GUARD"],
+        "timeout": 5,
+    }),
+    ("PostToolUse", "mcp__.*__create_session|Agent|Task", {
+        "type": "command",
+        "command": os.environ["FW_DELEGATION_RECORD"],
+        "timeout": 5,
+    }),
+    ("SessionStart", None, {
+        "type": "command",
+        "command": os.environ["FW_GIT_TRACKING_REFS"],
+        "timeout": 5,
+    }),
+]
+
+hooks = settings.setdefault("hooks", {})
+for event, matcher, hook in wanted:
+    groups = hooks.setdefault(event, [])
+    present = any(
+        h.get("command") == hook["command"]
+        for g in groups
+        for h in g.get("hooks", [])
+    )
+    if not present:
+        group = {"hooks": [hook]}
+        if matcher is not None:
+            group["matcher"] = matcher
+        groups.append(group)
+
+with open(path, "w") as f:
+    json.dump(settings, f, indent=2)
+    f.write("\n")
+print("merged flywheel hooks into .claude/settings.json")
+PY
+}
 
 # True if a previous install wrote this repo-relative path (so it is ours to
 # overwrite/remove without a backup).
@@ -200,6 +295,13 @@ fi
 
 if [ ! -e "${TARGET}/.git" ]; then
   echo "warning: ${TARGET} is not a git repo root — vendoring anyway" >&2
+fi
+
+# Nothing else to write: the scripts these registrations point at are already
+# in the tree, which is the whole reason this mode exists.
+if [ "${HOOKS_ONLY}" = 1 ]; then
+  merge_hook_settings
+  exit 0
 fi
 
 if [ "${AGENTS_ONLY}" = 1 ]; then
@@ -433,84 +535,8 @@ fi
 sort -u "${NEW_MANIFEST}" > "${MANIFEST}"
 rm -f "${NEW_MANIFEST}"
 
-# Merge the SessionStart/PreToolUse/Stop hooks into the target's
-# .claude/settings.json, keeping everything already there. Idempotent: entries
-# are matched by their command string.
-FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
-FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_BASH_ALLOW="${BASH_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
-FW_DELEGATION_GUARD="${DELEGATION_GUARD_CMD}" FW_DELEGATION_RECORD="${DELEGATION_RECORD_CMD}" \
-FW_GIT_TRACKING_REFS="${GIT_TRACKING_REFS_CMD}" \
-python3 - "${SETTINGS}" <<'PY'
-import json, os, sys
 
-path = sys.argv[1]
-settings = {}
-if os.path.exists(path):
-    with open(path) as f:
-        settings = json.load(f)
-
-wanted = [
-    ("SessionStart", None, {
-        "type": "command",
-        "command": os.environ["FW_SESSION_START"],
-        "timeout": 15,
-    }),
-    ("PreToolUse", "Read", {
-        "type": "command",
-        "command": os.environ["FW_READ_PRIME"],
-        "timeout": 5,
-    }),
-    ("PreToolUse", "Write|Edit|MultiEdit|NotebookEdit", {
-        "type": "command",
-        "command": os.environ["FW_WRITE_ALLOW"],
-        "timeout": 5,
-    }),
-    ("PreToolUse", "Bash", {
-        "type": "command",
-        "command": os.environ["FW_BASH_ALLOW"],
-        "timeout": 10,
-    }),
-    ("Stop", None, {
-        "type": "command",
-        "command": os.environ["FW_GATE"],
-        "timeout": 300,
-    }),
-    ("PreToolUse", "mcp__.*__create_session|Agent|Task", {
-        "type": "command",
-        "command": os.environ["FW_DELEGATION_GUARD"],
-        "timeout": 5,
-    }),
-    ("PostToolUse", "mcp__.*__create_session|Agent|Task", {
-        "type": "command",
-        "command": os.environ["FW_DELEGATION_RECORD"],
-        "timeout": 5,
-    }),
-    ("SessionStart", None, {
-        "type": "command",
-        "command": os.environ["FW_GIT_TRACKING_REFS"],
-        "timeout": 5,
-    }),
-]
-
-hooks = settings.setdefault("hooks", {})
-for event, matcher, hook in wanted:
-    groups = hooks.setdefault(event, [])
-    present = any(
-        h.get("command") == hook["command"]
-        for g in groups
-        for h in g.get("hooks", [])
-    )
-    if not present:
-        group = {"hooks": [hook]}
-        if matcher is not None:
-            group["matcher"] = matcher
-        groups.append(group)
-
-with open(path, "w") as f:
-    json.dump(settings, f, indent=2)
-    f.write("\n")
-print("merged flywheel hooks into .claude/settings.json")
-PY
+merge_hook_settings
 
 echo ""
 echo "done. Next steps:"
