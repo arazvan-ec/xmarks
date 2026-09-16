@@ -21,11 +21,14 @@ plus what the transition proved.
   conversation), `tool_calls`, `elapsed_s`. A field you cannot compute is left
   out on its own — the tooling reports an absent field unmeasured, never as
   zero — so never estimate one and never drop the whole object over one.
-- **Read `bytes_in` and `tool_calls`; do not recall them.** The meter records
-  every call as it happens, so ask it rather than reconstructing afterwards:
+- **Read the measured fields; do not recall or reconstruct them.** The meter
+  records every call as it happens, so ask it:
   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/read-meter.sh" --since <previous
   transition's ts>` (`bash .claude/flywheel/bin/read-meter.sh` on a vendored
-  install). It prints `bytes_in=<N> tool_calls=<N>`, or says **UNMEASURED** when
-  no meter ran — in which case omit both fields rather than writing a zero. The
-  two fields went unrecorded across the repo's entire history because the rule
-  asked for a running total nothing kept.
+  install). It prints `bytes_in=<N> tool_calls=<N> elapsed_s=<N>`. On a cycle's
+  **first** transition there is no previous ts — pass `--since first`, which cuts
+  at the earliest recorded call, rather than leaving the line unmeasured. It says
+  **UNMEASURED** when no meter ran; omit the fields then rather than writing a
+  zero. `bytes_in` and `tool_calls` went unrecorded across the repo's entire
+  history because the rule asked for a running total nothing kept, and every run
+  missed `elapsed_s` on line 1 because a commit delta has no previous commit.
