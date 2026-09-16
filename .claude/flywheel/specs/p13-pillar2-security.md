@@ -84,28 +84,73 @@ before it is scheduled.
 - **`SRC_COMMIT`** — `install-vendored.sh` already computes it
   (`rev-parse --short HEAD`). **A short SHA is not a valid `uses:` pin**; this
   needs the full one.
-- **`github.job_workflow_sha`** — the SHA of the *reusable workflow file's* own
-  commit, which is precisely the commit the caller pinned. If it exists, the pin
-  and the clone become one decision instead of two values that can drift.
-  **Unverified — T1 probes it before anything is built on it.**
+- **`github.job_workflow_sha`** — **T1 ran, and refuted it (2026-09-16).** The
+  field does not exist. A `workflow_call` job dumping `toJSON(github)` carries 33
+  keys and this is not among them, and there is no `GITHUB_JOB_WORKFLOW_SHA`
+  environment variable either. Evidence: run
+  [35155026753](https://github.com/arazvan-ec/xmarks/actions/runs/35155026753),
+  plus runs [35154882069](https://github.com/arazvan-ec/xmarks/actions/runs/35154882069)
+  (`push`) and [35154895860](https://github.com/arazvan-ec/xmarks/actions/runs/35154895860)
+  (`workflow_dispatch`), where it interpolated to the empty string —
+  `PROBE_len_job_workflow_sha=0`.
+- **`github.workflow_sha`** — exists, and is the trap. It is the **caller's**
+  commit in the **caller's** repository (probe: `b78888b…`, the caller's own
+  head), not the reusable workflow's pin. A fetch keyed on it would resolve a
+  consuming repo's SHA against *this* repo's URL and fail, or worse, collide.
+  Named here so a later reader does not "fix" the design by reaching for it.
+- **`inputs.flywheel_sha`** — what replaces it. `workflow_call` inputs pass
+  through intact (probe: `INPUT_len=40`), so the **caller carries the SHA twice**
+  — once in `uses: …@<sha>`, once in `with: flywheel_sha: <sha>` — and
+  `install-vendored.sh` emits both from one variable, so they cannot drift at the
+  point of writing. `check-supply-chain-pin.sh` asserts the two are identical.
+- **unauthenticated fetch by SHA** — verified, not assumed:
+  `git fetch --depth 1 origin <full-sha>` against this public repo returned
+  `FETCH=OK head=f00713c…` in the same probe run. The design needs no token.
 - **`scripts/supply-chain-pin-allow.txt`** — reasoned allowlist, the
   `fixture-leak-allow.txt` shape, for any `uses:` that legitimately cannot pin.
 
 ## A — Approach
 
 The pin and the clone must resolve to **one** commit, or they are two things to
-keep in sync and one of them will rot. `github.job_workflow_sha` gives the
-reusable workflow the SHA the caller pinned it to, so the fetch becomes:
+keep in sync and one of them will rot. The original plan was to read that commit
+off `github.job_workflow_sha`. **T1 refuted the field's existence**, so the
+approach below is the revision, and it is the third option — neither the original
+nor the `FLYWHEEL_SHA` fallback the spec named, which a workflow cannot bake
+because it cannot know its own commit before it is committed.
+
+**The caller passes the SHA it pinned.** `install-vendored.sh` writes both the
+`uses: …@<sha>` and a `with: flywheel_sha: <sha>` from the same shell variable,
+and the reusable workflow fetches that input:
 
 ```
 git -C "$DIR" fetch --depth 1 origin "$SHA" && git -C "$DIR" checkout --detach "$SHA"
 ```
 
-and there is no second value to maintain. If T1 finds the field absent or empty
-for this trigger shape, the fallback is an explicit `FLYWHEEL_SHA` baked into the
-workflow at release time, with the drift that implies — and the spec's structure
-changes, which is why T1 runs first and is a probe, not a doc quote (the P44
-precedent).
+One writer, one variable, two lines that the gate asserts are equal — so they
+cannot drift in anything this repo produces.
+
+**What this does not buy, stated because it is the weak seam.** At run time the
+reusable workflow *cannot* verify that its caller pinned the same commit it
+passed; no context field exposes the pin (that is exactly what T1 refuted). A
+caller that pins `@A` and passes `B` would run this repo's workflow code from A
+against this repo's source from B. That caller lives in a repo whoever wrote it
+already controls, so it is not an escalation — but it is not a property the
+workflow enforces, and claiming otherwise would be the assertion P18 exists to
+stop. It is enforced where it is generated, and only there.
+
+**Fail-closed on an absent input, and what that costs.** In-scope item 2 requires
+the workflow to fail before any vendored bash runs if it cannot resolve the
+commit. An `@main` caller from an earlier install passes no input, so it now
+fails loudly instead of cloning `main`. This **contradicts the safeguard below**
+("existing installs keep working"), which was written when
+`github.job_workflow_sha` was still believed to exist — under that design an
+`@main` caller would have resolved to main's head and kept working. T1 removed
+the option; the two clauses cannot both hold. Security wins, and the cost is
+recorded rather than smoothed over: those repos' weekly update stops, red, until
+a human re-vendors. The upgrade note carries the one-line remedy, and because the
+broken mechanism *is* how upgrade notes were delivered, the note cannot reach
+them by itself — someone has to look. **This is the one judgment in slice 1 that
+a reader may want reversed; it is called out in the PR for exactly that reason.**
 
 **What this does and does not buy, stated plainly.** Pinning converts unattended
 RCE into a reviewable diff: a compromised release can no longer reach installed
@@ -143,9 +188,11 @@ bump, no upgrade note, and nothing under `scripts/` or `skills/`.
 - **Fail-closed, uniquely.** Every other flywheel script is fail-open; this gate
   is CI, not a hook, and an unreadable workflow file must be a failure, not a
   pass. Stating it because the repo's reflex is the opposite.
-- **Do not break existing installs.** Repos carrying the `@main` caller keep
-  working until their next refresh rewrites it. Asserted in
-  `test-install-vendored.sh`, not assumed.
+- **Do not break existing installs.** ~~Repos carrying the `@main` caller keep
+  working until their next refresh rewrites it.~~ **Withdrawn by T1** — see
+  "Fail-closed on an absent input" in **A**. An `@main` caller now fails closed.
+  What `test-install-vendored.sh` still asserts is the narrower, true claim: a
+  freshly written caller is pinned and internally consistent.
 - **The allowlist is a debt with a reason**, per `fixture-leak-allow.txt`. An
   entry that matches nothing fails the gate, so it cannot go stale silently.
 - **No new network calls at session start.** This is CI and install-time only.
