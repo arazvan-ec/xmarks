@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+# flywheel — test for the read meter (P44).
+# Asserts the PostToolUse half records what a tool call brought back, keyed by
+# session and outside the project; that it stays silent and exits 0 on anything
+# it cannot measure; and that the --since half distinguishes an OBSERVED zero
+# (the meter ran, nothing was read) from UNMEASURED (no meter ran at all) —
+# the P40a rule one level down, where conflating the two fabricates the win.
+
+set -euo pipefail
+
+SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT="${SRC}/scripts/read-meter.sh"
+WORK="$(mktemp -d)"
+export TMPDIR="${WORK}"
+trap 'rm -rf "${WORK}"' EXIT
+
+fail() { echo "FAIL: $*" >&2; exit 1; }
+pass() { echo "  ok: $*"; }
+
+meter_for() {
+  FW_SID="$1" FW_TMP="${WORK}" python3 -c '
+import hashlib, os
+print(os.path.join(os.environ["FW_TMP"],
+      "flywheel-reads-" + hashlib.sha256(os.environ["FW_SID"].encode()).hexdigest()[:16] + ".jsonl"))'
+}
+
+feed() {
+  FW_SID="$1" FW_TOOL="$2" FW_RESP="$3" python3 -c '
+import json, os
+resp = os.environ["FW_RESP"]
+print(json.dumps({"session_id": os.environ["FW_SID"],
+                  "tool_name": os.environ["FW_TOOL"],
+                  "hook_event_name": "PostToolUse",
+                  "tool_response": json.loads(resp) if resp else None}))' | bash "${SCRIPT}"
+}
+
+rows() { FW_F="$1" python3 -c '
+import json, os
+print(json.dumps([json.loads(l) for l in open(os.environ["FW_F"], encoding="utf-8") if l.strip()]))'; }
+
+# --- a Read records the bytes that came back ------------------------------
+feed s1 Read '{"type":"text","file":{"filePath":"/p/a.txt","content":"0123456789"}}'
+M1="$(meter_for s1)"
+[ -f "${M1}" ] || fail "no meter file written at ${M1}"
+pass "a measurable tool call writes a meter line"
+
+FW_M="${M1}" python3 - <<'PY' || fail "the meter row is malformed"
+import json, os, sys
+rows = [json.loads(l) for l in open(os.environ["FW_M"], encoding="utf-8") if l.strip()]
+if len(rows) != 1:
+    print("expected 1 row, got %d" % len(rows), file=sys.stderr); sys.exit(1)
+r = rows[0]
+if r["tool"] != "Read":
+    print("tool not captured: %r" % (r,), file=sys.stderr); sys.exit(1)
+# filePath (8) + content (10) + type "text" (4) = 22 string-leaf bytes.
+if r["bytes"] != 22:
+    print("bytes should sum every string leaf, got %r" % (r["bytes"],), file=sys.stderr); sys.exit(1)
+if not r.get("ts"):
+    print("no timestamp", file=sys.stderr); sys.exit(1)
+PY
+pass "the row carries the tool, a timestamp, and every string leaf's bytes"
+
+# --- the dict shape differs per tool; the meter must not assume one --------
+feed s1 Bash '{"stdout":"abcde","stderr":"xy","interrupted":false,"isImage":false}'
+R="$(rows "${M1}")"
+FW_R="${R}" python3 - <<'PY' || fail "a Bash response was not measured"
+import json, os, sys
+rows = json.loads(os.environ["FW_R"])
+if len(rows) != 2:
+    print("the second call did not append: %d rows" % len(rows), file=sys.stderr); sys.exit(1)
+if rows[1]["bytes"] != 7:  # stdout 5 + stderr 2; booleans are not text
+    print("Bash bytes wrong: %r" % (rows[1]["bytes"],), file=sys.stderr); sys.exit(1)
+PY
+pass "a differently shaped response is measured without a per-tool extractor"
+
+# --- a shape that does not exist yet still counts --------------------------
+feed s1 FutureTool '{"a":{"b":["xxx",{"c":"yy"}]},"n":42}'
+FW_R="$(rows "${M1}")" python3 - <<'PY' || fail "a nested/unknown shape was not measured"
+import json, os, sys
+rows = json.loads(os.environ["FW_R"])
+if rows[-1]["bytes"] != 5:  # "xxx" + "yy"; keys and numbers are not payload
+    print("nested leaves not summed: %r" % (rows[-1]["bytes"],), file=sys.stderr); sys.exit(1)
+PY
+pass "an unanticipated nested shape is still measured"
+
+# --- per session, and outside the project ----------------------------------
+feed s2 Read '{"file":{"content":"zz"}}'
+[ "$(wc -l < "${M1}")" -eq 3 ] || fail "another session's call leaked into s1"
+case "$(meter_for s2)" in "${WORK}"/*) : ;; *) fail "state is not under TMPDIR" ;; esac
+[ -z "$(find "${SRC}" -name 'flywheel-reads-*' -print -quit)" ] \
+  || fail "the meter wrote counter state inside the project"
+pass "state is per session, under the temp dir, and never in the project"
+
+# --- a write tool's response never entered context: counted, not charged ---
+# Probed 2026-09-16: an Edit response carries `originalFile`, the WHOLE file
+# before the edit, while what reaches context is a one-line confirmation.
+# Charging it would let edit echoes dominate bytes_in and invert P40b.
+feed s1 Edit '{"filePath":"/p/a.txt","oldString":"a","newString":"b","originalFile":"0123456789ABCDEFGHIJ"}'
+FW_R="$(rows "${M1}")" python3 - <<'EDIT_CASE' || fail "a write tool was mis-metered"
+import json, os, sys
+r = json.loads(os.environ["FW_R"])[-1]
+if r["tool"] != "Edit":
+    print("the write call was not recorded at all: %r" % (r,), file=sys.stderr); sys.exit(1)
+if r["bytes"] != 0:
+    print("originalFile was charged to bytes_in: %r" % (r["bytes"],), file=sys.stderr); sys.exit(1)
+EDIT_CASE
+pass "a write tool is counted as a call and charged zero bytes"
+
+# --- nothing measurable: silent, no line, exit 0 ---------------------------
+BEFORE="$(wc -l < "${M1}")"
+printf 'not json at all' | bash "${SCRIPT}" || fail "malformed input must exit 0"
+feed s1 Read ''                        || fail "a missing tool_response must exit 0"
+[ "$(wc -l < "${M1}")" -eq "${BEFORE}" ] || fail "an unmeasurable call left a line"
+pass "unmeasurable input is silent, writes nothing, and never fails the call"
+
+# --- a real call that returned nothing is still a call ---------------------
+feed s1 Bash '{"stdout":"","stderr":""}'
+FW_R="$(rows "${M1}")" python3 - <<'EMPTY_CASE' || fail "an empty response was dropped"
+import json, os, sys
+r = json.loads(os.environ["FW_R"])[-1]
+if r["tool"] != "Bash" or r["bytes"] != 0:
+    print("an empty-but-real response must count as a 0-byte call: %r" % (r,), file=sys.stderr)
+    sys.exit(1)
+EMPTY_CASE
+pass "a call that returned nothing counts as a call, at zero bytes"
+
+# --- --since totals only what came after -----------------------------------
+CUT="$(FW_M="${M1}" python3 -c '
+import json, os
+rows=[json.loads(l) for l in open(os.environ["FW_M"], encoding="utf-8") if l.strip()]
+print(rows[-1]["ts"])')"
+OUT="$(CLAUDE_CODE_SESSION_ID=s1 bash "${SCRIPT}" --since "${CUT}")" || fail "--since failed"
+case "${OUT}" in
+  *bytes_in=*tool_calls=*) : ;;
+  *) fail "--since printed neither field: ${OUT}" ;;
+esac
+pass "--since reports bytes_in and tool_calls"
+
+ALL="$(CLAUDE_CODE_SESSION_ID=s1 bash "${SCRIPT}" --since 1970-01-01T00:00:00Z)"
+case "${ALL}" in
+  *"bytes_in=34"*) : ;;   # 22 + 7 + 5; the write and empty calls add 0
+  *) fail "--since over everything did not total the rows: ${ALL}" ;;
+esac
+case "${ALL}" in
+  *"tool_calls=5"*) : ;;  # every call counts, including the 0-byte ones
+  *) fail "--since did not count every call: ${ALL}" ;;
+esac
+pass "--since totals the bytes and counts every call"
+
+# --- an OBSERVED zero is not UNMEASURED ------------------------------------
+ZERO="$(CLAUDE_CODE_SESSION_ID=s1 bash "${SCRIPT}" --since 2999-01-01T00:00:00Z)"
+case "${ZERO}" in
+  *"bytes_in=0"*) : ;;
+  *) fail "a running meter with nothing since the cut must report 0: ${ZERO}" ;;
+esac
+pass "the meter ran and read nothing since the cut: an observed zero"
+
+NONE="$(CLAUDE_CODE_SESSION_ID=never-metered bash "${SCRIPT}" --since 1970-01-01T00:00:00Z)"
+case "${NONE}" in
+  *bytes_in=*) fail "no meter file must NOT report a number: ${NONE}" ;;
+esac
+[ -n "${NONE}" ] || fail "no meter file must still say something, not print silence"
+case "${NONE}" in
+  *UNMEASURED*) : ;;
+  *) fail "no meter file must name itself UNMEASURED: ${NONE}" ;;
+esac
+pass "no meter file reports UNMEASURED, never a zero that fabricates a win"
+
+echo "read-meter: all assertions passed"

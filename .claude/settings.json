@@ -108,6 +108,16 @@
           }
         ],
         "matcher": "mcp__.*__create_session|Agent|Task"
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/read-meter.sh",
+            "timeout": 5
+          }
+        ],
+        "matcher": ".*"
       }
     ]
   }

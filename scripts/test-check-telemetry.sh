@@ -133,6 +133,22 @@ run "${R}"
 [ "${RC}" -eq 1 ] || fail "a line naming no task or phase must fail, got ${RC}: $(cat "${WORK}/out")"
 pass "a transition must say which transition it is"
 
+echo "== a numeric task id identifies a transition (plan tasks are numbered) =="
+# work's plan tasks are numbered, and its own executor writes {"task": 3}.
+# Demanding a string here would have made CI reject the lines the skill produces.
+R="$(repo numtask)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-15T10:00:00Z","state":"completed","task":3,"cost":{"bytes_out":1}}'
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "a numeric task id must identify a transition, got ${RC}: $(cat "${WORK}/out")"
+pass "task may be a plan task number, not only a name"
+
+echo "== but a boolean is not an id =="
+R="$(repo booltask)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-15T10:00:00Z","state":"completed","task":true,"cost":{"bytes_out":1}}'
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "task=true must not identify a transition, got ${RC}: $(cat "${WORK}/out")"
+pass "a boolean task is not an identifier"
+
 echo "== phase satisfies identification too (pillar 2 runs are Rule-based) =="
 R="$(repo phaseok)"; spec "${R}" alpha
 telemetry "${R}" alpha '{"ts":"2026-09-15T10:00:00Z","state":"completed","phase":"spec","cost":{"elapsed_s":3}}'
