@@ -100,6 +100,7 @@ GATE_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/gate.sh"
 DELEGATION_GUARD_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/delegation-guard.sh"
 DELEGATION_RECORD_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/delegation-record.sh"
 GIT_TRACKING_REFS_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/git-tracking-refs.sh"
+READ_METER_CMD="\"\$CLAUDE_PROJECT_DIR\"/${HOOK_BASE}/read-meter.sh"
 
 merge_hook_settings() {
 # Merge the SessionStart/PreToolUse/Stop hooks into the target's
@@ -108,7 +109,7 @@ merge_hook_settings() {
 FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
 FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_BASH_ALLOW="${BASH_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
 FW_DELEGATION_GUARD="${DELEGATION_GUARD_CMD}" FW_DELEGATION_RECORD="${DELEGATION_RECORD_CMD}" \
-FW_GIT_TRACKING_REFS="${GIT_TRACKING_REFS_CMD}" \
+FW_GIT_TRACKING_REFS="${GIT_TRACKING_REFS_CMD}" FW_READ_METER="${READ_METER_CMD}" \
 python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
@@ -157,6 +158,11 @@ wanted = [
     ("SessionStart", None, {
         "type": "command",
         "command": os.environ["FW_GIT_TRACKING_REFS"],
+        "timeout": 5,
+    }),
+    ("PostToolUse", ".*", {
+        "type": "command",
+        "command": os.environ["FW_READ_METER"],
         "timeout": 5,
     }),
 ]
@@ -247,7 +253,7 @@ if [ "${MODE}" = "uninstall" ]; then
     FW_SESSION_START="${SESSION_START_CMD}" FW_READ_PRIME="${READ_PRIME_CMD}" \
     FW_WRITE_ALLOW="${WRITE_ALLOW_CMD}" FW_BASH_ALLOW="${BASH_ALLOW_CMD}" FW_GATE="${GATE_CMD}" \
     FW_DELEGATION_GUARD="${DELEGATION_GUARD_CMD}" FW_DELEGATION_RECORD="${DELEGATION_RECORD_CMD}" \
-    FW_GIT_TRACKING_REFS="${GIT_TRACKING_REFS_CMD}" \
+    FW_GIT_TRACKING_REFS="${GIT_TRACKING_REFS_CMD}" FW_READ_METER="${READ_METER_CMD}" \
     python3 - "${SETTINGS}" <<'PY'
 import json, os, sys
 
@@ -258,7 +264,8 @@ with open(path) as f:
 ours = {os.environ["FW_SESSION_START"], os.environ["FW_READ_PRIME"],
         os.environ["FW_WRITE_ALLOW"], os.environ["FW_BASH_ALLOW"],
         os.environ["FW_GATE"], os.environ["FW_DELEGATION_GUARD"],
-        os.environ["FW_DELEGATION_RECORD"], os.environ["FW_GIT_TRACKING_REFS"]}
+        os.environ["FW_DELEGATION_RECORD"], os.environ["FW_GIT_TRACKING_REFS"],
+        os.environ["FW_READ_METER"]}
 hooks = settings.get("hooks", {})
 for event in list(hooks):
     groups = []
@@ -411,7 +418,7 @@ fi
 # Hooks, plus the analysis scripts the skills invoke (plan-route, run-cost):
 # without those a vendored repo cannot lint its plan's routes or read its own
 # run cost, and the skills' fail-open makes that absence silent.
-for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/delegation-guard.sh "${SRC}"/scripts/delegation-record.sh "${SRC}"/scripts/git-tracking-refs.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh; do
+for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/delegation-guard.sh "${SRC}"/scripts/delegation-record.sh "${SRC}"/scripts/git-tracking-refs.sh "${SRC}"/scripts/read-meter.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh; do
   rewrite "${f}" | vendor_file ".claude/flywheel/bin/$(basename "${f}")"
   chmod +x "${BIN_DST}/$(basename "${f}")"
 done
