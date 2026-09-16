@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "skill_name": "work",
+    "skill_path": "skills/work",
+    "executor_model": "opus (fresh-context general-purpose subagent), the session default",
+    "timestamp": "2026-09-16",
+    "evals_run": [
+      1
+    ],
+    "runs_per_configuration": 1,
+    "configurations": [
+      "with_skill"
+    ],
+    "release_gate_for": "P44 v0.56.0 \u2014 work's cost rule reads bytes_in/tool_calls from the meter instead of asking for a recalled total",
+    "baseline_note": "without_skill baseline intentionally skipped: regression detection for a one-clause behavior change, not a skill-value study. Eval 2 not run \u2014 the change is orthogonal to the bugfix path and the suite is a manual, costly gate."
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "feature-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7
+      }
+    }
+  ],
+  "notes": [
+    "Release gate for P44. As with v0.54.0 the grader's 7/7 is not the decisive observation \u2014 what matters is what the run produced alongside it. The transition line the executor wrote carries cost.bytes_in=13963 and cost.tool_calls=15, both read from scripts/read-meter.sh. Every one of the repo's 18 prior telemetry lines omits both fields; these are the first values either has ever carried, produced by a fresh context following the edited rule rather than by the session that wrote it.",
+    "Per-field omission still holds rather than being papered over by the new source: `commit` and `route` are both omitted \u2014 the eval workdir is no git repo and TASK.md carries no route \u2014 while the two metered fields are present. Nothing was zeroed to look complete, and no line carries a tokens field.",
+    "A first run was graded 4/7 and is retained here as a mis-run, not a finding: it used the `executor` agent (haiku/low, no skill loaded), which is neither the with_skill arm nor a clean baseline \u2014 it differs from the gated configuration in both model and skill, so it measures nothing. It cost one fixture and is recorded because deleting a failed run is how a gate quietly becomes decorative."
+  ]
+}
