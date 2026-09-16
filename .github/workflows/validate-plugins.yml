@@ -18,7 +18,10 @@ on:
       - "README.md"
       - "docs/**"
       - ".claude/flywheel/**"
-      - ".github/workflows/validate-plugins.yml"
+      # Every workflow, not just this one: check-supply-chain-pin.sh guards
+      # flywheel-update.yml, and a filter that excluded it let half B change
+      # without the gate ever running (Codex P1, PR #81).
+      - ".github/workflows/**"
   pull_request:
     paths:
       - ".claude-plugin/**"
@@ -31,7 +34,10 @@ on:
       - "README.md"
       - "docs/**"
       - ".claude/flywheel/**"
-      - ".github/workflows/validate-plugins.yml"
+      # Every workflow, not just this one: check-supply-chain-pin.sh guards
+      # flywheel-update.yml, and a filter that excluded it let half B change
+      # without the gate ever running (Codex P1, PR #81).
+      - ".github/workflows/**"
 
 jobs:
   validate:

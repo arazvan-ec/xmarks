@@ -53,12 +53,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Fetch the pinned flywheel commit
+      - name: Verify the caller pinned a commit
+        id: pin
+        env:
+          SHA_IN: ${{ inputs.flywheel_sha }}
         run: |
-          SHA="${{ inputs.flywheel_sha }}"
-          printf '%s' "$SHA" | grep -Eq '^[0-9a-fA-F]{40}$' || exit 1
+          printf '%s' "${SHA_IN}" | grep -Eq '^[0-9a-fA-F]{40}$' || exit 1
+          echo "sha=${SHA_IN}" >> "$GITHUB_OUTPUT"
+      - name: Fetch the pinned flywheel commit
+        env:
+          SHA: ${{ steps.pin.outputs.sha }}
+        run: |
           git -C "$RUNNER_TEMP/xmarks" fetch -q --depth 1 origin "$SHA"
           git -C "$RUNNER_TEMP/xmarks" checkout -q --detach "$SHA"
+          ACTUAL="$(git -C "$RUNNER_TEMP/xmarks" rev-parse HEAD)"
+          [ "${ACTUAL}" = "${SHA}" ] || {
+            echo "mismatch"
+            exit 1
+          }
       - name: Refresh vendored copy
         run: bash "$RUNNER_TEMP/xmarks/scripts/install-vendored.sh" "$GITHUB_WORKSPACE"
       - uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
@@ -207,6 +219,47 @@ run_check "${R}"
 [ "${RC}" -ne 0 ] || fail "executing the tree before checking it out must fail"
 saw "before"
 pass "step ordering enforced"
+
+echo "== a --detach of a moving branch is not a pin (Codex P1, PR #81) =="
+# Found in review, and it mattered: the gate exited 0 and printed its success
+# line while the workflow fetched and checked out origin/main. A `--detach` is
+# only evidence if its OPERAND is the validated commit.
+R="$(sandbox movingbranch)"
+sed -i 's|fetch -q --depth 1 origin "\$SHA"|fetch -q --depth 1 origin main|' "${R}/.github/workflows/flywheel-update.yml"
+sed -i 's|checkout -q --detach "\$SHA"|checkout -q --detach origin/main|' "${R}/.github/workflows/flywheel-update.yml"
+grep -q 'detach origin/main' "${R}/.github/workflows/flywheel-update.yml" \
+  || fail "fixture bug: the moving-branch swap did not apply"
+run_check "${R}"
+[ "${RC}" -ne 0 ] || fail "checking out origin/main must fail — that IS the original defect"
+pass "literal branch operand red"
+
+echo "== fetching a branch while checking out the pin is still red =="
+R="$(sandbox fetchdrift)"
+sed -i 's|fetch -q --depth 1 origin "\$SHA"|fetch -q --depth 1 origin main|' "${R}/.github/workflows/flywheel-update.yml"
+run_check "${R}"
+[ "${RC}" -ne 0 ] || fail "a fetch of a branch and a checkout of the pin only agree by luck"
+pass "fetch/checkout operand drift red"
+
+echo "== the checked-out commit must be re-read and compared =="
+R="$(sandbox noverify)"
+python3 - "${R}/.github/workflows/flywheel-update.yml" <<'PY'
+import re, sys
+p = sys.argv[1]
+t = open(p).read()
+t2 = re.sub(r'\n *ACTUAL="\$\(git -C "\$RUNNER_TEMP/xmarks" rev-parse HEAD\)"\n(?:.*\n)*?( *\}\n)', "\n", t)
+assert t2 != t, "fixture bug: the rev-parse assertion was not removed"
+open(p, "w").write(t2)
+PY
+run_check "${R}"
+[ "${RC}" -ne 0 ] || fail "deleting the runtime HEAD comparison must fail"
+pass "missing runtime verification red"
+
+echo "== the checkout variable must be bound to the validated input =="
+R="$(sandbox unbound)"
+sed -i 's|SHA: \${{ steps.pin.outputs.sha }}|SHA: ${{ github.ref }}|' "${R}/.github/workflows/flywheel-update.yml"
+run_check "${R}"
+[ "${RC}" -ne 0 ] || fail "a checkout variable not bound to the validated sha must fail"
+pass "unbound checkout variable red"
 
 echo "== swapping the interpreter does not walk past the check =="
 # The step that executes the fetched tree happens to say `bash`. If the only

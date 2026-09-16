@@ -184,7 +184,9 @@ for n in clone_lines:
         f" commit the caller pinned. Fetch and check out the pinned commit instead.")
 
 # `git checkout -q --detach "$SHA"` is the shipped form, so flags may sit between.
-detach = [n for n, l in wf_code if re.search(r"checkout\s+(?:-\S+\s+)*--detach", l)]
+DETACH_RE = re.compile(r"checkout\s+(?:-\S+\s+)*--detach\s+(\S+)")
+detach_hits = [(n, m.group(1)) for n, l in wf_code for m in [DETACH_RE.search(l)] if m]
+detach = [n for n, _ in detach_hits]
 # Any interpreter pointed at the fetched tree, not just `bash`: swapping in `sh`
 # or `python3` would otherwise walk straight past this. `git -C "$RUNNER_TEMP/…"`
 # is deliberately not matched — it manipulates the checkout, it does not run it.
@@ -199,6 +201,51 @@ elif execs and detach and min(detach) > min(execs):
     problems.append(
         f"{WORKFLOW_REL}:{min(detach)}: the pinned checkout runs after line"
         f" {min(execs)} has already executed the fetched tree. It must come before it.")
+
+# The presence of a `--detach` proves nothing on its own: `checkout --detach
+# origin/main` detaches HEAD at whatever the branch points at right now, which is
+# the original defect wearing the fix's clothes. So the operand has to BE the
+# validated commit, the fetch has to ask for that same commit, and the result has
+# to be re-read. Each is checked, because dropping any one restores the hole.
+VAR_RE = re.compile(r'^"?\$\{?([A-Za-z_]\w*)\}?"?$')
+pinned_var = None
+for n, operand in detach_hits:
+    vm = VAR_RE.match(operand)
+    if vm:
+        pinned_var = vm.group(1)
+    else:
+        problems.append(
+            f"{WORKFLOW_REL}:{n}: the pinned checkout takes the literal ref"
+            f" '{operand}'. Detaching at a branch still resolves it at run time —"
+            f" the operand must be the validated commit.")
+
+if pinned_var:
+    for n, l in wf_code:
+        if not re.search(r"\bgit\b.*\bfetch\b", l):
+            continue
+        operand = l.split()[-1]
+        if not VAR_RE.match(operand) or VAR_RE.match(operand).group(1) != pinned_var:
+            problems.append(
+                f"{WORKFLOW_REL}:{n}: this fetch asks for '{operand}' while the"
+                f" checkout uses ${pinned_var}. Fetching a branch and checking out"
+                f" the pin only works while they agree, and nothing makes them.")
+
+    # Either binding style: an `env:` mapping or a shell assignment in the step.
+    if not re.search(r'%s\s*[:=]\s*"?\$\{\{\s*(?:steps\.[\w-]+\.outputs\.\w+|inputs\.flywheel_sha)\s*\}\}'
+                     % re.escape(pinned_var), workflow):
+        problems.append(
+            f"{WORKFLOW_REL}: ${pinned_var} is what gets checked out, but nothing"
+            f" binds it to the validated flywheel_sha. An unbound variable is empty,"
+            f" and an empty ref is not a refusal.")
+
+    verified = (any(re.search(r"rev-parse\s+HEAD", l) for _, l in wf_code) and
+                any(re.search(r'\[\s*"?\$\{?\w+\}?"?\s*=\s*"?\$\{?%s\}?"?\s*\]'
+                              % re.escape(pinned_var), l) for _, l in wf_code))
+    if not verified:
+        problems.append(
+            f"{WORKFLOW_REL}: nothing re-reads HEAD after the checkout and compares"
+            f" it to ${pinned_var}. The structural check says what the file asks for;"
+            f" this is what says the runner got it.")
 
 wf_code_text = "\n".join(l for _, l in wf_code)
 if not re.search(r"\[0-9a-fA-F\]\{40\}|\[0-9a-f\]\{40\}", wf_code_text):
