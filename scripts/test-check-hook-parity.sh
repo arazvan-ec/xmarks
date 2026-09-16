@@ -16,6 +16,8 @@ CHECK="${SRC}/scripts/check-hook-parity.sh"
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
 
+BEFORE="$(cd "${SRC}" && sha256sum hooks/hooks.json scripts/install-vendored.sh)"
+
 fail() { echo "FAIL: $*" >&2; exit 1; }
 pass() { echo "  ok: $*"; }
 
@@ -143,7 +145,11 @@ grep -q "delegation-guard" "${WORK}/out" || fail "the report must name the missi
 pass "an unregistered hook in the repo's own settings.json is caught and named"
 
 echo "== a real repo was never touched by any of the above =="
-( cd "${SRC}" && git diff --quiet -- hooks/hooks.json scripts/install-vendored.sh ) \
+# Hashes, not `git diff`: the question is whether THIS TEST changed the files,
+# and git diff answers a different one — whether the working tree is dirty —
+# so it went red on any developer mid-edit of the very files it guards.
+AFTER="$(cd "${SRC}" && sha256sum hooks/hooks.json scripts/install-vendored.sh)"
+[ "${AFTER}" = "${BEFORE}" ] \
   || fail "the real repo's hooks.json/install-vendored.sh must be untouched by this test"
 pass "real repo untouched"
 
