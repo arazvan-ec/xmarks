@@ -1,5 +1,50 @@
 # flywheel learnings
 
+## gotcha: the field the whole design rested on did not exist
+
+<!-- fw: type=gotcha; date=2026-09-16; files=.github/workflows/flywheel-update.yml,scripts/install-vendored.sh; spec=p13-pillar2-security; branch=claude/p13-supply-chain-slice1; evidence=a workflow_call job dumping toJSON(github) printed 33 keys and job_workflow_sha was not among them; no GITHUB_JOB_WORKFLOW_SHA env var either; empty in both push and workflow_dispatch runs (35154882069, 35154895860, 35155026753) -->
+
+The spec named `github.job_workflow_sha` as the thing that made the pin and the
+clone **one** value instead of two that drift, and marked it *unverified — T1
+probes it*. T1 probed it. It does not exist: not in the context, not as an env
+var, not under any trigger shape. Had T1 been a doc quote, the design would have
+shipped built on a field that interpolates to the empty string — and an empty
+SHA in a fetch is not a loud failure, it is a fetch of something else.
+
+What saved the slice was that the probe also **dumped every key**, rather than
+asking only the yes/no question. `github.workflow_sha` exists and looks like the
+answer; it is the *caller's* commit in the *caller's* repo. A narrower probe
+returns "absent", you reach for the nearest-looking field, and you ship a fetch
+that resolves a consuming repo's SHA against this repo's URL.
+
+The fallback the spec had pre-authorized — a `FLYWHEEL_SHA` baked in at release
+time — turned out to be impossible for a reason neither the spec nor the plan
+noticed: a workflow cannot contain its own commit SHA before it is committed. The
+third option, the caller passing the SHA it pins as an input, was only visible
+because the same probe run had also confirmed inputs pass through. **Probe the
+whole shape of the platform, not the one bit your design needs.**
+
+## gotcha: a gate that cannot survive being documented is a gate nobody can fix
+
+<!-- fw: type=gotcha; date=2026-09-16; files=scripts/check-supply-chain-pin.sh; spec=p13-pillar2-security; branch=claude/p13-supply-chain-slice1; evidence=the fixed workflow's own header explains the git clone it removed and the uses: pin it added, and the gate reported both as live violations; checkout -q --detach also slipped a regex written as checkout\s+--detach -->
+
+`check-supply-chain-pin.sh` greps for `git clone` and for unpinned `uses:`. The
+workflow it guards has a header comment explaining the `git clone` it removed and
+the `uses:` pin it added — so the fix made its own gate fail, on prose. A
+`description:` string mentioning the `uses:` pin failed it a second time.
+
+The instinct is to soften the patterns. The fix is to read only what executes:
+skip comment lines, and anchor `uses:` as a YAML key (`^\s*-?\s*uses:`) rather
+than matching the word anywhere. A third bug hid behind the same laziness —
+`checkout\s+--detach` never matched the shipped `checkout -q --detach`, so the
+ordering assertion was dead for the real file while green in the fixture.
+
+All three were invisible while the gate was only run against fixtures. They
+appeared the moment it ran against the tree it exists to protect. **A gate needs
+a test case for the artifact in its final, commented, shipped form**, not only
+for the minimal shape a fixture generates.
+
+
 ## gotcha: the gate list you were handed is not the gate set CI runs
 
 <!-- fw: type=gotcha; date=2026-09-16; files=scripts/test-fixture-scratch.sh,skills/loop/evals/solutions/unsafe-filter-shipped/MANIFEST; spec=p31-subjective-gate-eval; branch=claude/p31-subjective-gate-eval; pr=80; evidence=nine named gates all green locally, then test-installer red on scripts/test-fixture-scratch.sh; CI discovers all 22 scripts/test-*.sh and runs 7 check-* gates, two of which the brief never named -->
