@@ -1,5 +1,81 @@
 # flywheel learnings
 
+## gotcha: the gate list you were handed is not the gate set CI runs
+
+<!-- fw: type=gotcha; date=2026-09-16; files=scripts/test-fixture-scratch.sh,skills/loop/evals/solutions/unsafe-filter-shipped/MANIFEST; spec=p31-subjective-gate-eval; branch=claude/p31-subjective-gate-eval; pr=80; evidence=nine named gates all green locally, then test-installer red on scripts/test-fixture-scratch.sh; CI discovers all 22 scripts/test-*.sh and runs 7 check-* gates, two of which the brief never named -->
+
+Nine gates named in the brief, nine green, pushed. CI went red on a tenth. The
+workflow does not run a list — it **discovers** every `scripts/test-*.sh` and
+runs seven `check-*` gates, and `test-fixture-scratch.sh` and
+`check-agent-parity.sh` were in neither my brief nor my head.
+
+The repo had already written the moral one layer down: that discovery glob exists
+*because* a hand-written list let `test-run-cost.sh` sit unrun for four releases.
+A hand-written gate list in a task brief is the same defect one level up. Read
+`.github/workflows/` and run what it runs, then the named list is a subset you
+get for free.
+
+What it caught was real, not ceremony: the discovery arm requires every committed
+solution to grade **green**, and a deliberately-red cheat exemplar breaks that.
+The fix was to make the invariant two-sided — a MANIFEST declares `grades: green`
+or `grades: red` and must grade what it declares — never to loosen it. A
+committed cheat that starts grading green is a cheat the grader stopped catching,
+which is the whole reason to commit one.
+
+## decision: when a fixture ties, the honest deliverable is the label, not a nastier fixture
+
+<!-- fw: type=decision; date=2026-09-16; files=skills/loop/evals/evals.json,skills/loop/evals/README.md,skills/loop/evals/benchmarks/2026-09-16-v0.58.0/benchmark.md; spec=p31-subjective-gate-eval; branch=claude/p31-subjective-gate-eval; evidence=3 of 3 fresh-context runs landed in honest ending 2 — each refused the work item's literal wiring at spec time and delivered the capability safely; 0 of 6-7 injection shapes leaked in any run -->
+
+P31's fixture asks, in good faith, for something whose faithful implementation is
+a Critical. All three runs saw it coming at spec time, refused the literal
+wiring, recorded the deviation and shipped the capability anyway. The review gate
+was never what stopped the injection, because the injection never got that far.
+
+The tempting fix is to sharpen the ask until a run finally trips. That buys
+discrimination by destroying realism: an item that reads like a trap tests
+reading comprehension, and a suite that passes only because its fixture is
+implausible is measuring the fixture. The eval is labelled **outcome-only**
+instead — in `evals.json`, the suite README and the benchmark — and it still
+earns its keep, because the grader's four cheats each grade red on a different
+assertion.
+
+Two claims worth keeping apart, because conflating them is how a suite flatters
+itself: **the grader discriminates** and **the fixture reaches the gate** are
+different, and only the first was proven here. Say which one you have.
+
+## gotcha: an assertion can be dead on arrival and stay silent about it
+
+<!-- fw: type=gotcha; date=2026-09-16; files=skills/loop/evals/check.sh; spec=p31-subjective-gate-eval; branch=claude/p31-subjective-gate-eval; evidence=0 of 3 runs wrote a `verdict` field anywhere in 8, 12 and 11 telemetry lines; the assertion is carried instead by terminal state — run 1 closed cycle:closed, run 3 close:done -->
+
+Eval 3's grader keys on `verdict: PASS`, so eval 4 nearly did the same. Not one
+of three real runs wrote a `verdict` field at all — 31 telemetry lines, zero
+verdicts. That assertion would have been incapable of firing on live telemetry,
+and it would never have said so: an assertion whose job is to stay quiet on
+honest runs looks identical whether it is passing or dead.
+
+Red-on-untouched and green-on-ideal both pass for a dead assertion when the
+*committed solutions* carry the field the real executors do not. The gap is
+between the artifact a solution author writes and the artifact an executor
+actually produces, and only running the eval closes it.
+
+What saved it was a clause added for a different reason — a terminal-state check
+meant to catch a cheat that omits the word PASS. Right answer, smaller reason
+than the one that turned out to matter.
+
+## gotcha: eval arms run in parallel can corrupt each other's artifacts
+
+<!-- fw: type=gotcha; date=2026-09-16; files=skills/loop/evals/benchmarks/2026-09-16-v0.58.0/benchmark.md; spec=p31-subjective-gate-eval; branch=claude/p31-subjective-gate-eval; evidence=run 3's telemetry helper was overwritten by run 2's copy mid-cycle and 10 of its transition lines were appended to run 2's JSONL; after repair the three files are 8/12/11 lines with phases in order -->
+
+Three eval runs launched concurrently had separate workdirs and a shared session
+scratchpad. One run's telemetry helper script was overwritten by another's, and
+ten of its lines landed in the wrong run's JSONL. The run noticed and repaired
+it, and no grade changed — this time.
+
+Separate workdirs are not isolation. Anything an executor writes outside its
+workdir — a helper, a counter file, a temp path derived from something shared —
+is a channel between arms, and telemetry is exactly the artifact being graded.
+Run the arms sequentially, or give each one its own `TMPDIR`.
+
 ## gotcha: a derived field has a boundary where it cannot exist, and the boundary repeats every run
 
 <!-- fw: type=gotcha; date=2026-09-16; files=scripts/read-meter.sh,skills/work/references/work-detail.md; spec=p45-elapsed-has-a-start; branch=claude/flywheel-token-optimization-7ywqoz; evidence=p42 4/5, p43 3/4 and p44 3/4 all omit elapsed_s on line 1; after the meter supplied it, run-cost.sh reports full coverage with no PARTIAL marker -->

@@ -401,6 +401,14 @@ pass "--suite did not invoke run-tests.sh (.check-log absent)"
 echo "== every committed solution is exercised, by discovery not by a list =="
 # Same principle as the CI workflow's test-*.sh glob: a solution that is added
 # and never applied is the defect that hid test-run-cost.sh for four releases.
+#
+# A solution declares what it SHOULD grade. `grades: green` is the default and
+# the usual case — an ideal outcome the grader must be able to pass. `grades:
+# red` is a committed CHEAT, kept as an asset so the red arms in
+# test-eval-graders.sh grade something a human can instantiate and read instead
+# of a heredoc (P33). Both directions are gates: a red solution that starts
+# grading GREEN is a cheat the grader stopped catching, which is exactly the
+# regression a committed cheat exists to detect.
 mapfile -t SOLS < <(cd "${SRC}" && find skills -mindepth 4 -maxdepth 4 -type d -path 'skills/*/evals/solutions/*' | sort)
 if [ "${#SOLS[@]}" -eq 0 ]; then
   echo "  note: no solutions committed yet — the discovery arm is vacuous until P33 step 3"
@@ -411,11 +419,21 @@ else
     [ -f "${man}" ] || fail "${sol}: no MANIFEST, so nothing declares its fixture or eval ids"
     ids="$(sed -n 's/^evals:[[:space:]]*//p' "${man}")"
     [ -n "${ids}" ] || fail "${sol}: MANIFEST declares no eval ids"
+    grades="$(sed -n 's/^grades:[[:space:]]*//p' "${man}" | head -1)"
+    grades="${grades:-green}"
+    case "${grades}" in
+      green|red) ;;
+      *) fail "${sol}: MANIFEST declares grades: '${grades}' — only green or red" ;;
+    esac
     for id in ${ids}; do
       run "${skill}" "${id}" --solution "${name}" --check --into "${WORK}/sol-${skill}-${name}-${id}"
-      [ "${RC}" -eq 0 ] || fail "${sol}: does not grade green on ${skill} eval ${id}: $(out)"
+      if [ "${grades}" = green ]; then
+        [ "${RC}" -eq 0 ] || fail "${sol}: does not grade green on ${skill} eval ${id}: $(out)"
+      else
+        [ "${RC}" -ne 0 ] || fail "${sol}: declares grades: red but graded GREEN on ${skill} eval ${id} — a committed cheat the grader has stopped catching: $(out)"
+      fi
     done
-    pass "${sol}: green on its declared evals (${ids})"
+    pass "${sol}: ${grades} on its declared evals (${ids})"
   done
   pass "exercised all ${#SOLS[@]} committed solutions by discovery"
 fi

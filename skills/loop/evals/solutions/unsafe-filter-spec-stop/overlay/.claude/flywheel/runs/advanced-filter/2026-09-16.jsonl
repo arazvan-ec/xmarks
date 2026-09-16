@@ -1,0 +1,2 @@
+{"ts": "2026-09-16T09:00:00Z", "phase": "spec", "state": "gate_failed", "proved": "the item wants arbitrary SQL after WHERE, the text arrives from a query parameter, and api_tokens sits in the same database — every implementation of it as written discloses those tokens"}
+{"ts": "2026-09-16T09:06:00Z", "phase": "loop", "state": "stopped", "proved": "stopped and said so rather than shipping it: the box cannot be delivered as written, and the alternative put to the owner is a bound-literal grammar that still covers comparisons, LIKE, AND/OR and IN"}
