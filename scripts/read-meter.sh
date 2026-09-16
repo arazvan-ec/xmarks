@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# flywheel — the read meter (P44). Two halves of one measurement.
+#
+# As a PostToolUse hook it records what a tool call brought back into context;
+# with --since it totals that record for a transition line's cost object. They
+# live in one script because they must derive the same path from the same
+# session id, and a split would let the two drift silently.
+#
+# It measures `tool_response`, not `tool_input`: the ask is cheap, the answer is
+# what costs. Every string leaf counts, with no per-tool extractor — the shape
+# differs per tool (Bash returns stdout/stderr, Read a nested file object) and a
+# tool that does not exist yet must still be counted, not silently skipped.
+#
+# bytes_in stays a FLOOR (P23/P40a): tool responses only, never the conversation
+# and never content re-entering context.
+#
+# State is keyed by session under the system temp dir, the delegation-record.sh
+# derivation verbatim: in the project it would dirty `git status` and be committed.
+
+set -u
+
+if [ "${1:-}" = "--since" ]; then
+  SINCE="${2:-}"
+  [ -n "${SINCE}" ] || { echo "read-meter: --since needs a timestamp" >&2; exit 2; }
+  command -v python3 >/dev/null 2>&1 || { echo "read-meter: UNMEASURED — no python3" >&2; exit 0; }
+  FW_SINCE="${SINCE}" FW_SID="${CLAUDE_CODE_SESSION_ID:-}" python3 - <<'PY'
+import hashlib, json, os, sys, tempfile
+
+sid = os.environ.get("FW_SID") or ""
+if not sid:
+    print("read-meter: UNMEASURED — no CLAUDE_CODE_SESSION_ID; leave both fields out")
+    sys.exit(0)
+
+path = os.path.join(tempfile.gettempdir(),
+                    "flywheel-reads-" + hashlib.sha256(sid.encode()).hexdigest()[:16] + ".jsonl")
+if not os.path.exists(path):
+    # Absent is not zero. No meter ran, so the fields are UNMEASURED and must be
+    # omitted — printing 0 here is the exact fabrication P40a exists to stop.
+    print("read-meter: UNMEASURED — no counter for this session; omit both fields")
+    sys.exit(0)
+
+since, total, calls = os.environ["FW_SINCE"], 0, 0
+try:
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except Exception:
+                continue
+            if str(row.get("ts") or "") >= since:
+                total += int(row.get("bytes") or 0)
+                calls += 1
+except Exception:
+    print("read-meter: UNMEASURED — the counter could not be read; omit both fields")
+    sys.exit(0)
+
+print(f"bytes_in={total} tool_calls={calls}")
+print(f"# floor: tool responses since {since}, from {path}", file=sys.stderr)
+PY
+  exit 0
+fi
+
+INPUT="$(cat 2>/dev/null)"
+command -v python3 >/dev/null 2>&1 || exit 0
+
+FW_HOOK_INPUT="${INPUT}" python3 - <<'PY' 2>/dev/null
+import hashlib, json, os, sys, tempfile, time
+
+try:
+    payload = json.loads(os.environ.get("FW_HOOK_INPUT", "") or "{}")
+except Exception:
+    sys.exit(0)
+
+resp = payload.get("tool_response")
+if resp is None:
+    sys.exit(0)
+
+def leaves(node):
+    if isinstance(node, str):
+        return len(node.encode("utf-8"))
+    if isinstance(node, dict):
+        return sum(leaves(v) for v in node.values())
+    if isinstance(node, list):
+        return sum(leaves(v) for v in node)
+    return 0
+
+n = leaves(resp)
+if n <= 0:
+    sys.exit(0)
+
+sid = str(payload.get("session_id") or "no-session")
+path = os.path.join(tempfile.gettempdir(),
+                    "flywheel-reads-" + hashlib.sha256(sid.encode()).hexdigest()[:16] + ".jsonl")
+row = {
+    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    "tool": str(payload.get("tool_name") or ""),
+    "bytes": n,
+}
+try:
+    with open(path, "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+except Exception:
+    pass
+PY
+
+exit 0
