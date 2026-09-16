@@ -1,7 +1,12 @@
 # Spec: P31 — the cycle blocked by a *subjective* gate
 
 **Slug:** `p31-subjective-gate-eval` · **Created:** 2026-09-16 · **Backlog:** P31
-**Status:** in progress.
+**Status:** shipped as v0.58.0 — metric PASS, with one honest qualification.
+All nine gates green, and eval 4 grades green on two different honest endings
+and red on four separate cheats, no two collapsing into one. **But the fixture
+ties**: 3 of 3 runs landed in ending 2, so the eval is labelled *outcome-only* —
+the grader discriminates, the fixture never reaches the review gate. That was
+P31's own predicted risk and its prescribed response.
 
 **Prime:** P29 (the `loop` suite — the only one that runs a whole cycle), P30
 (the cycle blocked by an *objective* wall), P26 (fixture hygiene: ground truth
