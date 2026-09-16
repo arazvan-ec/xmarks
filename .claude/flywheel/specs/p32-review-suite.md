@@ -1,7 +1,19 @@
 # Spec: P32 — a `review` eval suite, and an honest label on what it covers
 
 **Slug:** `p32-review-suite` · **Created:** 2026-09-16 · **Backlog:** P32
-**Status:** in progress.
+**Status:** shipped as v0.60.0 — metric PASS. All 22 `scripts/test-*.sh` and all
+7 `check-*` gates green, plus `claude plugin validate . --strict`. The decisive
+clause is met and exceeded: red on 3 untouched fixtures, green on 3 ideal
+outcomes, red on **5** committed cheats (not 3) each asserted to fail *exactly*
+its own assertion by FAIL-line match and count, and a **seven**-spelling battery
+with silence required red.
+
+**Two honest qualifications.** (1) Three real runs came back 13/13 green, so the
+runs show no assertion reddens correct behaviour and show nothing about
+discrimination — that is carried by the cheats. (2) Eval 2's run drew **all
+three** reviewers: the symmetric assertion "performance must not be drawn here"
+would have been red on the first real run, and the run would have been right.
+Absence is asserted on eval 1 only, and `evals.json` records the measurement.
 
 **Prime:** P32 (the two options and the dishonest third), P26 (ground truth lives
 in the grader, never in the workdir), P33 (solutions as committed assets), P31
