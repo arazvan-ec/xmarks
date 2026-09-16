@@ -79,6 +79,21 @@ code to check the *prose*, and caught that documented uniqueness does not surviv
 the documented 80-character truncation. Eval 3's run closed by recommending a
 real three-reviewer dispatch — Option A, volunteered.
 
+## The grader changed after these runs, and they were re-graded
+
+A bot review of the PR found three assertions that a report asserting their
+*opposite* could satisfy: the bare phrase "in this context" made
+`"dispatched in parallel in this context"` pass option B; two name matches made
+`"the security and performance reviewers both ran"` pass the skip check; and a
+bare grep made `"found no SQL injection and no hardcoded credential"` pass the
+defect-class check. All three were reproduced green against the shipped grader,
+then fixed, and each is now a committed cheat with its own red arm.
+
+**The three saved workdirs were re-graded against the tightened grader: 13/13
+again, unchanged.** That is the evidence the tightening cost no correct run —
+and it is the reason the runs are still quoted here, though they were produced
+before it.
+
 ## Limitations
 
 - No dispatch exercised. Not an omission: it cannot be done from a subagent.

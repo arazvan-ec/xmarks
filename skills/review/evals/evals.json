@@ -1,7 +1,7 @@
 {
   "skill_name": "review",
   "scope": "REPORTING-AND-ROUTING-ONLY — this suite cannot cover parallel dispatch. A subagent cannot spawn subagents, so `Task` does not exist in any executor this repo runs, and `reviewer-*` are never actually dispatched here. What is graded is which reviewers the run DREW for a given diff (the .dispatch-log artifact) and whether the report SAYS the specialists did not run. Real dispatch has one arm only, and it is manual: see README.md 'The top-level arm (Option A)'.",
-  "notes": "Executor harness + grading: see README.md 'Skill evals'. Each eval instantiates a fixture into a temp workdir with its own setup — which seeds a git repo and then applies one pending change, so the diff to review is the uncommitted working-tree change — and a fresh-context subagent executes skills/review/SKILL.md as /flywheel:review in that dir. Brief the executor: the host Task tool is unavailable, so reviewer dispatch goes through ./dispatch-reviewer <reviewer-name>, which records the request and returns no findings — whatever lens it draws it must review itself, in this one context; and the synthesized review is saved to review.md in the workdir root. Point it at skills/review/SKILL.md and nothing else under this repo — in particular not evals/. Grade with: bash skills/review/evals/check.sh <id> <workdir>.",
+  "notes": "Executor harness + grading: see README.md 'Skill evals'. Each eval instantiates a fixture into a temp workdir with its own setup — which seeds a git repo and then applies one pending change, so the diff to review is the uncommitted working-tree change — and a fresh-context subagent executes skills/review/SKILL.md as /flywheel:review in that dir. Brief the executor: the host Task tool is unavailable, so reviewer dispatch goes through ./dispatch-reviewer <reviewer-name>, which records the request and returns no findings — whatever lens it draws it must review itself, in this one context; and the synthesized review is saved to review.md in the workdir root. Point it at skills/review/SKILL.md and nothing else under this repo — in particular not evals/. Grade with: bash skills/review/evals/check.sh <id> <workdir>. Grading the top-level Option A arm (real dispatch) uses FW_REAL_DISPATCH=1, which lifts the option-B assertion and nothing else.",
   "evals": [
     {
       "id": 1,
@@ -14,7 +14,7 @@
         ".dispatch-log records reviewer-correctness",
         ".dispatch-log records no security reviewer — nothing in the diff touches input handling, auth, secrets or dependencies",
         ".dispatch-log records no performance reviewer — nothing in the diff touches loops, queries, I/O or data volume",
-        "The report names both lenses it skipped (a silent cap reads as full coverage)"
+        "The report says it skipped both other lenses — each name in one sentence with language saying it was not drawn (two bare name matches also fit a report claiming they ran)"
       ]
     },
     {
@@ -27,7 +27,7 @@
         "review.md exists and is non-empty",
         ".dispatch-log records a security reviewer — the diff touches input handling, secrets and auth",
         ".dispatch-log records reviewer-correctness, which is drawn for every diff",
-        "The report cites the changed file and names the class of problem (injection / interpolation / unparameterized SQL / a hardcoded credential)",
+        "The report cites the changed file and names the class of problem affirmatively — un-negated and near a file or symbol, so neither a denial nor the routing rationale counts",
         "The report says the specialists did not actually run (Option B), rather than reading as if a fan-out happened"
       ]
     },

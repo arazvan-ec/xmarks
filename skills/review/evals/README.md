@@ -43,7 +43,13 @@ anywhere. The runbook step, for whoever takes it:
    — the point of this arm is that the host's own `Task` tool is used instead.
 3. Record what was dispatched from the session transcript, save the synthesized
    review as `review.md`, and write the dispatched reviewer names into
-   `.dispatch-log` by hand, one per line, so the committed grader still applies.
+   `.dispatch-log` by hand, one per line. Then grade with
+   **`FW_REAL_DISPATCH=1`**: the specialists really ran on this arm, so the
+   option-B assertion is not merely inapplicable but backwards — it would
+   require a truthful report to deny what happened. The flag lifts that one
+   assertion and prints it as `N/A:` (a silently dropped assertion is how a gate
+   rots); routing is still graded from `.dispatch-log`. The harness proves the
+   flag's scope in both directions.
 4. File the result under `benchmarks/<date>-topline/` and say in it that the
    dispatch was real.
 
@@ -101,13 +107,21 @@ evidence while proving nothing.
    rule lives ("only when the diff touches input handling, auth, secrets or
    dependencies"), because a docs-only diff is the one case with no defensible
    second reading.
-2. **Eval 1: the report names both lenses it skipped.** SKILL.md: "a silent cap
-   reads as full coverage". The names are read, not the sentence around them.
+2. **Eval 1: the report says it skipped both lenses.** SKILL.md: "a silent cap
+   reads as full coverage". Each lens name must sit in one sentence with
+   language saying it was *not* drawn — two bare name matches also fit "the
+   security and performance reviewers both ran and found no issues", which
+   asserts the opposite (`docs-claims-they-ran`).
 3. **Eval 2: security was drawn**, and correctness with it.
 4. **Eval 2: the review found something.** It must cite `app.py` or `store.py`
    and name the class of defect — injection, interpolation, unparameterized SQL,
-   a hardcoded credential — with a deliberately broad alternation. A suite that
-   grades who was drawn and never asks what came back is hollow.
+   a hardcoded credential — with a deliberately broad alternation, **un-negated
+   and near a file or symbol**. Both qualifiers were bought by review findings on
+   this suite's own PR: "I checked `app.py` and found **no** SQL injection and
+   **no** hardcoded credential" carries every word an affirmative finding carries
+   (`api-denies-the-finding`), and the routing rationale's own "drawn because the
+   diff adds a credential" names the domain while saying nothing about a defect.
+   A suite that grades who was drawn and never asks what came back is hollow.
 5. **Evals 2 and 3: the report says the specialists did not actually run.**
 6. **Eval 3: all three were drawn.**
 
@@ -132,6 +146,15 @@ reason, and `check.sh` records all three at the pattern:
   combined correctness+domain lens".
 - `no <role>` — "no performance reviewer was drawn" is a *routing* sentence. A
   report may say it while still implying the two it did draw ran in parallel.
+- **the bare context family** (`in this context`, `one context`, `single
+  context`) — removed after review on the PR that added this suite: "Three
+  specialist reviewers were dispatched **in parallel in this context**" contains
+  it while asserting exactly what option B exists to reject. It is now a
+  committed cheat (`fanout-affirmative-context`) and a battery red case. `inline`
+  survives only next to a review verb, because "findings inline below" is not a
+  disclosure either. Every honest disclosure measured so far — three real runs,
+  three ideal outcomes, seven battery spellings — also carries a negative phrase,
+  so nothing green was lost.
 
 Each would have made the assertion vacuously green, which is the hollow-grader
 failure P26 exists to catch.
@@ -157,7 +180,7 @@ An alternation nobody has watched accept a new spelling is a guess.
 ## The grader must be able to fail
 
 `scripts/test-eval-graders.sh` runs it red on all three untouched fixtures,
-green on three committed ideal outcomes, and red on **five committed cheats** —
+green on three committed ideal outcomes, and red on **eight committed cheats** —
 and each cheat arm asserts the **FAIL lines it produces and their count**, not
 merely a non-zero exit. Two cheats that go red for the same reason are one arm
 wearing two names, and the suite would look twice as strong as it is:
@@ -168,11 +191,19 @@ wearing two names, and the suite would look twice as strong as it is:
 | `docs-silent-cap` | 1 | the report names both lenses it skipped |
 | `api-security-skipped` | 2 | a security reviewer was drawn |
 | `api-no-finding` | 2 | the report names the class of defect |
+| `docs-claims-they-ran` | 1 | the same, when both names appear but claim they *ran* |
+| `api-denies-the-finding` | 2 | the same, when the class vocabulary is all negated |
 | `fanout-implied-parallel` | 3 | the Option B disclosure |
+| `fanout-affirmative-context` | 3 | the same, via a phrase the first alternation accepted |
 
 `api-security-skipped` is worth reading twice: its **report** claims the
 security lens and would have passed any prose-based check. Only the artifact
 disagrees.
+
+Three of the eight arrived from a bot review of this suite's own PR, and each
+one was watched grading **green** against the shipped grader before the grader
+was changed. That is the honest record: the first draft of all three assertions
+could be satisfied by a report asserting the opposite of what they meant.
 
 ## Fixture hygiene
 

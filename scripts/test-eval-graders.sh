@@ -310,7 +310,7 @@ for spec in "1:docs-correctness-only" "2:api-security-drawn" "3:fanout-honest"; 
   pass "review eval ${id}: green on ${sol}"
 done
 
-echo "== review: five cheats, each failing its OWN assertion =="
+echo "== review: eight cheats, each failing its OWN assertion =="
 # rc != 0 is not enough. Two cheats that both go red for the same reason are one
 # arm wearing two names, and the suite would look twice as strong as it is — so
 # every FAIL line a cheat produces must match the assertion that cheat targets,
@@ -328,20 +328,52 @@ cheat_case() { # cheat_case <solution> <eval-id> <expected-FAIL regex> <n-fails>
   pass "review: ${sol} is red on exactly its own assertion"
 }
 
-# Wrong routing on the one diff where the rule is unambiguous: docs only.
-cheat_case docs-full-fanout 1 'no (security|performance) reviewer was drawn' 2
+# Wrong routing on the one diff where the rule is unambiguous: docs only. Three
+# FAILs, not two: a report that fans out also stops describing a skip, and the
+# count is asserted so that losing either routing assertion shows up here.
+cheat_case docs-full-fanout 1 'no (security|performance) reviewer was drawn|names both lenses it skipped' 3
 # Right routing, never said — "a silent cap reads as full coverage".
 cheat_case docs-silent-cap 1 'names both lenses it skipped' 1
+# Named, and claimed to have RUN. Found by review on the PR that added this
+# suite: two independent name matches passed "the report names both lenses it
+# skipped" even when the sentence asserted the opposite.
+cheat_case docs-claims-they-ran 1 'names both lenses it skipped' 1
 # The prose claims the security lens; the artifact says it was never drawn. This
 # is the arm that proves routing is graded from .dispatch-log and not the report.
 cheat_case api-security-skipped 2 'a security reviewer was drawn' 1
 # Drawn, disclosed, and it found nothing: the hollow review.
 cheat_case api-no-finding 2 'names the class of defect' 1
+# The same hollow review that DENIES the defect in the vocabulary an affirmative
+# finding would use ("found no SQL injection and no hardcoded credential"). Also
+# from the PR review: the old grep counted a denial, and the routing rationale's
+# own "adds a credential" would have carried it even without one.
+cheat_case api-denies-the-finding 2 'names the class of defect' 1
 # Option B's own cheat: right routing, right findings, and an account of how they
 # were produced that never happened.
 cheat_case fanout-implied-parallel 3 'Option B' 1
+# The dishonest report that satisfied the FIRST version of the alternation: the
+# bare phrase "in this context" was a member, and "dispatched in parallel in this
+# context" contains it while asserting exactly what option B exists to reject.
+# The context family is out of the pattern for that reason; every honest run and
+# battery spelling measured so far carries a negative phrase as well.
+cheat_case fanout-affirmative-context 3 'Option B' 1
 
-echo "== review: the Option B disclosure, spelled seven ways =="
+echo "== review: FW_REAL_DISPATCH=1 changes option B and nothing else =="
+# Option A (evals/README.md) runs these evals where `Task` really exists, so the
+# specialists DO run and the option-B assertion is backwards there. The flag must
+# lift exactly that assertion — and must not become a way to grade a bad run.
+w="$(materialize review 3 fanout-implied-parallel real-dispatch-ok)"
+RC=0; FW_REAL_DISPATCH=1 bash "$(grader review)" 3 "${w}" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -eq 0 ] || fail "review: FW_REAL_DISPATCH=1 must lift the option-B assertion: $(cat "${WORK}/out")"
+grep -q '^N/A: ' "${WORK}/out" || fail "review: the lifted assertion must print an N/A line, not vanish"
+pass "FW_REAL_DISPATCH=1 lifts option B, and says so on a line"
+
+w="$(materialize review 1 docs-full-fanout real-dispatch-scope)"
+RC=0; FW_REAL_DISPATCH=1 bash "$(grader review)" 1 "${w}" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -ne 0 ] || fail "review: FW_REAL_DISPATCH=1 must not lift the routing assertions"
+pass "FW_REAL_DISPATCH=1 leaves routing graded" 
+
+echo "== review: the Option B disclosure, seven spellings and two negatives =="
 # The trap this suite is built against: v0.40.1 and v0.41.0 each mechanized a
 # property as ONE surface form and reddened correct runs, costing two releases.
 # So the alternation is itself gated — the same ideal outcome with its disclosure
@@ -378,6 +410,9 @@ disclosure_case no-fanout    0 "There was no real fan-out: each reviewer request
 disclosure_case not-launched 0 "Coverage caveat — the parallel specialist agents could not be launched, so this report is one context's work."
 disclosure_case no-separate  0 "Dispatch recorded only; no separate agent produced any of the findings below."
 disclosure_case silence      1 --
+# Not a spelling of the property — its negation. Kept in the battery because this
+# is the file someone edits when they want to loosen the alternation.
+disclosure_case affirmative  1 "Three specialist reviewers were dispatched in parallel in this context, and their findings are synthesized below." 
 
 echo "== verify: a PASS verdict on a planted-bug eval fails =="
 w="$(materialize verify 2 tally-sneaky-ideal rationalized)"
