@@ -1,5 +1,34 @@
 # flywheel learnings
 
+## gotcha: a derived field has a boundary where it cannot exist, and the boundary repeats every run
+
+<!-- fw: type=gotcha; date=2026-09-16; files=scripts/read-meter.sh,skills/work/references/work-detail.md; spec=p45-elapsed-has-a-start; branch=claude/flywheel-token-optimization-7ywqoz; evidence=p42 4/5, p43 3/4 and p44 3/4 all omit elapsed_s on line 1; after the meter supplied it, run-cost.sh reports full coverage with no PARTIAL marker -->
+
+`elapsed_s` came from commit-time deltas, and a delta needs a previous commit.
+The **first** transition of every cycle has none — so every run in the repo was
+permanently PARTIAL by exactly one line, always the same line, and the pattern
+read as three unrelated near-misses rather than one structural hole.
+
+Three runs each missing one field looks like sloppiness. The same line missing it
+in all three is a method that cannot reach there. When coverage is partial, check
+*which* rows are missing before assuming the writer was careless — and note that
+the same method also failed outright where its precondition was absent entirely
+(no git repo at all, as in `work`'s own eval fixture).
+
+## pattern: the strongest evidence for a clause is a fresh reader hitting the case it was written for
+
+<!-- fw: type=pattern; date=2026-09-16; files=skills/work/references/work-detail.md,skills/work/evals/benchmarks/2026-09-16-v0.57.0/benchmark.json; spec=p45-elapsed-has-a-start; branch=claude/flywheel-token-optimization-7ywqoz; evidence=the release-gate executor reported that --since first would have cut at 18:11:16Z, predating its cycle and sweeping in 110 unrelated calls, and passed the explicit start the clause prescribes -->
+
+A caveat was added to `work`'s cost rule minutes before the release gate ran: a
+session that did other work before the cycle must not use `--since first`,
+because that cut predates the cycle. The gate's fresh-context executor hit
+exactly that situation, diagnosed it in its own words, and did what the clause
+says — without being pointed at it.
+
+A rule that reads well proves nothing. A rule that an independent reader applies
+correctly at the moment it matters is verified, and the eval's numeric score was
+the weaker half of that run's evidence.
+
 ## gotcha: an instrument with no source reads UNMEASURED forever, and looks fine doing it
 
 <!-- fw: type=gotcha; date=2026-09-16; files=scripts/read-meter.sh,skills/work/references/work-detail.md; spec=p44-read-volume-is-observed; branch=claude/flywheel-token-optimization-7ywqoz; evidence=18 telemetry lines across 3 files carried zero instances of bytes_in and zero of tool_calls; after the meter shipped, run-cost.sh on this cycle reports bytes_in=50,786 and tool_calls=56 -->

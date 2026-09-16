@@ -147,6 +147,68 @@ case "${ALL}" in
 esac
 pass "--since totals the bytes and counts every call"
 
+# --- elapsed_s comes from the cut, so line 1 of a cycle can carry it -------
+# Every run in the repo omits elapsed_s on its FIRST line: a commit-time delta
+# needs a previous commit and the first transition has none.
+EL="$(CLAUDE_CODE_SESSION_ID=s1 bash "${SCRIPT}" --since 1970-01-01T00:00:00Z)"
+case "${EL}" in
+  *elapsed_s=*) : ;;
+  *) fail "--since must report elapsed_s: ${EL}" ;;
+esac
+pass "--since reports elapsed_s alongside the other two"
+
+FW_OUT="${EL}" python3 - <<'HUGE' || fail "elapsed_s must be the span from the cut to now"
+import os, sys, time
+v = int(dict(kv.split("=") for kv in os.environ["FW_OUT"].split())["elapsed_s"])
+# The cut is the epoch, so elapsed_s must be the time since 1970 — proving it is
+# measured from the cut and not from some fixed window.
+if abs(v - int(time.time())) > 120:
+    print("elapsed_s is not now-minus-cut: %r" % (v,), file=sys.stderr); sys.exit(1)
+HUGE
+pass "elapsed_s is now minus the cut, not a canned number"
+
+FIRST="$(CLAUDE_CODE_SESSION_ID=s1 bash "${SCRIPT}" --since first)"
+case "${FIRST}" in
+  *elapsed_s=*bytes_in=*|*bytes_in=*elapsed_s=*) : ;;
+  *) fail "--since first must report the same fields: ${FIRST}" ;;
+esac
+FW_A="${FIRST}" FW_B="${EL}" python3 - <<'FIRSTCUT' || fail "--since first did not resolve to the earliest row"
+import os, sys
+a = dict(kv.split("=") for kv in os.environ["FW_A"].split())
+b = dict(kv.split("=") for kv in os.environ["FW_B"].split())
+# Same rows as the epoch cut (every row is after the earliest one) ...
+if a["bytes_in"] != b["bytes_in"] or a["tool_calls"] != b["tool_calls"]:
+    print("first must cover every row: %r vs %r" % (a, b), file=sys.stderr); sys.exit(1)
+# ... but a start of minutes, not decades.
+if int(a["elapsed_s"]) > 3600:
+    print("first must start at the earliest row, not the epoch: %r" % (a["elapsed_s"],),
+          file=sys.stderr); sys.exit(1)
+FIRSTCUT
+pass "--since first starts at the earliest metered call, giving line 1 a start"
+
+NOMETER="$(CLAUDE_CODE_SESSION_ID=never-metered bash "${SCRIPT}" --since first)"
+case "${NOMETER}" in
+  *elapsed_s=*) fail "no counter must not report an elapsed number: ${NOMETER}" ;;
+  *UNMEASURED*) : ;;
+  *) fail "no counter with --since first must say UNMEASURED: ${NOMETER}" ;;
+esac
+pass "--since first with no counter is UNMEASURED, not a zero-length run"
+
+# --- a cut that is not a timestamp is caller error, not silence ------------
+set +e
+BAD="$(CLAUDE_CODE_SESSION_ID=s1 bash "${SCRIPT}" --since not-a-date 2>&1)"; BADRC=$?
+set -e
+[ "${BADRC}" -eq 2 ] || fail "a malformed cut must exit 2, got ${BADRC}: ${BAD}"
+case "${BAD}" in
+  *Traceback*) fail "a malformed cut must not throw: ${BAD}" ;;
+  *bytes_in=*) fail "a malformed cut must not report numbers: ${BAD}" ;;
+esac
+case "${BAD}" in
+  *timestamp*) : ;;
+  *) fail "a malformed cut must say what is wrong: ${BAD}" ;;
+esac
+pass "a cut that is not a timestamp fails loudly, without a traceback or a number"
+
 # --- an OBSERVED zero is not UNMEASURED ------------------------------------
 ZERO="$(CLAUDE_CODE_SESSION_ID=s1 bash "${SCRIPT}" --since 2999-01-01T00:00:00Z)"
 case "${ZERO}" in

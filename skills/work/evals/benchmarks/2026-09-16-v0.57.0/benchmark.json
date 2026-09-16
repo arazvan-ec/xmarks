@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "skill_name": "work",
+    "skill_path": "skills/work",
+    "executor_model": "opus (fresh-context general-purpose subagent), the session default",
+    "timestamp": "2026-09-16",
+    "evals_run": [
+      1
+    ],
+    "runs_per_configuration": 1,
+    "configurations": [
+      "with_skill"
+    ],
+    "release_gate_for": "P45 v0.57.0 \u2014 elapsed_s is read from the meter, and `--since first` gives a cycle's opening transition a start",
+    "baseline_note": "without_skill baseline intentionally skipped: regression detection for a one-clause behavior change. Eval 2 not run \u2014 the change is orthogonal to the bugfix path and the suite is a manual, costly gate."
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "feature-test-first",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7
+      }
+    }
+  ],
+  "notes": [
+    "The transition line carries elapsed_s=125 read from the meter, alongside bytes_in=20406 and tool_calls=22. Before P45 no run in the repo carried elapsed_s on its first line at all, because a commit-time delta needs a previous commit \u2014 and this workdir is not a git repo, so the old method had nothing to work with either.",
+    "The decisive observation is one the gate was not designed to produce. The executor independently hit the `--since first` caveat committed minutes earlier \u2014 it reports that first's cut (18:11:16Z) predated the cycle and would have swept in 110 unrelated calls \u2014 and followed the rule's instruction to pass the explicit cycle start instead. A fresh context reading the clause reached the conclusion the clause exists for, which is stronger evidence for the wording than the 7/7.",
+    "Per-field omission still holds: `commit` and `route` are both omitted (no git repo, no route on the plan task) while all four measured fields are present. Nothing zeroed, no tokens field."
+  ]
+}
