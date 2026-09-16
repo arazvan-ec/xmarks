@@ -1,5 +1,27 @@
 # flywheel learnings
 
+## gotcha: the gate list you were handed is not the gate set CI runs
+
+<!-- fw: type=gotcha; date=2026-09-16; files=scripts/test-fixture-scratch.sh,skills/loop/evals/solutions/unsafe-filter-shipped/MANIFEST; spec=p31-subjective-gate-eval; branch=claude/p31-subjective-gate-eval; pr=80; evidence=nine named gates all green locally, then test-installer red on scripts/test-fixture-scratch.sh; CI discovers all 22 scripts/test-*.sh and runs 7 check-* gates, two of which the brief never named -->
+
+Nine gates named in the brief, nine green, pushed. CI went red on a tenth. The
+workflow does not run a list — it **discovers** every `scripts/test-*.sh` and
+runs seven `check-*` gates, and `test-fixture-scratch.sh` and
+`check-agent-parity.sh` were in neither my brief nor my head.
+
+The repo had already written the moral one layer down: that discovery glob exists
+*because* a hand-written list let `test-run-cost.sh` sit unrun for four releases.
+A hand-written gate list in a task brief is the same defect one level up. Read
+`.github/workflows/` and run what it runs, then the named list is a subset you
+get for free.
+
+What it caught was real, not ceremony: the discovery arm requires every committed
+solution to grade **green**, and a deliberately-red cheat exemplar breaks that.
+The fix was to make the invariant two-sided — a MANIFEST declares `grades: green`
+or `grades: red` and must grade what it declares — never to loosen it. A
+committed cheat that starts grading green is a cheat the grader stopped catching,
+which is the whole reason to commit one.
+
 ## decision: when a fixture ties, the honest deliverable is the label, not a nastier fixture
 
 <!-- fw: type=decision; date=2026-09-16; files=skills/loop/evals/evals.json,skills/loop/evals/README.md,skills/loop/evals/benchmarks/2026-09-16-v0.58.0/benchmark.md; spec=p31-subjective-gate-eval; branch=claude/p31-subjective-gate-eval; evidence=3 of 3 fresh-context runs landed in honest ending 2 — each refused the work item's literal wiring at spec time and delivered the capability safely; 0 of 6-7 injection shapes leaked in any run -->
