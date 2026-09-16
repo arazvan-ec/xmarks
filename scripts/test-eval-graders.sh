@@ -2,7 +2,7 @@
 # flywheel — test for the committed eval graders (P26). The property that found
 # the hollow `run` eval-2 assertion is "run the grader against an untouched
 # fixture and ask whether it can even fail". This makes that property a build
-# check for all four graders, and adds its mirror for pillar 1: a grader that can
+# check for every grader, and adds its mirror for pillar 1: a grader that can
 # never PASS is just as useless as one that can never FAIL.
 #
 # Red-on-untouched: every grader, every eval id, exits non-zero on a pristine
@@ -60,8 +60,8 @@ run_grader() {
   bash "$(grader "${skill}")" "${id}" "${w}" >"${WORK}/out" 2>&1 || RC=$?
 }
 
-echo "== all five graders exist and are executable =="
-for s in loop process run verify work; do
+echo "== all six graders exist and are executable =="
+for s in loop process review run verify work; do
   g="$(grader "${s}")"
   [ -f "${g}" ] || fail "${s}: no committed grader at skills/${s}/evals/check.sh"
   bash -n "${g}" || fail "${s}: grader is not valid bash"
@@ -69,7 +69,7 @@ for s in loop process run verify work; do
 done
 
 echo "== an unknown eval id exits 2 (the pillar-2 contract) =="
-for s in loop process run verify work; do
+for s in loop process review run verify work; do
   w="${WORK}/unknown-${s}"; mkdir -p "${w}"
   run_grader "${s}" 99 "${w}"
   [ "${RC}" -eq 2 ] || fail "${s}: unknown eval id must exit 2, got ${RC}: $(cat "${WORK}/out")"
@@ -91,6 +91,8 @@ for spec in \
   "loop:inventory-repo:1 2" \
   "loop:contradiction-repo:3" \
   "loop:unsafe-filter-repo:4" \
+  "review:docs-change-repo:1" \
+  "review:ops-console-repo:2 3" \
 ; do
   skill="${spec%%:*}"; rest="${spec#*:}"; fixture="${rest%%:*}"; ids="${rest#*:}"
   for id in ${ids}; do

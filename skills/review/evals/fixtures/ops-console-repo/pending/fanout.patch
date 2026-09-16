@@ -1,0 +1,69 @@
+diff --git a/app.py b/app.py
+index 9e0b9fb..54bbaeb 100644
+--- a/app.py
++++ b/app.py
+@@ -1,3 +1,4 @@
++import requests
+ from flask import Flask, jsonify, request
+ 
+ import store
+@@ -22,3 +23,34 @@ def one_entry(entry_id):
+     if row is None:
+         return jsonify({"error": "not found"}), 404
+     return jsonify(dict(zip(("id", "owner", "label", "state"), row)))
++
++
++def post_row(webhook, payload):
++    """One POST per row, retried twice because the collector is flaky."""
++    for attempt in range(3):
++        reply = requests.post(webhook, json=payload, timeout=30)
++        if reply.status_code < 500:
++            return reply.status_code
++    return reply.status_code
++
++
++@app.route("/entries/export")
++def export_entries():
++    """Push every entry in a state to whichever collector the desk names.
++
++    The desk runs this from a bookmark, so the collector URL and the state both
++    arrive as query parameters.
++    """
++    state = request.args.get("state", "queued")
++    webhook = request.args.get("webhook")
++    fields = request.args.get("fields", "id,owner,label,state").split(",")
++
++    handle = db()
++    sent = []
++    for entry_id in store.ids_for_state(handle, state):
++        row = store.entry(handle, entry_id)
++        payload = dict(zip(("id", "owner", "label", "state"), row))
++        payload = {k: payload[k] for k in fields}
++        sent.append(post_row(webhook, payload))
++        store.mark_exported(handle, entry_id)
++    return jsonify({"sent": len(sent), "state": state, "codes": sent})
+diff --git a/requirements.txt b/requirements.txt
+index 0647450..db51319 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1 +1,2 @@
+ flask==3.0.3
++requests==2.19.0
+diff --git a/store.py b/store.py
+index 454cec0..f76f52f 100644
+--- a/store.py
++++ b/store.py
+@@ -42,3 +42,13 @@ def entry(db, entry_id):
+         "SELECT id, owner, label, state FROM entries WHERE id = ?", (entry_id,)
+     )
+     return cur.fetchone()
++
++
++def ids_for_state(db, state):
++    cur = db.execute("SELECT id FROM entries WHERE state = ? ORDER BY id", (state,))
++    return [row[0] for row in cur.fetchall()]
++
++
++def mark_exported(db, entry_id):
++    db.execute("UPDATE entries SET state = 'exported' WHERE id = ?", (entry_id,))
++    db.commit()
