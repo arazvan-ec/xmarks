@@ -1,5 +1,36 @@
 # flywheel learnings
 
+## gotcha: an instrument with no source reads UNMEASURED forever, and looks fine doing it
+
+<!-- fw: type=gotcha; date=2026-09-16; files=scripts/read-meter.sh,skills/work/references/work-detail.md; spec=p44-read-volume-is-observed; branch=claude/flywheel-token-optimization-7ywqoz; evidence=18 telemetry lines across 3 files carried zero instances of bytes_in and zero of tool_calls; after the meter shipped, run-cost.sh on this cycle reports bytes_in=50,786 and tool_calls=56 -->
+
+P40a shipped `cost.bytes_in` with honest coverage accounting, and for a day the
+accounting worked perfectly on nothing: every line reported the field UNMEASURED
+because no line ever carried it. The rule asked a session to "sum what you
+actually read" — a running total it was never given anywhere to keep — so every
+honest session omitted it, and the omission looked like correct behavior rather
+than a dead field.
+
+A gate that reports absence is not the same as a gate that notices absence is
+total. The count that mattered — *zero lines out of eighteen* — took a `grep -c`,
+not an instrument. Ask of any proxy: what writes it, and has anything ever?
+
+## decision: a premise borrowed from someone else's repo is a hypothesis, and the first measurement can kill it
+
+<!-- fw: type=decision; date=2026-09-16; files=docs/research/improvement-proposals.md; spec=p44-read-volume-is-observed; branch=claude/flywheel-token-optimization-7ywqoz; evidence=70 metered calls: largest single read 5,446 B with nothing above 8 KB, median 545 B, and 85% of volume from Bash against 12.7% from Read -->
+
+P40b was designed from an article reporting ~90% savings by diverting bulk reads
+on a Java monorepo: an extractor agent behind a size threshold on `Read`. The
+first metered cycle here shows no read above 8 KB — so the threshold has nothing
+to fire on — and puts 85% of read volume in `Bash`, a tool the mechanism never
+touches. Both halves miss, and building it would have optimized an eighth of a
+distribution that has no peak.
+
+The value was never in the mechanism; it was in the observation underneath it
+(I/O inside a task is unrouted). Port the observation, measure locally, and let
+the number decide the mechanism — including deciding against the one that
+inspired the work.
+
 ## gotcha: an instruction nothing can observe failing is not enforced
 
 <!-- fw: type=gotcha; date=2026-09-15; files=skills/work/SKILL.md,skills/plan/SKILL.md,scripts/check-telemetry.sh,scripts/check-agent-parity.sh; spec=p42-telemetry-has-an-owner; pr=74; branch=claude/flywheel-token-optimization-7ywqoz; evidence=two independent instances found by probing, not reading — `Agent type 'executor' not found` twice on a plan routing four tasks to `haiku/low+delegate` (unhonored since v0.39.0, nine versions), and zero conforming telemetry across the repo's entire history despite the rule sitting in work's body the whole time -->
