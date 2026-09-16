@@ -220,15 +220,17 @@ for n, operand in detach_hits:
             f" the operand must be the validated commit.")
 
 if pinned_var:
+    # The fetch must name the pinned commit somewhere in its arguments — not
+    # necessarily last, so reordering flags or adding --depth does not trip this.
+    # Defence in depth: fetching only a branch would leave the checkout to fail at
+    # run time anyway, which is closed, but silently late.
+    ref_re = re.compile(r'"?\$\{?%s\}?"?' % re.escape(pinned_var))
     for n, l in wf_code:
-        if not re.search(r"\bgit\b.*\bfetch\b", l):
-            continue
-        operand = l.split()[-1]
-        if not VAR_RE.match(operand) or VAR_RE.match(operand).group(1) != pinned_var:
+        if re.search(r"\bgit\b.*\bfetch\b", l) and not ref_re.search(l):
             problems.append(
-                f"{WORKFLOW_REL}:{n}: this fetch asks for '{operand}' while the"
-                f" checkout uses ${pinned_var}. Fetching a branch and checking out"
-                f" the pin only works while they agree, and nothing makes them.")
+                f"{WORKFLOW_REL}:{n}: this fetch never names ${pinned_var}, so the"
+                f" commit the checkout wants may simply not be present. Fetching a"
+                f" branch and checking out the pin agree only by luck.")
 
     # Either binding style: an `env:` mapping or a shell assignment in the step.
     if not re.search(r'%s\s*[:=]\s*"?\$\{\{\s*(?:steps\.[\w-]+\.outputs\.\w+|inputs\.flywheel_sha)\s*\}\}'
