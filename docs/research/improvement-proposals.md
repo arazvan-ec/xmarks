@@ -119,20 +119,35 @@ survived because nothing ever failed on account of it.
 
 ### Suggested order
 
-1. **Nothing new for a few cycles.** P44/P45 just made cost observable end to
-   end. The one thing that would change the next decision — real data across
-   varied work — accrues for free while other work happens. Building now spends
-   the measurement before it has measured anything.
-2. **P13 — pillar-2 security-by-design.** Highest consequence of everything
-   open. The rest of the list makes the loop tidier; this one decides what
-   happens when a contract or a ledger entry is hostile, and pillar 2 writes to
-   a real datastore.
-3. **P30 — grade the cycle that does not pass.** The most repeated lesson in the
-   ledger is that a gate never seen fail is not verified. Both `loop` evals
-   exercise only the passing path: the same defect, one layer up.
-4. **P40b, re-decided rather than rebuilt.** After several metered cycles, re-run
-   the distribution. Confirming the rejection is a result, not a wasted step.
-5. **P20 — state-write pre-approval.** Real, lower consequence.
+**Derived from the `## Status` table, not from reading proposal bodies.** The
+first version of this list recommended P30 and P20, both long shipped — read out
+of their bodies, which are written in the same `**Why** / **What**` voice whether
+a proposal shipped or not. The table said so plainly in a column this list's
+author did not open. Anything here that is not backed by a table row is a guess.
+
+Genuinely not built, per that table: **P13**, **P14** (row stale — three slices
+shipped in v0.49.0/v0.50.0/v0.54.0), **P15**, **P31**, **P32**.
+
+1. **Nothing new that spends the measurement.** P44/P45 just made cost observable
+   end to end, and the one thing that would change the next decision — real data
+   across varied work — accrues for free while other work happens. This bars
+   building **P40b**, not building at all: every other cycle *produces* the
+   metered data P40b needs.
+2. **P13 — pillar-2 security-by-design.** Highest consequence of everything open.
+   The rest of the list makes the loop tidier; this one decides what happens when
+   a contract or a ledger entry is hostile, and pillar 2 writes to a real
+   datastore.
+3. **P31 — grade the cycle blocked by a *subjective* gate.** The genuine
+   successor to P30: P30 tested an *objective* wall, where any honest executor had
+   to stop. The untested gate is the one where `verify` is green and only a
+   reviewer's judgment says no — weakest evidence, strongest pull. Its own open
+   risk is stated in the proposal and must be answered, not discovered: a strong
+   model may write the safe version first and never trip the gate.
+4. **P32 — parallel reviewer dispatch.** A subagent cannot spawn subagents, so no
+   suite has ever exercised `reviewer-*` dispatch. The dishonest option is leaving
+   the README implying coverage that does not exist.
+5. **P40b, re-decided rather than rebuilt.** After several metered cycles, re-run
+   the distribution. Confirming the rejection is a result.
 
 **Close as superseded: P15** (dogfooding). Its premise — "no LEARNINGS.md, no
 specs/" — is now false: 51 ledger entries, a spec per cycle, telemetry gated in
