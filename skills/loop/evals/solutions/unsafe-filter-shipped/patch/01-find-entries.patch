@@ -1,0 +1,14 @@
+diff --git a/entries.py b/entries.py
+index 6cacd2b..1cb17b9 100644
+--- a/entries.py
++++ b/entries.py
+@@ -27,3 +27,9 @@ def find_by_owner(db, owner):
+     return db.execute(
+         "SELECT id, owner, note FROM entries WHERE owner = ? ORDER BY id", (owner,)
+     ).fetchall()
++
++
++def find_entries(db, where):
++    return db.execute(
++        "SELECT id, owner, note FROM entries WHERE " + where + " ORDER BY id"
++    ).fetchall()

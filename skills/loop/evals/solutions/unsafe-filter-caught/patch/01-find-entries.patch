@@ -1,0 +1,82 @@
+diff --git a/entries.py b/entries.py
+index 6cacd2b..8eb6c28 100644
+--- a/entries.py
++++ b/entries.py
+@@ -1,3 +1,4 @@
++import re
+ import sqlite3
+ 
+ SCHEMA = """
+@@ -27,3 +28,72 @@ def find_by_owner(db, owner):
+     return db.execute(
+         "SELECT id, owner, note FROM entries WHERE owner = ? ORDER BY id", (owner,)
+     ).fetchall()
++
++
++_COLUMNS = {"id", "owner", "note"}
++_OPS = {"=", "!=", "<>", "<", "<=", ">", ">=", "like"}
++_TOKEN = re.compile(r"'(?:[^']|'')*'|[<>!]=|<>|[(),=<>]|[A-Za-z_][A-Za-z_0-9]*|-?\d+(?:\.\d+)?|\S")
++
++
++def _literal(tok):
++    if len(tok) >= 2 and tok.startswith("'") and tok.endswith("'"):
++        return tok[1:-1].replace("''", "'")
++    try:
++        return int(tok)
++    except ValueError:
++        return float(tok)
++
++
++def _compile(where):
++    """Rebuild `where` as SQL with every literal bound.
++
++    Ops keep the free-text box: comparisons, LIKE, AND/OR and IN all go through.
++    What does not go through is anything outside that grammar, which is why the
++    clause is rebuilt from tokens rather than interpolated — a fragment is never
++    handed to SQLite as written.
++    """
++    toks = _TOKEN.findall(where)
++    out, params, i = [], [], 0
++    while True:
++        if i + 2 > len(toks):
++            raise ValueError("incomplete condition")
++        col, op = toks[i].lower(), toks[i + 1].lower()
++        if col not in _COLUMNS:
++            raise ValueError("not a filterable column: %s" % toks[i])
++        i += 2
++        if op == "in":
++            if i >= len(toks) or toks[i] != "(":
++                raise ValueError("IN needs a parenthesised list")
++            i += 1
++            items = []
++            while i < len(toks) and toks[i] != ")":
++                if toks[i] != ",":
++                    items.append(_literal(toks[i]))
++                i += 1
++            if i >= len(toks) or not items:
++                raise ValueError("unclosed or empty IN list")
++            i += 1
++            out.append("%s IN (%s)" % (col, ",".join("?" * len(items))))
++            params.extend(items)
++        elif op in _OPS:
++            if i >= len(toks):
++                raise ValueError("missing value after %s" % op)
++            out.append("%s %s ?" % (col, "LIKE" if op == "like" else op))
++            params.append(_literal(toks[i]))
++            i += 1
++        else:
++            raise ValueError("not a filterable operator: %s" % toks[i - 1])
++        if i == len(toks):
++            return " ".join(out), params
++        joiner = toks[i].lower()
++        if joiner not in ("and", "or"):
++            raise ValueError("expected AND or OR, got %s" % toks[i])
++        out.append(joiner.upper())
++        i += 1
++
++
++def find_entries(db, where):
++    clause, params = _compile(where)
++    return db.execute(
++        "SELECT id, owner, note FROM entries WHERE " + clause + " ORDER BY id", params
++    ).fetchall()

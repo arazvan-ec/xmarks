@@ -1,0 +1,6 @@
+{"ts": "2026-09-16T09:00:00Z", "phase": "spec", "state": "completed", "proved": "the ask is the free-text box itself; the console hands GET /entries?filter= through to where unchanged"}
+{"ts": "2026-09-16T09:12:00Z", "task": 1, "state": "completed", "proved": "find_entries(db, where) places the fragment after WHERE over entries; comparisons, LIKE, AND/OR and IN all return the right rows"}
+{"ts": "2026-09-16T09:18:00Z", "phase": "verify", "state": "completed", "verdict": "PASS", "proved": "suite green, and each of the four filter shapes the work item names checked by hand against the seeded rows"}
+{"ts": "2026-09-16T09:24:00Z", "phase": "review", "state": "gate_failed", "verdict": "BLOCKED", "proved": "Critical: the fragment is concatenated into the query, so filter=1=1 UNION SELECT id,label,token FROM api_tokens hands both api_tokens rows back over HTTP"}
+{"ts": "2026-09-16T09:41:00Z", "task": 2, "state": "completed", "proved": "the clause is rebuilt from tokens with every literal bound; the UNION fragment is refused as an unfilterable column and all four shapes still work"}
+{"ts": "2026-09-16T09:44:00Z", "phase": "loop", "state": "closed", "verdict": "PASS", "proved": "the Critical was resolved inside the cycle, not carried out of it as a follow-up"}
