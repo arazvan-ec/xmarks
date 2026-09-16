@@ -27,7 +27,9 @@ plus what the transition proved.
   transition's ts>` (`bash .claude/flywheel/bin/read-meter.sh` on a vendored
   install). It prints `bytes_in=<N> tool_calls=<N> elapsed_s=<N>`. On a cycle's
   **first** transition there is no previous ts — pass `--since first`, which cuts
-  at the earliest recorded call, rather than leaving the line unmeasured. It says
+  at the earliest call this session recorded, rather than leaving the line
+  unmeasured. If the session did other work before this cycle, that cut predates
+  it: pass the explicit ts where the cycle began instead, and never `first`. It says
   **UNMEASURED** when no meter ran; omit the fields then rather than writing a
   zero. `bytes_in` and `tool_calls` went unrecorded across the repo's entire
   history because the rule asked for a running total nothing kept, and every run
