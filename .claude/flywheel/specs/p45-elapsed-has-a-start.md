@@ -1,6 +1,10 @@
 # Spec: P45 — the first transition has a start
 
 **Slug:** `p45-elapsed-has-a-start` · **Created:** 2026-09-16 · **Backlog:** P45
+**Status:** shipped as v0.57.0 — metric PASS. `run-cost.sh` over this cycle's
+run reports all four cost fields at **full coverage, line 1 included**, with no
+PARTIAL marker anywhere. No run in the repo's history had managed that.
+
 **Prime:** P23 (`elapsed_s` as a proxy), P44 (the meter, and the probe that found
 `duration_ms` in the hook payload), and the ledger entry *"a missing field is not
 a zero"* — which is why this gap is visible as PARTIAL instead of being averaged
