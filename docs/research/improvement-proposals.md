@@ -32,7 +32,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P10 | Portability + installer correctness | ✅ shipped (v0.17.0) | Done — BSD-safe sed, manifest-driven pruning + uninstall, sticky `--auto-update`, generic agents |
 | P11 | `gate.sh` hardening | ✅ shipped (v0.20.0) | Done — trust-on-first-use consent (outside repo), git-tracked cost cache, per-tree persisted bypass, first test coverage |
 | P12 | Token-discipline pass over the skills | ✅ shipped (v0.19.0) | Done — recall-first priming, diff-routed review with stated skips, honest evaluator wording, slimmer descriptions, size-capped injection |
-| P13 | Pillar-2 security-by-design | 🔵 proposed | Untrusted-data framing; parameterized writes; secret redaction; pin `@main` |
+| P13 | Pillar-2 security-by-design | 🟢 design signed (PR #79), slice 1 next | Threat model + spec + plan landed, no code. 10 boundaries cited to file:line. Decisions taken: contract hash + re-approve on drift, DB role probe-and-refuse, **supply chain first and alone** — B10 is the only Critical. Two proposed checkers are already red on `main`. Residual hole recorded unsolved: maturation rewrites the file the hash covers, so it can re-bless itself |
 | P14 | Pillar integration + process lifecycle | 🔵 proposed | Discovery, run→spec escalation, contract sync, write-path probe + file fallback |
 | P15 | Dogfooding flywheel on flywheel | 🔵 proposed | Seed LEARNINGS.md; `processes/release.md`; fix help state list |
 | P16 | Live run progress: task ledger + telemetry report | ✅ shipped (v0.16.0) | Done — both pillars (run/process + loop/work); piloted by flow-audit v3 + the p16 cycle report |
@@ -50,7 +50,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P28 | Atomic commits inside the loop | ✅ shipped (v0.40.0) | Done — `work` commits + pushes each task at its green edge (pathspec commit, force-free push, both already inside the P21 grant), `debug` commits fix + regression test, `ship` keeps the history and commits only the remainder. Skill text only; no new script, no widened permission surface. Open: does the per-task commit change what reviewers catch? |
 | P29 | A `loop` eval: the cycle telemetry gets graded | ✅ shipped (v0.41.0) | Done — `skills/loop/evals/`, the first suite that runs a whole cycle, so `work`'s JSONL exists to be graded at all. The decisive assertion resolves every recorded `commit` against git with `cat-file`. Found a real contract gap on its first run (prose in the `commit` field where the skill said nothing about absence). Open: it grades one cycle shape; a failing-gate cycle is untested |
 | P30 | Grade the cycle that does not pass | ✅ shipped (v0.42.0) | Done — `loop` eval 3 on `contradiction-repo`: an unsatisfiable work item, graded on the artifact every cheap way out must touch. Neither route nor final suite colour asserted; each cheat (weakened test, claimed PASS) has its own red case in CI |
-| P31 | Grade the cycle blocked by a *subjective* gate (review Critical) | 🟡 designed, not built | The last untested gate: verify goes GREEN and only the reviewer's judgment stands between the cycle and "done". Design below; the open risk is discrimination, not mechanization |
+| P31 | Grade the cycle blocked by a *subjective* gate (review Critical) | ✅ shipped v0.58.0 — **outcome-only** | The **grader** discriminates (four cheats, four different red assertions, each watched failing). The **fixture does not reach the gate**: 3 of 3 fresh-context runs wrote the safe version from the start, so review never blocked a green cycle. Labelled outcome-only in `evals.json`, the suite README and the benchmark. Reaching the gate needs a fixture where the Critical emerges from the *implementation*, not from reading the work item — a different fixture, not a nastier ask |
 | P32 | Parallel reviewer dispatch: test it, or stop implying it is tested | 🟡 designed, not built | A subagent cannot spawn subagents, so no suite has ever exercised `reviewer-*` dispatch. Two honest options below; the dishonest one is leaving the README implying coverage that does not exist |
 | P35 | Invocation-context budget: a ceiling on what a skill body costs | ✅ shipped | Done — `references/` as the progressive-disclosure convention, a per-skill byte ceiling in CI (the P24 shape, applied to what an invocation pays rather than what every session pays), and the installer fix that makes a vendored `references/` arrive at all. Bodies 69,065 → 55,352 B; worst case 8,395 → 5,259 |
 | P36 | What an invocation actually costs: worst case + per-skill ceilings | ✅ shipped (v0.47.0) | Done — the gate enforces `body` **and** `worst` (body + every reference it can reach, transitively, counted once); keyed budget file with named exceptions carrying their reason. Open: the two exceptions are debts — `work` at ~11.4 KB worst case argues for splitting the skill, not for a bigger number |
@@ -133,11 +133,14 @@ shipped in v0.49.0/v0.50.0/v0.54.0), **P15**, **P31**, **P32**.
    across varied work — accrues for free while other work happens. This bars
    building **P40b**, not building at all: every other cycle *produces* the
    metered data P40b needs.
-2. **P13 — pillar-2 security-by-design.** Highest consequence of everything open.
+2. **P13 — pillar-2 security-by-design.** *Design signed 2026-09-16 (PR #79); **slice 1 —
+   supply chain — is the next thing to build**, and it is the only Critical in the model.*
+   Highest consequence of everything open.
    The rest of the list makes the loop tidier; this one decides what happens when
    a contract or a ledger entry is hostile, and pillar 2 writes to a real
    datastore.
-3. **P31 — grade the cycle blocked by a *subjective* gate.** The genuine
+3. ~~**P31**~~ — *shipped v0.58.0, outcome-only: the grader discriminates, the fixture ties.
+   A successor fixture is a new proposal, not a re-run of this one.* The genuine
    successor to P30: P30 tested an *objective* wall, where any honest executor had
    to stop. The untested gate is the one where `verify` is green and only a
    reviewer's judgment says no — weakest evidence, strongest pull. Its own open
