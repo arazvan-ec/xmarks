@@ -97,8 +97,16 @@ for dirpath, _, files in os.walk(runs):
                     break
             # Identification: pillar 1 names a task, pillar 2 a Rule phase. One or
             # the other, or the line cannot say which transition it is.
-            if problem is None and not any(
-                    isinstance(rec.get(k), str) and rec[k].strip() for k in ("task", "phase")):
+            def identifies(v):
+                # A plan task is numbered — work's own executor writes {"task": 3} —
+                # so an int identifies as well as a name. A bool identifies nothing.
+                if isinstance(v, bool):
+                    return False
+                if isinstance(v, int):
+                    return True
+                return isinstance(v, str) and bool(v.strip())
+
+            if problem is None and not any(identifies(rec.get(k)) for k in ("task", "phase")):
                 problem = "names neither a task nor a phase"
             cost = rec.get("cost")
             if problem is None:
