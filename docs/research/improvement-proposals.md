@@ -66,6 +66,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P43 | flywheel's hooks run on flywheel | ✅ shipped (v0.55.0) | Done — `install-vendored.sh --hooks-only` (self-target only, registrations point at `scripts/` so there are no copies to drift), the eight hooks committed in this repo's `.claude/settings.json`, and `check-hook-parity.sh` gained its third direction: what `hooks.json` declares must also be registered here. Pays the debt P41 declared. **Acceptance observation recorded** by artifact: `delegation-record.sh` wrote its state file for the T4 `Agent` call and SessionStart injected the ledger — both hooks live |
 | P44 | The meter: read volume is observed, not reconstructed | ✅ shipped (v0.56.0) | Done — `read-meter.sh` on `PostToolUse` records the bytes of `tool_response` that entered context; `bytes_in`/`tool_calls` had zero instances in the repo's whole history before it |
 | P45 | The first transition has a start | ✅ shipped (v0.57.0) | Done — `elapsed_s` comes from the meter's cut, and `--since first` gives a cycle's opening line the start a commit delta could never supply; first run in the repo with no PARTIAL field |
+| P46 | An assertion that cannot fire on a live run | 🔵 proposed | Audit every grader assertion for whether a real executor can trip it. Eval 3 keys on `verdict: PASS`; 3 fresh-context runs wrote 31 telemetry lines and **zero** verdicts. Harness-verified is not live-verified, and a silent assertion looks identical whether it is passing or dead |
 
 ## Priority overview
 
@@ -2812,3 +2813,50 @@ the eval's 7/7.
 Result: `run-cost.sh` reports all four cost fields at **full coverage, line 1
 included, with no PARTIAL marker** — the first run in the repo's history with no
 hole in it.
+
+## P46 — an assertion that cannot fire on a live run (analysis, 2026-09-16)
+
+**Why.** Building eval 4, P31 nearly copied eval 3's load-bearing check —
+`verdict: PASS` must not appear on a closed cycle — and then looked at what real
+executors write. Across three fresh-context runs, **31 telemetry lines carried
+zero `verdict` fields**. Eval 4 is carried instead by a terminal-state clause,
+added to catch a different cheat; right answer, smaller reason than the one that
+mattered.
+
+Eval 3's assertion is **not dead**: `scripts/test-eval-graders.sh:224` injects
+`{"verdict":"PASS"}` and watches the grader go red. That proves it works against
+a cheat spelled that way. It does not prove a real dishonest cycle would spell it
+that way — and the evidence says it would not, because honest runs do not use the
+field at all.
+
+**The general defect, which is the point of the proposal.** An assertion whose
+job is to stay quiet on honest runs *looks identical whether it is passing or
+dead*. Both standard arms pass for a dead assertion: red-on-untouched fails for
+some other reason, and green-on-ideal stays quiet as designed. The only thing
+that distinguishes them is whether the committed ideal solutions carry a field
+that live executors actually produce — and a solution is written by the same
+person writing the assertion, so it inherits the assumption rather than testing
+it.
+
+**What.** An audit pass, not a rewrite:
+
+1. For every grader assertion across the four suites, ask whether a **live** run
+   can trip it, and record the answer with evidence from real telemetry rather
+   than from the committed solutions.
+2. Where an assertion can only fire on a spelling no observed run produces, widen
+   it the way eval 4 did — accept many spellings, treat only silence as the
+   defect — or say in the suite README that it guards the exemplar and not the
+   behaviour.
+3. Consider a harness rule: a committed ideal solution should be **derived from a
+   real run** wherever one exists, so the exemplar cannot drift from what the
+   subject produces.
+
+**Not proposed:** rewriting eval 3's assertion blindly. It catches a real cheat
+and costs nothing. The question is whether it is the *only* thing standing
+between a dishonest close and a green grade, and the audit answers that.
+
+**Evidence.** `skills/loop/evals/check.sh:148-160` (the assertion),
+`scripts/test-eval-graders.sh:224-229` (the arm that proves it fires),
+`skills/loop/evals/benchmarks/2026-09-16-v0.58.0/benchmark.md` (31 lines, zero
+verdicts), and the ledger entry *"an assertion can be dead on arrival and stay
+silent about it"*.
