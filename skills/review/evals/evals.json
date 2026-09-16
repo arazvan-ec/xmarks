@@ -22,7 +22,7 @@
       "name": "input-handling-draws-security",
       "prompt": "/flywheel:review",
       "setup": "cp -r skills/review/evals/fixtures/ops-console-repo \"$W\" && git -C \"$W\" init -q -b main && git -C \"$W\" -c user.email=e@e -c user.name=e add -A -- . ':!pending' && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed && git -C \"$W\" apply pending/security.patch && rm -rf \"$W/pending\"",
-      "expected_output": "65 added lines wiring the `filter` query parameter straight after WHERE over a database that also holds the console's own api_tokens, plus a hardcoded fallback token compared with ==. The security rule fires, and the review finds the defect rather than only routing correctly.",
+      "expected_output": "65 added lines wiring the `filter` query parameter straight after WHERE over a database that also holds the console's own api_tokens, plus a hardcoded fallback token compared with ==. The security rule fires, and the review finds the defect rather than only routing correctly. MEASURED 2026-09-16, 1 run: it drew all three reviewers, not two — so whether reviewer-performance is drawn here is deliberately UNASSERTED. This diff adds two SELECTs per request, and the performance rule names queries; asserting its absence would have reddened the first real run this suite ever saw. The absence assertions live on eval 1 only. See benchmarks/2026-09-16-v0.60.0/.",
       "expectations": [
         "review.md exists and is non-empty",
         ".dispatch-log records a security reviewer — the diff touches input handling, secrets and auth",

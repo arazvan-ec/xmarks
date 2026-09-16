@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "skill_name": "review",
+    "skill_path": "skills/review",
+    "executor_model": "session default (fresh-context general-purpose subagents)",
+    "timestamp": "2026-09-16",
+    "evals_run": [1, 2, 3],
+    "iteration": "P32 — the first review suite. Routing graded from .dispatch-log; option B (the honesty of an unavailable dispatch) graded as an alternation.",
+    "runs_per_configuration": 1,
+    "configurations": ["with_skill"],
+    "release_gate_for": "P32 v0.60.0",
+    "scope": "REPORTING-AND-ROUTING-ONLY. A subagent cannot spawn subagents, so Task did not exist in any of these runs and no reviewer-* was ever actually dispatched. These runs measure which reviewers were DRAWN and what the report SAID about the dispatch — not the fan-out.",
+    "option_a_status": "NEVER RUN. The top-level arm (real dispatch, from a session that is not a subagent) is documented as a manual runbook step in evals/README.md and has not been executed.",
+    "token_note": "tokens and tool calls are the harness-reported subagent totals per Agent call, not a self-estimate (P18)."
+  },
+  "headline": "3 of 3 runs green, 13 of 13 assertions. The suite's value here is negative evidence — no assertion reddened a correct run — and the discrimination is carried by the five committed cheats and the seven-spelling battery, not by these runs. One near-miss is the finding worth keeping: eval 2's run drew ALL THREE reviewers, so an assertion that reviewer-performance must NOT be drawn on that diff would have failed the first real run it ever saw.",
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "docs-only-draws-correctness-alone",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 166.6, "tokens": 63252, "tool_calls": 11, "errors": 0},
+      "dispatch_log": ["reviewer-correctness"],
+      "notes": [
+        "Routed as the skill's docs/comment-only case: correctness alone, and both skipped lenses named with the rule that skipped them.",
+        "Found two High findings in the prose itself (documented uniqueness does not survive the documented 80-character CMS truncation; the 'what is not handled' section names the loud empty-string case and omits the silent one) — it ran the code to check the claims rather than reading them.",
+        "Disclosed the fallback although eval 1 does not assert it: 'the correctness lens below was executed directly in this context'."
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "input-handling-draws-security",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 5, "failed": 0, "total": 5, "time_seconds": 177.0, "tokens": 64439, "tool_calls": 14, "errors": 0},
+      "dispatch_log": ["reviewer-correctness", "reviewer-security", "reviewer-performance"],
+      "notes": [
+        "THE NEAR-MISS: it drew all three, not the two the ideal outcome draws. The suite asserts only that security was drawn here; had it also asserted that performance was NOT, this run would have been red and the assertion wrong.",
+        "Confirmed the injection end-to-end against a throwaway copy rather than asserting it, and flagged the committed token as a second Critical.",
+        "Disclosure spelling: 'all three lenses synthesized here in one context since dispatch returns no findings'."
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "cross-domain-draws-the-full-fan-out",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {"pass_rate": 1.0, "passed": 4, "failed": 0, "total": 4, "time_seconds": 184.2, "tokens": 58920, "tool_calls": 11, "errors": 0},
+      "dispatch_log": ["reviewer-correctness", "reviewer-security", "reviewer-performance"],
+      "notes": [
+        "The only run unambiguously executed against the PRE-clause SKILL.md (its report was written 3m20s before the option-B clause was added), so its disclosure is the unprompted behaviour P32 predicted.",
+        "Disclosure spelling: 'All three lenses were therefore applied by the synthesizing context itself, not by three independent adversarial reviewers. That is strictly weaker than a real dispatch: one context, one set of blind spots, no disagreement to surface.'",
+        "Volunteered the Option A recommendation itself: it closed by saying a real three-reviewer dispatch should be re-run."
+      ]
+    }
+  ],
+  "grader_evidence": {
+    "red_on_untouched": 3,
+    "green_on_ideal_outcomes": 3,
+    "committed_cheats_red": 5,
+    "cheat_arms_assert_which_FAIL_lines": true,
+    "disclosure_spellings_required_green": 7,
+    "disclosure_silence_required_red": 1
+  },
+  "limitations": [
+    "No dispatch was exercised. Not by omission — it cannot be, from a subagent.",
+    "One run per eval, so nothing here is a variance measurement.",
+    "3 of 3 green on first contact means these runs did not discriminate. They are evidence that the assertions do not redden correct behaviour; the evidence that they CAN fail is the five cheats and the battery.",
+    "Runs 1 and 2 were launched before the option-B clause was added to SKILL.md and finished after it, so it is not established which text they read. Only run 3 is clean pre-clause evidence."
+  ]
+}
