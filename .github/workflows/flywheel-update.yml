@@ -15,11 +15,13 @@ name: flywheel update (reusable)
 # mechanical refresh to match. The security property is that a human chooses the
 # commit that gets executed.
 #
-# The cost is DISCOVERY: with the pin unchanged this workflow is a weekly no-op,
-# and nothing here announces that a newer flywheel exists. Closing the supply-
-# chain hole and keeping automatic discovery are not the same task, and slice 1
-# only does the first. Said plainly here rather than left for someone to notice
-# when their updates quietly stop arriving.
+# The cost is UNATTENDED updates: with the pin unchanged this workflow is a
+# weekly no-op, so no PR arrives on its own any more. Discovery itself still
+# works by other routes — flywheel's SessionStart hook polls this repo's
+# plugin.json and prints "flywheel X.Y.Z is available", and /flywheel:update
+# refreshes on demand. What is gone is the part that needed nobody present,
+# which is the same part that was executing unreviewed code. Said plainly here
+# rather than left for someone to notice when PRs stop arriving.
 #
 # Caller repos must allow GitHub Actions to create pull requests
 # (Settings → Actions → General → "Allow GitHub Actions to create and
