@@ -14,7 +14,11 @@
 # without that text ever reaching context; the call counts, the bytes do not.
 #
 # bytes_in stays a FLOOR (P23/P40a): tool responses only, never the conversation
-# and never content re-entering context.
+# and never content re-entering context. elapsed_s is `now - cut`, so it is the
+# transition's true wall clock only when the line is written AT the transition —
+# which is what the duty requires anyway. `--since first` cuts at the earliest
+# recorded call, the only start a cycle's FIRST transition can observe: a commit
+# delta needs a previous commit it does not have.
 #
 # State is keyed by session under the system temp dir, the delegation-record.sh
 # derivation verbatim: in the project it would dirty `git status` and be committed.
@@ -26,7 +30,7 @@ if [ "${1:-}" = "--since" ]; then
   [ -n "${SINCE}" ] || { echo "read-meter: --since needs a timestamp" >&2; exit 2; }
   command -v python3 >/dev/null 2>&1 || { echo "read-meter: UNMEASURED — no python3" >&2; exit 0; }
   FW_SINCE="${SINCE}" FW_SID="${CLAUDE_CODE_SESSION_ID:-}" python3 - <<'PY'
-import hashlib, json, os, sys, tempfile
+import calendar, hashlib, json, os, sys, tempfile, time
 
 sid = os.environ.get("FW_SID") or ""
 if not sid:
@@ -43,26 +47,46 @@ if not os.path.exists(path):
 
 since, total, calls = os.environ["FW_SINCE"], 0, 0
 try:
+    rows = []
     with open(path, encoding="utf-8") as fh:
         for line in fh:
             line = line.strip()
             if not line:
                 continue
             try:
-                row = json.loads(line)
+                rows.append(json.loads(line))
             except Exception:
                 continue
-            if str(row.get("ts") or "") >= since:
-                total += int(row.get("bytes") or 0)
-                calls += 1
 except Exception:
-    print("read-meter: UNMEASURED — the counter could not be read; omit both fields")
+    print("read-meter: UNMEASURED — the counter could not be read; omit the fields")
     sys.exit(0)
 
-print(f"bytes_in={total} tool_calls={calls}")
+stamps = sorted(str(r.get("ts") or "") for r in rows if r.get("ts"))
+if since == "first":
+    if not stamps:
+        print("read-meter: UNMEASURED — the counter holds no timestamped call; omit the fields")
+        sys.exit(0)
+    since = stamps[0]
+
+for row in rows:
+    if str(row.get("ts") or "") >= since:
+        total += int(row.get("bytes") or 0)
+        calls += 1
+
+try:
+    cut = calendar.timegm(time.strptime(since, "%Y-%m-%dT%H:%M:%SZ"))
+except ValueError:
+    # Caller error, not missing data: reporting UNMEASURED here would hide a
+    # broken call behind a word that means "nothing was recorded".
+    print(f"read-meter: --since needs an ISO timestamp like 2026-09-16T18:00:00Z"
+          f" or the word 'first', not {since!r}", file=sys.stderr)
+    sys.exit(2)
+elapsed = max(0, int(time.time()) - cut)
+
+print(f"bytes_in={total} tool_calls={calls} elapsed_s={elapsed}")
 print(f"# floor: tool responses since {since}, from {path}", file=sys.stderr)
 PY
-  exit 0
+  exit $?   # the reader's exit code is python's; a bad cut must not look like success
 fi
 
 INPUT="$(cat 2>/dev/null)"
