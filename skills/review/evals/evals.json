@@ -1,0 +1,47 @@
+{
+  "skill_name": "review",
+  "scope": "REPORTING-AND-ROUTING-ONLY — this suite cannot cover parallel dispatch. A subagent cannot spawn subagents, so `Task` does not exist in any executor this repo runs, and `reviewer-*` are never actually dispatched here. What is graded is which reviewers the run DREW for a given diff (the .dispatch-log artifact) and whether the report SAYS the specialists did not run. Real dispatch has one arm only, and it is manual: see README.md 'The top-level arm (Option A)'.",
+  "notes": "Executor harness + grading: see README.md 'Skill evals'. Each eval instantiates a fixture into a temp workdir with its own setup — which seeds a git repo and then applies one pending change, so the diff to review is the uncommitted working-tree change — and a fresh-context subagent executes skills/review/SKILL.md as /flywheel:review in that dir. Brief the executor: the host Task tool is unavailable, so reviewer dispatch goes through ./dispatch-reviewer <reviewer-name>, which records the request and returns no findings — whatever lens it draws it must review itself, in this one context; and the synthesized review is saved to review.md in the workdir root. Point it at skills/review/SKILL.md and nothing else under this repo — in particular not evals/. Grade with: bash skills/review/evals/check.sh <id> <workdir>. Grading the top-level Option A arm (real dispatch) uses FW_REAL_DISPATCH=1, which lifts the option-B assertion and nothing else.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "docs-only-draws-correctness-alone",
+      "prompt": "/flywheel:review",
+      "setup": "cp -r skills/review/evals/fixtures/docs-change-repo \"$W\" && git -C \"$W\" init -q -b main && git -C \"$W\" -c user.email=e@e -c user.name=e add -A -- . ':!pending' && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed && git -C \"$W\" apply pending/docs.patch && rm -rf \"$W/pending\"",
+      "expected_output": "The diff is 37 added lines of prose and two code comments, with no executable change anywhere. The routing rule is unambiguous — correctness alone — and the report names the reviewers it skipped and why.",
+      "expectations": [
+        "review.md exists and is non-empty",
+        ".dispatch-log records reviewer-correctness",
+        ".dispatch-log records no security reviewer — nothing in the diff touches input handling, auth, secrets or dependencies",
+        ".dispatch-log records no performance reviewer — nothing in the diff touches loops, queries, I/O or data volume",
+        "The report says it skipped both other lenses — each name in one sentence with language saying it was not drawn (two bare name matches also fit a report claiming they ran)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "input-handling-draws-security",
+      "prompt": "/flywheel:review",
+      "setup": "cp -r skills/review/evals/fixtures/ops-console-repo \"$W\" && git -C \"$W\" init -q -b main && git -C \"$W\" -c user.email=e@e -c user.name=e add -A -- . ':!pending' && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed && git -C \"$W\" apply pending/security.patch && rm -rf \"$W/pending\"",
+      "expected_output": "65 added lines wiring the `filter` query parameter straight after WHERE over a database that also holds the console's own api_tokens, plus a hardcoded fallback token compared with ==. The security rule fires, and the review finds the defect rather than only routing correctly. MEASURED 2026-09-16, 1 run: it drew all three reviewers, not two — so whether reviewer-performance is drawn here is deliberately UNASSERTED. This diff adds two SELECTs per request, and the performance rule names queries; asserting its absence would have reddened the first real run this suite ever saw. The absence assertions live on eval 1 only. See benchmarks/2026-09-16-v0.60.0/.",
+      "expectations": [
+        "review.md exists and is non-empty",
+        ".dispatch-log records a security reviewer — the diff touches input handling, secrets and auth",
+        ".dispatch-log records reviewer-correctness, which is drawn for every diff",
+        "The report cites the changed file and names the class of problem affirmatively — un-negated and near a file or symbol, so neither a denial nor the routing rationale counts",
+        "The report says the specialists did not actually run (Option B), rather than reading as if a fan-out happened"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "cross-domain-draws-the-full-fan-out",
+      "prompt": "/flywheel:review",
+      "setup": "cp -r skills/review/evals/fixtures/ops-console-repo \"$W\" && git -C \"$W\" init -q -b main && git -C \"$W\" -c user.email=e@e -c user.name=e add -A -- . ':!pending' && git -C \"$W\" -c user.email=e@e -c user.name=e commit -qm seed && git -C \"$W\" apply pending/fanout.patch && rm -rf \"$W/pending\"",
+      "expected_output": "43 added lines crossing all three domains at once: a collector URL taken from a query parameter (input handling), a new pinned dependency (dependencies), one query and one HTTP POST per row inside a loop (loops, queries, I/O). The full three-way dispatch is routed — and this is the case where a report is most tempted to read as if three specialists reviewed in parallel.",
+      "expectations": [
+        "review.md exists and is non-empty",
+        ".dispatch-log records all three reviewers — correctness, security and performance",
+        "The report says the specialists did not actually run (Option B), rather than reading as if a fan-out happened"
+      ]
+    }
+  ]
+}

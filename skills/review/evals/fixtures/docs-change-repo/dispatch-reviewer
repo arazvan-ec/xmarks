@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Records a reviewer dispatch request. Returns no findings.
+[ -n "${1:-}" ] || { echo "usage: ./dispatch-reviewer <reviewer-name>" >&2; exit 2; }
+printf '%s\n' "$1" >> .dispatch-log
+echo "recorded: $1"
