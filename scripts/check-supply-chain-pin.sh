@@ -34,6 +34,12 @@
 #
 # Exit: 0 ok · 1 an unpinned or unverified boundary · 2 unusable input
 #
+# KNOWN LIMIT, so nobody mistakes this for more than it is: half B reasons about
+# line order within the file, not about jobs. The guarded workflow has one job; a
+# future one that checked out the pin in job A and executed the tree in job B
+# would satisfy this while proving nothing, since jobs do not share a filesystem.
+# Splitting that workflow into two jobs means revisiting this check.
+#
 # FAIL-CLOSED, against this repo's reflex. Every other flywheel script is
 # fail-open because a hook must never kill a session. This is CI, and a reusable
 # workflow it cannot read is a workflow it cannot vouch for, so a missing or
@@ -179,7 +185,11 @@ for n in clone_lines:
 
 # `git checkout -q --detach "$SHA"` is the shipped form, so flags may sit between.
 detach = [n for n, l in wf_code if re.search(r"checkout\s+(?:-\S+\s+)*--detach", l)]
-execs = [n for n, l in wf_code if re.search(r"\bbash\s+\"?\$\{?RUNNER_TEMP", l)]
+# Any interpreter pointed at the fetched tree, not just `bash`: swapping in `sh`
+# or `python3` would otherwise walk straight past this. `git -C "$RUNNER_TEMP/…"`
+# is deliberately not matched — it manipulates the checkout, it does not run it.
+execs = [n for n, l in wf_code
+         if re.search(r"\b(?:bash|sh|zsh|python3?|node|ruby|perl)\s+\"?\$\{?RUNNER_TEMP", l)]
 
 if execs and not detach:
     problems.append(

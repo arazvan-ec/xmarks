@@ -208,6 +208,30 @@ run_check "${R}"
 saw "before"
 pass "step ordering enforced"
 
+echo "== swapping the interpreter does not walk past the check =="
+# The step that executes the fetched tree happens to say `bash`. If the only
+# thing standing between a repo and unreviewed code is which interpreter the
+# line names, the check is a spelling test.
+for interp in sh python3 node; do
+  R="$(sandbox "interp-${interp}")"
+  sed -i "s|run: bash \"\$RUNNER_TEMP/xmarks/scripts/install-vendored.sh\" \"\$GITHUB_WORKSPACE\"|run: ${interp} \"\$RUNNER_TEMP/xmarks/scripts/install-vendored.sh\"|" \
+    "${R}/.github/workflows/flywheel-update.yml"
+  grep -q "${interp} \"\$RUNNER_TEMP" "${R}/.github/workflows/flywheel-update.yml" \
+    || fail "fixture bug: ${interp} substitution did not apply"
+  sed -i '/checkout -q --detach/d' "${R}/.github/workflows/flywheel-update.yml"
+  run_check "${R}"
+  [ "${RC}" -ne 0 ] || fail "an unguarded '${interp}' against the fetched tree must fail"
+done
+pass "sh, python3 and node are caught like bash"
+
+echo "== manipulating the checkout is not executing it =="
+# git -C "$RUNNER_TEMP/..." appears in the fetch step itself; reading it as an
+# execution would make the fixed workflow unfixable.
+R="$(sandbox gitonly)"
+run_check "${R}"
+[ "${RC}" -eq 0 ] || fail "git against the fetched tree must not count as executing it: $(cat "${WORK}/out")"
+pass "git -C against the tree is not an execution"
+
 echo "== an unpinned third-party action fails, and the allowlist can excuse it =="
 R="$(sandbox actions)"
 sed -i 's|actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2|actions/checkout@v4|' \
