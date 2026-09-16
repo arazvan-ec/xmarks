@@ -142,9 +142,41 @@ pass "pre-existing agent backed up (with warning) before overwrite"
   || fail "pre-existing flywheel-help skill was not backed up"
 pass "pre-existing skill backed up before overwrite"
 
-grep -q 'flywheel-update.yml@main' "${TARGET}/.github/workflows/flywheel-update.yml" \
-  || fail "--auto-update did not write the caller workflow"
+CALLER="${TARGET}/.github/workflows/flywheel-update.yml"
+[ -f "${CALLER}" ] || fail "--auto-update did not write the caller workflow"
 pass "--auto-update wrote .github/workflows/flywheel-update.yml"
+
+# P13/B10. The gate (scripts/check-supply-chain-pin.sh) reads the TEMPLATE and can
+# only assert it interpolates one full-SHA variable. That the generated file then
+# carries a real 40-hex pin, and the SAME sha as the input, is only observable
+# here — on the artifact. Neither assertion is the claim on its own.
+if grep -q 'flywheel-update\.yml@main' "${CALLER}"; then
+  fail "the caller still pins @main: whatever that branch points at when the cron fires is what runs here under contents:write"
+fi
+PIN="$(sed -n 's|.*flywheel-update\.yml@\([0-9a-fA-F]*\).*|\1|p' "${CALLER}" | head -1)"
+printf '%s' "${PIN}" | grep -Eq '^[0-9a-fA-F]{40}$' \
+  || fail "the caller's uses: ref is '${PIN}', not a full 40-hex commit SHA (a short SHA is not a valid pin)"
+pass "caller pins a full 40-hex commit SHA"
+
+INPUT="$(sed -n 's|.*flywheel_sha:[[:space:]]*\([0-9a-fA-F]*\).*|\1|p' "${CALLER}" | head -1)"
+[ -n "${INPUT}" ] || fail "the caller passes no flywheel_sha input, so the reusable workflow cannot learn which commit it was pinned to"
+[ "${INPUT}" = "${PIN}" ] \
+  || fail "the caller pins ${PIN} but passes ${INPUT}: the executed code and the trusted commit must be one value"
+pass "flywheel_sha matches the uses: pin exactly"
+
+[ "${PIN}" = "$(git -C "${SRC}" rev-parse HEAD)" ] \
+  || fail "the caller pins ${PIN}, which is not this checkout's HEAD"
+pass "the pin is this checkout's commit"
+
+# The heredoc is unquoted now so the SHA interpolates. That makes every other `$`
+# in it live, and a swallowed `${{ }}` would be invisible in the diff's intent.
+if grep -q '\$(' "${CALLER}"; then
+  fail "a command substitution survived into the written caller — the unquoted heredoc executed it"
+fi
+if grep -q '{{' "${CALLER}"; then
+  grep -q '\${{' "${CALLER}" || fail "a GitHub expression in the caller lost its leading \$ to the unquoted heredoc"
+fi
+pass "nothing in the template was eaten by the unquoted heredoc"
 
 grep -q 'https://github.com/acme/demo/settings/actions' "${WORK}/install-out.txt" \
   || fail "--auto-update did not print the repo's Actions settings URL"
