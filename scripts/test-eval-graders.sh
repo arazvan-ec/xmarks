@@ -90,6 +90,7 @@ for spec in \
   "run:contradictory-contract-repo:5" \
   "loop:inventory-repo:1 2" \
   "loop:contradiction-repo:3" \
+  "loop:unsafe-filter-repo:4" \
 ; do
   skill="${spec%%:*}"; rest="${spec#*:}"; fixture="${rest%%:*}"; ids="${rest#*:}"
   for id in ${ids}; do
