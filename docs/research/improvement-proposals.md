@@ -2616,11 +2616,35 @@ level down, and the level that bites first.
 itself, nothing for content re-entering context. Labelled as such wherever it
 surfaces, per the P23 rule.
 
-**P40b — not approved.** An `extractor` agent (haiku, read-only tools) plus a
-size threshold in `read-prime.sh` that returns `ask` rather than denying, keeping
-flywheel's hook contract. It stays unbuilt until P40a's numbers come back from
-real cycles: P18 forbids shipping on an unmeasured premise, and "reads are the
-peak here" is currently a hypothesis borrowed from someone else's Java monorepo.
+**P40b — rejected as designed (2026-09-16, first real data).** The proposal was
+an `extractor` agent (haiku, read-only) plus a size threshold in `read-prime.sh`.
+P44 made read volume observable and the first metered cycle answers it:
+
+| | |
+| --- | --- |
+| calls metered | 70, totalling 60,363 bytes |
+| largest single read | **5,446 bytes** — nothing above 8 KB at all |
+| median read | 545 bytes; the top 5 are 32% of the total |
+| where the volume is | **Bash 85%**, Read 12.7%, Agent 2.2% |
+
+Both halves of the mechanism miss. A **size threshold has nothing to fire on**:
+the distribution is flat, with no tail to divert. And it is hooked on `Read`,
+which carries **an eighth** of the volume — the reads in this repo are many small
+command outputs, not a few bulk file loads. The Spotify premise held for a Java
+monorepo; it does not hold here, and building the mechanism anyway would have
+optimized the wrong eighth of a distribution with no peak.
+
+**Limits of this conclusion, stated so it can be overturned.** One cycle, one
+session, 70 calls. `bytes_in` is a floor (tool responses only — never the
+conversation, never content re-entering context). And this cycle was script and
+test work, which is Bash-heavy by nature; a cycle reading widely across an
+unfamiliar codebase would skew toward `Read`. The meter now runs on every cycle,
+so this is re-decidable with a real sample rather than re-argued.
+
+**What the data suggests instead, unbuilt and unapproved.** If read volume ever
+becomes worth routing here, the target is command output, not file reads — which
+is a different proposal from the article's, and needs its own evidence before it
+earns a number.
 
 **Not taken.** The article's `code-write` path (a cheap model writing code that
 never enters the reviewing context) is incompatible with `/flywheel:work`'s TDD

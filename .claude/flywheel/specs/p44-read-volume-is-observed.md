@@ -1,7 +1,11 @@
 # Spec: P44 — read volume is observed, not reconstructed
 
 **Slug:** `p44-read-volume-is-observed` · **Created:** 2026-09-16 · **Backlog:** P44
-**Status:** draft — blocked on #74 merging (P42 ungates the duty this spec feeds).
+**Status:** shipped as v0.56.0 — metric PASS. The decisive clause held on real
+data: `run-cost.sh` over this cycle's own run reports `bytes_in` 50,786 and
+`tool_calls` 56 as numbers rather than UNMEASURED, the first values either field
+has carried in the repo's history, and marks both PARTIAL (2 of 4) because the
+two transitions that built the meter could not be measured by it.
 
 **Prime:** P23 (cost proxies), P40a (per-field coverage, `bytes_in` as a floor),
 P42 (the duty that now runs every run), P43 (the hooks that now fire here), and
