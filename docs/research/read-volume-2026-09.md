@@ -77,8 +77,11 @@ that verdict's 70-call session. Independent of the rejection, the sample is:
 
 **Pooled bytes per call is 1,842 — 2.1× the 862 the original verdict saw**
 (1,139,974 / 619 vs 60,363 / 70). On the independent five cycles it is 1,934,
-2.2×. Per-cycle read volume is 4–8× the original session's total. Read volume is
-not negligible here, and it grew as the work moved off scripts.
+2.2×. Per-call is the comparable unit here: cycle *totals* run from **0.72× to
+6.60×** the original session's 60,363 bytes — p45 (43,520) and p44 (50,786) are
+both below it — and that spread tracks how long a cycle ran at least as much as
+how heavily it read. Read volume per call is not negligible here, and it rose as
+the work moved off scripts.
 
 That is the strongest statement the data supports about magnitude. It says
 nothing about *shape*, and shape is what P40b needs.
@@ -192,10 +195,14 @@ cycles (p32, p31) and the audit cycle (p13-pillar2, whose first transition cited
 meter-building cycles (p44, p45) — small scripts, tight test loops — read
 lightly.
 
-**The script-heavy cycle is an outlier, and it is the one the verdict came from.**
-p44 sits at 907 bytes per call, second-lowest of the six and below the pooled
-1,842. The original rejection was drawn from the thinnest-reading cycle in the
-sample, which is precisely the limitation it named about itself.
+**The verdict's own cycle is the lightest of the six — but it is not an outlier.**
+p44 sits at 907 bytes per call, the lowest of the six, and p45 is 989; on the
+section-3 means the two are within 1% of each other (905 and 913). They are a
+cluster, not a lone point: the two meter-building cycles, each about half the
+pooled 1,842. So the original rejection was drawn from the thinnest-reading end
+of the sample — the limitation it named about itself — but calling that cycle
+exceptional would overstate it. What separates the groups is the four heavier
+cycles above them, not one outlier below.
 
 Caveats on the p-value: n = 29 transitions in groups of 2 to 8; the unit is a
 ratio of two aggregates, not a read; and one operator on one repo means the
@@ -218,9 +225,11 @@ downgraded from *measured* to *unmeasured*. The honest position is weaker than
 the one in the backlog today, and the backlog row should say so: P40b is
 unjustified rather than disproven.
 
-The one thing that has moved *toward* the proposal is magnitude: 2.1× the read
-volume per call, and cycles that read four to eight times more than the one
-judged. That makes the question worth keeping open. It does not answer it —
+The one thing that has moved *toward* the proposal is magnitude, and only on a
+per-call basis: 2.1× the read volume per call, with the four heavier cycles
+running 1.3× to 3.7× the rate of the cycle that was judged. Cycle totals say
+less than that — two of the six read fewer bytes in total than the original
+session did. That makes the question worth keeping open. It does not answer it —
 volume is not shape, and P40b is a bet on shape.
 
 What would overturn this, stated so it can be: a per-call record over several
@@ -232,14 +241,23 @@ fact.
 
 **Make the tail observable before deciding whether to route it.** The gap this
 analysis hit is not a shortage of cycles — it is that the per-call record is
-thrown away at session end while the aggregate is kept. A transition line that
-carried, alongside `bytes_in` and `tool_calls`, the transition's **max call**,
-its **p90**, and its **bytes by tool** would have answered every question above
-from the same six cycles, for a few dozen bytes per line.
+thrown away at session end while the aggregate is kept.
 
-Stated as a candidate: it is small, it is measurement rather than optimization,
-and it makes P40b decidable on the next six cycles instead of unanswerable on
-these. It has not been specced, approved, or built here, and the existing
+*What* to keep is constrained by the question, and the obvious answer is not
+enough. P40b asks a **joint** question — how much volume arrives in individual
+calls above a threshold, **and through which tool** — so a transition's overall
+max, its p90 and its bytes-by-tool would not settle it: many different per-call
+distributions produce those same three summaries, and none of them says whether
+the calls above 8 KB were `Read` or `Bash`. That is this document's own thesis
+applied to its own suggestion. The smallest thing that would answer it is
+**per-tool tail statistics** — for each tool, the call count and byte total above
+each of a few fixed size buckets, plus that tool's largest single call — or
+simply retaining the per-call record.
+
+Stated as a candidate: it is measurement rather than optimization, and it makes
+P40b decidable on the next several cycles instead of unanswerable on these. Its
+cost is real and unmeasured — a per-tool bucket table is many times the bytes of
+the four-field cost object, on every transition line. It has not been specced, approved, or built here, and the existing
 `bytes_in` field must keep working unchanged if it ever is — a summary that
 replaces the floor with a sample would trade one blind spot for another.
 
