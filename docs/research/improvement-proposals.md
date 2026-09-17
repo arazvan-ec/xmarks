@@ -60,7 +60,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P14a | Pillar-2 slice 1: the write-path probe + process discovery | ✅ shipped (v0.49.0) | Done — the probe is read-only and runs before Rule 1, a failure is a blocker and never a silent fallback; `process` proposes the git-native store when no DB signal hits; the banner lists the repo's contracts. Open: T5 (bare `/flywheel:run` listing) deferred to slice 2, and the rest of P14 is slices 2–3 |
 | P14b | Pillar-2 slice 2: the maturation survives the session | ✅ shipped (v0.50.0) | Done — a matured contract is committed pathspec-scoped rather than left staged (staged dies with the session while the datastore row survives); the bare `/flywheel:run` listing lands. Open: a run blocked by a defect in its OWN contract has no defined behaviour — two executors split on it |
 | P14c | Pillar-2 slice 3: a contract defect escalates | ✅ shipped (v0.54.0) | Done — step 2 names the two failures apart; a contract defect blocks, never rewrites the fixed rules, and stubs a spec from the run's evidence. Four eval paths, stub in exactly one. Open: step 0's task materialization has never fired in 8/8 runs; the contract metric has no rejection-path equivalent |
-| P40 | Measure what the loop reads, then route the reads | ✅ P40a (v0.52.0) · ⚪ P40b rejected — **unjustified, not disproven** | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
+| P40 | Measure what the loop reads, then route the reads | ✅ P40a (v0.52.0) · ⚪ P40b rejected — **unjustified, not disproven** | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stayed **unapproved** until real runs could say whether read volume is a peak here. **P50 (v0.66.0) supplies the missing measurement**: the first metered session reports `max_read=11,036` over 117 calls with `Bash` holding 96% of the bytes across 93 calls — many small reads, not a few fat ones, which points away from a size threshold. Still the owner's call, now on evidence rather than an 18x interval |
 | P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.51.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
 | P42 | The telemetry duty gets an owner that runs | ✅ shipped (v0.54.0) | Done — `work` writes its transition line every run, not only inside a `/flywheel:loop` cycle; `check-telemetry.sh` gates conformance + coverage in CI; `telemetry-baseline.txt` opens with **29 debts**, one per cycle that shipped unmeasured. Nothing backfilled (P18). The cycle wrote the repo's first conforming telemetry, and `work` eval 1 graded 7/7. Open: the 29 debts can only be paid by real cycles, and P40b still needs several runs' worth of `bytes_in` before it can be judged |
 | P43 | flywheel's hooks run on flywheel | ✅ shipped (v0.55.0) | Done — `install-vendored.sh --hooks-only` (self-target only, registrations point at `scripts/` so there are no copies to drift), the eight hooks committed in this repo's `.claude/settings.json`, and `check-hook-parity.sh` gained its third direction: what `hooks.json` declares must also be registered here. Pays the debt P41 declared. **Acceptance observation recorded** by artifact: `delegation-record.sh` wrote its state file for the T4 `Agent` call and SessionStart injected the ledger — both hooks live |
@@ -70,6 +70,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P47 | The release convention is enforced in one direction only | ✅ shipped v0.63.0 | Two gates: `check-release-bump.sh` (a release-bearing diff must move the version **ahead of** the base) and `check-version-citations.sh` (a *pointer* — a link, or see/read/follow/consult before a path — must resolve; a bare mention stays free, so **no exclusion list**). Proven on real history: PR #85 replayed against its own base goes red, and the v0.61.0 mistake reconstructed on the live tree goes red while `main` stays green. The `paths:` filters are gone — a filter and a whole-tree corpus cannot both be correct |
 | P48 | The ledger cannot be aggregated by phase, or read across runs | ✅ shipped v0.64.0 | Measured on the corpus: **36 of 58** transition lines carry no `phase` and **6 of 11** cycles carry none on any line, because `check-telemetry.sh` accepted `task` **or** `phase` — identification and aggregation are different duties and only the first was specified. `run-cost.sh` also took one run and one baseline, so the cross-cycle view had to be hand-written to ask the question at all. Now: `phase` required from a cutoff placed **after the whole existing corpus and before this cycle's first line** (live on its own first subject, older lines a counted debt — nothing backfilled), and `run-cost.sh --all` rolling the corpus up by phase, route and cycle with P40a's per-FIELD coverage carried through the merge |
 | P49 | The plan's ladder is honored, or the record says otherwise | ✅ shipped v0.65.0 | The aggregate said the ladder collapsed (40 of 46 routed transitions on opus, haiku **0**); per task that is false — 5 of 5 one-to-one transitions honored their route. It evaporates instead through **8 unrecorded plan tasks** across p13/p42/p43, five of them the `haiku/low+delegate` ones; one `T1-T2` merge that buys the max tier unsaid; and 26 lines carrying `opus/xhigh`, an effort the tier table cannot rank. `check-route-honored.sh` fails an unrecorded task and an unsaid upgrade, reports what it cannot settle, and had its own cycle as its first live subject |
+| P50 | The meter names the read, not just the total | ✅ shipped v0.66.0 | `read-meter.sh --since` now prints `max_read` (the largest single tool response — a maximum, never summed) and `by_tool` (the total attributed per tool, write tools at 0 bytes and a real call count). Nothing new is measured: the state file has carried `{ts, tool, bytes}` since v0.56.0 and the reader discarded two thirds of it. `run-cost.sh` splits SUM_FIELDS from MAX_FIELDS so the maximum survives every bucket and the corpus merge. First live reading: **max_read=11,036 over 117 calls**, `Bash` holding 198,191 of 206,266 bytes — many small reads, not a few fat ones |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -2991,3 +2992,35 @@ Second honored `+delegate` in this repo's history, after P41's.
   that never ran; this is the same shape waiting to happen.
 - **`work`'s body is at 5659/5700 B** — 41 bytes. The next clause does not fit,
   and the reference split (P35/P36) buys nothing against `worst`.
+
+## P50 — the meter names the read, not just the total (✅ shipped v0.66.0)
+
+**Where it came from.** The same session as P48 and P49. The corpus roll-up P48
+made possible put read volume at **4.0×** write volume (1,475,873 bytes in
+against 372,942 out), which is the peak P40b was arguing about — and the ledger
+already recorded why that argument could not be settled:
+
+> keeping the aggregate is not keeping the measurement — the largest single read
+> in 619 calls is bounded only to [4,898 ; 152,232] bytes, straddling P40b's 8 KB
+> threshold by 18x
+
+**What shipped.** `max_read` and `by_tool` out of `--since`, on rows the meter
+was already writing. `run-cost.sh` grew a second field kind so a maximum is never
+summed. No hook changed: the half of `read-meter.sh` that runs on every tool call
+is untouched, and its arms stayed green throughout.
+
+**What the first reading says.** `max_read=11,036` over 117 calls; `Bash` 198,191
+bytes across 93 calls, `Read` 5,057 across 2. The reads in this loop are **many
+and small** — the mean Bash response is about 2.1 KB — so a size threshold would
+fire on almost nothing while the volume comes from call *count*. One session is
+not a corpus, and the honest statement is that the evidence now exists and points
+one way, not that P40b is settled.
+
+**Still open.**
+
+- **`by_tool` is recorded but not rolled up.** `run-cost.sh --all` totals
+  `max_read` correctly and ignores `by_tool`; a corpus-level "which tool costs
+  the reads" would need it merged, and that was deliberately outside this
+  cycle's assertions rather than smuggled in.
+- The three questions P49 left: whether `xhigh` is a tier, the hand-written
+  `check-*` list in CI, and `work`'s body at 41 bytes of headroom.
