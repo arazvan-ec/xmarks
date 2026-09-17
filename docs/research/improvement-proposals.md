@@ -68,6 +68,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P45 | The first transition has a start | ✅ shipped (v0.57.0) | Done — `elapsed_s` comes from the meter's cut, and `--since first` gives a cycle's opening line the start a commit delta could never supply; first run in the repo with no PARTIAL field |
 | P46 | An assertion that cannot fire on a live run | 🔵 proposed | Audit every grader assertion for whether a real executor can trip it. Eval 3 keys on `verdict: PASS`; 3 fresh-context runs wrote 31 telemetry lines and **zero** verdicts. Harness-verified is not live-verified, and a silent assertion looks identical whether it is passing or dead |
 | P47 | The release convention is enforced in one direction only | ✅ shipped v0.63.0 | Two gates: `check-release-bump.sh` (a release-bearing diff must move the version **ahead of** the base) and `check-version-citations.sh` (a *pointer* — a link, or see/read/follow/consult before a path — must resolve; a bare mention stays free, so **no exclusion list**). Proven on real history: PR #85 replayed against its own base goes red, and the v0.61.0 mistake reconstructed on the live tree goes red while `main` stays green. The `paths:` filters are gone — a filter and a whole-tree corpus cannot both be correct |
+| P49 | A session pays for its own length, not for its work | ✅ shipped v0.65.0 | Measured end to end on a real 2h40m debug session: **21,404,993 cache-read tokens against 120,280 written** — 178 re-read per token produced, **58% of the bill** — with the first call re-reading ~30K tokens of context and the last re-reading 279,203. Its output was 10 commits over 3 PRs: 4 instrumentation, 3 documentation, 3 candidate fixes, **0 verifications**, because the log that would have discriminated lived on a phone the session could not read. The identical call sequence split across three chained sessions costs 9.9M against 21.3M, so the lever is the **handoff**, not reading less. Shipped: a `PostToolUse` budget advisory (once per multiple, a read of the total the meter already holds), `/flywheel:debug` suspending when the evidence is out of reach, and two bans — a second instrumentation round with nothing learned, and raising effort to replace a missing discriminator. **This is the run P40b was waiting for**, and it weakens it: the peak is not read volume but read *position* |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -319,6 +320,56 @@ budget — it doesn't replace the metric-command check, it independently
 re-verifies it.
 
 ---
+
+## P49 — a session pays for its own length, not for its work (✅ shipped v0.65.0)
+
+**Where it came from.** An owner asked why a session that was told about one bug
+had executed 31 steps, and whether that could be optimised. The session record
+answered it in four numbers, and none of them was the step count.
+
+**Evidence.** The session's own usage record, decomposed by token class. The
+model reproduces this bill and two other sessions' of the same day to within
+0.3%, so the split is measured rather than asserted:
+
+| class | tokens | share of bill |
+| --- | --- | --- |
+| cache read | 21,404,993 | 58.5% |
+| cache write | 456,818 | 25.0% |
+| output (reasoning + writing) | 120,280 | 16.4% |
+| input | 4,938 | 0.1% |
+
+**83.5% of it was context, not work.** And the cost per call is not flat: the
+first call re-read ~30K tokens, the last 279,203 — nine times the price for the
+same work, by position alone. cache-read is `Σ(context at each call)`, so a
+session's bill grows with the *square* of its length. Split into three chained
+sessions the same call sequence costs 9.9M instead of 21.3M.
+
+**What it says about P40b.** P40b (an extractor agent + a read-size threshold)
+was rejected as *unjustified, not disproven*, pending "real runs saying whether
+read volume is a peak here". This is such a run, and it does not justify P40b —
+it weakens it. The peak is not the size of any read; it is the number of times
+everything already read is read again. An extractor shrinks one term of a
+product whose other term is the one that runs away.
+
+**Where the 31 steps came from.** 10 commits, 3 merged PRs, 446 lines: four
+commits of instrumentation, three of documentation, three candidate fixes, zero
+verifications. The bug was on a phone. `/flywheel:debug` step 3 said *run it and
+read the actual evidence* and offered no move for the case where the session
+cannot run it, so it instrumented, guessed, and instrumented again — three
+rounds, each re-reading the context of the last, at `xhigh`, where ~$3 of
+reasoning generated candidates that no available evidence could kill.
+
+**What shipped.** One primitive, three places: the **handoff**. A budget
+advisory in the meter (mechanical), a suspend in `debug` step 3, and two bans on
+the exits that get taken instead. Plus the defect found underneath: the meter
+passed its payload through an env var capped at 128 KiB and failed whole, so the
+largest tool responses were never counted at all — `bytes_in` has been a floor
+with a hole in it since P44.
+
+**Still open.** The advisory fires on a floor (`bytes_in`), not on context, so
+600 KB is a break-even derived from a conversion, not a measurement of context
+itself; a session that reasons a great deal and reads little crosses late. And
+nothing yet grades whether a session that is advised actually hands off.
 
 ## P5 — Token-usage discipline
 
