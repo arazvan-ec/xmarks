@@ -43,6 +43,27 @@ The rule is **ahead of**, and the test's last arm replays #85 from real history
 against its real base rather than asserting it on a fixture. Watching a rule go
 green on the very case that motivated it is the cheapest way to find out it is
 measuring something adjacent.
+## gotcha: keeping the aggregate is not keeping the measurement
+
+<!-- fw: type=gotcha; date=2026-09-17; files=scripts/read-meter.sh,.claude/flywheel/specs/p44-read-volume-is-observed.md; spec=p40b-redecision; branch=claude/p40b-redecision; evidence=`grep -rln '"tool"' .claude/flywheel/runs/` returns nothing across 29 metered transitions; the largest single read in 619 calls is bounded only to [4,898 ; 152,232] bytes, straddling P40b's 8 KB threshold by 18x -->
+
+P40b was rejected on two per-call numbers — largest read 5,446 bytes, 85% of
+volume in `Bash` — and re-decidable "once several metered cycles accumulate".
+Six accumulated. **Neither number can be recomputed from any of them.** The
+per-call counter is keyed by session under the system temp dir and never
+committed; what the cycles kept is `bytes_in` and `tool_calls` per transition,
+which is an average over each transition's calls and flattens the tail the
+proposal exists to divert.
+
+The meter was not wrong and the cycles were not sloppy. The instrument recorded
+exactly what it was specced to record, and the field that survived answers
+*how much* while the decision needed *what shape*. Waiting for more cycles
+could never have closed that gap: six cycles of an aggregate is still an
+aggregate.
+
+Before parking a proposal as "re-decidable with more data", name the statistic
+the re-decision will compute and check that a committed field carries it. A
+per-call record is reconstructible from nothing after the session ends.
 
 ## gotcha: asserting a step is PRESENT says nothing about what it operates on
 
