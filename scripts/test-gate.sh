@@ -184,5 +184,46 @@ run_hook '{}'
 [ "$(ran_count)" -eq "$((BEFORE + 1))" ] || fail "untrusted-era seal took effect — trust boundary breached"
 pass "untrusted gate cannot be sealed"
 
+echo "== the cache leaves NOTHING inside the repo =="
+# The gate runs on every Stop. Writing its cache into the project left an
+# untracked file that reappeared the moment it was deleted: `git status`
+# reported changes that corresponded to no change, and the hook's own advice
+# ("commit your work") fought a file that must never be committed.
+echo 0 > "${WORK}/mode"
+echo cachecheck >> "${TARGET}/file.txt"
+run_hook '{}'
+[ "${RC}" -eq 0 ] || fail "green gate should allow, got ${RC}"
+# Todo salvo el propio gate, que es la fixture de este test y no estado.
+SUCIO="$(git -C "${TARGET}" status --porcelain --untracked-files=all -- .claude \
+  | grep -v '\.claude/flywheel/gate\.sh$' || true)"
+[ -z "${SUCIO}" ] || fail "the gate wrote state inside the repo: ${SUCIO}"
+find "${TARGET}" -name '.gate-state' -print -quit | grep -q . \
+  && fail "a .gate-state file is still being written inside the project" || true
+[ -n "$(ls -A "${STORE}/gate-state" 2>/dev/null)" ] || fail "the cache is not in the state dir either — it went nowhere"
+pass "state lives outside the repo; .claude/ stays clean"
+
+echo "== two projects do not share one cache file =="
+# A single shared file would make each project evict the other's entry, and the
+# cache would never hit for either.
+OTRO="${WORK}/target2"
+mkdir -p "${OTRO}/.claude/flywheel"
+git init -q "${OTRO}"
+git -C "${OTRO}" -c user.email=t@t -c user.name=t checkout -qb main 2>/dev/null || true
+echo otro > "${OTRO}/file.txt"
+git -C "${OTRO}" add file.txt
+git -C "${OTRO}" -c user.email=t@t -c user.name=t commit -qm base
+cp "${GATE}" "${OTRO}/.claude/flywheel/gate.sh"
+chmod +x "${OTRO}/.claude/flywheel/gate.sh"
+
+ANTES="$(ran_count)"
+printf '%s' '{}' | CLAUDE_PROJECT_DIR="${OTRO}" FLYWHEEL_STATE_DIR="${STORE}" bash "${HOOK}" >/dev/null 2>&1 || true
+[ "$(ran_count)" -eq "$((ANTES + 1))" ] || fail "the second project should run its own gate, ran $(ran_count)"
+
+# Y el primero sigue cacheado: su entrada no la pisó el segundo.
+run_hook '{}'
+[ "$(ran_count)" -eq "$((ANTES + 1))" ] || fail "the first project's cache was evicted by the second"
+[ "$(ls -A "${STORE}/gate-state" | wc -l | tr -d ' ')" -eq 2 ] || fail "expected one cache file per project"
+pass "one cache file per project: neither evicts the other"
+
 echo ""
 echo "all gate tests passed"
