@@ -5,6 +5,9 @@
 # lines with no cost object are reported as UNMEASURED, never as zero; a
 # `tokens` key warns (the field is banned by design, P18); malformed lines are
 # skipped and counted; missing/empty input fails with a clear error.
+# P48: --all rolls the whole corpus up — cycles named and counted, totals grouped
+# by phase, phase-less lines bucketed apart, and the per-FIELD coverage discipline
+# carried through the merge so an absent field never totals as 0.
 
 set -euo pipefail
 
@@ -215,5 +218,74 @@ grep -qE "opus/high.*700~" "${WORK}/out" \
   || fail "a bucket covering bytes_in on only some of its transitions must mark it: $(cat "${WORK}/out")"
 grep -qE "~.*partial" "${WORK}/out" || fail "the ~ marker needs its legend: $(cat "${WORK}/out")"
 pass "partial bucket coverage marked and explained"
+
+# --- P48: the corpus, not one run ------------------------------------------
+# pline <ts> <phase> <bytes_out> [route]
+pline() {
+  local route=""
+  [ -n "${4:-}" ] && route=",\"route\":\"$4\""
+  printf '{"ts":"2026-09-18T10:%02d:00Z","task":"t%s","phase":"%s","state":"completed"%s,"cost":{"bytes_out":%s,"tool_calls":1,"elapsed_s":2}}\n' \
+    "$1" "$1" "$2" "${route}" "$3"
+}
+
+echo "== --all totals every run file in the corpus =="
+CORPUS="${WORK}/corpus"
+mkdir -p "${CORPUS}/alpha" "${CORPUS}/beta"
+{ pline 0 spec 100; pline 1 work 200; } > "${CORPUS}/alpha/2026-09-18.jsonl"
+{ pline 2 work 300; } > "${CORPUS}/beta/2026-09-18.jsonl"
+run --all "${CORPUS}"
+[ "${RC}" -eq 0 ] || fail "--all over a real corpus must exit 0, got ${RC}: $(cat "${WORK}/out")"
+grep -qE "2 cycles" "${WORK}/out" || fail "--all must count the cycles: $(cat "${WORK}/out")"
+grep -qE "3 transitions|transitions: 3" "${WORK}/out" || fail "--all must count the transitions: $(cat "${WORK}/out")"
+grep -qE "bytes_out +600" "${WORK}/out" || fail "--all must total across files (600): $(cat "${WORK}/out")"
+pass "--all totals the whole corpus"
+
+echo "== --all groups the totals by phase =="
+grep -qE "work.*500" "${WORK}/out" || fail "the work phase must total 500 across both cycles: $(cat "${WORK}/out")"
+grep -qE "spec.*100" "${WORK}/out" || fail "the spec phase must total 100: $(cat "${WORK}/out")"
+pass "by-phase totals cross cycle boundaries"
+
+echo "== --all names each cycle, so 'how many ran' is answerable =="
+grep -q "alpha" "${WORK}/out" || fail "each cycle must be named: $(cat "${WORK}/out")"
+grep -q "beta" "${WORK}/out" || fail "each cycle must be named: $(cat "${WORK}/out")"
+pass "cycles are named, not just counted"
+
+echo "== a phase-less line is bucketed apart, never attributed to a phase =="
+mkdir -p "${CORPUS}/gamma"
+{ line 3 999 1 1; } > "${CORPUS}/gamma/2026-09-18.jsonl"
+run --all "${CORPUS}"
+grep -qiE "no phase" "${WORK}/out" || fail "phase-less lines need their own bucket: $(cat "${WORK}/out")"
+grep -qE "(work|spec).*999" "${WORK}/out" && fail "a phase-less line must not be attributed: $(cat "${WORK}/out")"
+pass "phase-less transitions are reported, not attributed"
+
+echo "== a field no transition carries is UNMEASURED across the corpus, never 0 =="
+grep -qE "bytes_in +UNMEASURED" "${WORK}/out" || fail "an absent field must not total as 0: $(cat "${WORK}/out")"
+pass "corpus-wide coverage keeps the P40a discipline"
+
+echo "== a field only some cycles carry is marked PARTIAL =="
+mkdir -p "${CORPUS}/delta"
+{ bline 4 10 700 1 1; } > "${CORPUS}/delta/2026-09-18.jsonl"
+run --all "${CORPUS}"
+grep -qE "bytes_in.*PARTIAL" "${WORK}/out" || fail "partial corpus coverage must be marked: $(cat "${WORK}/out")"
+pass "partial coverage marked across the corpus"
+
+echo "== --all on a path that is not a directory fails loudly =="
+run --all "${WORK}/nope"
+[ "${RC}" -eq 2 ] || fail "a missing corpus dir must exit 2, got ${RC}: $(cat "${WORK}/out")"
+run --all
+[ "${RC}" -eq 2 ] || fail "--all with no path must exit 2, got ${RC}: $(cat "${WORK}/out")"
+pass "unusable --all input exits 2"
+
+echo "== an empty corpus is not a green 'nothing to report' =="
+mkdir -p "${WORK}/empty"
+run --all "${WORK}/empty"
+[ "${RC}" -eq 2 ] || fail "a corpus with no run files must exit 2, got ${RC}: $(cat "${WORK}/out")"
+pass "an empty corpus fails loudly"
+
+echo "== the repo's own corpus reports =="
+run --all "${SRC}/.claude/flywheel/runs"
+[ "${RC}" -eq 0 ] || fail "flywheel's own corpus must report, got ${RC}: $(cat "${WORK}/out")"
+grep -qE "cycles" "${WORK}/out" || fail "the real corpus must report its cycles: $(cat "${WORK}/out")"
+pass "flywheel's own corpus rolls up"
 
 echo "ALL PASS"
