@@ -14,11 +14,16 @@
 # without that text ever reaching context; the call counts, the bytes do not.
 #
 # bytes_in stays a FLOOR (P23/P40a): tool responses only, never the conversation
-# and never content re-entering context. elapsed_s is `now - cut`, so it is the
-# transition's true wall clock only when the line is written AT the transition —
-# which is what the duty requires anyway. `--since first` cuts at the earliest
-# recorded call, the only start a cycle's FIRST transition can observe: a commit
-# delta needs a previous commit it does not have.
+# and never content re-entering context. `max_read` and `by_tool` (P50) come out
+# of the same rows: the state file has always carried `tool` and `bytes` per
+# call, and --since used to collapse both into one number — which is why P40b's
+# threshold question could only be bounded to an 18x interval and never answered.
+#
+# elapsed_s is `now - cut`, so it is the transition's true wall clock only when
+# the line is written AT the transition — which is what the duty requires anyway.
+# `--since first` cuts at the earliest recorded call, the only start a cycle's
+# FIRST transition can observe: a commit delta needs a previous commit it does
+# not have.
 #
 # State is keyed by session under the system temp dir, the delegation-record.sh
 # derivation verbatim: in the project it would dirty `git status` and be committed.
@@ -45,7 +50,7 @@ if not os.path.exists(path):
     print("read-meter: UNMEASURED — no counter for this session; omit both fields")
     sys.exit(0)
 
-since, total, calls = os.environ["FW_SINCE"], 0, 0
+since, total, calls, mx, by = os.environ["FW_SINCE"], 0, 0, 0, {}
 try:
     rows = []
     with open(path, encoding="utf-8") as fh:
@@ -70,8 +75,15 @@ if since == "first":
 
 for row in rows:
     if str(row.get("ts") or "") >= since:
-        total += int(row.get("bytes") or 0)
+        n = int(row.get("bytes") or 0)
+        total += n
         calls += 1
+        mx = max(mx, n)
+        # A write tool sits here with 0 bytes and a real call count, as P44
+        # defined it: the call happened, its bytes never entered context.
+        tool = str(row.get("tool") or "?")
+        b, c = by.get(tool, (0, 0))
+        by[tool] = (b + n, c + 1)
 
 try:
     cut = calendar.timegm(time.strptime(since, "%Y-%m-%dT%H:%M:%SZ"))
@@ -83,7 +95,12 @@ except ValueError:
     sys.exit(2)
 elapsed = max(0, int(time.time()) - cut)
 
-print(f"bytes_in={total} tool_calls={calls} elapsed_s={elapsed}")
+# by_tool is written on one line, biggest first: the shape a transition line
+# copies verbatim, and the order a reader needs first.
+attrib = ",".join(f"{t}:{b}/{c}" for t, (b, c) in
+                  sorted(by.items(), key=lambda kv: (-kv[1][0], kv[0])))
+print(f"bytes_in={total} tool_calls={calls} elapsed_s={elapsed} max_read={mx}"
+      + (f" by_tool={attrib}" if attrib else ""))
 print(f"# floor: tool responses since {since}, from {path}", file=sys.stderr)
 PY
   exit $?   # the reader's exit code is python's; a bad cut must not look like success
