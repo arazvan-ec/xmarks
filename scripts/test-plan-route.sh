@@ -180,4 +180,42 @@ rc 2
 says "usage"
 pass "missing file → exit 2; no argument → usage"
 
+echo "== --json emits every task's route and tier (P49) =="
+cat > "${WORK}/json.md" <<'EOF'
+### T1 — first
+- route: `sonnet/medium`
+- check: `true`
+### T2 — second
+- route: `opus/high`
+- check: `true`
+- risk: highest
+EOF
+RC=0; bash "${LINT}" --json "${WORK}/json.md" >"${WORK}/out" 2>"${WORK}/err" || RC=$?
+[ "${RC}" -eq 0 ] || fail "--json on a legal plan must exit 0, got ${RC}: $(cat "${WORK}/err")"
+python3 - "${WORK}/out" <<'PYJSON' || fail "--json must emit parseable per-task routes: $(cat "${WORK}/out")"
+import json, sys
+d = json.load(open(sys.argv[1]))
+t = {x["id"]: x for x in d["tasks"]}
+assert set(t) == {"T1", "T2"}, t
+assert t["T1"]["route"] == "sonnet/medium" and t["T1"]["tier"] == 2, t["T1"]
+assert t["T2"]["route"] == "opus/high" and t["T2"]["tier"] == 3, t["T2"]
+assert t["T2"]["risk_highest"] is True and t["T1"]["risk_highest"] is False, t
+assert d["top_tier"] == 3, d
+PYJSON
+pass "--json carries route, tier and rank per task"
+
+echo "== --json on a plan with a lint error still fails, so no consumer reads it as fine =="
+cat > "${WORK}/jsonbad.md" <<'EOF'
+### T1 — no route
+- check: `true`
+EOF
+RC=0; bash "${LINT}" --json "${WORK}/jsonbad.md" >"${WORK}/out" 2>"${WORK}/err" || RC=$?
+[ "${RC}" -eq 1 ] || fail "--json on an unlintable plan must exit 1, got ${RC}: $(cat "${WORK}/err")"
+pass "--json cannot launder a broken plan"
+
+echo "== --json with no plan file is unusable input =="
+RC=0; bash "${LINT}" --json >"${WORK}/out" 2>"${WORK}/err" || RC=$?
+[ "${RC}" -eq 2 ] || fail "--json with no path must exit 2, got ${RC}"
+pass "--json with no path exits 2"
+
 echo "ALL PASS"
