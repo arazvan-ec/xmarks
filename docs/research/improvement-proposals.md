@@ -32,7 +32,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P10 | Portability + installer correctness | ✅ shipped (v0.17.0) | Done — BSD-safe sed, manifest-driven pruning + uninstall, sticky `--auto-update`, generic agents |
 | P11 | `gate.sh` hardening | ✅ shipped (v0.20.0) | Done — trust-on-first-use consent (outside repo), git-tracked cost cache, per-tree persisted bypass, first test coverage |
 | P12 | Token-discipline pass over the skills | ✅ shipped (v0.19.0) | Done — recall-first priming, diff-routed review with stated skips, honest evaluator wording, slimmer descriptions, size-capped injection |
-| P13 | Pillar-2 security-by-design | 🟢 design signed (PR #79), slice 1 next | Threat model + spec + plan landed, no code. 10 boundaries cited to file:line. Decisions taken: contract hash + re-approve on drift, DB role probe-and-refuse, **supply chain first and alone** — B10 is the only Critical. Two proposed checkers are already red on `main`. Residual hole recorded unsolved: maturation rewrites the file the hash covers, so it can re-bless itself |
+| P13 | Pillar-2 security-by-design | 🟡 slice 1 shipped v0.61.0 (B10 closed); slices 2+ open | **B10, the only Critical, is closed**: the installer pins the caller and the reusable workflow verifies the commit it checks out, failing closed before anything is fetched or executed — proven by two reverts, the decisive one run in two forms with the caller left pinned. `job_workflow_sha` **does not exist** (probed in real Actions), so the design's fallback was rebuilt around a `flywheel_sha` input. **Cost accepted:** existing `@main` installs break loudly and cannot receive the upgrade note. Still open: the contract hash (M3) and its unsolved residual — maturation rewrites the file the hash covers, so it can re-bless itself — plus the DB role probe (M4), the injection framing and the secret checker |
 | P14 | Pillar integration + process lifecycle | 🔵 proposed | Discovery, run→spec escalation, contract sync, write-path probe + file fallback |
 | P15 | Dogfooding flywheel on flywheel | 🔵 proposed | Seed LEARNINGS.md; `processes/release.md`; fix help state list |
 | P16 | Live run progress: task ledger + telemetry report | ✅ shipped (v0.16.0) | Done — both pillars (run/process + loop/work); piloted by flow-audit v3 + the p16 cycle report |
@@ -134,9 +134,11 @@ shipped in v0.49.0/v0.50.0/v0.54.0), **P15**, **P31**, **P32**.
    across varied work — accrues for free while other work happens. This bars
    building **P40b**, not building at all: every other cycle *produces* the
    metered data P40b needs.
-2. **P13 — pillar-2 security-by-design.** *Design signed 2026-09-16 (PR #79); **slice 1 —
-   supply chain — is the next thing to build**, and it is the only Critical in the model.*
-   Highest consequence of everything open.
+2. **P13 — pillar-2 security-by-design.** *Slice 1 shipped v0.61.0 and closed B10, the only
+   Critical. **Slice 2 is the contract hash (M3)**, and it must solve the residual the design
+   recorded rather than restate it: maturation rewrites the very file the hash covers, so a
+   maturation that re-records the hash re-blesses itself — the exact loop M3 exists to break.*
+   Still the highest consequence of everything open.
    The rest of the list makes the loop tidier; this one decides what happens when
    a contract or a ledger entry is hostile, and pillar 2 writes to a real
    datastore.
