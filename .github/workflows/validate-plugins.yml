@@ -81,6 +81,9 @@ jobs:
       - name: Check cycle telemetry (P42)
         run: bash scripts/check-telemetry.sh
 
+      - name: Check the plan's ladder was honored (P49)
+        run: bash scripts/check-route-honored.sh
+
       # Discovery, not a hand-written list. check-test-pairing.sh guarantees a
       # script arrives with its test; this guarantees the test is then run, so a
       # new one cannot sit in the tree never executed (which is what happened to
