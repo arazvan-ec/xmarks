@@ -26,13 +26,14 @@ and a transition maps to one:
 | --- | --- | --- |
 | p42 | T1-T3 sonnet, T4 opus, T5 haiku+delegate, T6 sonnet, T7 haiku+delegate | T1-T2, T3, T4 **honored**; **T5, T6, T7 have no line at all** |
 | p43 | T1 sonnet, T2 opus, T3 sonnet, T4+T5 haiku+delegate | T3 honored; T1 **absorbed** into a `T1-T2` transition that ran opus/high; **T4, T5 have no line** |
-| p13 | T1-T3 opus/high | ran `opus/xhigh` ×3 — an effort the tier ladder cannot rank |
+| p13 | T1-T6 across three tiers | three lines at `opus/xhigh` — an effort the ladder cannot rank; **T4, T5, T6 have no line** |
 
 Every 1:1 transition honored its route — 5 of 5. The ladder evaporates three
 other ways, none of which any gate asks about:
 
-1. **The cheap tail is never recorded.** Five planned tasks across two cycles,
-   including **all four `haiku/low+delegate` tasks**, have no transition line.
+1. **The cheap tail is never recorded.** Eight planned tasks across the three
+   cycles, **five of them `haiku/low+delegate`**, have no transition line. (The
+   table above was written before the gate ran over p13, which adds three.)
    The ledger cannot distinguish *"ran and wrote nothing"* from *"never ran"* —
    and that is the finding, not a detail of it.
 2. **A merge silently buys the higher tier.** One transition covering `T1-T2`
