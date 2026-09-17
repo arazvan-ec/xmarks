@@ -228,4 +228,28 @@ case "${NONE}" in
 esac
 pass "no meter file reports UNMEASURED, never a zero that fabricates a win"
 
+# --- the payload reaches the meter whatever its size -----------------------
+# It used to reach python through an environment variable; a single env string
+# is capped (128 KiB on Linux) and the exec fails WHOLE, so the largest tool
+# responses — the ones that actually fill the context — were dropped in silence
+# while the meter still called its total a floor. This harness's own `feed` has
+# the same cap, which is why the big payload is built inside the helper.
+
+feed_big() {  # sid bytes [budget]
+  FW_SID="$1" FW_N="$2" python3 -c '
+import json, os
+print(json.dumps({"session_id": os.environ["FW_SID"], "tool_name": "Bash",
+                  "hook_event_name": "PostToolUse",
+                  "tool_response": {"stdout": "x" * int(os.environ["FW_N"])}}))' \
+  | FLYWHEEL_CONTEXT_BUDGET_BYTES="${3-}" bash "${SCRIPT}"
+}
+
+feed_big s9 200000 >/dev/null
+BIG="$(CLAUDE_CODE_SESSION_ID=s9 bash "${SCRIPT}" --since first)"
+case "${BIG}" in
+  *"bytes_in=200000"*) : ;;
+  *) fail "a 200 KB response must be counted, not dropped for its size: ${BIG}" ;;
+esac
+pass "a tool response larger than the env-var cap is metered, not silently lost"
+
 echo "read-meter: all assertions passed"

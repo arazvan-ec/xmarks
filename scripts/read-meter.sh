@@ -89,14 +89,20 @@ PY
   exit $?   # the reader's exit code is python's; a bad cut must not look like success
 fi
 
-INPUT="$(cat 2>/dev/null)"
+# Via a FILE, never an env var: a single env string is capped (128 KiB on
+# Linux) and the exec fails whole, so every tool response past the cap was
+# dropped in silence — the largest reads, which are the ones that matter.
 command -v python3 >/dev/null 2>&1 || exit 0
+INPUT_FILE="$(mktemp "${TMPDIR:-/tmp}/flywheel-meter-in.XXXXXX" 2>/dev/null)" || exit 0
+trap 'rm -f "${INPUT_FILE}"' EXIT
+cat > "${INPUT_FILE}" 2>/dev/null
 
-FW_HOOK_INPUT="${INPUT}" python3 - <<'PY' 2>/dev/null
+FW_HOOK_INPUT_FILE="${INPUT_FILE}" python3 - <<'PY' 2>/dev/null
 import hashlib, json, os, sys, tempfile, time
 
 try:
-    payload = json.loads(os.environ.get("FW_HOOK_INPUT", "") or "{}")
+    with open(os.environ["FW_HOOK_INPUT_FILE"], encoding="utf-8") as fh:
+        payload = json.load(fh)
 except Exception:
     sys.exit(0)
 
@@ -134,6 +140,7 @@ try:
         fh.write(json.dumps(row, ensure_ascii=False) + "\n")
 except Exception:
     pass
+
 PY
 
 exit 0
