@@ -4,40 +4,18 @@ name: Validate plugins
 # hook frontmatter) with the Claude Code CLI. Runs in --strict mode so that
 # unrecognized fields and missing metadata fail the build.
 
+# No paths: filter, deliberately. The list here grew one entry at a time as
+# gates were added, and it was already wrong once — it excluded the workflow
+# check-supply-chain-pin.sh guards, so half of PR #81 changed with the gate
+# never running (Codex P1). check-version-citations.sh (P47) reads EVERY
+# tracked file, so no enumeration can be right for it: CLAUDE.md alone was
+# outside the old list, and any file added later would be too. A filter and a
+# whole-tree corpus cannot both be correct, and the cheap half of that trade is
+# running this job on a PR that only touches LICENSE.
 on:
   push:
     branches: [main]
-    paths:
-      - ".claude-plugin/**"
-      - "skills/**"
-      - "agents/**"
-      - ".claude/agents/**"
-      - "hooks/**"
-      - "scripts/**"
-      - "upgrades/**"
-      - "README.md"
-      - "docs/**"
-      - ".claude/flywheel/**"
-      # Every workflow, not just this one: check-supply-chain-pin.sh guards
-      # flywheel-update.yml, and a filter that excluded it let half B change
-      # without the gate ever running (Codex P1, PR #81).
-      - ".github/workflows/**"
   pull_request:
-    paths:
-      - ".claude-plugin/**"
-      - "skills/**"
-      - "agents/**"
-      - ".claude/agents/**"
-      - "hooks/**"
-      - "scripts/**"
-      - "upgrades/**"
-      - "README.md"
-      - "docs/**"
-      - ".claude/flywheel/**"
-      # Every workflow, not just this one: check-supply-chain-pin.sh guards
-      # flywheel-update.yml, and a filter that excluded it let half B change
-      # without the gate ever running (Codex P1, PR #81).
-      - ".github/workflows/**"
 
 jobs:
   validate:
@@ -77,6 +55,13 @@ jobs:
       - name: Check script/test pairing (P22)
         if: github.event_name == 'pull_request'
         run: bash scripts/check-test-pairing.sh "origin/${{ github.base_ref }}"
+
+      - name: Check that a release-bearing change brought its release (P47)
+        if: github.event_name == 'pull_request'
+        run: bash scripts/check-release-bump.sh "origin/${{ github.base_ref }}"
+
+      - name: Check that upgrade-note citations resolve (P47)
+        run: bash scripts/check-version-citations.sh
 
       - name: Check skill description budget (P24)
         run: bash scripts/check-description-budget.sh

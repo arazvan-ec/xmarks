@@ -82,6 +82,21 @@ plugin itself is no exception — "it's a small change" is the exact excuse
   bump `.claude-plugin/plugin.json` `version`, add `upgrades/v<version>.md`
   (frontmatter `version` / `requires-action: true|false` / `summary:`, a
   `## What changed`, and a `## Strategy` only when `requires-action: true`).
+  Two gates, and they ask opposite questions (P47).
+  `scripts/check-release-bump.sh` asks the one the rule is written in — *this
+  diff touched a release-bearing path, so where is the bump?* — and wants a
+  version **ahead of** the base's, not merely different from it, because a
+  branch cut before `main` moved carries an older one.
+  `scripts/test-docs-consistency.sh` asks the converse: a declared version has
+  its note. Skipping the first needs `SKIP_RELEASE_BUMP=<reason>`; it takes the
+  reason, not a `1`.
+- **A version you send a reader to must exist** (P47):
+  `scripts/check-version-citations.sh` fails when a link, or a `see`/`read`/
+  `follow`/`consult`/`refer to` immediately before the path, names an upgrade
+  note that is not in the tree. Naming a version in prose is a mention and stays
+  free — the rule grades the claim, not the number. A renumber has to carry its
+  pointers with it; the 0.61.0 one did not, and shipped a refusal message
+  sending third-party repos to a note nobody ever wrote.
 - **A `SKILL.md` invocation is capped, twice** (P35, P36): a session loads the
   whole body of every skill it invokes, plus whatever references that run reads.
   So `scripts/check-invocation-budget.sh` enforces **two** numbers per skill
