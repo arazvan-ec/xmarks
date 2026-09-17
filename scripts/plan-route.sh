@@ -190,8 +190,12 @@ if os.environ.get("FW_JSON") == "1":
         for e in errors:
             print(f"plan-route: FAIL: {e}", file=sys.stderr)
         sys.exit(1)
+    # The ladders travel with the parse: a consumer ranking a route recorded
+    # elsewhere must rank it against the same two lists, not a second copy.
     print(json.dumps({"plan": path, "top_tier": TOP,
-                      "top_route": f"{TOP_MODEL}/{TOP_EFFORT}", "tasks": records}))
+                      "top_route": f"{TOP_MODEL}/{TOP_EFFORT}",
+                      "model_ladder": list(MODEL_LADDER),
+                      "effort_ladder": list(EFFORT_LADDER), "tasks": records}))
     sys.exit(0)
 
 unusable = len(tasks) - len(routed)
