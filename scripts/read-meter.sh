@@ -141,6 +141,66 @@ try:
 except Exception:
     pass
 
+# The budget. One more tool call costs the whole accumulated context re-read,
+# so a session's bill grows with the square of its own length: past a point the
+# cheapest thing it can do is END, and no amount of reading less will match it.
+# The advisory is a READ of the total already recorded above, never a second
+# measurement — it must not add a call or a byte to what `--since` reports.
+raw = (os.environ.get("FLYWHEEL_CONTEXT_BUDGET_BYTES") or "").strip()
+try:
+    budget = int(raw) if raw else 600000
+except ValueError:
+    budget = 600000          # a typo must not silently disarm the guard
+if budget <= 0:
+    sys.exit(0)
+
+total = 0
+try:
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                total += int(json.loads(line).get("bytes") or 0)
+            except Exception:
+                continue
+except Exception:
+    sys.exit(0)
+
+crossed = total // budget
+if crossed < 1:
+    sys.exit(0)
+
+# Fires once per multiple: once is an advisory, every call is noise that costs
+# the very context it is warning about. The mark is a sidecar, not a meter row.
+mark = (path[: -len(".jsonl")] if path.endswith(".jsonl") else path) + ".warned"
+try:
+    with open(mark, encoding="utf-8") as fh:
+        warned = int((fh.read() or "0").strip() or 0)
+except Exception:
+    warned = 0
+if crossed <= warned:
+    sys.exit(0)
+try:
+    with open(mark, "w", encoding="utf-8") as fh:
+        fh.write(str(crossed))
+except Exception:
+    sys.exit(0)   # cannot remember it fired, so stay silent rather than repeat
+
+def human(n):
+    return "%.1f MB" % (n / 1000000.0) if n >= 1000000 else "%d KB" % (n // 1000)
+
+print(json.dumps({"hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "additionalContext": (
+        "flywheel context budget: this session has pulled %s of tool output into context "
+        "(%s budget, crossed %dx). Every further tool call re-reads all of it, so the cost "
+        "grows with the length of the session rather than with the work. Finish the step you "
+        "are on, then write the handoff \u2014 what is done, what is next, the first file the "
+        "next session should read \u2014 commit and push it, and end the session. Continuing "
+        "here is the expensive choice, not the thorough one."
+    ) % (human(total), human(budget), crossed)}}, ensure_ascii=False))
 PY
 
 exit 0
