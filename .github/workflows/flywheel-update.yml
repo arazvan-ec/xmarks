@@ -7,7 +7,7 @@ name: flywheel update (reusable)
 # PINS, and when they differ re-runs that commit's installer and opens a PR with
 # the refreshed copy. No difference → no PR, so there is no weekly noise.
 #
-# WHAT CHANGED IN 0.59.0, AND WHAT IT COSTS. This used to compare against
+# WHAT CHANGED IN 0.61.0, AND WHAT IT COSTS. This used to compare against
 # whatever this repo's `main` was at run time, which is the same thing as
 # executing `main` unattended (see SUPPLY CHAIN below). It now compares against
 # the pinned commit, so **the pin is the update lever**: a repo moves to a new
@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       # Fail-closed, and before anything is fetched or executed. An absent input
-      # means the caller predates flywheel 0.59.0 and still says `@main`; that
+      # means the caller predates flywheel 0.61.0 and still says `@main`; that
       # caller cannot be made safe, so it is refused rather than served.
       - name: Verify the caller pinned a commit
         id: pin
@@ -72,7 +72,7 @@ jobs:
           SHA_IN: ${{ inputs.flywheel_sha }}
         run: |
           if [ -z "${SHA_IN}" ]; then
-            echo "::error::This repository's .github/workflows/flywheel-update.yml calls flywheel's reusable workflow without a flywheel_sha input, which means it still pins @main. An unpinned caller lets anyone who can push to arazvan-ec/xmarks run arbitrary code here under contents:write, so this workflow now refuses to run instead. Remedy: re-vendor with 'bash /path/to/xmarks/scripts/install-vendored.sh --auto-update .' and commit the rewritten caller. See upgrades/v0.59.0.md."
+            echo "::error::This repository's .github/workflows/flywheel-update.yml calls flywheel's reusable workflow without a flywheel_sha input, which means it still pins @main. An unpinned caller lets anyone who can push to arazvan-ec/xmarks run arbitrary code here under contents:write, so this workflow now refuses to run instead. Remedy: re-vendor with 'bash /path/to/xmarks/scripts/install-vendored.sh --auto-update .' and commit the rewritten caller. See upgrades/v0.61.0.md."
             exit 1
           fi
           printf '%s' "${SHA_IN}" | grep -Eq '^[0-9a-fA-F]{40}$' || {
