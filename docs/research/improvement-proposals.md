@@ -67,6 +67,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P44 | The meter: read volume is observed, not reconstructed | ✅ shipped (v0.56.0) | Done — `read-meter.sh` on `PostToolUse` records the bytes of `tool_response` that entered context; `bytes_in`/`tool_calls` had zero instances in the repo's whole history before it |
 | P45 | The first transition has a start | ✅ shipped (v0.57.0) | Done — `elapsed_s` comes from the meter's cut, and `--since first` gives a cycle's opening line the start a commit delta could never supply; first run in the repo with no PARTIAL field |
 | P46 | An assertion that cannot fire on a live run | 🔵 proposed | Audit every grader assertion for whether a real executor can trip it. Eval 3 keys on `verdict: PASS`; 3 fresh-context runs wrote 31 telemetry lines and **zero** verdicts. Harness-verified is not live-verified, and a silent assertion looks identical whether it is passing or dead |
+| P47 | The release convention is enforced in one direction only | 🔵 proposed | `test-docs-consistency.sh` asserts *the current version has a note*, never *a `scripts/` change brought a bump*. So a scripts-only PR ships green with no release — observed on #85, and it is the same hole that let a renumber leave `upgrades/v0.59.0.md` cited in a shipped error message pointing at a file that never existed |
 
 ## Priority overview
 
@@ -2863,3 +2864,43 @@ between a dishonest close and a green grade, and the audit answers that.
 `skills/loop/evals/benchmarks/2026-09-16-v0.58.0/benchmark.md` (31 lines, zero
 verdicts), and the ledger entry *"an assertion can be dead on arrival and stay
 silent about it"*.
+
+## P47 — the release convention is enforced in one direction only (analysis, 2026-09-17)
+
+**Why.** CLAUDE.md is unambiguous: *every change to `skills/`, `agents/`,
+`hooks/` or `scripts/` is a release* — bump `plugin.json`, add
+`upgrades/v<version>.md`. It says `scripts/test-docs-consistency.sh` enforces it.
+It enforces the converse.
+
+That gate reads the version out of `plugin.json` and asserts a matching note
+exists. Nothing asks the opposite question: *this diff touched `scripts/`, so
+where is the bump?* A scripts-only PR with no bump and no note is green.
+
+**Observed twice in one day, both times green:**
+
+- **PR #85** changed `scripts/gate.sh` and `scripts/test-gate.sh` with no bump
+  and no note. CI passed. Its author said so in the body and left the release to
+  whoever cut it — which worked only because a human read the body.
+- **The v0.61.0 renumber** left three `0.59.0` references in
+  `.github/workflows/flywheel-update.yml`, one of them the `::error::` a refused
+  repo reads, pointing at `upgrades/v0.59.0.md` — a file that would never exist.
+  Green throughout. Nothing checks that a version named in prose resolves to a
+  file that is there.
+
+**What.** Two assertions, each seen red before green:
+
+1. **Bump implied by path.** If the diff against the merge base touches
+   `skills/`, `agents/`, `hooks/` or `scripts/`, `plugin.json`'s version must
+   differ from the base's, and `upgrades/v<new>.md` must exist. The escape hatch
+   is a labelled exception with a reason, as this repo does elsewhere — never a
+   silent pass.
+2. **A cited version resolves.** Every `v<x.y.z>` or `upgrades/v<x.y.z>.md`
+   named anywhere in tracked prose must correspond to a file that exists. This
+   is the one that would have caught the renumber, and it costs a glob.
+
+**Not proposed:** blocking a docs-only PR. The first assertion keys on the four
+release-bearing directories precisely so `docs/research/` changes stay free.
+
+**Related.** P46, on assertions that cannot fire on a live run. This is its
+sibling: an assertion that fires on the wrong direction. Both are cases of a
+gate whose *shape* looks like the rule while covering something adjacent.
