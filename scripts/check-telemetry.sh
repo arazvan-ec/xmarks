@@ -13,10 +13,18 @@
 #                 exempts it WITH A REASON. The baseline lists what is exempt, not
 #                 what is expected: a new spec is covered by default, and silencing
 #                 one is a line in the diff.
+#   PHASE (P48)  — a line written from the cutoff on names its `phase`. Identifying
+#                 a transition and being summable by phase are different duties,
+#                 and only the first was specified: 36 of the corpus's 58 lines
+#                 carry none, so "which phase costs most" had no answer. Older
+#                 lines are a COUNTED NOTICE — nothing may be backfilled (P18).
 #
 # Usage: check-telemetry.sh [repo-root]
 #   SKIP_TELEMETRY_CHECK=1        skip with a logged notice, never silently
 #   FLYWHEEL_TELEMETRY_BASELINE   override the baseline path
+#   FLYWHEEL_PHASE_REQUIRED_FROM  move the phase cutoff (default: the release that
+#                                 introduced it, placed after the whole corpus so
+#                                 the rule binds live work from its first line)
 #
 # Exit: 0 ok · 1 non-conforming telemetry or an unexplained gap · 2 unusable
 #         input (no specs dir, no python3, or a baseline entry with no reason)
@@ -36,10 +44,12 @@ BASELINE="${FLYWHEEL_TELEMETRY_BASELINE:-${ROOT}/scripts/telemetry-baseline.txt}
 [ -d "${SPECS}" ] || { echo "telemetry: no ${SPECS} — nothing to check" >&2; exit 2; }
 command -v python3 >/dev/null 2>&1 || { echo "telemetry: no python3" >&2; exit 2; }
 
-FW_SPECS="${SPECS}" FW_RUNS="${RUNS}" FW_BASELINE="${BASELINE}" python3 - <<'PY'
+FW_SPECS="${SPECS}" FW_RUNS="${RUNS}" FW_BASELINE="${BASELINE}" \
+FW_PHASE_FROM="${FLYWHEEL_PHASE_REQUIRED_FROM:-2026-09-17T20:00:00Z}" python3 - <<'PY'
 import json, os, sys
 
 specs, runs, baseline = os.environ["FW_SPECS"], os.environ["FW_RUNS"], os.environ["FW_BASELINE"]
+PHASE_FROM = os.environ["FW_PHASE_FROM"]
 
 exempt = {}
 if os.path.isfile(baseline):
@@ -62,6 +72,7 @@ slugs = sorted(f[:-3] for f in os.listdir(specs)
 # debt, not a new violation: reported, never fatal. The tokens ban is the one
 # rule with no exemption — P18 is about what may enter the ledger at all.
 bad, notices, covered = [], [], set()
+phaseless = 0
 for dirpath, _, files in os.walk(runs):
     for f in files:
         if not f.endswith(".jsonl"):
@@ -108,6 +119,18 @@ for dirpath, _, files in os.walk(runs):
 
             if problem is None and not any(identifies(rec.get(k)) for k in ("task", "phase")):
                 problem = "names neither a task nor a phase"
+            # Aggregation (P48) is the duty above identification: a line may
+            # still identify by task alone, but from the cutoff on it must also
+            # say which phase it belongs to, or the ledger cannot be totalled by
+            # one. Before the cutoff the same line is a debt to count, not a
+            # failure to fix — backfilling it would fabricate the evidence.
+            phase = rec.get("phase")
+            if problem is None and not (isinstance(phase, str) and phase.strip()):
+                if str(rec.get("ts") or "") >= PHASE_FROM:
+                    problem = (f"carries no phase — required from {PHASE_FROM} so the"
+                               " ledger can be totalled by phase (P48)")
+                else:
+                    phaseless += 1
             cost = rec.get("cost")
             if problem is None:
                 if not isinstance(cost, dict):
@@ -136,6 +159,10 @@ for g in gaps:
 n_ex = sum(1 for s in slugs if s in exempt)
 print(f"telemetry: {len(covered & set(slugs))} of {len(slugs)} specs carry telemetry;"
       f" {n_ex} exempt via the baseline — each one a cycle that shipped unmeasured.")
+if phaseless:
+    print(f"telemetry: {phaseless} line(s) predate the phase rule ({PHASE_FROM}) and name no"
+          f" phase, so that stretch of the corpus cannot be totalled by phase."
+          f" Nothing is backfilled to change it (P18).")
 
 sys.exit(1 if (bad or gaps) else 0)
 PY
