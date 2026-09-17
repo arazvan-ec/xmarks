@@ -1,7 +1,14 @@
 # Spec: P47 — the release convention, enforced in the direction it is written
 
 **Slug:** `p47-release-gate-direction` · **Created:** 2026-09-17 · **Backlog:** P47
-**Status:** in progress — target v0.63.0.
+**Status:** shipped as v0.63.0 — metric PASS. 25 discovered `scripts/test-*.sh`
+and 10 `check-*` gates green under an isolated `TMPDIR`; `claude plugin validate
+. --strict` passes. Both decisive clauses hold on real history rather than a
+fixture: `check-version-citations.sh` is green on the tree as it stands (4
+pointers, all resolving, no exclusion list) and red on that same tree with the
+0.61.0 renumber put back, naming the workflow once; `check-release-bump.sh`
+exits 1 on PR #85 replayed against its real base and reports 0.62.0 → 0.63.0
+here.
 
 **Prime:** P22 (`check-test-pairing.sh`, the only gate here that already reasons
 about a diff against a merge base), P46 (an assertion that cannot fire on a live
