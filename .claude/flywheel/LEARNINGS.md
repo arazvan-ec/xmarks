@@ -873,3 +873,64 @@ The shape that proves it is a table with one column per path and a mark in exact
 Fail-open is the right behaviour and it worked perfectly — which is exactly why this hid. A degradation that always happens produces no failures, no alerts and no complaints; it simply means the rule everyone reads is not the rule anyone executes, and the fallback quietly became the real specification.
 
 The check is cheap and nobody runs it: **count how often the fallback fires**. Always is a defect — either the primary path should be removed and the fallback promoted to the rule, or the capability it assumes should be made real. Writing it as the primary path is the one option the evidence rules out.
+
+## gotcha: the aggregate accused the wrong suspect
+
+<!-- fw: type=gotcha; date=2026-09-17; files=scripts/check-route-honored.sh,.claude/flywheel/specs/p49-the-plan-is-honored-or-said.md; spec=p49-the-plan-is-honored-or-said; branch=claude/session-process-flow-optimization-frmnro; evidence=40 of 46 routed transitions on opus and haiku zero read as a collapsed router; per task, 5 of 5 transitions mapping 1:1 to a plan task honored their route, while 8 planned tasks across p13/p42/p43 — five of them haiku/low+delegate — had no transition line at all -->
+
+The corpus said the route ladder had collapsed: 40 of 46 routed transitions on
+opus, sonnet 5, haiku **0**. Two readings fit — the planner over-assigns, or
+`work` disobeys — and a gate was specced for the first before anyone checked it.
+Per task, both are false. Every transition that maps to exactly one plan task ran
+at exactly the route it was given.
+
+What the aggregate was actually showing is the **tasks that have no line**. The
+cheap tail of a plan — the `haiku/low+delegate` steps, the release chores, the
+metric run — is where recording stops, so the tiers that only appear there never
+appear in the record at all. An aggregate over a partial record does not report
+"fewer haiku runs"; it reports **zero**, and zero looks exactly like a policy.
+
+Before building on a distribution, check whether the population is the one you
+think. Ask the per-item question once: here it took one script and refuted the
+premise of a spec already written.
+
+## pattern: a cutoff placed between the corpus and the next line makes a rule live on its first subject
+
+<!-- fw: type=pattern; date=2026-09-17; files=scripts/check-telemetry.sh,scripts/check-route-honored.sh; spec=p48-phase-in-every-line; branch=claude/session-process-flow-optimization-frmnro; evidence=newest existing line 2026-09-17T19:40:54Z, cutoff 20:00:00Z, this cycle's first line 21:46:00Z — the gate reddens on the cycle that shipped it and counts the 36 older lines as a notice -->
+
+A new rule over an existing record has three bad options and one good one.
+Backfilling fabricates evidence (P18). A per-item exemption list either grows
+forever or, worse, reuses a file that exempts something else — listing 36
+phase-less lines by slug would have exempted those slugs from the *coverage*
+check too, hiding a real gap to silence a shape one. A cutoff dated "tomorrow"
+ships a rule that cannot fire on any live run, which is P46's defect committed on
+purpose.
+
+The fourth: a **timestamp between the newest line in the corpus and the first line
+the new cycle will write**. It splits exactly the set that can still be fixed from
+the set that cannot, needs no list, and makes the shipping cycle the rule's first
+subject — so the release proves the gate by reddening on its own author.
+
+It has to be checked against the real corpus, not assumed. A date-granular cutoff
+here would have reddened two lines written earlier the same day, on history
+nothing can fix.
+
+## gotcha: a meter whose window always ends "now" cannot measure a window that ended earlier
+
+<!-- fw: type=gotcha; date=2026-09-17; files=scripts/read-meter.sh,.claude/flywheel/runs/p50-the-meter-names-the-read/2026-09-17.jsonl; spec=p50-the-meter-names-the-read; branch=claude/session-process-flow-optimization-frmnro; evidence=--since cuts at a timestamp and runs to the present, so of six transitions written after the fact only T5 could carry max_read and by_tool; an earlier pass also wrote ts values ahead of the real clock and the meter correctly returned 0 -->
+
+`read-meter.sh --since` reports from a cut to the present. Totals survive that:
+two cumulative readings differenced give a middle window's `bytes_in` and
+`tool_calls`. A **maximum** and a **per-tool split** do not — they cannot be
+recovered from two sums, so a line written after its transition must leave them
+out rather than reconstruct them by hand.
+
+Which is the contract working: *omit a field you cannot compute*. But it means
+the fields exist only for a line written **at** its transition, and the duty that
+says so is now load-bearing rather than stylistic.
+
+The same session found the cheaper half of this the hard way: transition
+timestamps were written slightly ahead of the real clock, and the meter returned
+`bytes_in=0 tool_calls=0` for every one of them. That zero is the only reason the
+error was caught. Take boundaries from something already recorded — commit
+timestamps — not from an estimate of what time it is.

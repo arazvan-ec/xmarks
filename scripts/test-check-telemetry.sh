@@ -216,6 +216,18 @@ run "${R}"
 grep -qi "legacy" "${WORK}/out" || fail "the notice must name it: $(cat "${WORK}/out")"
 pass "the phase rule routes through the baseline like every other shape rule"
 
+echo "== by_tool is not a numeric proxy (P50) =="
+# A dict of per-tool bytes is a breakdown, not a measurement of the transition:
+# a cost object carrying only it has still measured nothing.
+R="$(repo bytool)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-18T10:00:00Z","state":"completed","task":3,"phase":"work","cost":{"by_tool":{"Bash":{"bytes":10,"calls":1}}}}'
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a cost object of only by_tool must fail, got ${RC}: $(cat "${WORK}/out")"
+telemetry "${R}" alpha '{"ts":"2026-09-18T10:00:00Z","state":"completed","task":3,"phase":"work","cost":{"max_read":10,"by_tool":{"Bash":{"bytes":10,"calls":1}}}}'
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "max_read alongside it is a numeric proxy, got ${RC}: $(cat "${WORK}/out")"
+pass "by_tool alone does not satisfy the cost rule; max_read does"
+
 echo "== the real repo is green =="
 run "${SRC}"
 [ "${RC}" -eq 0 ] || fail "this repo must pass its own telemetry gate, got ${RC}: $(cat "${WORK}/out")"
