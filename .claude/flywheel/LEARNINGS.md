@@ -83,6 +83,78 @@ appeared the moment it ran against the tree it exists to protect. **A gate needs
 a test case for the artifact in its final, commented, shipped form**, not only
 for the minimal shape a fixture generates.
 
+## gotcha: an absence assertion is a bet, and the first real run is where you find out
+
+<!-- fw: type=gotcha; date=2026-09-16; files=skills/review/evals/evals.json,skills/review/evals/check.sh; spec=p32-review-suite; branch=claude/p32-review-suite; evidence=eval 2's fresh-context run drew all three reviewers where the committed ideal draws two; an assertion that reviewer-performance must NOT be drawn there would have been red on the first real run the suite ever saw -->
+
+Grading a routing rule invites a tempting symmetry: if a docs-only diff must draw
+correctness **alone**, then an input-handling diff should draw correctness and
+security and **not** performance. The second half is a bet on a reading, not a
+rule. `security.patch` adds two `SELECT`s per request and the performance rule
+names *queries* — so the run that drew all three was right, and the assertion
+would have been wrong.
+
+Absence is only assertable where there is no second reading. That is why it lives
+on eval 1 (a docs-only diff executes nothing) and nowhere else, and why eval 2's
+`expected_output` records the measurement rather than the intuition. The
+generalization: a positive assertion says "this rule fired"; a negative one says
+"no defensible reading of any other rule fired", which is a far bigger claim and
+usually an unmeasured one.
+
+## pattern: grade the artifact of a decision, not the sentence describing it
+
+<!-- fw: type=pattern; date=2026-09-16; files=skills/review/evals/check.sh,skills/review/evals/solutions/api-security-skipped/; spec=p32-review-suite; branch=claude/p32-review-suite; evidence=the api-security-skipped cheat's report claims the security lens in prose and would pass any prose-based check; .dispatch-log shows it was never drawn, and the arm grades red on exactly that assertion -->
+
+`/flywheel:review` routes reviewers and then writes about having routed them. The
+prose is the cheapest thing in the artifact to get right and the least
+informative — a report can claim a lens it never applied without anyone lying on
+purpose.
+
+`Task` does not exist inside a subagent, so the decision left no trace at all
+until the fixture shipped `dispatch-reviewer`: a shim that records each reviewer
+drawn and returns no findings. That one file turns a routing rule from prose into
+an artifact, and the committed cheat proves the difference — its report claims
+security, its `.dispatch-log` does not, and the grader reads the log.
+
+Where a decision leaves no artifact, the honest move is to *make* one that is
+cheap and truthful, not to fall back on matching the sentence about it.
+
+## decision: when a property has no canonical wording, gate the alternation itself
+
+<!-- fw: type=decision; date=2026-09-16; files=skills/review/evals/check.sh,scripts/test-eval-graders.sh; spec=p32-review-suite; branch=claude/p32-review-suite; evidence=three fresh-context runs produced three different disclosures, none matching the committed ideal's wording; the harness now requires seven rewritten spellings green and silence red -->
+
+v0.40.1 and v0.41.0 each mechanized a property as one surface form and reddened
+correct runs. The response here was not "write a longer regex" — a longer regex
+nobody has watched accept a new spelling is the same guess with more words. It
+was to make the alternation a thing under test: the ideal outcome's disclosure
+paragraph is rewritten **seven** different honest ways and all seven must stay
+green, then removed and required red.
+
+Two smaller rules fell out of building it, both measured rather than reasoned:
+
+- **Exclusions need recorded reasons.** `fallback` had to come out because the
+  diff under review adds a hardcoded *fallback token*; `one reviewer` because it
+  contains the other match group's own word and the skill's small-diff rule says
+  it verbatim; `no <role>` because "no performance reviewer was drawn" is a
+  *routing* sentence. Each would have made the assertion vacuously green.
+- **A broad alternation is safe only where it cannot fire alone.** Loose on
+  spelling, strict on silence: the defect being caught is a report that says
+  nothing, and nothing about a correct report's wording is anyone's business.
+
+## gotcha: BASED-ON pins a filesystem digest, so running a fixture's own suite poisons it
+
+<!-- fw: type=gotcha; date=2026-09-16; files=skills/review/evals/solutions/*/BASED-ON,scripts/fixture-scratch.sh; spec=p32-review-suite; branch=claude/p32-review-suite; evidence=ops-console-repo digested caf110b6 with __pycache__/ present and d6581cb9 without; five solutions were committed pinning the first, which no clean checkout can reproduce -->
+
+`python3 -m unittest` inside `skills/<skill>/evals/fixtures/<repo>/` leaves
+`__pycache__/` behind. It is gitignored, so `git status` is clean and nothing
+looks wrong — but `fixture_digest` walks the **filesystem**, not the index, so
+every `BASED-ON` taken afterwards pins a tree only this machine has. Local green,
+CI red on a fresh clone.
+
+Verify a fixture's suite from a scratch copy, never in place. And note where the
+gate actually is: `test-fixture-scratch.sh`'s discovery arm catches it on CI
+precisely because CI has no leftovers — the same property that makes the bug
+invisible locally makes it unmissable there.
 
 ## gotcha: the gate list you were handed is not the gate set CI runs
 

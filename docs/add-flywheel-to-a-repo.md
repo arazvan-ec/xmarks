@@ -101,12 +101,12 @@ Optionally, for repos you'd rather not think about:
   prints the exact URL for: *Settings → Actions → General → "Allow GitHub Actions to create
   and approve pull requests"*.
 
-  Since v0.59.0 that caller **pins a full commit SHA** and passes it as a `flywheel_sha`
+  Since v0.61.0 that caller **pins a full commit SHA** and passes it as a `flywheel_sha`
   input, because this job runs flywheel's code in your CI with write access (P13/B10). It
   therefore does **not** chase `main` on its own: bump the pinned SHA, or re-run the
-  installer from a newer checkout, to move. Repos installed before v0.59.0 carry an `@main`
+  installer from a newer checkout, to move. Repos installed before v0.61.0 carry an `@main`
   caller, and this job now fails for them until they re-vendor — see
-  [`../upgrades/v0.59.0.md`](../upgrades/v0.59.0.md).
+  [`../upgrades/v0.61.0.md`](../upgrades/v0.61.0.md).
 
 Updates are more than a file refresh: every release ships an AI-authored note in
 [`upgrades/`](../upgrades/) describing whether the version **requires action** in installed

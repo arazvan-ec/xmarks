@@ -2,7 +2,7 @@
 # flywheel — test for the committed eval graders (P26). The property that found
 # the hollow `run` eval-2 assertion is "run the grader against an untouched
 # fixture and ask whether it can even fail". This makes that property a build
-# check for all four graders, and adds its mirror for pillar 1: a grader that can
+# check for every grader, and adds its mirror for pillar 1: a grader that can
 # never PASS is just as useless as one that can never FAIL.
 #
 # Red-on-untouched: every grader, every eval id, exits non-zero on a pristine
@@ -60,8 +60,8 @@ run_grader() {
   bash "$(grader "${skill}")" "${id}" "${w}" >"${WORK}/out" 2>&1 || RC=$?
 }
 
-echo "== all five graders exist and are executable =="
-for s in loop process run verify work; do
+echo "== all six graders exist and are executable =="
+for s in loop process review run verify work; do
   g="$(grader "${s}")"
   [ -f "${g}" ] || fail "${s}: no committed grader at skills/${s}/evals/check.sh"
   bash -n "${g}" || fail "${s}: grader is not valid bash"
@@ -69,7 +69,7 @@ for s in loop process run verify work; do
 done
 
 echo "== an unknown eval id exits 2 (the pillar-2 contract) =="
-for s in loop process run verify work; do
+for s in loop process review run verify work; do
   w="${WORK}/unknown-${s}"; mkdir -p "${w}"
   run_grader "${s}" 99 "${w}"
   [ "${RC}" -eq 2 ] || fail "${s}: unknown eval id must exit 2, got ${RC}: $(cat "${WORK}/out")"
@@ -91,6 +91,8 @@ for spec in \
   "loop:inventory-repo:1 2" \
   "loop:contradiction-repo:3" \
   "loop:unsafe-filter-repo:4" \
+  "review:docs-change-repo:1" \
+  "review:ops-console-repo:2 3" \
 ; do
   skill="${spec%%:*}"; rest="${spec#*:}"; fixture="${rest%%:*}"; ids="${rest#*:}"
   for id in ${ids}; do
@@ -295,6 +297,122 @@ printf '\n\ndef find_by_owner(db, owner):\n    return []\n' >> "${w}/entries.py"
 run_grader loop 4 "${w}"
 [ "${RC}" -ne 0 ] || fail "loop: gutting the module must not pass"
 pass "gutting the module is graded red by the one positive probe"
+
+echo "== GREEN on the three ideal review outcomes =="
+# One per eval, because the three evals assert different things: routing on a
+# docs-only diff, the security trigger plus a quality check, and the full
+# fan-out plus Option B.
+for spec in "1:docs-correctness-only" "2:api-security-drawn" "3:fanout-honest"; do
+  id="${spec%%:*}"; sol="${spec#*:}"
+  w="$(materialize review "${id}" "${sol}" "ideal-review-${id}")"
+  run_grader review "${id}" "${w}"
+  [ "${RC}" -eq 0 ] || fail "review eval ${id}: ${sol} must grade green: $(cat "${WORK}/out")"
+  pass "review eval ${id}: green on ${sol}"
+done
+
+echo "== review: eight cheats, each failing its OWN assertion =="
+# rc != 0 is not enough. Two cheats that both go red for the same reason are one
+# arm wearing two names, and the suite would look twice as strong as it is — so
+# every FAIL line a cheat produces must match the assertion that cheat targets,
+# and nothing else may be red.
+cheat_case() { # cheat_case <solution> <eval-id> <expected-FAIL regex> <n-fails>
+  local sol="$1" id="$2" re="$3" want="$4"
+  local w; w="$(materialize review "${id}" "${sol}" "cheat-${sol}")"
+  run_grader review "${id}" "${w}"
+  [ "${RC}" -ne 0 ] || fail "review: ${sol} must grade red: $(cat "${WORK}/out")"
+  local n unmatched
+  n="$(grep -c '^FAIL: ' "${WORK}/out")"
+  [ "${n}" -eq "${want}" ] || fail "review: ${sol} produced ${n} FAIL lines, expected ${want}: $(cat "${WORK}/out")"
+  unmatched="$(grep '^FAIL: ' "${WORK}/out" | grep -vE "${re}" || true)"
+  [ -z "${unmatched}" ] || fail "review: ${sol} went red for a reason it does not target: ${unmatched}"
+  pass "review: ${sol} is red on exactly its own assertion"
+}
+
+# Wrong routing on the one diff where the rule is unambiguous: docs only. Three
+# FAILs, not two: a report that fans out also stops describing a skip, and the
+# count is asserted so that losing either routing assertion shows up here.
+cheat_case docs-full-fanout 1 'no (security|performance) reviewer was drawn|names both lenses it skipped' 3
+# Right routing, never said — "a silent cap reads as full coverage".
+cheat_case docs-silent-cap 1 'names both lenses it skipped' 1
+# Named, and claimed to have RUN. Found by review on the PR that added this
+# suite: two independent name matches passed "the report names both lenses it
+# skipped" even when the sentence asserted the opposite.
+cheat_case docs-claims-they-ran 1 'names both lenses it skipped' 1
+# The prose claims the security lens; the artifact says it was never drawn. This
+# is the arm that proves routing is graded from .dispatch-log and not the report.
+cheat_case api-security-skipped 2 'a security reviewer was drawn' 1
+# Drawn, disclosed, and it found nothing: the hollow review.
+cheat_case api-no-finding 2 'names the class of defect' 1
+# The same hollow review that DENIES the defect in the vocabulary an affirmative
+# finding would use ("found no SQL injection and no hardcoded credential"). Also
+# from the PR review: the old grep counted a denial, and the routing rationale's
+# own "adds a credential" would have carried it even without one.
+cheat_case api-denies-the-finding 2 'names the class of defect' 1
+# Option B's own cheat: right routing, right findings, and an account of how they
+# were produced that never happened.
+cheat_case fanout-implied-parallel 3 'Option B' 1
+# The dishonest report that satisfied the FIRST version of the alternation: the
+# bare phrase "in this context" was a member, and "dispatched in parallel in this
+# context" contains it while asserting exactly what option B exists to reject.
+# The context family is out of the pattern for that reason; every honest run and
+# battery spelling measured so far carries a negative phrase as well.
+cheat_case fanout-affirmative-context 3 'Option B' 1
+
+echo "== review: FW_REAL_DISPATCH=1 changes option B and nothing else =="
+# Option A (evals/README.md) runs these evals where `Task` really exists, so the
+# specialists DO run and the option-B assertion is backwards there. The flag must
+# lift exactly that assertion — and must not become a way to grade a bad run.
+w="$(materialize review 3 fanout-implied-parallel real-dispatch-ok)"
+RC=0; FW_REAL_DISPATCH=1 bash "$(grader review)" 3 "${w}" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -eq 0 ] || fail "review: FW_REAL_DISPATCH=1 must lift the option-B assertion: $(cat "${WORK}/out")"
+grep -q '^N/A: ' "${WORK}/out" || fail "review: the lifted assertion must print an N/A line, not vanish"
+pass "FW_REAL_DISPATCH=1 lifts option B, and says so on a line"
+
+w="$(materialize review 1 docs-full-fanout real-dispatch-scope)"
+RC=0; FW_REAL_DISPATCH=1 bash "$(grader review)" 1 "${w}" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -ne 0 ] || fail "review: FW_REAL_DISPATCH=1 must not lift the routing assertions"
+pass "FW_REAL_DISPATCH=1 leaves routing graded" 
+
+echo "== review: the Option B disclosure, seven spellings and two negatives =="
+# The trap this suite is built against: v0.40.1 and v0.41.0 each mechanized a
+# property as ONE surface form and reddened correct runs, costing two releases.
+# So the alternation is itself gated — the same ideal outcome with its disclosure
+# paragraph rewritten seven different honest ways must stay green, and the same
+# report with the paragraph REMOVED must go red. Silence is the defect; wording
+# is the run's business.
+disclosure_case() { # disclosure_case <name> <want-rc> <replacement text | -->
+  local name="$1" want="$2" text="$3"
+  local w; w="$(materialize review 3 fanout-honest "disclosure-${name}")"
+  FW_TEXT="${text}" python3 - "${w}/review.md" <<'EOF'
+import os, re, sys
+p = sys.argv[1]
+s = open(p).read()
+new = os.environ["FW_TEXT"]
+block = re.compile(r"\*\*How the three lenses were covered\.\*\*.*?(?=\n## )", re.S)
+if not block.search(s):
+    sys.exit("the ideal outcome no longer carries the paragraph this arm rewrites")
+open(p, "w").write(block.sub((new + "\n\n") if new != "--" else "", s))
+EOF
+  run_grader review 3 "${w}"
+  if [ "${want}" -eq 0 ]; then
+    [ "${RC}" -eq 0 ] || fail "review: the disclosure spelled '${name}' must stay green: $(cat "${WORK}/out")"
+  else
+    [ "${RC}" -ne 0 ] || fail "review: '${name}' must grade red"
+  fi
+  pass "disclosure '${name}': $([ "${want}" -eq 0 ] && echo green || echo red)"
+}
+
+disclosure_case no-subagents 0 "No subagents here — I read the diff through all three lenses myself, one after the other."
+disclosure_case unavailable  0 "Reviewer dispatch is unavailable in this environment; ./dispatch-reviewer only records the request."
+disclosure_case recorded     0 "The three reviewers were recorded, not run. Everything below is a single-context review."
+disclosure_case never-ran    0 "Task is not available, so the specialist agents never ran; treat this as an inline review."
+disclosure_case no-fanout    0 "There was no real fan-out: each reviewer request came back with no findings, and the checklists were worked through sequentially."
+disclosure_case not-launched 0 "Coverage caveat — the parallel specialist agents could not be launched, so this report is one context's work."
+disclosure_case no-separate  0 "Dispatch recorded only; no separate agent produced any of the findings below."
+disclosure_case silence      1 --
+# Not a spelling of the property — its negation. Kept in the battery because this
+# is the file someone edits when they want to loosen the alternation.
+disclosure_case affirmative  1 "Three specialist reviewers were dispatched in parallel in this context, and their findings are synthesized below." 
 
 echo "== verify: a PASS verdict on a planted-bug eval fails =="
 w="$(materialize verify 2 tally-sneaky-ideal rationalized)"

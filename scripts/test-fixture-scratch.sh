@@ -357,7 +357,7 @@ pass "no GNU-only sort/xargs/find flags, and sha256 is probed with a fallback"
 echo "== the committed tree: every eval resolves, and no answer key is in a fixture =="
 unset FW_EVAL_ROOT
 COUNT=0
-for s in loop process run verify work; do
+for s in loop process review run verify work; do
   ids="$(python3 -c "
 import json;print(' '.join(str(e['id']) for e in json.load(open('${SRC}/skills/${s}/evals/evals.json'))['evals']))")"
   for id in ${ids}; do
@@ -368,7 +368,7 @@ import json;print(' '.join(str(e['id']) for e in json.load(open('${SRC}/skills/$
     COUNT=$((COUNT + 1))
   done
 done
-[ "${COUNT}" -ge 14 ] || fail "expected at least 14 committed evals, resolved ${COUNT} — the loop is not covering the suites"
+[ "${COUNT}" -ge 17 ] || fail "expected at least 17 committed evals, resolved ${COUNT} — the loop is not covering the suites"
 pass "all ${COUNT} committed evals resolve to a fixture directory that exists"
 
 # check-fixture-leaks.sh copies verdict vocabulary, but loop's ideal JSONL

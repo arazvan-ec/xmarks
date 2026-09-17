@@ -1,0 +1,70 @@
+diff --git a/README.md b/README.md
+index 416872f..1eec038 100644
+--- a/README.md
++++ b/README.md
+@@ -8,3 +8,22 @@ slugify("El Confidencial — Portada")   # 'el-confidencial-portada'
+ ```
+ 
+ Run the tests with `python3 -m unittest`.
++
++## Why slugs are stable
++
++A slug is part of a published URL, so it is generated once and then stored.
++`slugify` is deliberately lossy — accents are folded, punctuation collapses —
++which means two different titles can produce the same slug. That is what
++`unique_slug` is for: pass it the slugs already taken in the section and it
++returns the first free variant.
++
++Never re-run `slugify` over an article that is already live. Regenerating a
++slug changes the URL, and the CMS does not keep a redirect.
++
++## Editorial conventions
++
++- Titles are slugified from the printed headline, not from the SEO title.
++- Section prefixes (`/espana/`, `/mercados/`) are added by the CMS and are not
++  part of what this helper returns.
++- Slugs longer than 80 characters are truncated by the CMS at publish time, so
++  keep headlines short if the tail matters.
+diff --git a/docs/usage.md b/docs/usage.md
+index 1396b76..16f2526 100644
+--- a/docs/usage.md
++++ b/docs/usage.md
+@@ -6,3 +6,18 @@ ends.
+ 
+ `unique_slug(title, taken)` does the same and then appends `-2`, `-3`, … until
+ the result is not already in `taken`.
++
++## Collisions
++
++`taken` is any container supporting `in`. The desk passes the set of slugs
++already used in the same section, which is the scope the CMS enforces
++uniqueness over — two sections may hold the same slug.
++
++The counter starts at `-2` because the first article keeps the bare slug. There
++is no upper bound on the counter; in practice the desk has never gone past
++`-4`.
++
++## What is not handled
++
++Transliteration is ASCII-folding only, so a Cyrillic or Greek headline folds
++away to an empty string and the caller gets `''`. The desk types those by hand.
+diff --git a/slugify.py b/slugify.py
+index 0ba8e61..024f5c5 100644
+--- a/slugify.py
++++ b/slugify.py
+@@ -3,12 +3,15 @@ import unicodedata
+ 
+ 
+ def slugify(title):
++    # NFKD first, then an ASCII encode: folding accents this way keeps the
++    # result stable across the two Python versions the CMS still runs.
+     norm = unicodedata.normalize("NFKD", title)
+     ascii_only = norm.encode("ascii", "ignore").decode("ascii")
+     return re.sub(r"[^a-z0-9]+", "-", ascii_only.lower()).strip("-")
+ 
+ 
+ def unique_slug(title, taken):
++    # The bare slug belongs to the first article, so the counter starts at 2.
+     base = slugify(title)
+     if base not in taken:
+         return base

@@ -1,0 +1,98 @@
+diff --git a/app.py b/app.py
+index 9e0b9fb..d17263d 100644
+--- a/app.py
++++ b/app.py
+@@ -1,9 +1,14 @@
++import os
++
+ from flask import Flask, jsonify, request
+ 
+ import store
+ 
+ app = Flask(__name__)
+ 
++# The desk's shared console token. Overridden per deploy.
++OPS_TOKEN = os.environ.get("OPS_TOKEN", "ops-live-7f3c2a91b4")
++
+ 
+ def db():
+     return store.open_db("console.db")
+@@ -22,3 +27,37 @@ def one_entry(entry_id):
+     if row is None:
+         return jsonify({"error": "not found"}), 404
+     return jsonify(dict(zip(("id", "owner", "label", "state"), row)))
++
++
++def authorized(req):
++    return req.headers.get("X-Ops-Token", "") == OPS_TOKEN
++
++
++@app.route("/entries/search")
++def search_entries():
++    """Advanced filter: the desk types an expression, we put it after WHERE.
++
++    Ops asked for comparisons, LIKE, AND/OR and IN — a fixed column list is
++    what they are trying to get away from.
++    """
++    if not authorized(request):
++        return jsonify({"error": "unauthorized"}), 401
++    where = request.args.get("filter", "1=1")
++    handle = db()
++    rows = store.find_entries(handle, where)
++    return jsonify({
++        "total": store.count_entries(handle, where),
++        "rows": [dict(zip(("id", "owner", "label", "state"), row)) for row in rows],
++    })
++
++
++@app.route("/entries/search/save", methods=["POST"])
++def save_search():
++    """Keep an expression the desk wants back tomorrow."""
++    if not authorized(request):
++        return jsonify({"error": "unauthorized"}), 401
++    owner = request.form.get("owner", "ops")
++    name = request.form.get("name", "untitled")
++    where = request.form.get("filter", "1=1")
++    store.save_filter(db(), owner, name, where)
++    return jsonify({"saved": name, "owner": owner, "filter": where})
+diff --git a/store.py b/store.py
+index 454cec0..20ba840 100644
+--- a/store.py
++++ b/store.py
+@@ -7,6 +7,12 @@ CREATE TABLE IF NOT EXISTS entries (
+     label TEXT NOT NULL,
+     state TEXT NOT NULL
+ );
++CREATE TABLE IF NOT EXISTS saved_filters (
++    id INTEGER PRIMARY KEY,
++    owner TEXT NOT NULL,
++    name TEXT NOT NULL,
++    expression TEXT NOT NULL
++);
+ CREATE TABLE IF NOT EXISTS api_tokens (
+     id INTEGER PRIMARY KEY,
+     label TEXT NOT NULL,
+@@ -42,3 +48,23 @@ def entry(db, entry_id):
+         "SELECT id, owner, label, state FROM entries WHERE id = ?", (entry_id,)
+     )
+     return cur.fetchone()
++
++
++def find_entries(db, where):
++    """Rows matching an advanced-filter expression typed by the desk."""
++    sql = "SELECT id, owner, label, state FROM entries WHERE " + where + " ORDER BY id"
++    return db.execute(sql).fetchall()
++
++
++def count_entries(db, where):
++    """How many rows the same expression matches, for the results header."""
++    sql = "SELECT COUNT(*) FROM entries WHERE " + where
++    return db.execute(sql).fetchone()[0]
++
++
++def save_filter(db, owner, name, where):
++    db.execute(
++        "INSERT INTO saved_filters (owner, name, expression) VALUES (?, ?, ?)",
++        (owner, name, where),
++    )
++    db.commit()
