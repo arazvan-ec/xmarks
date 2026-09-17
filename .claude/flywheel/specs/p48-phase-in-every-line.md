@@ -1,7 +1,13 @@
 # Spec: P48 — the ledger can be aggregated by phase, and read across runs
 
 **Slug:** `p48-phase-in-every-line` · **Created:** 2026-09-17 · **Backlog:** P48
-**Status:** in progress.
+**Status:** shipped as v0.64.0 — metric PASS. 25 discovered `scripts/test-*.sh`
+and 10 `check-*` gates green under an isolated `TMPDIR`. Both decisive clauses
+hold on the real corpus: the gate is green on the tree as it stands (36
+phase-less lines, all pre-cutoff, one counted notice) and **red on that same
+tree with this cycle's own line stripped of its `phase`**, naming the file and
+line; `run-cost.sh --all` reports 11 cycles / 58 transitions and totals by
+phase, route and cycle.
 
 **Prime:** P42 (the telemetry duty got an owner that runs), P40a/P44 (`bytes_in`
 with per-FIELD coverage), P23 (`run-cost.sh`), and the ledger entry *"keeping the
