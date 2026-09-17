@@ -88,8 +88,10 @@ plugin itself is no exception — "it's a small change" is the exact excuse
   version **ahead of** the base's, not merely different from it, because a
   branch cut before `main` moved carries an older one.
   `scripts/test-docs-consistency.sh` asks the converse: a declared version has
-  its note. Skipping the first needs `SKIP_RELEASE_BUMP=<reason>`; it takes the
-  reason, not a `1`.
+  its note. Excepting the first needs a **`Release-Exception: <reason>` trailer
+  on a commit in the diff** — it reaches CI, is read where the reason has to be
+  argued, and expires with the branch. `SKIP_RELEASE_BUMP=<reason>` is the
+  operator's local lever and reaches no runner. Both take the reason, not a `1`.
 - **A version you send a reader to must exist** (P47):
   `scripts/check-version-citations.sh` fails when a link, or a `see`/`read`/
   `follow`/`consult`/`refer to` immediately before the path, names an upgrade

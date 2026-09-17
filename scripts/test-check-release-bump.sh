@@ -115,6 +115,42 @@ run_check SKIP_RELEASE_BUMP=""
 [ "${RC}" -eq 1 ] || fail "an empty SKIP_RELEASE_BUMP must be unset, not a pass, got ${RC}"
 pass "SKIP_RELEASE_BUMP= (empty) → the gate still runs"
 
+echo "== a base that cannot be diffed exits 2, never 0 =="
+branch
+echo touched > "${REPO}/scripts/thing.txt"
+g add -A && g commit -qm no-bump
+RC=0
+(cd "${REPO}" && bash "${CHECK}" definitely-not-a-ref >"${WORK}/out" 2>&1) || RC=$?
+[ "${RC}" -eq 2 ] || fail "an undiffable base must exit 2, got ${RC}: $(cat "${WORK}/out")"
+grep -q "definitely-not-a-ref" "${WORK}/out" || fail "the refusal must name the base it could not diff"
+pass "a missing base ref → exit 2 (an empty diff is not a clean one)"
+
+# The env var cannot reach a CI runner: the workflow step passes no environment,
+# and a PR cannot add one without editing the workflow for every later PR. The
+# exception that IS reviewable is a trailer on a commit in the diff.
+echo "== the exception a PR can actually carry: a commit trailer =="
+branch
+echo touched > "${REPO}/scripts/thing.txt"
+g add -A
+g commit -qm "chore: touch scripts
+
+Release-Exception: orchestrator renumbers at integration"
+run_check
+[ "${RC}" -eq 0 ] || fail "a Release-Exception trailer with a reason must pass, got ${RC}: $(cat "${WORK}/out")"
+grep -q "orchestrator renumbers at integration" "${WORK}/out" || fail "the reason must be printed, not swallowed"
+pass "Release-Exception: <reason> in a commit → exit 0, reason echoed"
+
+branch
+echo touched > "${REPO}/scripts/thing.txt"
+g add -A
+g commit -qm "chore: touch scripts
+
+Release-Exception:"
+run_check
+[ "${RC}" -eq 2 ] || fail "a bare Release-Exception: must exit 2 (no reason), got ${RC}: $(cat "${WORK}/out")"
+grep -qi "reason" "${WORK}/out" || fail "the refusal must ask for a reason"
+pass "Release-Exception: with no reason → exit 2"
+
 echo "== unusable input exits 2, never 0 =="
 branch
 echo touched > "${REPO}/scripts/thing.txt"

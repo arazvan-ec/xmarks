@@ -133,9 +133,17 @@ assertion 1 applies to it: the gate must not block its own PR by accident.
   to a file assumes the reader meant the upgrade note. The corpus has **zero**
   occurrences of a directive followed by a bare version, so including the form
   would add false-positive surface against no evidence that it ever occurs.
-- **The exception is a debt with a reason on it.** `SKIP_RELEASE_BUMP` takes the
-  reason, not a `1`; a bare truthy value is rejected, so nobody can silence the
-  gate without saying why in the diff.
+- **The exception is a debt with a reason on it, and it has to reach CI.**
+  `SKIP_RELEASE_BUMP=<reason>` is an environment variable, so it reaches no
+  runner: a PR could only use it by editing the workflow, which leaves the gate
+  disabled for every later PR rather than excepted once. The reviewable form is
+  a **`Release-Exception: <reason>` trailer** on a commit in the diff. Both
+  refuse a bare truthy value; an empty trailer exits 2 rather than falling
+  through, since "no reason" and "no trailer" are otherwise the same string.
+  (Codex found this on review — the first draft shipped the env var alone.)
+- **Fail closed on a base that cannot be diffed.** An empty diff and a failed
+  one are the same empty variable, and the second waving changes through is the
+  fail-open this gate exists to close. (Also Codex, also the first draft.)
 - **No exclusion list in assertion 2.** The moment a path has to be excluded, the
   rule is wrong — say so rather than adding the line.
 - **Fail-loud on unusable input, never fail-open.** A missing `plugin.json` at

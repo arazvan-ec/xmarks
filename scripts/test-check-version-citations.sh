@@ -68,6 +68,16 @@ put prose.md "See ${LIVE}." "Full detail in [\`${LIVE}\`](../${LIVE})." "Read ./
 [ "${RC}" -eq 0 ] || fail "live pointers must pass, got ${RC}: $(cat "${WORK}/out")"
 pass "see/link/relative pointers at an existing note → exit 0"
 
+# A markdown destination ends at whitespace; a title after it is not part of it.
+echo "== a link title naming another note does not corrupt the destination =="
+put prose.md "The remedy is [the note](${LIVE} \"formerly ${DEAD}\")."
+[ "${RC}" -eq 0 ] || fail "a titled link at a live note must pass, got ${RC}: $(cat "${WORK}/out")"
+put prose.md "The remedy is [the note](${DEAD} \"formerly ${LIVE}\")."
+[ "${RC}" -eq 1 ] || fail "a titled link at a DEAD note must still exit 1, got ${RC}: $(cat "${WORK}/out")"
+grep -qx "  prose.md:1: ${DEAD}" "${WORK}/out" \
+  || fail "the reported path must be the destination alone: $(cat "${WORK}/out")"
+pass "a link title mentioning another note → destination parsed alone"
+
 echo "== a verb that merely precedes the path in a sentence is not a pointer =="
 put prose.md "See the ledger entry about the renumber that left ${DEAD} behind."
 [ "${RC}" -eq 0 ] || fail "a verb with prose between it and the path must pass, got ${RC}: $(cat "${WORK}/out")"

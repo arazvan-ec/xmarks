@@ -8,9 +8,15 @@
 # origin/main, then main) — base resolution identical to check-test-pairing.sh,
 # so the two gates cannot disagree about what "the base" is.
 #
-# SKIP_RELEASE_BUMP=<reason> is the escape hatch, and it takes the REASON, not a
-# 1: a bare truthy value is refused. An exception is a debt, and the reason is
-# what makes it payable — and what puts it in the diff.
+# Two escape hatches, both carrying a REASON rather than a 1, because an
+# exception is a debt and the reason is what makes it payable:
+#   Release-Exception: <reason>   a trailer on a commit in the diff. The one a
+#                                 pull request can use — it reaches CI, travels
+#                                 with the commits under review, and expires
+#                                 with them.
+#   SKIP_RELEASE_BUMP=<reason>    the operator's lever, for a local run. It
+#                                 reaches no CI runner.
+# A bare truthy value is refused in both.
 #
 # Exit: 0 ok · 1 a release-bearing change with no release · 2 unusable input
 
@@ -33,9 +39,40 @@ if [ -z "${BASE}" ]; then
   if git rev-parse -q --verify origin/main >/dev/null; then BASE=origin/main; else BASE=main; fi
 fi
 
-# shellcheck disable=SC2086
-changed="$(git diff --name-only "${BASE}...HEAD" -- skills agents hooks scripts)"
+# An empty diff and a diff that could not be taken look identical in a variable,
+# and treating the second as the first is exactly the fail-open this gate exists
+# to close: a typo'd or unfetched base would wave every release-bearing change
+# through. A shallow checkout is the realistic way to get here.
+if ! changed="$(git diff --name-only "${BASE}...HEAD" -- skills agents hooks scripts 2>/dev/null)"; then
+  echo "release-bump: cannot diff ${BASE}...HEAD — is '${BASE}' a ref this checkout has?" >&2
+  echo "              (a shallow clone does not; CI checks out with fetch-depth: 0)" >&2
+  exit 2
+fi
 [ -n "${changed}" ] || { echo "release-bump: no release-bearing changes vs ${BASE}"; exit 0; }
+
+# The exception a pull request can actually carry. SKIP_RELEASE_BUMP is the
+# operator's lever and reaches nothing in CI: the workflow step passes no
+# environment, and a PR cannot add one without editing the workflow for every
+# later PR — which would leave the gate disabled rather than excepted once. A
+# trailer travels with the commits under review, expires with them, and is read
+# in the same place the reason has to be argued.
+# Matched as whole LINES, not as captured reasons: a trailer whose reason is
+# empty captures to "" and would otherwise be indistinguishable from no trailer
+# at all — which is the one case that must refuse rather than fall through.
+exc_raw="$(git log --format=%B "${BASE}..HEAD" 2>/dev/null \
+  | grep -E '^[[:space:]]*Release-Exception:' || true)"
+if [ -n "${exc_raw}" ]; then
+  reason="$(printf '%s\n' "${exc_raw}" \
+    | sed -E 's/^[[:space:]]*Release-Exception:[[:space:]]*//; s/[[:space:]]+$//' \
+    | grep -v '^$' | head -n1)"
+  if [ -z "${reason}" ]; then
+    echo "release-bump: a Release-Exception: trailer carries the reason, and this one is empty." >&2
+    echo "              e.g. Release-Exception: orchestrator renumbers at integration" >&2
+    exit 2
+  fi
+  echo "release-bump: EXCEPTED by a commit trailer — ${reason}"
+  exit 0
+fi
 
 command -v python3 >/dev/null 2>&1 || { echo "release-bump: no python3" >&2; exit 2; }
 

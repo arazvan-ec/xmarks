@@ -36,7 +36,11 @@ git rev-parse --git-dir >/dev/null 2>&1 \
 
 VERB='([Ss]ee|[Rr]ead|[Ff]ollow|[Cc]onsult|[Rr]efer to)'
 NOTE='(\.{0,2}/)*upgrades/v[0-9]+\.[0-9]+\.[0-9]+\.md'
-RE="(\\]\\([^)]*|(^|[^A-Za-z])${VERB}[^A-Za-z0-9]{0,6})${NOTE}"
+# [^) \t] in the link branch, not [^)]: a markdown destination ends at
+# whitespace, and a link title after it ("...") may name another note. Allowing
+# the match to span one would pull two versions out of a single citation and
+# test a path that is neither.
+RE="(\\]\\([^) 	]*|(^|[^A-Za-z])${VERB}[^A-Za-z0-9]{0,6})${NOTE}"
 
 hits="$(git ls-files -z | xargs -0 grep -HnIoE "${RE}" 2>/dev/null || true)"
 
@@ -47,7 +51,10 @@ while IFS= read -r hit; do
   [ -n "${hit}" ] || continue
   where="${hit%%:*}"; rest="${hit#*:}"
   line="${rest%%:*}"; text="${rest#*:}"
-  note="upgrades/$(printf '%s' "${text}" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+\.md')"
+  # tail -n1: the destination is the last version token in the match. The regex
+  # above already makes a second one impossible; this keeps a newline out of the
+  # -f test if it ever stops being, because a false red is the worse failure.
+  note="upgrades/$(printf '%s' "${text}" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+\.md' | tail -n1)"
   key="${where}:${line}:${note}"
   case "${seen}" in *"|${key}|"*) continue ;; esac
   seen="${seen}|${key}|"
