@@ -1,7 +1,13 @@
 # Spec: P50 — the meter names the read, not just the total
 
 **Slug:** `p50-the-meter-names-the-read` · **Created:** 2026-09-17 · **Backlog:** P50
-**Status:** in progress.
+**Status:** shipped as v0.66.0 — metric PASS. 26 discovered `scripts/test-*.sh`
+and 11 `check-*` gates green under an isolated `TMPDIR`; `check-release-bump.sh`
+reports 0.63.0 → 0.66.0 against the real base. Decisive clause held with one
+honest limit: the reader's window always ends **now**, so only T5 — the
+transition whose window ended as the line was written — could carry `max_read`
+and `by_tool`. The other five omit them rather than reconstruct them. First live
+figures: `max_read=11,036` over 117 calls, `Bash` 198,191 of 206,266 bytes.
 
 **Prime:** P40a/P40b (read volume measured, then the routing of reads **rejected
 as unjustified, not disproven**), P44 (the meter), and the ledger entry *"keeping
@@ -87,6 +93,12 @@ its own transition line — P49's gate is now watching this cycle.
   largest read was nothing" instead of "nothing was measured".
 - **A maximum is never summed.** Asserted directly: two runs of `max_read=100`
   roll up to 100, not 200.
+- **A window that does not end now cannot be measured.** `--since` cuts at a
+  timestamp and runs to the present, so a line written after the fact can
+  difference `bytes_in`/`tool_calls` from two cumulative readings but cannot
+  recover a maximum or a per-tool split. Those fields are then omitted, never
+  reconstructed. A `--until` bound would close it and was deliberately left out
+  of this cycle's assertions.
 - **`by_tool` is not a numeric proxy.** `check-telemetry.sh` requires `cost` to
   carry at least one numeric value; a dict does not satisfy it, and the arm that
   proves a cost object of only `by_tool` still fails keeps that honest.
