@@ -28,8 +28,9 @@ In scope, two assertions, each seen red before its green:
 
 1. **Bump implied by path.** If the diff against the merge base touches
    `skills/`, `agents/`, `hooks/` or `scripts/`, then `plugin.json`'s version
-   must differ from the base's **and** `upgrades/v<new>.md` must exist. Escape
-   hatch: a labelled exception carrying a reason — never a silent pass.
+   must be **ahead of** the base's — not merely different from it, see
+   **Safeguards** — **and** `upgrades/v<new>.md` must exist. Escape hatch: a
+   labelled exception carrying a reason — never a silent pass.
 2. **A remedy pointer resolves.** A citation in tracked text that *sends a
    reader to* an upgrade note must name a note that is there.
 
@@ -68,10 +69,14 @@ it exists to catch, and the only way out is an exclusion list, which is the
 loosening this cycle is supposed to avoid.
 
 So the rule keys on the **claim the text makes**, not on the version appearing.
-"The renumber left `upgrades/v0.59.0.md` cited" asserts nothing about the file
-system; it is a mention. "See `upgrades/v0.59.0.md`" asserts the file is there,
-to a reader who in the failing case is a third-party repo that cannot see this
-tree at all. Only the second is checkable, and only the second was ever wrong.
+"The renumber left `<note>` cited" asserts nothing about the file system; it is
+a mention. "See `<note>`" asserts the file is there, to a reader who in the
+failing case is a third-party repo that cannot see this tree at all. Only the
+second is checkable, and only the second was ever wrong.
+
+Those two examples are written with a placeholder because the gate cannot tell
+an illustrative quotation from a live pointer — it read the first draft of this
+paragraph and was right to. That is the rule's standing cost, paid here first.
 
 Measured on the tree at `2e57402`: 4 remedy pointers, all resolving — the gate
 is green on the real historical corpus without one exclusion.
@@ -109,6 +114,10 @@ assertion 1 applies to it: the gate must not block its own PR by accident.
 
 ## S — Safeguards
 
+- **"Ahead of", not "different from".** Written as "different", assertion 1
+  passes PR #85 verbatim: that branch was cut before main moved and carries
+  0.58.0 against a base of 0.61.0, so its version differs and the weaker rule
+  reports OK. The test watched exactly that before the rule tightened.
 - **Assertion 2 admits its ceiling.** It catches a dead destination, not a
   *wrong* one: a pointer naming an upgrade note that exists but is the wrong
   release reads as green. The renumber produced a dead one, which is the case
