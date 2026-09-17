@@ -1,5 +1,49 @@
 # flywheel learnings
 
+## decision: when a rule would redden on the description of its own bug, grade the claim, not the token
+
+<!-- fw: type=decision; date=2026-09-17; files=scripts/check-version-citations.sh,scripts/test-check-version-citations.sh; spec=p47-release-gate-direction; branch=claude/p47-release-gate-direction; evidence=exactly one cited upgrade note is absent from the tree (0.59.0) and both of its citations sit in the improvement-proposals.md entry that documents this defect; the shipped rule is green on that corpus with no exclusions and red on it with the 0.61.0 renumber put back -->
+
+P47 asked that every version named in tracked prose resolve to a file. Counted
+on the real corpus, the naive form reddens on **the backlog entry describing the
+bug it exists to catch** — and the only way out of that is an exclusion list,
+which is the loosening the cycle was supposed to avoid.
+
+The way out was to stop grading the token. Naming a version ("the renumber left
+`<note>` cited") asserts nothing about the file system; sending a reader to one
+("See `<note>`") asserts the file is there. Only the second is checkable, and
+only the second was ever wrong. The gate keys on links and on a small set of
+directives immediately before the path, and on nothing else.
+
+Two things this cost, both worth paying. The gate cannot tell an illustrative
+quotation from a live pointer — it read the first draft of its own spec, found a
+`See <note>` written out literally, and was right to; prose that must quote the
+bad form writes it with a placeholder, as this entry does. And it catches a
+*dead* destination, not a *wrong* one: a pointer at a note that exists but
+belongs to another release stays green. The renumber produced a dead one.
+
+The general shape: when a gate would fire on the honest description of its own
+defect, the predicate is reading the wrong thing. Widen the exclusions and it
+is worthless; narrow the predicate to the claim being made and it needs none.
+
+## gotcha: "the version changed" is not "the version was bumped"
+
+<!-- fw: type=gotcha; date=2026-09-17; files=scripts/check-release-bump.sh,scripts/test-check-release-bump.sh; spec=p47-release-gate-direction; branch=claude/p47-release-gate-direction; pr=85; evidence=PR #85 head d52d2f0^2 carries 0.58.0 against a base of 0.61.0 with scripts/gate.sh changed; the gate written as "differs from the base" printed `release-bump: OK (0.5.0 -> 0.1.0)` on the fixture and would have passed #85 verbatim -->
+
+The spec said a release-bearing diff must leave `plugin.json`'s version
+**different** from the base's. It reads as obviously right and it is wrong, in
+the exact case the gate was written for.
+
+PR #85 was cut before `main` moved. Its head says 0.58.0; its base said 0.61.0.
+The version differs, so "differs" reports OK — the gate would have shipped the
+miss it was built from. A stale branch is not a rare shape; it is the default
+shape of any branch open longer than a day.
+
+The rule is **ahead of**, and the test's last arm replays #85 from real history
+against its real base rather than asserting it on a fixture. Watching a rule go
+green on the very case that motivated it is the cheapest way to find out it is
+measuring something adjacent.
+
 ## gotcha: asserting a step is PRESENT says nothing about what it operates on
 
 <!-- fw: type=gotcha; date=2026-09-16; files=scripts/check-supply-chain-pin.sh,.github/workflows/validate-plugins.yml; spec=p13-pillar2-security; branch=claude/p13-supply-chain-slice1; pr=81; evidence=swapping fetch/checkout to `origin main`/`origin/main` and deleting the ACTUAL==SHA comparison left the gate exiting 0 and printing its success line while the workflow executed a moving branch -->
