@@ -69,6 +69,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P46 | An assertion that cannot fire on a live run | 🔵 proposed | Audit every grader assertion for whether a real executor can trip it. Eval 3 keys on `verdict: PASS`; 3 fresh-context runs wrote 31 telemetry lines and **zero** verdicts. Harness-verified is not live-verified, and a silent assertion looks identical whether it is passing or dead |
 | P47 | The release convention is enforced in one direction only | ✅ shipped v0.63.0 | Two gates: `check-release-bump.sh` (a release-bearing diff must move the version **ahead of** the base) and `check-version-citations.sh` (a *pointer* — a link, or see/read/follow/consult before a path — must resolve; a bare mention stays free, so **no exclusion list**). Proven on real history: PR #85 replayed against its own base goes red, and the v0.61.0 mistake reconstructed on the live tree goes red while `main` stays green. The `paths:` filters are gone — a filter and a whole-tree corpus cannot both be correct |
 | P48 | The ledger cannot be aggregated by phase, or read across runs | ✅ shipped v0.64.0 | Measured on the corpus: **36 of 58** transition lines carry no `phase` and **6 of 11** cycles carry none on any line, because `check-telemetry.sh` accepted `task` **or** `phase` — identification and aggregation are different duties and only the first was specified. `run-cost.sh` also took one run and one baseline, so the cross-cycle view had to be hand-written to ask the question at all. Now: `phase` required from a cutoff placed **after the whole existing corpus and before this cycle's first line** (live on its own first subject, older lines a counted debt — nothing backfilled), and `run-cost.sh --all` rolling the corpus up by phase, route and cycle with P40a's per-FIELD coverage carried through the merge |
+| P49 | The plan's ladder is honored, or the record says otherwise | ✅ shipped v0.65.0 | The aggregate said the ladder collapsed (40 of 46 routed transitions on opus, haiku **0**); per task that is false — 5 of 5 one-to-one transitions honored their route. It evaporates instead through **8 unrecorded plan tasks** across p13/p42/p43, five of them the `haiku/low+delegate` ones; one `T1-T2` merge that buys the max tier unsaid; and 26 lines carrying `opus/xhigh`, an effort the tier table cannot rank. `check-route-honored.sh` fails an unrecorded task and an unsaid upgrade, reports what it cannot settle, and had its own cycle as its first live subject |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -2944,3 +2945,49 @@ that same day's lines on history that cannot be fixed.
 breakdown covers 22 of 58 transitions until enough cycles run under the rule.
 `compound` has never written a transition line at all — the roll-up now makes
 that absence visible instead of merely true.
+
+## P49 — the plan's ladder is honored, or the record says otherwise (✅ shipped v0.65.0)
+
+**Where it came from.** P48's roll-up, one release earlier, in the same session.
+The corpus view made the ladder look collapsed, and the first hypothesis — the
+planner over-assigns, so make a fully-top-tier plan fail — was written down and
+then **refuted by the evidence before anything was built on it**. Every plan in
+this repo routes across all three tiers; p40a's routes 4 haiku, 2 sonnet, 1 opus.
+
+**What the per-task comparison shows** (the only cycles carrying both a plan and
+telemetry):
+
+| cycle | planned | recorded |
+| --- | --- | --- |
+| p42 | T1-T3 sonnet, T4 opus, T5 haiku+delegate, T6 sonnet, T7 haiku+delegate | T1-T2, T3, T4 honored; **T5, T6, T7 absent** |
+| p43 | T1 sonnet, T2 opus, T3 sonnet, T4+T5 haiku+delegate | T3 honored; T1 **absorbed** into a `T1-T2` run at opus/high; **T4, T5 absent** |
+| p13 | T1-T6 across three tiers | three lines at `opus/xhigh`, **T4, T5, T6 absent** |
+
+So "haiku never ran" is not a routing decision at all: the tasks routed to haiku
+are the ones whose transitions were never written. The loop stops recording
+before it reaches the cheap tail — the same shape P48 found in the *phases*
+(`verify` on 3 of 11 cycles, `review` 3, `ship` 1, `compound` 0).
+
+**What shipped.** `check-route-honored.sh`, consuming `plan-route.sh --json` so
+the plan format keeps one parser. Fatal, from the P48 cutoff on: a plan task
+with no transition line, and a transition above its plan's tier with no
+`route_escalated_from`. Reported, never fatal: merges, unrankable routes, and
+transitions mapping to no plan task. `work`'s rule gains the upward direction.
+
+**The cycle was its own first subject.** It carried a plan, and the gate was red
+on the real tree until each of T1-T6 had written its line — including T5, which
+was routed `haiku/low+delegate` and ran there (the `executor` subagent, with
+`delegation-record.sh` writing `{tool: Agent, model: haiku}` as the artifact).
+Second honored `+delegate` in this repo's history, after P41's.
+
+**Open, for the owner.**
+
+- **Is `xhigh` a tier?** 26 telemetry lines say sessions run at it;
+  `route-tiers.txt` and `plan-route.sh` define `low|medium|high|max`. Either the
+  ladder is missing a rung or the record uses a word the plugin does not define.
+  The gate reports the mismatch and declines to decide it.
+- **The `check-*` gate list in CI is still hand-written** (10 entries now) while
+  `test-*.sh` is discovered. The ledger already carries two entries about gates
+  that never ran; this is the same shape waiting to happen.
+- **`work`'s body is at 5659/5700 B** — 41 bytes. The next clause does not fit,
+  and the reference split (P35/P36) buys nothing against `worst`.
