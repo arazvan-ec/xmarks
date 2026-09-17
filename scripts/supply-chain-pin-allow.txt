@@ -1,0 +1,19 @@
+# Allowlist for scripts/check-supply-chain-pin.sh (P13).
+# Format: <path-relative-to-repo-root> <uses-spec> <reason>
+#
+# A reason must say why this reference legitimately cannot pin, or why the risk
+# it carries is not the one the gate is about. "we'll do it later" is a date,
+# not a reason. Every entry must match a real unpinned reference: stale entries
+# fail the gate, so an exemption cannot quietly outlive the thing it excused.
+#
+# The boundary this gate exists for is B10: code that runs in OTHER people's
+# repositories, under contents:write, on a cron nobody watches. The entries
+# below are workflows that only ever run in THIS repository's own CI, where a
+# compromised action reaches a throwaway runner and a human is already reading
+# the result. That is a real risk and a smaller one, it is not slice 1's
+# Critical, and pinning them is a change to this repo's CI that belongs in the
+# slice that can also watch it go green.
+
+.github/workflows/release.yml actions/checkout@v4 runs only in this repo's CI, not in a consuming repo under contents:write
+.github/workflows/validate-plugins.yml actions/checkout@v4 runs only in this repo's CI, not in a consuming repo under contents:write
+.github/workflows/validate-plugins.yml actions/setup-node@v4 runs only in this repo's CI, not in a consuming repo under contents:write

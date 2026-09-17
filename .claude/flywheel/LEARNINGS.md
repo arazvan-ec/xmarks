@@ -1,5 +1,88 @@
 # flywheel learnings
 
+## gotcha: asserting a step is PRESENT says nothing about what it operates on
+
+<!-- fw: type=gotcha; date=2026-09-16; files=scripts/check-supply-chain-pin.sh,.github/workflows/validate-plugins.yml; spec=p13-pillar2-security; branch=claude/p13-supply-chain-slice1; pr=81; evidence=swapping fetch/checkout to `origin main`/`origin/main` and deleting the ACTUAL==SHA comparison left the gate exiting 0 and printing its success line while the workflow executed a moving branch -->
+
+`check-supply-chain-pin.sh` was written to prove a pinned checkout happens before
+the fetched tree is executed. It searched for `checkout --detach` and checked its
+line number. Both true statements; neither one the property. **`checkout --detach
+origin/main` detaches HEAD at whatever the branch points at right now** — the
+exact defect the gate exists to catch, passing the gate.
+
+It survived the spec's two reverts, fourteen sandbox cases and a red-before-green
+first run, because every one of those deleted the step. None of them *kept* the
+step and changed its argument. A reviewer found it in minutes.
+
+The fix took four assertions, not one — operand is a variable, the fetch asks for
+the same variable, the variable is bound to the validated input, and HEAD is
+re-read and compared — because dropping any single one restores the hole. The
+general form: **a structural gate must assert the data flow, not the vocabulary.**
+Presence of the right word is the cheapest possible proxy for the property, and
+the fixture that makes it look sufficient is usually one you simplified yourself.
+
+## gotcha: a gate can be green, correct, and never run
+
+<!-- fw: type=gotcha; date=2026-09-16; files=.github/workflows/validate-plugins.yml; spec=p13-pillar2-security; branch=claude/p13-supply-chain-slice1; pr=81; evidence=both path filters listed scripts/** and, under .github/workflows, only validate-plugins.yml itself — so a PR touching only the guarded flywheel-update.yml started no job at all -->
+
+The ledger already says a hand-written gate *list* is a defect, and this cycle
+duly ran the discovered set — 23 tests, 8 checks, locally. All green. And a PR
+that changed only `.github/workflows/flywheel-update.yml` would have started
+**nothing**, because CI's own `paths:` filter did not name it. The gate guarding
+the file was not reachable from a change to the file.
+
+Discovery inside the job does not help if the job never starts. `paths:` filters
+are a second, invisible gate list — one layer above the one the repo already
+learned to distrust. When adding a gate, check the trigger that reaches it:
+*what is the smallest diff that should fail this, and does CI wake up for it?*
+Fixed with a `.github/workflows/**` glob rather than the one filename, so the
+next workflow is covered without anyone remembering.
+
+
+## gotcha: the field the whole design rested on did not exist
+
+<!-- fw: type=gotcha; date=2026-09-16; files=.github/workflows/flywheel-update.yml,scripts/install-vendored.sh; spec=p13-pillar2-security; branch=claude/p13-supply-chain-slice1; evidence=a workflow_call job dumping toJSON(github) printed 33 keys and job_workflow_sha was not among them; no GITHUB_JOB_WORKFLOW_SHA env var either; empty in both push and workflow_dispatch runs (35154882069, 35154895860, 35155026753) -->
+
+The spec named `github.job_workflow_sha` as the thing that made the pin and the
+clone **one** value instead of two that drift, and marked it *unverified — T1
+probes it*. T1 probed it. It does not exist: not in the context, not as an env
+var, not under any trigger shape. Had T1 been a doc quote, the design would have
+shipped built on a field that interpolates to the empty string — and an empty
+SHA in a fetch is not a loud failure, it is a fetch of something else.
+
+What saved the slice was that the probe also **dumped every key**, rather than
+asking only the yes/no question. `github.workflow_sha` exists and looks like the
+answer; it is the *caller's* commit in the *caller's* repo. A narrower probe
+returns "absent", you reach for the nearest-looking field, and you ship a fetch
+that resolves a consuming repo's SHA against this repo's URL.
+
+The fallback the spec had pre-authorized — a `FLYWHEEL_SHA` baked in at release
+time — turned out to be impossible for a reason neither the spec nor the plan
+noticed: a workflow cannot contain its own commit SHA before it is committed. The
+third option, the caller passing the SHA it pins as an input, was only visible
+because the same probe run had also confirmed inputs pass through. **Probe the
+whole shape of the platform, not the one bit your design needs.**
+
+## gotcha: a gate that cannot survive being documented is a gate nobody can fix
+
+<!-- fw: type=gotcha; date=2026-09-16; files=scripts/check-supply-chain-pin.sh; spec=p13-pillar2-security; branch=claude/p13-supply-chain-slice1; evidence=the fixed workflow's own header explains the git clone it removed and the uses: pin it added, and the gate reported both as live violations; checkout -q --detach also slipped a regex written as checkout\s+--detach -->
+
+`check-supply-chain-pin.sh` greps for `git clone` and for unpinned `uses:`. The
+workflow it guards has a header comment explaining the `git clone` it removed and
+the `uses:` pin it added — so the fix made its own gate fail, on prose. A
+`description:` string mentioning the `uses:` pin failed it a second time.
+
+The instinct is to soften the patterns. The fix is to read only what executes:
+skip comment lines, and anchor `uses:` as a YAML key (`^\s*-?\s*uses:`) rather
+than matching the word anywhere. A third bug hid behind the same laziness —
+`checkout\s+--detach` never matched the shipped `checkout -q --detach`, so the
+ordering assertion was dead for the real file while green in the fixture.
+
+All three were invisible while the gate was only run against fixtures. They
+appeared the moment it ran against the tree it exists to protect. **A gate needs
+a test case for the artifact in its final, commented, shipped form**, not only
+for the minimal shape a fixture generates.
+
 ## gotcha: an absence assertion is a bet, and the first real run is where you find out
 
 <!-- fw: type=gotcha; date=2026-09-16; files=skills/review/evals/evals.json,skills/review/evals/check.sh; spec=p32-review-suite; branch=claude/p32-review-suite; evidence=eval 2's fresh-context run drew all three reviewers where the committed ideal draws two; an assertion that reviewer-performance must NOT be drawn there would have been red on the first real run the suite ever saw -->

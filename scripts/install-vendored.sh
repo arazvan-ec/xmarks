@@ -438,14 +438,43 @@ if [ "${AUTO_UPDATE}" = 1 ]; then
   if [ -f "${TARGET}/${UPDATE_WORKFLOW_REL}" ] && ! in_manifest "${UPDATE_WORKFLOW_REL}"; then
     echo "warning: ${UPDATE_WORKFLOW_REL} already exists and is not flywheel's — leaving it untouched" >&2
   else
+    # The caller must pin the exact commit it will execute (P13/B10). A short SHA
+    # is not a valid `uses:` ref, so this is rev-parse HEAD and not the --short
+    # SRC_COMMIT recorded further down. The same variable fills both the `uses:`
+    # pin and the flywheel_sha input, so the two cannot drift: they have one
+    # writer. scripts/check-supply-chain-pin.sh asserts that.
+    SRC_COMMIT_FULL="$(git -C "${SRC}" rev-parse HEAD 2>/dev/null || echo unknown)"
+    if ! printf '%s' "${SRC_COMMIT_FULL}" | grep -Eq '^[0-9a-fA-F]{40}$'; then
+      echo "error: --auto-update needs the commit of this flywheel checkout to pin the" >&2
+      echo "       caller workflow to, and '${SRC}' is not a git checkout (got" >&2
+      echo "       '${SRC_COMMIT_FULL}'). An unpinnable caller is exactly what this" >&2
+      echo "       workflow must never write, so it is not written." >&2
+      echo "       Install from a git clone of arazvan-ec/xmarks, or drop --auto-update." >&2
+      exit 1
+    fi
     mkdir -p "${TARGET}/.github/workflows"
-    vendor_file "${UPDATE_WORKFLOW_REL}" <<'YAML'
+    # UNQUOTED heredoc: SRC_COMMIT_FULL has to interpolate. Safe here only because
+    # the body below contains no other `$` and no backticks — checked, not assumed
+    # (scripts/test-install-vendored.sh asserts the written file verbatim). Any
+    # `${{ }}` expression added below would be eaten by the shell and must be
+    # escaped as `\${{ }}`.
+    vendor_file "${UPDATE_WORKFLOW_REL}" <<YAML
 name: flywheel update
 
 # Written by flywheel's install-vendored.sh --auto-update. Refreshes the
-# vendored flywheel copy weekly and opens a PR when a new version is out.
+# vendored flywheel copy to match the flywheel commit pinned below, and opens a
+# PR when this repo's copy differs from it.
 # Requires: Settings → Actions → General → "Allow GitHub Actions to create
 # and approve pull requests".
+#
+# THE PINNED SHA BELOW IS A TRUST DECISION. This workflow runs flywheel's code
+# in this repo's CI with write access. It is pinned so that only a commit
+# someone here chose can run, rather than whatever arazvan-ec/xmarks happens to
+# be at. The two occurrences must stay identical.
+#
+# To move to a newer flywheel, change both to the new commit SHA (or re-run
+# install-vendored.sh --auto-update from a newer checkout). Nothing moves it for
+# you: pinning trades automatic discovery for control over what executes here.
 
 on:
   schedule:
@@ -454,10 +483,12 @@ on:
 
 jobs:
   update:
-    uses: arazvan-ec/xmarks/.github/workflows/flywheel-update.yml@main
+    uses: arazvan-ec/xmarks/.github/workflows/flywheel-update.yml@${SRC_COMMIT_FULL}
     permissions:
       contents: write
       pull-requests: write
+    with:
+      flywheel_sha: ${SRC_COMMIT_FULL}
 YAML
     echo "wrote ${UPDATE_WORKFLOW_REL} (weekly auto-update PRs)"
   fi

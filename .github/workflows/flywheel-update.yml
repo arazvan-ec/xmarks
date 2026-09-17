@@ -3,16 +3,56 @@ name: flywheel update (reusable)
 # Reusable workflow for repos that carry a VENDORED flywheel copy (installed
 # with scripts/install-vendored.sh). The caller — written into target repos by
 # `install-vendored.sh --auto-update` — runs this weekly: it compares the
-# repo's .claude/flywheel/VERSION against the latest version on this repo's
-# main, and when they differ re-runs the installer and opens a PR with the
-# refreshed copy. No new version → no PR, so there is no weekly noise.
+# repo's .claude/flywheel/VERSION against the version at the commit the caller
+# PINS, and when they differ re-runs that commit's installer and opens a PR with
+# the refreshed copy. No difference → no PR, so there is no weekly noise.
+#
+# WHAT CHANGED IN 0.61.0, AND WHAT IT COSTS. This used to compare against
+# whatever this repo's `main` was at run time, which is the same thing as
+# executing `main` unattended (see SUPPLY CHAIN below). It now compares against
+# the pinned commit, so **the pin is the update lever**: a repo moves to a new
+# flywheel by bumping the SHA in its own caller, and this workflow then does the
+# mechanical refresh to match. The security property is that a human chooses the
+# commit that gets executed.
+#
+# The cost is UNATTENDED updates: with the pin unchanged this workflow is a
+# weekly no-op, so no PR arrives on its own any more. Discovery itself still
+# works by other routes — flywheel's SessionStart hook polls this repo's
+# plugin.json and prints "flywheel X.Y.Z is available", and /flywheel:update
+# refreshes on demand. What is gone is the part that needed nobody present,
+# which is the same part that was executing unreviewed code. Said plainly here
+# rather than left for someone to notice when PRs stop arriving.
 #
 # Caller repos must allow GitHub Actions to create pull requests
 # (Settings → Actions → General → "Allow GitHub Actions to create and
 # approve pull requests").
 
+# SUPPLY CHAIN (P13/B10). This workflow runs in OTHER people's repositories,
+# under contents:write + pull-requests:write, weekly, with nobody watching. It
+# used to `git clone` this repo's default branch and bash the result, so whoever
+# could move that branch executed arbitrary code in every consuming repo.
+#
+# Pinning the caller's `uses:` alone does not fix that — a pinned workflow that
+# clones a moving branch still executes the branch. So the caller passes the very
+# commit it pinned as `flywheel_sha`, and this workflow checks that commit out.
+# The caller writes both from one variable (install-vendored.sh), and
+# scripts/check-supply-chain-pin.sh asserts both halves.
+#
+# Why an input and not a context field: github.job_workflow_sha does not exist.
+# A workflow_call job's github context carries 33 keys and that is not one of
+# them (probed 2026-09-16, run 35155026753). github.workflow_sha exists but is
+# the CALLER's commit in the CALLER's repo — wrong repository, and a trap.
+
 on:
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      flywheel_sha:
+        description: >-
+          The full 40-character commit SHA of arazvan-ec/xmarks to install. Must
+          be the same commit this workflow is pinned to in the caller's `uses:`.
+        required: false
+        type: string
+        default: ""
 
 jobs:
   refresh:
@@ -21,10 +61,40 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Fetch latest flywheel
-        run: git clone --depth 1 https://github.com/arazvan-ec/xmarks "$RUNNER_TEMP/xmarks"
+      # Fail-closed, and before anything is fetched or executed. An absent input
+      # means the caller predates flywheel 0.61.0 and still says `@main`; that
+      # caller cannot be made safe, so it is refused rather than served.
+      - name: Verify the caller pinned a commit
+        id: pin
+        env:
+          SHA_IN: ${{ inputs.flywheel_sha }}
+        run: |
+          if [ -z "${SHA_IN}" ]; then
+            echo "::error::This repository's .github/workflows/flywheel-update.yml calls flywheel's reusable workflow without a flywheel_sha input, which means it still pins @main. An unpinned caller lets anyone who can push to arazvan-ec/xmarks run arbitrary code here under contents:write, so this workflow now refuses to run instead. Remedy: re-vendor with 'bash /path/to/xmarks/scripts/install-vendored.sh --auto-update .' and commit the rewritten caller. See upgrades/v0.61.0.md."
+            exit 1
+          fi
+          printf '%s' "${SHA_IN}" | grep -Eq '^[0-9a-fA-F]{40}$' || {
+            echo "::error::flywheel_sha must be a full 40-character commit SHA; got '${SHA_IN}'. A branch, tag or short SHA is not a pin."
+            exit 1
+          }
+          echo "sha=${SHA_IN}" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch the pinned flywheel commit
+        env:
+          SHA: ${{ steps.pin.outputs.sha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/xmarks"
+          git -C "$RUNNER_TEMP/xmarks" init -q
+          git -C "$RUNNER_TEMP/xmarks" remote add origin https://github.com/arazvan-ec/xmarks
+          git -C "$RUNNER_TEMP/xmarks" fetch -q --depth 1 origin "$SHA"
+          git -C "$RUNNER_TEMP/xmarks" checkout -q --detach "$SHA"
+          ACTUAL="$(git -C "$RUNNER_TEMP/xmarks" rev-parse HEAD)"
+          [ "${ACTUAL}" = "${SHA}" ] || {
+            echo "::error::checked out ${ACTUAL} but the caller pinned ${SHA}"
+            exit 1
+          }
 
       - name: Compare versions
         id: check
@@ -47,12 +117,15 @@ jobs:
 
       - name: Build PR body with upgrade notes
         if: steps.check.outputs.needs == 'true'
+        env:
+          LOCAL: ${{ steps.check.outputs.local }}
+          REMOTE: ${{ steps.check.outputs.remote }}
+          PINNED: ${{ steps.pin.outputs.sha }}
         run: |
-          LOCAL="${{ steps.check.outputs.local }}"
-          REMOTE="${{ steps.check.outputs.remote }}"
           {
             echo "Automated refresh of the vendored flywheel copy from"
-            echo "[arazvan-ec/xmarks](https://github.com/arazvan-ec/xmarks) \`main\`:"
+            echo "[arazvan-ec/xmarks](https://github.com/arazvan-ec/xmarks) at the"
+            echo "commit this repo's caller workflow pins, \`${PINNED}\`:"
             echo "\`${LOCAL}\` → \`${REMOTE}\`."
             echo ""
             ACTION=false
@@ -85,7 +158,7 @@ jobs:
 
       - name: Open update PR
         if: steps.check.outputs.needs == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
         with:
           add-paths: |
             .claude/
