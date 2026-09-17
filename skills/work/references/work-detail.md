@@ -9,7 +9,7 @@ One JSON line per task transition, appended to
 `.claude/flywheel/runs/<spec-slug>/<date>.jsonl`:
 
 ```json
-{"ts": "<ISO>", "task": …, "phase": "<spec|work|verify|review|compound|ship>", "state": …, "route": "<model>/<effort>", "commit": "<sha>", "cost": {"bytes_out": …, "bytes_in": …, "tool_calls": …, "elapsed_s": …}}
+{"ts": "<ISO>", "task": …, "phase": "<spec|work|verify|review|compound|ship>", "state": …, "route": "<model>/<effort>", "commit": "<sha>", "cost": {"bytes_out": …, "bytes_in": …, "tool_calls": …, "elapsed_s": …, "max_read": …, "by_tool": {…}}}
 ```
 
 plus what the transition proved.
@@ -22,14 +22,18 @@ plus what the transition proved.
   to move up a tier. That pair is the only honest record of a mis-route.
 - `cost` — **observable proxies only**: `bytes_out` (bytes you wrote),
   `bytes_in` (bytes of tool output that entered context; a floor, never the
-  conversation), `tool_calls`, `elapsed_s`. A field you cannot compute is left
+  conversation), `tool_calls`, `elapsed_s`, `max_read` (the largest single tool
+  response in the window — a maximum, never summed) and `by_tool`
+  (`{tool: {bytes, calls}}`; a write tool appears with 0 bytes and a real call
+  count). A field you cannot compute is left
   out on its own — the tooling reports an absent field unmeasured, never as
   zero — so never estimate one and never drop the whole object over one.
 - **Read the measured fields; do not recall or reconstruct them.** The meter
   records every call as it happens, so ask it:
   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/read-meter.sh" --since <previous
   transition's ts>` (`bash .claude/flywheel/bin/read-meter.sh` on a vendored
-  install). It prints `bytes_in=<N> tool_calls=<N> elapsed_s=<N>`. On a cycle's
+  install). It prints `bytes_in=<N> tool_calls=<N> elapsed_s=<N> max_read=<N>
+  by_tool=<Tool>:<bytes>/<calls>,…`. On a cycle's
   **first** transition there is no previous ts — pass `--since first`, which cuts
   at the earliest call this session recorded, rather than leaving the line
   unmeasured. If the session did other work before this cycle, that cut predates
