@@ -1,7 +1,14 @@
 # Spec: P49 — the plan's ladder is honored, or the record says otherwise
 
 **Slug:** `p49-the-plan-is-honored-or-said` · **Created:** 2026-09-17 · **Backlog:** P49
-**Status:** in progress.
+**Status:** shipped as v0.65.0 — metric PASS. 26 discovered `scripts/test-*.sh`
+and 11 `check-*` gates green under an isolated `TMPDIR`. Both decisive clauses
+hold: the gate reports 8 unrecorded tasks across p13/p42/p43 (five of them
+`haiku/low+delegate`), p43's `T1-T2` merge and p13's three unrankable routes **as
+pre-cutoff notices**, leaving the tree green; and it is **green on this cycle's
+own plan and telemetry, red the moment T5's line is removed**, naming it. T5 was
+routed `haiku/low+delegate` and ran there — `delegation-record.sh` wrote
+`{tool: Agent, model: haiku}`.
 
 **Prime:** P27 (route tiers), P41 (flywheel can honor its own `+delegate`), P48
 (the ledger is totalled by phase), and `work`'s rule *"a route you could not
