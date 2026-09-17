@@ -68,6 +68,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P45 | The first transition has a start | ✅ shipped (v0.57.0) | Done — `elapsed_s` comes from the meter's cut, and `--since first` gives a cycle's opening line the start a commit delta could never supply; first run in the repo with no PARTIAL field |
 | P46 | An assertion that cannot fire on a live run | 🔵 proposed | Audit every grader assertion for whether a real executor can trip it. Eval 3 keys on `verdict: PASS`; 3 fresh-context runs wrote 31 telemetry lines and **zero** verdicts. Harness-verified is not live-verified, and a silent assertion looks identical whether it is passing or dead |
 | P47 | The release convention is enforced in one direction only | ✅ shipped v0.63.0 | Two gates: `check-release-bump.sh` (a release-bearing diff must move the version **ahead of** the base) and `check-version-citations.sh` (a *pointer* — a link, or see/read/follow/consult before a path — must resolve; a bare mention stays free, so **no exclusion list**). Proven on real history: PR #85 replayed against its own base goes red, and the v0.61.0 mistake reconstructed on the live tree goes red while `main` stays green. The `paths:` filters are gone — a filter and a whole-tree corpus cannot both be correct |
+| P48 | The ledger cannot be aggregated by phase, or read across runs | ✅ shipped v0.64.0 | Measured on the corpus: **36 of 58** transition lines carry no `phase` and **6 of 11** cycles carry none on any line, because `check-telemetry.sh` accepted `task` **or** `phase` — identification and aggregation are different duties and only the first was specified. `run-cost.sh` also took one run and one baseline, so the cross-cycle view had to be hand-written to ask the question at all. Now: `phase` required from a cutoff placed **after the whole existing corpus and before this cycle's first line** (live on its own first subject, older lines a counted debt — nothing backfilled), and `run-cost.sh --all` rolling the corpus up by phase, route and cycle with P40a's per-FIELD coverage carried through the merge |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -2903,3 +2904,43 @@ release-bearing directories precisely so `docs/research/` changes stay free.
 **Related.** P46, on assertions that cannot fire on a live run. This is its
 sibling: an assertion that fires on the wrong direction. Both are cases of a
 gate whose *shape* looks like the rule while covering something adjacent.
+
+## P48 — the ledger cannot be aggregated by phase, or read across runs (✅ shipped v0.64.0)
+
+**Where it came from.** A session asked what looks like a reporting question —
+*how many cycles have run, and can we optimise the flow from them?* — and the
+answer had to be hand-derived with a throwaway script, in a repo whose CLAUDE.md
+says `cost.bytes_in` *"is what makes the difference checkable"*.
+
+**Evidence,** counted over `.claude/flywheel/runs/` (11 run files, 58
+transitions, 20 runs including the HTML-only ones):
+
+| defect | measured |
+| --- | --- |
+| `phase` optional | 36 of 58 lines carry none; 6 of 11 cycles carry none on any line |
+| no transversal view | `run-cost.sh <run> [baseline]` — one run against one baseline, never the corpus |
+| the tail of the loop is barely recorded | `verify` on 3 of 11 cycles, `review` 3, `ship` 1, `compound` 0 |
+| verdicts | 3 in 58 lines — corroborates P46 with a second, independent corpus |
+
+**What shipped.** Two assertions, each seen red before green:
+
+1. A line whose `ts` is at or after the cutoff carries a non-empty `phase`, or
+   the gate fails. Older lines are a **counted notice** — the corpus predates
+   the rule and nothing may be backfilled (P18).
+2. `run-cost.sh --all <runs-dir>` merges every run file and groups the totals by
+   phase, route and cycle, with per-FIELD coverage carried through the merge.
+
+**The cutoff is the design decision.** Per-line debt cannot go in
+`telemetry-baseline.txt` without exempting those slugs from the **coverage**
+check too — hiding a real gap to silence a shape one. A timestamp splits exactly
+the set that can still be fixed from the set that cannot, and needs no list.
+Placed at `2026-09-17T20:00:00Z`: after the newest line in the corpus
+(`19:40:54Z`), before the first line of the cycle that shipped it. A cutoff of
+"tomorrow" would have been P46's defect committed on purpose — a rule that
+cannot fire on any live run — and a date-granular one would have reddened two of
+that same day's lines on history that cannot be fixed.
+
+**Still open.** The 36 phase-less lines stay unaggregatable forever; the phase
+breakdown covers 22 of 58 transitions until enough cycles run under the rule.
+`compound` has never written a transition line at all — the roll-up now makes
+that absence visible instead of merely true.

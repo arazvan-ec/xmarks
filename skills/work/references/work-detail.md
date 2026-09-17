@@ -9,11 +9,15 @@ One JSON line per task transition, appended to
 `.claude/flywheel/runs/<spec-slug>/<date>.jsonl`:
 
 ```json
-{"ts": "<ISO>", "task": …, "state": …, "route": "<model>/<effort>", "commit": "<sha>", "cost": {"bytes_out": …, "bytes_in": …, "tool_calls": …, "elapsed_s": …}}
+{"ts": "<ISO>", "task": …, "phase": "<spec|work|verify|review|compound|ship>", "state": …, "route": "<model>/<effort>", "commit": "<sha>", "cost": {"bytes_out": …, "bytes_in": …, "tool_calls": …, "elapsed_s": …}}
 ```
 
 plus what the transition proved.
 
+- `phase` — which step of the loop this transition belongs to, on **every** line.
+  `task` says which transition it is; `phase` is what the ledger is summed by,
+  and a line carrying only the first cannot be totalled with the rest (P48).
+  Free text, so a pillar-2 run names its Rule phase instead.
 - `route_escalated_from: "<model>/<effort>"` — carry it on a transition that had
   to move up a tier. That pair is the only honest record of a mis-route.
 - `cost` — **observable proxies only**: `bytes_out` (bytes you wrote),
