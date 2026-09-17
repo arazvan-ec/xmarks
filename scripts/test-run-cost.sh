@@ -288,4 +288,36 @@ run --all "${SRC}/.claude/flywheel/runs"
 grep -qE "cycles" "${WORK}/out" || fail "the real corpus must report its cycles: $(cat "${WORK}/out")"
 pass "flywheel's own corpus rolls up"
 
+# --- P50: a maximum is carried as a maximum ---------------------------------
+# mline <ts> <bytes_out> <max_read>
+mline() {
+  printf '{"ts":"2026-09-18T11:%02d:00Z","task":"m%s","phase":"work","state":"completed","cost":{"bytes_out":%s,"max_read":%s}}\n' \
+    "$1" "$1" "$2" "$3"
+}
+
+echo "== max_read is reported, and is never summed =="
+{ mline 0 10 100; mline 1 10 100; } > "${WORK}/mx.jsonl"
+run "${WORK}/mx.jsonl"
+[ "${RC}" -eq 0 ] || fail "a run carrying max_read must report, got ${RC}: $(cat "${WORK}/out")"
+grep -qE "max_read +100( |$)" "${WORK}/out" \
+  || fail "two transitions of max_read=100 must report 100, not 200: $(cat "${WORK}/out")"
+grep -qE "max_read +200" "${WORK}/out" && fail "max_read was summed: $(cat "${WORK}/out")"
+pass "max_read reports the maximum, not the total"
+
+echo "== the corpus-wide maximum is the largest of the cycles', not their sum =="
+MX="${WORK}/mxcorpus"
+mkdir -p "${MX}/alpha" "${MX}/beta"
+{ mline 0 10 100; } > "${MX}/alpha/2026-09-18.jsonl"
+{ mline 1 10 700; } > "${MX}/beta/2026-09-18.jsonl"
+run --all "${MX}"
+grep -qE "max_read +700" "${WORK}/out" || fail "the corpus max must be 700: $(cat "${WORK}/out")"
+grep -qE "max_read +800" "${WORK}/out" && fail "the corpus max was summed: $(cat "${WORK}/out")"
+pass "the roll-up carries the maximum across cycles"
+
+echo "== a run that never recorded max_read reports UNMEASURED, not 0 =="
+run "${WORK}/a.jsonl"
+grep -qE "max_read +UNMEASURED" "${WORK}/out" \
+  || fail "an absent max_read must be UNMEASURED, never a 0 maximum: $(cat "${WORK}/out")"
+pass "an absent maximum is unmeasured, not zero"
+
 echo "ALL PASS"

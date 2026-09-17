@@ -3,8 +3,9 @@
 # cost proxies in a run's JSONL and, given a baseline, prints the delta — so
 # "this release made the loop cheaper" becomes a number instead of a claim.
 #
-# The four fields are PROXIES, deliberately: bytes written, bytes read, tool
-# calls and wall clock are observable from inside a session; token counts are
+# The fields are PROXIES, deliberately: bytes written, bytes read, tool calls,
+# wall clock and the largest single read are observable from inside a session;
+# `max_read` is carried as a MAXIMUM wherever the others are summed. Token counts are
 # not, and a guessed token number is exactly the unverifiable evidence P18 keeps
 # out of the ledger. bytes_in (P40a) is a FLOOR on read volume: it charges once
 # per read and nothing for the conversation itself.
@@ -27,8 +28,17 @@ python3 - "$@" <<'PY'
 import json, sys, os
 from collections import Counter
 
-FIELDS = ("bytes_out", "bytes_in", "tool_calls", "elapsed_s")
-UNITS = {"bytes_out": "bytes", "bytes_in": "bytes", "tool_calls": "calls", "elapsed_s": "s"}
+SUM_FIELDS = ("bytes_out", "bytes_in", "tool_calls", "elapsed_s")
+# max_read (P50) is a maximum, not a total: summing it would answer "how big was
+# the biggest read" with a number no single read ever had.
+MAX_FIELDS = ("max_read",)
+FIELDS = SUM_FIELDS + MAX_FIELDS
+UNITS = {"bytes_out": "bytes", "bytes_in": "bytes", "tool_calls": "calls",
+         "elapsed_s": "s", "max_read": "bytes"}
+
+
+def fold(field, acc, v):
+    return max(acc, v) if field in MAX_FIELDS else acc + v
 
 
 def plural(n, word):
@@ -97,13 +107,13 @@ def load(path):
                 v = cost.get(f)
                 if isinstance(v, bool) or not isinstance(v, (int, float)):
                     continue
-                totals[f] += v
+                totals[f] = fold(f, totals[f], v)
                 coverage[f] += 1
                 if route:
-                    routes[route][f] += v
+                    routes[route][f] = fold(f, routes[route][f], v)
                     routes[route]["cov"][f] += 1
                 if phase:
-                    phases[phase][f] += v
+                    phases[phase][f] = fold(f, phases[phase][f], v)
                     phases[phase]["cov"][f] += 1
             if route:
                 routes[route]["measured"] += 1
@@ -131,7 +141,7 @@ def merge(parts):
            "escalations": Counter(), "phases": {}, "phaseless": 0, "cycles": {}}
     for name, r in parts:
         for f in FIELDS:
-            out["totals"][f] += r["totals"][f]
+            out["totals"][f] = fold(f, out["totals"][f], r["totals"][f])
             out["coverage"][f] += r["coverage"][f]
         for k in ("measured", "unmeasured", "skipped", "tokens_seen", "unrouted", "phaseless"):
             out[k] += r[k]
@@ -143,14 +153,14 @@ def merge(parts):
                 dst["n"] += b["n"]
                 dst["measured"] += b["measured"]
                 for f in FIELDS:
-                    dst[f] += b[f]
+                    dst[f] = fold(f, dst[f], b[f])
                     dst["cov"][f] += b["cov"][f]
         cyc = out["cycles"].setdefault(name, dict.fromkeys(FIELDS, 0) | {
             "n": 0, "measured": 0, "cov": dict.fromkeys(FIELDS, 0)})
         cyc["n"] += r["measured"] + r["unmeasured"]
         cyc["measured"] += r["measured"]
         for f in FIELDS:
-            cyc[f] += r["totals"][f]
+            cyc[f] = fold(f, cyc[f], r["totals"][f])
             cyc["cov"][f] += r["coverage"][f]
     out["routed"] = sum(b["n"] for b in out["routes"].values())
     return out
