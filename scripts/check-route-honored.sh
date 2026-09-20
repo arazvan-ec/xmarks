@@ -95,8 +95,21 @@ def rank(route, models, efforts):
     return (models.index(model), efforts.index(effort))
 
 
+def delegates(route):
+    """Whether a recorded route carries +delegate.
+
+    Tier and delegation are different axes, so this is read separately and
+    compared separately: a record that drops a planned +delegate is neither
+    above nor below the plan, and folding it into the tier comparison is how it
+    went unnoticed."""
+    if not isinstance(route, str):
+        return False
+    m = ROUTE_RE.match(route.strip().strip("`").lower())
+    return bool(m and (m.group(3) or "").strip() == "delegate")
+
+
 fatal, notices, checked, pre = [], [], 0, 0
-no_plan = []
+no_plan, compared = [], set()
 
 for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
     d = os.path.join(runs, slug)
@@ -136,6 +149,7 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
     if not rows:
         continue
 
+    compared.add(slug)
     newest = max((str(r.get("ts") or "") for r in rows), default="")
     covered = set()
 
@@ -171,6 +185,17 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
         if rp is None:
             notices.append(f"{where}: the plan's own route {planned!r} cannot be ranked")
             continue
+        want_d = bool(tasks[planned_id].get("delegate"))
+        got_d = delegates(got)
+        if want_d and not got_d and not rec.get("route_escalated_from"):
+            msg = (f"{where} ran {got} where the plan routed {planned} — the"
+                   f" delegation it bought is not in the record, and a subagent"
+                   f" that never ran is the one thing the tier alone cannot show")
+            (fatal if post else notices).append(msg)
+            pre += 0 if post else 1
+        elif got_d and not want_d:
+            notices.append(f"{where} delegated where the plan routed {planned} —"
+                           f" reported, not a finding: less was spent, not more")
         if rg > rp and not rec.get("route_escalated_from"):
             msg = (f"{where} ran {got} where the plan routed {planned}, with no"
                    f" route_escalated_from to say so — an upgrade is a mis-route"
@@ -190,13 +215,33 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
         (fatal if post else notices).append(msg)
         pre += 0 if post else 1
 
+# A plan whose slug has no run directory, or an empty one, was never reached by
+# the loop above — the gate simply said nothing about it (Codex, PR #91). It is
+# named here and counted, not failed: `check-telemetry.sh` owns the duty of
+# failing a spec with no telemetry, and the plans in this state are exactly the
+# cycles its baseline exempts with a reason. Failing here would contradict a
+# decision already taken; saying nothing was the actual defect.
+uncompared = []
+if os.path.isdir(specs):
+    for f in sorted(os.listdir(specs)):
+        if not f.endswith(".plan.md"):
+            continue
+        slug = f[: -len(".plan.md")]
+        if slug not in compared:
+            uncompared.append(slug)
+
 for f in fatal:
     print(f"route-honored: {f}")
 for n in notices:
     print(f"route-honored: note — {n}")
 
+for u in uncompared:
+    print(f"route-honored: note — {u} has a plan and no usable run record, so none"
+          f" of its tasks could be compared with the routes it bought")
+
 print(f"route-honored: {checked} transition(s) compared against a plan;"
-      f" {len(no_plan)} cycle(s) ran without one, so there was no route to honor.")
+      f" {len(no_plan)} cycle(s) ran without one, so there was no route to honor"
+      + (f"; {len(uncompared)} plan(s) had no record to compare." if uncompared else "."))
 if pre:
     print(f"route-honored: {pre} finding(s) predate the cutoff ({CUT}) and are counted,"
           f" not failed — nothing is backfilled to change them (P18).")
