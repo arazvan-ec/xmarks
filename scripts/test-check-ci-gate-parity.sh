@@ -108,12 +108,17 @@ run "${SRC}"
 if [ "${RC}" -eq 0 ]; then
   pass "this repo wires every gate it ships"
 else
-  # Until T3 wires it, the decisive clause: red naming exactly one gate.
+  # Before T3 wires them, the decisive clause: red, and red ONLY for the two
+  # gates known to be unwired at that point — the hole this cycle exists to
+  # close, and this gate itself, which is not yet in the workflow. Anything
+  # else named here is a real finding, not the expected transient.
   grep -q "check-supply-chain-pin.sh" "${WORK}/out" \
     || fail "the real tree is red but not for the known reason: $(cat "${WORK}/out")"
-  n="$(grep -c "check-[a-z-]*\.sh" "${WORK}/out")"
-  [ "${n}" -eq 1 ] || fail "expected exactly one unwired gate, got ${n}: $(cat "${WORK}/out")"
-  pass "the real tree is red naming check-supply-chain-pin.sh alone (wired in T3)"
+  unexpected="$(grep -oE "check-[a-z-]+\.sh" "${WORK}/out" | sort -u \
+    | grep -vE "^check-(supply-chain-pin|ci-gate-parity)\.sh$" || true)"
+  [ -z "${unexpected}" ] \
+    || fail "the real tree names a gate beyond the known transient: ${unexpected}"
+  pass "the real tree is red naming only the known unwired gates (both wired in T3)"
 fi
 
 echo "ALL PASS"
