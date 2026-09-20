@@ -5,6 +5,8 @@
 # neither telemetry nor a baseline entry fails and is NAMED; a baselined spec
 # passes; a baseline entry carrying no reason is unusable input; `.plan.md` is
 # not a spec; the skip is logged; and the real repo is green.
+# P48: a line written after the cutoff names its phase; before it, the same line
+# is a counted notice — the corpus predates the rule and nothing may be backfilled.
 
 set -uo pipefail
 
@@ -165,6 +167,66 @@ telemetry "${R}" alpha '{"ts":"2026-09-15T10:00:00Z","state":"completed","task":
 run "${R}"
 [ "${RC}" -eq 1 ] || fail "a cost object with no numeric proxy must fail, got ${RC}: $(cat "${WORK}/out")"
 pass "cost must carry at least one numeric proxy"
+
+echo "== a line written after the cutoff must name its phase (P48) =="
+R="$(repo nophase)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-18T10:00:00Z","state":"completed","task":3,"cost":{"bytes_out":1}}'
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a post-cutoff line with no phase must exit 1, got ${RC}: $(cat "${WORK}/out")"
+grep -qi "phase" "${WORK}/out" || fail "the failure must name phase: $(cat "${WORK}/out")"
+pass "post-cutoff line with no phase exits 1"
+
+echo "== the same line with a phase passes =="
+telemetry "${R}" alpha '{"ts":"2026-09-18T10:00:00Z","state":"completed","task":3,"phase":"work","cost":{"bytes_out":1}}'
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "a post-cutoff line naming its phase must pass, got ${RC}: $(cat "${WORK}/out")"
+pass "phase satisfies the rule"
+
+echo "== an empty phase is not a phase =="
+telemetry "${R}" alpha '{"ts":"2026-09-18T10:00:00Z","state":"completed","task":3,"phase":"   ","cost":{"bytes_out":1}}'
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "phase='   ' must not satisfy the rule, got ${RC}: $(cat "${WORK}/out")"
+pass "a blank phase does not count"
+
+echo "== before the cutoff a phase-less line passes, and is COUNTED =="
+# Nothing may be backfilled (P18), so the corpus that predates the rule is a
+# debt to report, never a failure to fix. Silent would be the same as absent.
+R="$(repo precutoff)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-15T10:00:00Z","state":"completed","task":3,"cost":{"bytes_out":1}}'
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "a pre-cutoff phase-less line must not fail, got ${RC}: $(cat "${WORK}/out")"
+grep -qiE "1 .*phase" "${WORK}/out" || fail "the pre-cutoff debt must be counted: $(cat "${WORK}/out")"
+pass "pre-cutoff lines pass and their count is stated"
+
+echo "== the cutoff is overridable, and moving it back reddens the same line =="
+R="$(repo cutoffenv)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-15T10:00:00Z","state":"completed","task":3,"cost":{"bytes_out":1}}'
+RC=0; FLYWHEEL_PHASE_REQUIRED_FROM=2026-01-01T00:00:00Z bash "${GATE}" "${R}" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -eq 1 ] || fail "the same line must fail under an earlier cutoff, got ${RC}: $(cat "${WORK}/out")"
+pass "the cutoff is one constant, and it is what decides"
+
+echo "== a baselined slug's post-cutoff phase-less line is a notice, not a failure =="
+R="$(repo exemptphase)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-18T10:00:00Z","state":"completed","task":3,"phase":"work","cost":{"bytes_out":1}}'
+spec "${R}" legacy
+telemetry "${R}" legacy '{"ts":"2026-09-18T10:00:00Z","state":"completed","task":3,"cost":{"bytes_out":1}}'
+printf 'legacy  its runs/ file predates the contract\n' >> "${R}/scripts/telemetry-baseline.txt"
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "a baselined slug must not fail on shape, got ${RC}: $(cat "${WORK}/out")"
+grep -qi "legacy" "${WORK}/out" || fail "the notice must name it: $(cat "${WORK}/out")"
+pass "the phase rule routes through the baseline like every other shape rule"
+
+echo "== by_tool is not a numeric proxy (P50) =="
+# A dict of per-tool bytes is a breakdown, not a measurement of the transition:
+# a cost object carrying only it has still measured nothing.
+R="$(repo bytool)"; spec "${R}" alpha
+telemetry "${R}" alpha '{"ts":"2026-09-18T10:00:00Z","state":"completed","task":3,"phase":"work","cost":{"by_tool":{"Bash":{"bytes":10,"calls":1}}}}'
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a cost object of only by_tool must fail, got ${RC}: $(cat "${WORK}/out")"
+telemetry "${R}" alpha '{"ts":"2026-09-18T10:00:00Z","state":"completed","task":3,"phase":"work","cost":{"max_read":10,"by_tool":{"Bash":{"bytes":10,"calls":1}}}}'
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "max_read alongside it is a numeric proxy, got ${RC}: $(cat "${WORK}/out")"
+pass "by_tool alone does not satisfy the cost rule; max_read does"
 
 echo "== the real repo is green =="
 run "${SRC}"

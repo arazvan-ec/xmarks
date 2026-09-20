@@ -7,7 +7,7 @@ allowed-tools: Read, Edit, Write, Grep, Glob, Bash
 
 # /flywheel:work — the inner loop
 
-**Progress, live:** materialize each plan task as a visible task before starting and flip its state the moment its local check goes green — never in bulk afterwards. **Every run, in a cycle or standalone**, append **one JSON line per transition** to `.claude/flywheel/runs/<spec-slug>/<date>.jsonl`: **never secrets, never a `tokens` field**, and omit a field you cannot compute rather than estimating it. Do not render the HTML report here; the loop does it at gates and close. Fail-open: reporting never blocks the work. The line's exact shape: `skills/work/references/work-detail.md`.
+**Progress, live:** materialize each plan task as a visible task before starting and flip its state the moment its local check goes green — never in bulk afterwards. **Every run, in a cycle or standalone**, append **one JSON line per transition** to `.claude/flywheel/runs/<spec-slug>/<date>.jsonl`: **never secrets, never a `tokens` field**, **always a `phase`** (the ledger is totalled by it), and omit a field you cannot compute rather than estimating it. Do not render the HTML report here; the loop does it at gates and close. Fail-open: reporting never blocks the work. The line's exact shape: `skills/work/references/work-detail.md`.
 
 **Prime from fixtures:** before building test data for an entity, `/flywheel:recall fixture <entity>` — use the ledger's recipe instead of re-deriving it.
 
@@ -35,6 +35,7 @@ Each task carries `route: <model>/<effort>[+delegate]` from the approved plan. E
 - **`+delegate`** → hand it to the **`executor`** agent with the task's `changes` and `check` verbatim. It returns the check output, or `ESCALATE: <reason>`. Never argue with an escalation — take the task back one tier up.
 - **A route above the session's current tier** → say so and switch, or ask once: `/model opus high`, or `--effort high` for the session.
 - **A route you could not honor** (no permission, agent unavailable) → run at the tier you have and **say which route was not honored**. Never downgrade silently.
+- **A route you ran *above*, or a task folded into a costlier sibling** → record `route_escalated_from`, and give every plan task its own line. An unrecorded upgrade is the mis-route nothing can see.
 
 A mis-route you **observed** — a T1 that needed escalating, a T3 that finished cheap — is worth a `decision` learning at compound time.
 

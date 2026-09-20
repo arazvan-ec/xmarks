@@ -5,6 +5,8 @@
 # it cannot measure; and that the --since half distinguishes an OBSERVED zero
 # (the meter ran, nothing was read) from UNMEASURED (no meter ran at all) —
 # the P40a rule one level down, where conflating the two fabricates the win.
+# P50: --since also names the largest single read and attributes the total per
+# tool, on data the meter has recorded since v0.56.0 and then discarded.
 
 set -euo pipefail
 
@@ -227,5 +229,99 @@ case "${NONE}" in
   *) fail "no meter file must name itself UNMEASURED: ${NONE}" ;;
 esac
 pass "no meter file reports UNMEASURED, never a zero that fabricates a win"
+
+# --- P50: the total is attributed, and the biggest read is named -------------
+feed s50 Read '{"type":"text","file":{"filePath":"/p/big.txt","content":"'"$(printf 'x%.0s' $(seq 1 500))"'"}}'
+feed s50 Bash '{"stdout":"'"$(printf 'y%.0s' $(seq 1 40))"'","stderr":""}'
+feed s50 Write '{"type":"update","filePath":"/p/out.txt","originalFile":"'"$(printf 'z%.0s' $(seq 1 900))"'"}'
+P50OUT="$(CLAUDE_CODE_SESSION_ID=s50 bash "${SCRIPT}" --since 1970-01-01T00:00:00Z)"
+
+case "${P50OUT}" in
+  *max_read=*) : ;;
+  *) fail "--since must report max_read: ${P50OUT}" ;;
+esac
+case "${P50OUT}" in
+  *by_tool=*) : ;;
+  *) fail "--since must report by_tool: ${P50OUT}" ;;
+esac
+pass "--since reports max_read and by_tool"
+
+FW_OUT="${P50OUT}" python3 - <<'MAXPY' || fail "max_read/by_tool are wrong: ${P50OUT}"
+import os, sys
+f = dict(kv.split("=", 1) for kv in os.environ["FW_OUT"].split() if "=" in kv)
+total, mx = int(f["bytes_in"]), int(f["max_read"])
+# The largest SINGLE call, not the total and not the last one.
+if mx >= total:
+    print("max_read %d must be below the total %d with three calls" % (mx, total), file=sys.stderr)
+    sys.exit(1)
+if mx < 500:
+    print("max_read %d must be the 500-byte Read, not a smaller call" % mx, file=sys.stderr)
+    sys.exit(1)
+by = {}
+for part in f["by_tool"].split(","):
+    tool, rest = part.split(":", 1)
+    b, c = rest.split("/", 1)
+    by[tool] = (int(b), int(c))
+if set(by) != {"Read", "Bash", "Write"}:
+    print("every tool that made a call must appear: %r" % (by,), file=sys.stderr); sys.exit(1)
+# A write tool's response never reached context: the call counts, the bytes do not.
+if by["Write"] != (0, 1):
+    print("Write must carry 0 bytes and 1 call, got %r" % (by["Write"],), file=sys.stderr); sys.exit(1)
+if by["Read"][0] != mx:
+    print("Read's bytes %r must be the max here" % (by["Read"],), file=sys.stderr); sys.exit(1)
+if sum(b for b, _ in by.values()) != total:
+    print("by_tool must attribute the whole total: %r vs %d" % (by, total), file=sys.stderr); sys.exit(1)
+MAXPY
+pass "max_read is the largest single call; by_tool attributes the whole total"
+
+# An observed-empty window is not an absent meter: the fields report as zero
+# only where a meter actually ran and recorded nothing after the cut.
+EMPTY="$(CLAUDE_CODE_SESSION_ID=s50 bash "${SCRIPT}" --since 2999-01-01T00:00:00Z)"
+case "${EMPTY}" in
+  *max_read=0*) : ;;
+  *) fail "an observed-empty window must report max_read=0: ${EMPTY}" ;;
+esac
+pass "an observed-empty window reports zero, distinct from UNMEASURED"
+
+NOMAX="$(CLAUDE_CODE_SESSION_ID=never-metered bash "${SCRIPT}" --since 1970-01-01T00:00:00Z)"
+case "${NOMAX}" in
+  *max_read=*|*by_tool=*) fail "no meter must not report the new fields either: ${NOMAX}" ;;
+esac
+pass "no counter reports UNMEASURED for the new fields too, never max_read=0"
+
+# --- P53/Codex: the boundary second belongs to the transition that ended -----
+feed s53 Bash '{"stdout":"'"$(printf 'a%.0s' $(seq 1 900))"'","stderr":""}'
+feed s53 Read '{"type":"text","file":{"filePath":"/p/x","content":"'"$(printf 'b%.0s' $(seq 1 30))"'"}}'
+S53TS="$(FW_F="$(meter_for s53)" python3 -c '
+import json, os
+rows = [json.loads(l) for l in open(os.environ["FW_F"], encoding="utf-8") if l.strip()]
+print(rows[0]["ts"])')"
+
+echo "== an explicit --since excludes the boundary second =="
+# The caller passes the PREVIOUS transition's ts, and that transition already
+# counted every call bearing it. Including them again inherits a maximum this
+# transition never made — which is a wrong answer, not a rounding error.
+EXCL="$(CLAUDE_CODE_SESSION_ID=s53 bash "${SCRIPT}" --since "${S53TS}")"
+FW_OUT="${EXCL}" python3 - <<'EXCLPY' || fail "the boundary second was counted: ${EXCL}"
+import os, sys
+f = dict(kv.split("=", 1) for kv in os.environ["FW_OUT"].split() if "=" in kv)
+# Both calls share the boundary second in this fixture, so an exclusive cut
+# leaves nothing after it: an OBSERVED zero, not UNMEASURED.
+if int(f["tool_calls"]) != 0 or int(f["bytes_in"]) != 0 or int(f["max_read"]) != 0:
+    print("expected an empty window, got %r" % (f,), file=sys.stderr); sys.exit(1)
+EXCLPY
+pass "a caller-supplied cut is exclusive"
+
+echo "== --since first stays INCLUSIVE, or line 1 loses the call it measures =="
+FIRST53="$(CLAUDE_CODE_SESSION_ID=s53 bash "${SCRIPT}" --since first)"
+FW_OUT="${FIRST53}" python3 - <<'FIRSTPY' || fail "--since first dropped its earliest call: ${FIRST53}"
+import os, sys
+f = dict(kv.split("=", 1) for kv in os.environ["FW_OUT"].split() if "=" in kv)
+if int(f["tool_calls"]) != 2:
+    print("expected both calls, got %r" % (f,), file=sys.stderr); sys.exit(1)
+if int(f["max_read"]) < 900:
+    print("the first call's bytes must be in the max, got %r" % (f,), file=sys.stderr); sys.exit(1)
+FIRSTPY
+pass "--since first keeps the earliest call it cuts at"
 
 echo "read-meter: all assertions passed"

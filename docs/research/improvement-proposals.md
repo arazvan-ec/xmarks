@@ -60,7 +60,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P14a | Pillar-2 slice 1: the write-path probe + process discovery | ✅ shipped (v0.49.0) | Done — the probe is read-only and runs before Rule 1, a failure is a blocker and never a silent fallback; `process` proposes the git-native store when no DB signal hits; the banner lists the repo's contracts. Open: T5 (bare `/flywheel:run` listing) deferred to slice 2, and the rest of P14 is slices 2–3 |
 | P14b | Pillar-2 slice 2: the maturation survives the session | ✅ shipped (v0.50.0) | Done — a matured contract is committed pathspec-scoped rather than left staged (staged dies with the session while the datastore row survives); the bare `/flywheel:run` listing lands. Open: a run blocked by a defect in its OWN contract has no defined behaviour — two executors split on it |
 | P14c | Pillar-2 slice 3: a contract defect escalates | ✅ shipped (v0.54.0) | Done — step 2 names the two failures apart; a contract defect blocks, never rewrites the fixed rules, and stubs a spec from the run's evidence. Four eval paths, stub in exactly one. Open: step 0's task materialization has never fired in 8/8 runs; the contract metric has no rejection-path equivalent |
-| P40 | Measure what the loop reads, then route the reads | ✅ P40a (v0.52.0) · ⚪ P40b rejected — **unjustified, not disproven** | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stays **unapproved** until real runs say whether read volume is a peak here |
+| P40 | Measure what the loop reads, then route the reads | ✅ P40a (v0.52.0) · ⚪ P40b rejected — **unjustified, not disproven** | P40a done — `bytes_in` with per-FIELD coverage, so a pre-P40a baseline reports the field UNMEASURED instead of totalling it as 0 and fabricating an improvement. P40b (an `extractor` agent + a read-size threshold in `read-prime.sh`, the portable half of the Spotify Portal article) stayed **unapproved** until real runs could say whether read volume is a peak here. **P50 (v0.66.0) supplies the missing measurement**: the first metered session reports `max_read=11,036` over 117 calls with `Bash` holding 96% of the bytes across 93 calls — many small reads, not a few fat ones, which points away from a size threshold. Still the owner's call, now on evidence rather than an 18x interval |
 | P41 | flywheel can honor its own `+delegate` | ✅ shipped (v0.51.0) | Done — `install-vendored.sh --agents-only` (the one permitted self-target), the six agents committed at `.claude/agents/`, `check-agent-parity.sh` in CI both directions. Metric PASS **and acceptance observation recorded** — the `executor` subagent type resolved and ran the plan's own T6, the first `+delegate` route this repo has ever honored. Open: flywheel's **hooks** are still inactive in its own repo, so `delegation-guard.sh` never fires here |
 | P42 | The telemetry duty gets an owner that runs | ✅ shipped (v0.54.0) | Done — `work` writes its transition line every run, not only inside a `/flywheel:loop` cycle; `check-telemetry.sh` gates conformance + coverage in CI; `telemetry-baseline.txt` opens with **29 debts**, one per cycle that shipped unmeasured. Nothing backfilled (P18). The cycle wrote the repo's first conforming telemetry, and `work` eval 1 graded 7/7. Open: the 29 debts can only be paid by real cycles, and P40b still needs several runs' worth of `bytes_in` before it can be judged |
 | P43 | flywheel's hooks run on flywheel | ✅ shipped (v0.55.0) | Done — `install-vendored.sh --hooks-only` (self-target only, registrations point at `scripts/` so there are no copies to drift), the eight hooks committed in this repo's `.claude/settings.json`, and `check-hook-parity.sh` gained its third direction: what `hooks.json` declares must also be registered here. Pays the debt P41 declared. **Acceptance observation recorded** by artifact: `delegation-record.sh` wrote its state file for the T4 `Agent` call and SessionStart injected the ledger — both hooks live |
@@ -68,6 +68,13 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P45 | The first transition has a start | ✅ shipped (v0.57.0) | Done — `elapsed_s` comes from the meter's cut, and `--since first` gives a cycle's opening line the start a commit delta could never supply; first run in the repo with no PARTIAL field |
 | P46 | An assertion that cannot fire on a live run | 🔵 proposed | Audit every grader assertion for whether a real executor can trip it. Eval 3 keys on `verdict: PASS`; 3 fresh-context runs wrote 31 telemetry lines and **zero** verdicts. Harness-verified is not live-verified, and a silent assertion looks identical whether it is passing or dead |
 | P47 | The release convention is enforced in one direction only | ✅ shipped v0.63.0 | Two gates: `check-release-bump.sh` (a release-bearing diff must move the version **ahead of** the base) and `check-version-citations.sh` (a *pointer* — a link, or see/read/follow/consult before a path — must resolve; a bare mention stays free, so **no exclusion list**). Proven on real history: PR #85 replayed against its own base goes red, and the v0.61.0 mistake reconstructed on the live tree goes red while `main` stays green. The `paths:` filters are gone — a filter and a whole-tree corpus cannot both be correct |
+| P48 | The ledger cannot be aggregated by phase, or read across runs | ✅ shipped v0.64.0 | Measured on the corpus: **36 of 58** transition lines carry no `phase` and **6 of 11** cycles carry none on any line, because `check-telemetry.sh` accepted `task` **or** `phase` — identification and aggregation are different duties and only the first was specified. `run-cost.sh` also took one run and one baseline, so the cross-cycle view had to be hand-written to ask the question at all. Now: `phase` required from a cutoff placed **after the whole existing corpus and before this cycle's first line** (live on its own first subject, older lines a counted debt — nothing backfilled), and `run-cost.sh --all` rolling the corpus up by phase, route and cycle with P40a's per-FIELD coverage carried through the merge |
+| P49 | The plan's ladder is honored, or the record says otherwise | ✅ shipped v0.65.0 | The aggregate said the ladder collapsed (40 of 46 routed transitions on opus, haiku **0**); per task that is false — 5 of 5 one-to-one transitions honored their route. It evaporates instead through **8 unrecorded plan tasks** across p13/p42/p43, five of them the `haiku/low+delegate` ones; one `T1-T2` merge that buys the max tier unsaid; and 26 lines carrying `opus/xhigh`, an effort the tier table cannot rank. `check-route-honored.sh` fails an unrecorded task and an unsaid upgrade, reports what it cannot settle, and had its own cycle as its first live subject |
+| P50 | The meter names the read, not just the total | ✅ shipped v0.66.0 | `read-meter.sh --since` now prints `max_read` (the largest single tool response — a maximum, never summed) and `by_tool` (the total attributed per tool, write tools at 0 bytes and a real call count). Nothing new is measured: the state file has carried `{ts, tool, bytes}` since v0.56.0 and the reader discarded two thirds of it. `run-cost.sh` splits SUM_FIELDS from MAX_FIELDS so the maximum survives every bucket and the corpus merge. First live reading: **max_read=11,036 over 117 calls**, `Bash` holding 198,191 of 206,266 bytes — many small reads, not a few fat ones |
+| P51 | The effort ladder has the rung the CLI has | ✅ shipped v0.67.0 | P49 left `xhigh` to the owner; the owner confirmed it and the CLI reference orders the levels `low < medium < high < xhigh < max` (`ultracode` = xhigh + orchestration, not a sixth rung). Inserted, never appended — appending would rank `max` below it and invert every comparison at the top of the ladder, which is what the test asserts. `route-tiers.txt` untouched on purpose: the ladder is vocabulary, the tier table is policy about where the riskiest step must run. 26 lines that no comparison could reach are now inside one |
+| P52 | A gate in the tree is a gate CI runs | ✅ shipped v0.68.0 | `check-supply-chain-pin.sh` — *"the only Critical in the pillar-2 threat model"* by its own header — was invoked by **no workflow**: it appeared in `.github/workflows/` twice, both times in a **comment**. Tested, passing, never executed. `check-ci-gate-parity.sh` now asserts both directions (every gate wired; every wired gate exists), strips comment lines because that is the whole defect, and is wired alongside the Critical gate so it polices its own enforcement. The hand-written step list is kept on purpose — a glob loop would call the two base-ref gates without their argument and leave them green having compared nothing |
+| P53 | Three findings from review, each reproduced first | ✅ shipped v0.69.0 | Codex on PR #91, all three confirmed on fixtures before any change: the `+delegate` suffix was discarded in the route comparison, so a plan buying `haiku/low+delegate` against a record saying `haiku/low` passed as **honored** — a subagent that never ran, reported as success; a plan with no run directory was never reached at all (**12** of them, not the 7 a hand count found); and the meter's inclusive `>= since` handed the previous transition's calls to the next one, reporting `max_read=50000` for a transition that never made that call |
+| P54 | Two dials nobody but their author has read | 🔵 needs a decision | Both were set inside P48-P53 by the same session that wrote the gates enforcing them, and the review that followed read the code, not the policy. **(a)** What `check-route-honored.sh` calls fatal — three rules — against what it calls a notice; too strict and the habit becomes `SKIP_ROUTE_CHECK`. **(b)** The cutoff `2026-09-17T20:00:00Z`, which forgives 36 phase-less lines and 6 route findings **permanently** and binds everything after — and which is a **literal duplicated in two scripts** behind two env vars, so one can move without the other |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -2903,3 +2910,301 @@ release-bearing directories precisely so `docs/research/` changes stay free.
 **Related.** P46, on assertions that cannot fire on a live run. This is its
 sibling: an assertion that fires on the wrong direction. Both are cases of a
 gate whose *shape* looks like the rule while covering something adjacent.
+
+## P48 — the ledger cannot be aggregated by phase, or read across runs (✅ shipped v0.64.0)
+
+**Where it came from.** A session asked what looks like a reporting question —
+*how many cycles have run, and can we optimise the flow from them?* — and the
+answer had to be hand-derived with a throwaway script, in a repo whose CLAUDE.md
+says `cost.bytes_in` *"is what makes the difference checkable"*.
+
+**Evidence,** counted over `.claude/flywheel/runs/` (11 run files, 58
+transitions, 20 runs including the HTML-only ones):
+
+| defect | measured |
+| --- | --- |
+| `phase` optional | 36 of 58 lines carry none; 6 of 11 cycles carry none on any line |
+| no transversal view | `run-cost.sh <run> [baseline]` — one run against one baseline, never the corpus |
+| the tail of the loop is barely recorded | `verify` on 3 of 11 cycles, `review` 3, `ship` 1, `compound` 0 |
+| verdicts | 3 in 58 lines — corroborates P46 with a second, independent corpus |
+
+**What shipped.** Two assertions, each seen red before green:
+
+1. A line whose `ts` is at or after the cutoff carries a non-empty `phase`, or
+   the gate fails. Older lines are a **counted notice** — the corpus predates
+   the rule and nothing may be backfilled (P18).
+2. `run-cost.sh --all <runs-dir>` merges every run file and groups the totals by
+   phase, route and cycle, with per-FIELD coverage carried through the merge.
+
+**The cutoff is the design decision.** Per-line debt cannot go in
+`telemetry-baseline.txt` without exempting those slugs from the **coverage**
+check too — hiding a real gap to silence a shape one. A timestamp splits exactly
+the set that can still be fixed from the set that cannot, and needs no list.
+Placed at `2026-09-17T20:00:00Z`: after the newest line in the corpus
+(`19:40:54Z`), before the first line of the cycle that shipped it. A cutoff of
+"tomorrow" would have been P46's defect committed on purpose — a rule that
+cannot fire on any live run — and a date-granular one would have reddened two of
+that same day's lines on history that cannot be fixed.
+
+**Still open.** The 36 phase-less lines stay unaggregatable forever; the phase
+breakdown covers 22 of 58 transitions until enough cycles run under the rule.
+`compound` has never written a transition line at all — the roll-up now makes
+that absence visible instead of merely true.
+
+## P49 — the plan's ladder is honored, or the record says otherwise (✅ shipped v0.65.0)
+
+**Where it came from.** P48's roll-up, one release earlier, in the same session.
+The corpus view made the ladder look collapsed, and the first hypothesis — the
+planner over-assigns, so make a fully-top-tier plan fail — was written down and
+then **refuted by the evidence before anything was built on it**. Every plan in
+this repo routes across all three tiers; p40a's routes 4 haiku, 2 sonnet, 1 opus.
+
+**What the per-task comparison shows** (the only cycles carrying both a plan and
+telemetry):
+
+| cycle | planned | recorded |
+| --- | --- | --- |
+| p42 | T1-T3 sonnet, T4 opus, T5 haiku+delegate, T6 sonnet, T7 haiku+delegate | T1-T2, T3, T4 honored; **T5, T6, T7 absent** |
+| p43 | T1 sonnet, T2 opus, T3 sonnet, T4+T5 haiku+delegate | T3 honored; T1 **absorbed** into a `T1-T2` run at opus/high; **T4, T5 absent** |
+| p13 | T1-T6 across three tiers | three lines at `opus/xhigh`, **T4, T5, T6 absent** |
+
+So "haiku never ran" is not a routing decision at all: the tasks routed to haiku
+are the ones whose transitions were never written. The loop stops recording
+before it reaches the cheap tail — the same shape P48 found in the *phases*
+(`verify` on 3 of 11 cycles, `review` 3, `ship` 1, `compound` 0).
+
+**What shipped.** `check-route-honored.sh`, consuming `plan-route.sh --json` so
+the plan format keeps one parser. Fatal, from the P48 cutoff on: a plan task
+with no transition line, and a transition above its plan's tier with no
+`route_escalated_from`. Reported, never fatal: merges, unrankable routes, and
+transitions mapping to no plan task. `work`'s rule gains the upward direction.
+
+**The cycle was its own first subject.** It carried a plan, and the gate was red
+on the real tree until each of T1-T6 had written its line — including T5, which
+was routed `haiku/low+delegate` and ran there (the `executor` subagent, with
+`delegation-record.sh` writing `{tool: Agent, model: haiku}` as the artifact).
+Second honored `+delegate` in this repo's history, after P41's.
+
+**Open, for the owner.**
+
+- ~~**Is `xhigh` a tier?**~~ **Answered (P51, v0.67.0): it is an effort, not a tier.** It joins the ladder between `high` and `max`; `route-tiers.txt` keeps three tiers. Original entry: 26 telemetry lines say sessions run at it;
+  `route-tiers.txt` and `plan-route.sh` define `low|medium|high|max`. Either the
+  ladder is missing a rung or the record uses a word the plugin does not define.
+  The gate reports the mismatch and declines to decide it.
+- ~~**The `check-*` gate list in CI is still hand-written**~~ **Answered (P52, v0.68.0): the list stays, and is now gated** — and `check-supply-chain-pin.sh` had in fact never run. Original entry: the list is hand-written (10 entries then) while
+  `test-*.sh` is discovered. The ledger already carries two entries about gates
+  that never ran; this is the same shape waiting to happen.
+- **`work`'s body is at 5659/5700 B** — 41 bytes. The next clause does not fit,
+  and the reference split (P35/P36) buys nothing against `worst`.
+
+## P50 — the meter names the read, not just the total (✅ shipped v0.66.0)
+
+**Where it came from.** The same session as P48 and P49. The corpus roll-up P48
+made possible put read volume at **4.0×** write volume (1,475,873 bytes in
+against 372,942 out), which is the peak P40b was arguing about — and the ledger
+already recorded why that argument could not be settled:
+
+> keeping the aggregate is not keeping the measurement — the largest single read
+> in 619 calls is bounded only to [4,898 ; 152,232] bytes, straddling P40b's 8 KB
+> threshold by 18x
+
+**What shipped.** `max_read` and `by_tool` out of `--since`, on rows the meter
+was already writing. `run-cost.sh` grew a second field kind so a maximum is never
+summed. No hook changed: the half of `read-meter.sh` that runs on every tool call
+is untouched, and its arms stayed green throughout.
+
+**What the first reading says.** `max_read=11,036` over 117 calls; `Bash` 198,191
+bytes across 93 calls, `Read` 5,057 across 2. The reads in this loop are **many
+and small** — the mean Bash response is about 2.1 KB — so a size threshold would
+fire on almost nothing while the volume comes from call *count*. One session is
+not a corpus, and the honest statement is that the evidence now exists and points
+one way, not that P40b is settled.
+
+**Still open.**
+
+- **`by_tool` is recorded but not rolled up.** `run-cost.sh --all` totals
+  `max_read` correctly and ignores `by_tool`; a corpus-level "which tool costs
+  the reads" would need it merged, and that was deliberately outside this
+  cycle's assertions rather than smuggled in.
+- The three questions P49 left: whether `xhigh` is a tier, the hand-written
+  `check-*` list in CI, and `work`'s body at 41 bytes of headroom.
+
+## P51 — the effort ladder has the rung the CLI has (✅ shipped v0.67.0)
+
+**Where it came from.** P49's own open question, answered by the owner two days
+later. The evidence was in the tree the whole time: `docs/research/claude-code-loops.md`
+describes `/effort ultracode` as *"xhigh reasoning + auto orchestration"*, and the
+ladder in `plan-route.sh` still read `low|medium|high|max`. A research note and a
+gate disagreed about the vocabulary, and the gate lost 26 lines to it.
+
+**The distinction that kept the change small.** Two things looked like one:
+
+| | what it is | what changing it does |
+| --- | --- | --- |
+| `EFFORT_LADDER` | vocabulary + ordering | decides what is legal and which of two routes is higher |
+| `route-tiers.txt` | policy | decides which pairs are named tiers, and which one every plan's riskiest step must reach |
+
+Only the first was wrong. Adding a tier 4 would have moved the top tier and
+changed what every future plan is required to say — so the tier table was left
+alone, and the note says why.
+
+**Position, not membership.** `xhigh` goes *between* `high` and `max`. Appended
+after `max` it would rank `max` as the lower of the two and silently invert every
+comparison at the top of the ladder, while still passing any test that only
+asked whether the string was present. The arm asserts
+`index(high) < index(xhigh) < index(max)`.
+
+**Verified where it matters,** on the real corpus rather than a fixture: p13's
+three `opus/xhigh` transitions moved from *unrankable* to *an unrecorded upgrade
+over `opus/high`*, staying pre-cutoff notices with the tree green.
+
+**A note on the record this cycle wrote.** The first draft of its own telemetry
+recorded `route: opus/xhigh` — and the gate immediately failed it as an
+unrecorded upgrade. A session cannot observe its own effort setting, so claiming
+the rung it had just added would have been exactly the unverifiable evidence P18
+keeps out. The lines record `opus/high`, the tier the plan bought.
+
+## P52 — a gate in the tree is a gate CI runs (✅ shipped v0.68.0)
+
+**Where it came from.** P49's second open question, raised as a structural risk
+— *"the ledger already carries two entries about gates that never ran; this is
+the same shape waiting to happen"*. It was not waiting. Checking before building
+turned the risk into a live finding in one command:
+
+```
+comm -23 <gates in the tree> <gates a workflow actually invokes>
+  → check-supply-chain-pin.sh
+```
+
+The first, naive version of that comparison reported nothing missing, because
+both of the gate's appearances in `.github/workflows/` are comment lines. That
+false green is the reason this is a gate rather than a grep in a workflow step.
+
+**What the unwired gate was.** Not a nice-to-have: its header calls it *"the only
+Critical in the pillar-2 threat model"*. It guards the pin that stops a moving
+ref from executing arbitrary bash in every consuming repo's CI under
+`contents:write`, weekly, unattended. It was correct, tested, and never ran.
+
+**What shipped.** `check-ci-gate-parity.sh`, asserting both directions, plus the
+wiring for the Critical gate and for the parity gate itself. Parity now reports
+**12 of 12 gates invoked across 3 workflow files**.
+
+**What was deliberately not done.** Replacing the hand-written list with a glob.
+`check-test-pairing.sh` and `check-release-bump.sh` take the merge base as an
+argument; a loop would call them without it and they would pass having compared
+nothing — the exact failure mode this repo keeps rediscovering. The list is
+fine. The list being unchecked was not.
+
+**A note on the delegated report.** T3 ran on `haiku/low+delegate` and its report
+attributed two red checks to *"pre-existing telemetry debt"*. Checked rather than
+accepted: the red was this cycle's own missing telemetry, which the coverage rule
+raises for every new spec until its run file exists. The wiring it was asked to
+do was correct; the diagnosis it volunteered was not.
+
+## P53 — three findings from review, each reproduced first (✅ shipped v0.69.0)
+
+**Where it came from.** Three P2 comments from Codex on PR #91, against code
+written earlier in the same session. Every one was reproduced on a fixture before
+anything was edited — which is how the second one's real size came out.
+
+**1. The delegation suffix was discarded.** `rank()` compared model and effort
+and dropped regex group 3. A plan that bought `haiku/low+delegate` and a record
+that said `haiku/low` compared equal, so the gate reported *honored* for a
+delegation that never happened. In a repo where P41 and P49 exist to track
+exactly that, the gate built to catch mis-routes was blind to the mis-route it
+was most likely to see. Tier and delegation are different axes; folding one into
+the other is what hid it.
+
+**2. A plan with no record was never inspected.** Discovery started from
+`runs/*/`, so a plan whose slug had no directory there was never reached. The
+hand count said 7; the gate, once written, found **12** — five plans have a run
+directory holding only an HTML report, which the loop skipped for the same reason
+and which were just as invisible. Shipped as a **notice**, not the failure the
+review proposed, because `check-telemetry.sh` already fails a spec with no
+telemetry and these are precisely the cycles its baseline exempts with a reason.
+The review named the right gap; the right severity was the other gate's.
+
+**3. The boundary second belonged to both transitions.** `--since` filtered with
+`>=` on second-granular rows, and the documented call passes the previous
+transition's timestamp. Calls bearing it were counted twice — negligible for a
+sum, wrong for a maximum: the fixture reported `max_read=50000` from a call the
+transition never made. The fix splits the two cuts, because `--since first` names
+a row rather than a boundary and must stay inclusive.
+
+**What this says about the cycle that shipped the originals.** All three are
+*"asserting a step is PRESENT says nothing about what it operates on"* — the
+ledger's own entry — in three costumes: a comparison that ran on part of the
+route, a loop that ran on part of the corpus, and a filter that ran on part of a
+second. Each gate was green, correct in what it checked, and aimed slightly off
+the thing it claimed.
+
+## P54 — two dials nobody but their author has read (🔵 needs a decision)
+
+**Where it came from.** The merge conversation on PR #91. Six releases shipped in
+one session; Codex reviewed three of them and found three real defects, all in
+*code*. These two are **policy**, chosen by the same session that wrote the gates
+that enforce them, and nobody else has looked at either. Neither is a defect
+today. Both decide how much the discipline costs every future cycle, which is not
+a thing to discover by accident six months from now.
+
+### (a) What `check-route-honored.sh` fails on, against what it merely reports
+
+**Fatal** (from the cutoff on) — three rules:
+
+| | |
+| --- | --- |
+| a plan task with **no transition line** | the ledger cannot tell "ran and wrote nothing" from "never ran" |
+| a transition **above** its plan's tier with no `route_escalated_from` | an unrecorded upgrade |
+| a record that **drops a planned `+delegate`** | a subagent the plan bought that never appears |
+
+**Reported, never fatal** — a merged range absorbing a cheaper task, a route the
+ladder cannot rank, the plan's own route being unrankable, a transition mapping
+to no plan task, a plan with no usable run record, *extra* delegation, and
+running *below* the plan.
+
+**The question.** Is the fatal set right for everyday work? The first rule is the
+strict one: it means **every plan task must write a line, or CI is red** — the
+release chore, the metric run, the two-line doc fix. That is exactly the duty
+that was missing (eight tasks across p13/p42/p43 had no line, five of them the
+`haiku/low+delegate` ones), and it is also the rule most likely to redden a cycle
+that merged two tasks honestly and said so.
+
+**The failure mode to watch for** is not a red build. It is `SKIP_ROUTE_CHECK`
+becoming routine — a gate skipped by habit is worse than a gate that was never
+written, because the tree still looks guarded.
+
+**What would settle it:** the next handful of real cycles. Count how often the
+gate goes red, and for each red ask whether the run was actually wrong. If the
+answer is mostly no, demote rule 1 to a notice and keep the two deviation rules
+fatal. There is no need to guess now — the data arrives on its own.
+
+### (b) The cutoff, and the fact that there are two of them
+
+`2026-09-17T20:00:00Z` is the instant that splits *"this corpus predates the
+rule"* from *"this is live work"*. It was placed after the newest line then in
+the tree and before the first line of the cycle that shipped it, so the rule
+would bind its own author rather than lie dormant (P46's defect). That part is
+sound and was checked against the real corpus.
+
+Two things about it deserve an owner:
+
+1. **It forgives permanently.** 36 phase-less lines and 6 route findings are
+   counted notices forever. Nothing may be backfilled (P18), so they can never
+   become conforming — but the *notices* could eventually be retired, either by
+   deleting the pre-cutoff corpus or by accepting that the roll-up will always
+   report a partial phase breakdown. Today the honest answer is "leave them";
+   the question is whether that is still true once the post-cutoff corpus is
+   large enough to stand alone.
+2. **The literal is written twice.** `scripts/check-telemetry.sh:48`
+   (`FLYWHEEL_PHASE_REQUIRED_FROM`) and `scripts/check-route-honored.sh:58`
+   (`FLYWHEEL_ROUTE_CHECK_FROM`) each carry their own copy. Move one and the two
+   gates silently disagree about when the rules began — and nothing checks that
+   they agree. This repo's answer to exactly this shape is **one authority**
+   (`route-tiers.txt` is the single definition of a tier, read by both the
+   linter and the gate). A shared constant, or one variable read by both, is the
+   same move one level down.
+
+**Recommendation on (2), for whenever this is picked up:** one file, one value,
+both gates reading it — and a test that a gate cannot fall back to a literal of
+its own. The duplication is harmless *today* precisely because both copies say
+the same thing, which is also the reason nobody would notice the day they stop.

@@ -9,23 +9,33 @@
 # `- route:` (`<model>/<effort>[+delegate]`), one `- check:`, and exactly one
 # `- risk: highest` in a plan with 2+ tasks.
 #
-# Usage: plan-route.sh <plan.md>
+# Usage: plan-route.sh [--json] <plan.md>
+#
+# --json (P49) emits the same parse as machine-readable records — each task's
+# route, tier and rank — so a consumer never re-implements this parser. Two
+# readers of one format is how the two drift; a broken plan still exits 1 under
+# --json, so nothing can launder one by asking for JSON.
 # Exit: 0 OK · 1 lint failures · 2 unusable input (no file, no argument, no tasks)
 
 set -euo pipefail
 
-[ "$#" -ge 1 ] || { echo "usage: plan-route.sh <plan.md>" >&2; exit 2; }
+JSON=0
+if [ "${1:-}" = "--json" ]; then JSON=1; shift; fi
+[ "$#" -ge 1 ] || { echo "usage: plan-route.sh [--json] <plan.md>" >&2; exit 2; }
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-python3 - "$1" "${FLYWHEEL_ROUTE_TIERS:-${HERE}/route-tiers.txt}" <<'PY'
-import os, re, sys
+FW_JSON="${JSON}" python3 - "$1" "${FLYWHEEL_ROUTE_TIERS:-${HERE}/route-tiers.txt}" <<'PY'
+import json, os, re, sys
 from collections import Counter
 
 # Ascending cost/strength. These are the CLI's legal values; which point on each
 # axis defines a tier is policy, and lives in route-tiers.txt.
 MODEL_LADDER = ("haiku", "sonnet", "opus")
-EFFORT_LADDER = ("low", "medium", "high", "max")
+# The CLI's order (P51): low < medium < high < xhigh < max. `ultracode` is not a
+# sixth rung — it requests xhigh with orchestration on — so it stays illegal
+# here. xhigh is INSERTED, never appended: appending would rank max below it.
+EFFORT_LADDER = ("low", "medium", "high", "xhigh", "max")
 MODELS = MODEL_LADDER + ("inherit",)
 EFFORTS = EFFORT_LADDER
 TASK_RE = re.compile(r"^###\s+T(\d+)\s*[—–-]*\s*(.*)$")
@@ -133,7 +143,7 @@ def tier_of(model, effort):
     return None
 
 
-routed, risky = [], []
+routed, risky, records = [], [], []
 for t in tasks:
     hot = t["fields"].get("risk", "").lower().startswith("highest")
     if hot:
@@ -151,6 +161,11 @@ for t in tasks:
     if not r:
         continue
     routed.append(r)
+    records.append({"id": t["id"], "title": t["title"],
+                    "route": f"{r[0]}/{r[1]}" + ("+delegate" if r[2] else ""),
+                    "model": r[0], "effort": r[1], "delegate": r[2],
+                    "tier": tier_of(r[0], r[1]), "rank": ranks(r[0], r[1]),
+                    "risk_highest": hot})
     if hot:
         rm, re_ = ranks(r[0], r[1])
         top_rm, top_re = ranks(TOP_MODEL, TOP_EFFORT)
@@ -170,6 +185,21 @@ if len(tasks) > 1:
     elif len(risky) > 1:
         errors.append("more than one task carries '- risk: highest' ("
                       + ", ".join(risky) + ") — the plan names exactly one")
+
+if os.environ.get("FW_JSON") == "1":
+    # stdout stays pure JSON; lint failures still go to stderr and exit 1, so a
+    # consumer cannot read a broken plan as a good one.
+    if errors:
+        for e in errors:
+            print(f"plan-route: FAIL: {e}", file=sys.stderr)
+        sys.exit(1)
+    # The ladders travel with the parse: a consumer ranking a route recorded
+    # elsewhere must rank it against the same two lists, not a second copy.
+    print(json.dumps({"plan": path, "top_tier": TOP,
+                      "top_route": f"{TOP_MODEL}/{TOP_EFFORT}",
+                      "model_ladder": list(MODEL_LADDER),
+                      "effort_ladder": list(EFFORT_LADDER), "tasks": records}))
+    sys.exit(0)
 
 unusable = len(tasks) - len(routed)
 print(f"plan-route: {path}")
