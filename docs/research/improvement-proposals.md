@@ -72,6 +72,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P49 | The plan's ladder is honored, or the record says otherwise | ✅ shipped v0.65.0 | The aggregate said the ladder collapsed (40 of 46 routed transitions on opus, haiku **0**); per task that is false — 5 of 5 one-to-one transitions honored their route. It evaporates instead through **8 unrecorded plan tasks** across p13/p42/p43, five of them the `haiku/low+delegate` ones; one `T1-T2` merge that buys the max tier unsaid; and 26 lines carrying `opus/xhigh`, an effort the tier table cannot rank. `check-route-honored.sh` fails an unrecorded task and an unsaid upgrade, reports what it cannot settle, and had its own cycle as its first live subject |
 | P50 | The meter names the read, not just the total | ✅ shipped v0.66.0 | `read-meter.sh --since` now prints `max_read` (the largest single tool response — a maximum, never summed) and `by_tool` (the total attributed per tool, write tools at 0 bytes and a real call count). Nothing new is measured: the state file has carried `{ts, tool, bytes}` since v0.56.0 and the reader discarded two thirds of it. `run-cost.sh` splits SUM_FIELDS from MAX_FIELDS so the maximum survives every bucket and the corpus merge. First live reading: **max_read=11,036 over 117 calls**, `Bash` holding 198,191 of 206,266 bytes — many small reads, not a few fat ones |
 | P51 | The effort ladder has the rung the CLI has | ✅ shipped v0.67.0 | P49 left `xhigh` to the owner; the owner confirmed it and the CLI reference orders the levels `low < medium < high < xhigh < max` (`ultracode` = xhigh + orchestration, not a sixth rung). Inserted, never appended — appending would rank `max` below it and invert every comparison at the top of the ladder, which is what the test asserts. `route-tiers.txt` untouched on purpose: the ladder is vocabulary, the tier table is policy about where the riskiest step must run. 26 lines that no comparison could reach are now inside one |
+| P52 | A gate in the tree is a gate CI runs | ✅ shipped v0.68.0 | `check-supply-chain-pin.sh` — *"the only Critical in the pillar-2 threat model"* by its own header — was invoked by **no workflow**: it appeared in `.github/workflows/` twice, both times in a **comment**. Tested, passing, never executed. `check-ci-gate-parity.sh` now asserts both directions (every gate wired; every wired gate exists), strips comment lines because that is the whole defect, and is wired alongside the Critical gate so it polices its own enforcement. The hand-written step list is kept on purpose — a glob loop would call the two base-ref gates without their argument and leave them green having compared nothing |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -2988,7 +2989,7 @@ Second honored `+delegate` in this repo's history, after P41's.
   `route-tiers.txt` and `plan-route.sh` define `low|medium|high|max`. Either the
   ladder is missing a rung or the record uses a word the plugin does not define.
   The gate reports the mismatch and declines to decide it.
-- **The `check-*` gate list in CI is still hand-written** (10 entries now) while
+- ~~**The `check-*` gate list in CI is still hand-written**~~ **Answered (P52, v0.68.0): the list stays, and is now gated** — and `check-supply-chain-pin.sh` had in fact never run. Original entry: the list is hand-written (10 entries then) while
   `test-*.sh` is discovered. The ledger already carries two entries about gates
   that never ran; this is the same shape waiting to happen.
 - **`work`'s body is at 5659/5700 B** — 41 bytes. The next clause does not fit,
@@ -3060,3 +3061,40 @@ recorded `route: opus/xhigh` — and the gate immediately failed it as an
 unrecorded upgrade. A session cannot observe its own effort setting, so claiming
 the rung it had just added would have been exactly the unverifiable evidence P18
 keeps out. The lines record `opus/high`, the tier the plan bought.
+
+## P52 — a gate in the tree is a gate CI runs (✅ shipped v0.68.0)
+
+**Where it came from.** P49's second open question, raised as a structural risk
+— *"the ledger already carries two entries about gates that never ran; this is
+the same shape waiting to happen"*. It was not waiting. Checking before building
+turned the risk into a live finding in one command:
+
+```
+comm -23 <gates in the tree> <gates a workflow actually invokes>
+  → check-supply-chain-pin.sh
+```
+
+The first, naive version of that comparison reported nothing missing, because
+both of the gate's appearances in `.github/workflows/` are comment lines. That
+false green is the reason this is a gate rather than a grep in a workflow step.
+
+**What the unwired gate was.** Not a nice-to-have: its header calls it *"the only
+Critical in the pillar-2 threat model"*. It guards the pin that stops a moving
+ref from executing arbitrary bash in every consuming repo's CI under
+`contents:write`, weekly, unattended. It was correct, tested, and never ran.
+
+**What shipped.** `check-ci-gate-parity.sh`, asserting both directions, plus the
+wiring for the Critical gate and for the parity gate itself. Parity now reports
+**12 of 12 gates invoked across 3 workflow files**.
+
+**What was deliberately not done.** Replacing the hand-written list with a glob.
+`check-test-pairing.sh` and `check-release-bump.sh` take the merge base as an
+argument; a loop would call them without it and they would pass having compared
+nothing — the exact failure mode this repo keeps rediscovering. The list is
+fine. The list being unchecked was not.
+
+**A note on the delegated report.** T3 ran on `haiku/low+delegate` and its report
+attributed two red checks to *"pre-existing telemetry debt"*. Checked rather than
+accepted: the red was this cycle's own missing telemetry, which the coverage rule
+raises for every new spec until its run file exists. The wiring it was asked to
+do was correct; the diagnosis it volunteered was not.

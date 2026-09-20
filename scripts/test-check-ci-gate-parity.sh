@@ -4,8 +4,8 @@
 # tree passes; an unwired gate fails and is named; a gate referenced only from a
 # COMMENT fails (the case that actually happened); a workflow invoking a script
 # that does not exist fails; any workflow file counts as wiring; unusable input
-# exits 2; the skip is logged; and the real tree is red naming exactly the one
-# gate nobody wired.
+# exits 2; the skip is logged; and the real tree is green once every gate is
+# wired, or red naming only the gates known to be unwired while it is not.
 
 set -uo pipefail
 
