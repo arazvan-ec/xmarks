@@ -934,3 +934,40 @@ timestamps were written slightly ahead of the real clock, and the meter returned
 `bytes_in=0 tool_calls=0` for every one of them. That zero is the only reason the
 error was caught. Take boundaries from something already recorded — commit
 timestamps — not from an estimate of what time it is.
+
+## pattern: a risk worth filing is worth one command before you file it
+
+<!-- fw: type=pattern; date=2026-09-20; files=scripts/check-ci-gate-parity.sh,.claude/flywheel/specs/p52-every-gate-runs.md; spec=p52-every-gate-runs; branch=claude/session-process-flow-optimization-frmnro; evidence=filed as "the same shape waiting to happen"; one comm between the gates in the tree and the gates a workflow invokes showed check-supply-chain-pin.sh — "the only Critical in the pillar-2 threat model" — had never run -->
+
+A risk was written into the backlog in good faith: *the `check-*` list in CI is
+hand-written while the tests are discovered, and the ledger already carries two
+entries about gates that never ran — this is the same shape waiting to happen.*
+
+It was not waiting. One `comm` between the two sets took under a minute and
+turned "a shape that could fail" into "the Critical gate has never run". Filing
+the risk cost about as much as checking it, and the two produce very different
+artifacts: one is a note someone may read, the other is a defect with a date.
+
+The corollary bit twice in one session, in both directions: the **first** version
+of that comparison reported nothing missing, because both mentions of the gate in
+`.github/workflows/` are comment lines. A check that does not model how the thing
+is actually read gives a false green that looks exactly like good news.
+
+## gotcha: a fixture ages the moment the thing it tests changes
+
+<!-- fw: type=gotcha; date=2026-09-20; files=scripts/test-check-route-honored.sh,scripts/plan-route.sh; spec=p51-the-ladder-has-the-rung; branch=claude/session-process-flow-optimization-frmnro; evidence=the "an unrankable route is reported" arm used opus/xhigh; v0.67.0 added xhigh to the ladder, so the arm was asserting that a RANKABLE route is reported as unrankable — caught only because the release sweep runs every test -->
+
+An arm asserted *"a route the ladder cannot rank is reported, never read as
+honored"*, using `opus/xhigh` as its example. The next release added `xhigh` to
+the ladder. The assertion did not change; its **subject** did, and the arm
+started testing something nobody had written down.
+
+This is the cheap half of P46's problem — an assertion that cannot fire — arriving
+by a different road. Nobody edited the test. Nobody had to.
+
+Two things caught it, and neither was foresight: the suite runs **every** test on
+every release rather than the ones a diff looks like it touches, and the arm
+grepped for the literal route string, so it failed loudly instead of passing on a
+different code path. When a change edits a vocabulary, a ladder, a schema or an
+enum, grep the fixtures for the token that changed — they are the assertions most
+likely to be silently re-aimed.
