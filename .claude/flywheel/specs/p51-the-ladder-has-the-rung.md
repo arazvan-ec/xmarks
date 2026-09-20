@@ -1,7 +1,15 @@
 # Spec: P51 — the effort ladder has the rung the CLI has
 
 **Slug:** `p51-the-ladder-has-the-rung` · **Created:** 2026-09-20 · **Backlog:** P51
-**Status:** in progress.
+**Status:** shipped as v0.67.0 — metric PASS. 26 discovered `scripts/test-*.sh`
+and 11 `check-*` gates green under an isolated `TMPDIR`. Decisive clause held on
+the real corpus: p13's three `opus/xhigh` transitions moved from *unrankable* to
+*an unrecorded upgrade over `opus/high`*, still pre-cutoff notices, tree green.
+Two things the cycle caught on itself: its first telemetry draft claimed
+`route: opus/xhigh` and the gate failed it (a session cannot observe its own
+effort), and the release sweep found the unrankable **test fixture** had been
+using `xhigh` — the assertion stayed green on a subject this very change had
+removed from it.
 
 **Prime:** P27 (route tiers), P49 (`check-route-honored.sh`, which reports an
 unrankable route rather than reading it as honored) and the question P49 left
