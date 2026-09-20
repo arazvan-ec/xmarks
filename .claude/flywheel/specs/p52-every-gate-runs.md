@@ -1,7 +1,13 @@
 # Spec: P52 — a gate in the tree is a gate CI runs
 
 **Slug:** `p52-every-gate-runs` · **Created:** 2026-09-20 · **Backlog:** P52
-**Status:** in progress.
+**Status:** shipped as v0.68.0 — metric PASS. 27 discovered `scripts/test-*.sh`
+and 12 `check-*` gates green under an isolated `TMPDIR`; `check-release-bump.sh`
+reports 0.63.0 → 0.68.0 against the real base. Decisive clause held: the gate
+was **red on the tree as it stands**, naming `check-supply-chain-pin.sh` (and
+itself, not yet wired), and **green once both were wired** — parity now reports
+12 of 12 gates invoked across 3 workflow files. The defect was proven to exist
+before it was fixed.
 
 **Prime:** P38/P41 (`check-hook-parity.sh`, `check-agent-parity.sh` — the same
 shape, one level over), and the two ledger entries this is about: *"a gate can be
