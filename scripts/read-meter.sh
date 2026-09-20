@@ -25,6 +25,15 @@
 # FIRST transition can observe: a commit delta needs a previous commit it does
 # not have.
 #
+# THE TWO CUTS DIFFER, AND THEY HAVE TO (P53, found in review). A caller-supplied
+# timestamp is the PREVIOUS transition's, and that transition already counted
+# every call bearing it; rows are second-granular, so an inclusive cut hands them
+# to the next transition as well. For bytes_in that is a small double-count; for
+# max_read it is a maximum this transition never made. So an explicit --since is
+# EXCLUSIVE. `first` stays inclusive: it names a row rather than a boundary, and
+# excluding it would drop the one call a cycle's first transition exists to
+# measure.
+#
 # State is keyed by session under the system temp dir, the delegation-record.sh
 # derivation verbatim: in the project it would dirty `git status` and be committed.
 
@@ -51,6 +60,7 @@ if not os.path.exists(path):
     sys.exit(0)
 
 since, total, calls, mx, by = os.environ["FW_SINCE"], 0, 0, 0, {}
+from_first = since == "first"
 try:
     rows = []
     with open(path, encoding="utf-8") as fh:
@@ -74,7 +84,8 @@ if since == "first":
     since = stamps[0]
 
 for row in rows:
-    if str(row.get("ts") or "") >= since:
+    ts = str(row.get("ts") or "")
+    if (ts >= since) if from_first else (ts > since):
         n = int(row.get("bytes") or 0)
         total += n
         calls += 1

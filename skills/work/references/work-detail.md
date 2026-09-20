@@ -33,7 +33,9 @@ plus what the transition proved.
   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/read-meter.sh" --since <previous
   transition's ts>` (`bash .claude/flywheel/bin/read-meter.sh` on a vendored
   install). It prints `bytes_in=<N> tool_calls=<N> elapsed_s=<N> max_read=<N>
-  by_tool=<Tool>:<bytes>/<calls>,…`. On a cycle's
+  by_tool=<Tool>:<bytes>/<calls>,…`. The cut is **exclusive**, so the previous
+  transition's own timestamp is exactly the right argument: calls bearing it
+  belong to the transition that already counted them. On a cycle's
   **first** transition there is no previous ts — pass `--since first`, which cuts
   at the earliest call this session recorded, rather than leaving the line
   unmeasured. If the session did other work before this cycle, that cut predates
