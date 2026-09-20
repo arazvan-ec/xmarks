@@ -14,7 +14,7 @@ Three P2 findings from Codex on PR #91, against code this session wrote. Each wa
 
 | # | finding | reproduced |
 | --- | --- | --- |
-| 1 | a plan with no run directory is never inspected | **7 of 19** plans in this repo are in exactly that state |
+| 1 | a plan with no run directory is never inspected | **12 of the 19** plans predating this cycle — 7 with no directory at all, and 5 whose directory holds only an HTML report and no JSONL, which the loop skipped for the same reason |
 | 2 | the `+delegate` suffix does not participate in the comparison | plan buys `haiku/low+delegate`, record says `haiku/low` → gate **exits 0, "honored"** |
 | 3 | the inclusive `>= since` boundary double-counts the boundary second | `--since 10:00:00Z` reports `max_read=50000` from a call that belonged to the *previous* transition |
 
@@ -46,9 +46,12 @@ Three assertions:
 
 **Finding 1 is a notice, deliberately, and the reason matters.** Codex proposed
 treating it as unusable or failed input. The duty it names already has an owner:
-`check-telemetry.sh` **fails** a spec with no telemetry, and the 7 plans in this
-state are precisely the ones its baseline exempts *with a reason*. Failing here
-too would contradict a decision already taken and redden seven cycles that
+`check-telemetry.sh` **fails** a spec with no telemetry, and the plans in this
+state are precisely the ones its baseline exempts *with a reason*. The first
+count taken by hand said 7; the gate itself found **12**, because five plans have
+a run directory holding only an HTML report — the loop skipped those for exactly
+the same reason and they were just as invisible. Failing here
+too would contradict a decision already taken and redden twelve cycles that
 shipped before the duty existed. What was genuinely missing is that the route
 gate said nothing at all about them — so it now names them and counts them, and
 the fatal duty stays with the gate that owns it.
@@ -87,8 +90,9 @@ Atomic commits, pushed per task. Every plan task writes its own transition line.
 - **`--since first` must not lose its first call.** The arm that covers it
   predates this change and stays green untouched; the exclusive boundary applies
   only to a caller-supplied timestamp.
-- **Finding 1 must not redden seven baselined cycles.** Checked against the real
-  tree: 7 plans have no run directory and every one of their specs is exempt in
+- **Finding 1 must not redden twelve baselined cycles.** Checked against the
+  real tree, and the hand count was low: 7 plans have no run directory and 5 more
+  have one with no JSONL in it. Every one of their specs is exempt in
   `telemetry-baseline.txt` with a reason.
 - **Finding 2 must not redden the corpus.** Checked: no pre-cutoff line pairs a
   `+delegate` plan task with a suffix-less record, because those tasks have no
@@ -107,7 +111,8 @@ for g in scripts/check-*.sh; do bash "$g" || echo "RED $g"; done
 
 Decisive clauses, each on the fixture that reproduced the finding:
 
-1. The gate names the 7 uncompared plans on the real tree, and stays green.
+1. The gate names the 12 uncompared plans on the real tree (13 while this
+   cycle's own record is still being written), and stays green.
 2. `haiku/low` recorded against a planned `haiku/low+delegate` is **red**, and
    green once the record carries the suffix or says why it does not.
 3. `--since <the previous transition's ts>` no longer reports that transition's

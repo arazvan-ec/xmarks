@@ -73,6 +73,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P50 | The meter names the read, not just the total | ✅ shipped v0.66.0 | `read-meter.sh --since` now prints `max_read` (the largest single tool response — a maximum, never summed) and `by_tool` (the total attributed per tool, write tools at 0 bytes and a real call count). Nothing new is measured: the state file has carried `{ts, tool, bytes}` since v0.56.0 and the reader discarded two thirds of it. `run-cost.sh` splits SUM_FIELDS from MAX_FIELDS so the maximum survives every bucket and the corpus merge. First live reading: **max_read=11,036 over 117 calls**, `Bash` holding 198,191 of 206,266 bytes — many small reads, not a few fat ones |
 | P51 | The effort ladder has the rung the CLI has | ✅ shipped v0.67.0 | P49 left `xhigh` to the owner; the owner confirmed it and the CLI reference orders the levels `low < medium < high < xhigh < max` (`ultracode` = xhigh + orchestration, not a sixth rung). Inserted, never appended — appending would rank `max` below it and invert every comparison at the top of the ladder, which is what the test asserts. `route-tiers.txt` untouched on purpose: the ladder is vocabulary, the tier table is policy about where the riskiest step must run. 26 lines that no comparison could reach are now inside one |
 | P52 | A gate in the tree is a gate CI runs | ✅ shipped v0.68.0 | `check-supply-chain-pin.sh` — *"the only Critical in the pillar-2 threat model"* by its own header — was invoked by **no workflow**: it appeared in `.github/workflows/` twice, both times in a **comment**. Tested, passing, never executed. `check-ci-gate-parity.sh` now asserts both directions (every gate wired; every wired gate exists), strips comment lines because that is the whole defect, and is wired alongside the Critical gate so it polices its own enforcement. The hand-written step list is kept on purpose — a glob loop would call the two base-ref gates without their argument and leave them green having compared nothing |
+| P53 | Three findings from review, each reproduced first | ✅ shipped v0.69.0 | Codex on PR #91, all three confirmed on fixtures before any change: the `+delegate` suffix was discarded in the route comparison, so a plan buying `haiku/low+delegate` against a record saying `haiku/low` passed as **honored** — a subagent that never ran, reported as success; a plan with no run directory was never reached at all (**12** of them, not the 7 a hand count found); and the meter's inclusive `>= since` handed the previous transition's calls to the next one, reporting `max_read=50000` for a transition that never made that call |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -3098,3 +3099,40 @@ attributed two red checks to *"pre-existing telemetry debt"*. Checked rather tha
 accepted: the red was this cycle's own missing telemetry, which the coverage rule
 raises for every new spec until its run file exists. The wiring it was asked to
 do was correct; the diagnosis it volunteered was not.
+
+## P53 — three findings from review, each reproduced first (✅ shipped v0.69.0)
+
+**Where it came from.** Three P2 comments from Codex on PR #91, against code
+written earlier in the same session. Every one was reproduced on a fixture before
+anything was edited — which is how the second one's real size came out.
+
+**1. The delegation suffix was discarded.** `rank()` compared model and effort
+and dropped regex group 3. A plan that bought `haiku/low+delegate` and a record
+that said `haiku/low` compared equal, so the gate reported *honored* for a
+delegation that never happened. In a repo where P41 and P49 exist to track
+exactly that, the gate built to catch mis-routes was blind to the mis-route it
+was most likely to see. Tier and delegation are different axes; folding one into
+the other is what hid it.
+
+**2. A plan with no record was never inspected.** Discovery started from
+`runs/*/`, so a plan whose slug had no directory there was never reached. The
+hand count said 7; the gate, once written, found **12** — five plans have a run
+directory holding only an HTML report, which the loop skipped for the same reason
+and which were just as invisible. Shipped as a **notice**, not the failure the
+review proposed, because `check-telemetry.sh` already fails a spec with no
+telemetry and these are precisely the cycles its baseline exempts with a reason.
+The review named the right gap; the right severity was the other gate's.
+
+**3. The boundary second belonged to both transitions.** `--since` filtered with
+`>=` on second-granular rows, and the documented call passes the previous
+transition's timestamp. Calls bearing it were counted twice — negligible for a
+sum, wrong for a maximum: the fixture reported `max_read=50000` from a call the
+transition never made. The fix splits the two cuts, because `--since first` names
+a row rather than a boundary and must stay inclusive.
+
+**What this says about the cycle that shipped the originals.** All three are
+*"asserting a step is PRESENT says nothing about what it operates on"* — the
+ledger's own entry — in three costumes: a comparison that ran on part of the
+route, a loop that ran on part of the corpus, and a filter that ran on part of a
+second. Each gate was green, correct in what it checked, and aimed slightly off
+the thing it claimed.

@@ -14,10 +14,18 @@
 #   MERGED     — one transition covering `T1-T2` runs at the max of the two, so
 #                the cheaper task's route is bought and never used. A notice: the
 #                merge is legal, going unsaid is what costs.
-#   UNRANKABLE — 26 lines carry `opus/xhigh`, an effort route-tiers.txt does not
-#                define. A route nothing can rank is compared against nothing;
-#                reported, never read as honored. Whether `xhigh` is a tier is
-#                the owner's call, not this gate's.
+#   UNRANKABLE — a route route-tiers.txt cannot rank is compared against nothing;
+#                reported, never read as honored. (26 lines carried `opus/xhigh`
+#                until v0.67.0 gave the ladder that rung.)
+#   UNCOMPARED — a plan whose slug has no run directory, or one holding no JSONL.
+#                Twelve of them here, and the loop below never reached any: they
+#                are named and counted, never failed, because check-telemetry.sh
+#                owns the duty of failing a spec with no telemetry and its
+#                baseline exempts exactly these cycles with a reason (P53).
+#
+# Tier and delegation are different axes. A record that drops a planned
+# `+delegate` is neither above nor below the plan, and folding the suffix into
+# the tier comparison is how a subagent that never ran passed as honored (P53).
 #
 # What fails: a transition that ran ABOVE its plan's tier without
 # `route_escalated_from` to say so, and a plan task with no line. Both only from
