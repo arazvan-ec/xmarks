@@ -71,6 +71,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P48 | The ledger cannot be aggregated by phase, or read across runs | ✅ shipped v0.64.0 | Measured on the corpus: **36 of 58** transition lines carry no `phase` and **6 of 11** cycles carry none on any line, because `check-telemetry.sh` accepted `task` **or** `phase` — identification and aggregation are different duties and only the first was specified. `run-cost.sh` also took one run and one baseline, so the cross-cycle view had to be hand-written to ask the question at all. Now: `phase` required from a cutoff placed **after the whole existing corpus and before this cycle's first line** (live on its own first subject, older lines a counted debt — nothing backfilled), and `run-cost.sh --all` rolling the corpus up by phase, route and cycle with P40a's per-FIELD coverage carried through the merge |
 | P49 | The plan's ladder is honored, or the record says otherwise | ✅ shipped v0.65.0 | The aggregate said the ladder collapsed (40 of 46 routed transitions on opus, haiku **0**); per task that is false — 5 of 5 one-to-one transitions honored their route. It evaporates instead through **8 unrecorded plan tasks** across p13/p42/p43, five of them the `haiku/low+delegate` ones; one `T1-T2` merge that buys the max tier unsaid; and 26 lines carrying `opus/xhigh`, an effort the tier table cannot rank. `check-route-honored.sh` fails an unrecorded task and an unsaid upgrade, reports what it cannot settle, and had its own cycle as its first live subject |
 | P50 | The meter names the read, not just the total | ✅ shipped v0.66.0 | `read-meter.sh --since` now prints `max_read` (the largest single tool response — a maximum, never summed) and `by_tool` (the total attributed per tool, write tools at 0 bytes and a real call count). Nothing new is measured: the state file has carried `{ts, tool, bytes}` since v0.56.0 and the reader discarded two thirds of it. `run-cost.sh` splits SUM_FIELDS from MAX_FIELDS so the maximum survives every bucket and the corpus merge. First live reading: **max_read=11,036 over 117 calls**, `Bash` holding 198,191 of 206,266 bytes — many small reads, not a few fat ones |
+| P51 | The effort ladder has the rung the CLI has | ✅ shipped v0.67.0 | P49 left `xhigh` to the owner; the owner confirmed it and the CLI reference orders the levels `low < medium < high < xhigh < max` (`ultracode` = xhigh + orchestration, not a sixth rung). Inserted, never appended — appending would rank `max` below it and invert every comparison at the top of the ladder, which is what the test asserts. `route-tiers.txt` untouched on purpose: the ladder is vocabulary, the tier table is policy about where the riskiest step must run. 26 lines that no comparison could reach are now inside one |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -2983,7 +2984,7 @@ Second honored `+delegate` in this repo's history, after P41's.
 
 **Open, for the owner.**
 
-- **Is `xhigh` a tier?** 26 telemetry lines say sessions run at it;
+- ~~**Is `xhigh` a tier?**~~ **Answered (P51, v0.67.0): it is an effort, not a tier.** It joins the ladder between `high` and `max`; `route-tiers.txt` keeps three tiers. Original entry: 26 telemetry lines say sessions run at it;
   `route-tiers.txt` and `plan-route.sh` define `low|medium|high|max`. Either the
   ladder is missing a rung or the record uses a word the plugin does not define.
   The gate reports the mismatch and declines to decide it.
@@ -3024,3 +3025,38 @@ one way, not that P40b is settled.
   cycle's assertions rather than smuggled in.
 - The three questions P49 left: whether `xhigh` is a tier, the hand-written
   `check-*` list in CI, and `work`'s body at 41 bytes of headroom.
+
+## P51 — the effort ladder has the rung the CLI has (✅ shipped v0.67.0)
+
+**Where it came from.** P49's own open question, answered by the owner two days
+later. The evidence was in the tree the whole time: `docs/research/claude-code-loops.md`
+describes `/effort ultracode` as *"xhigh reasoning + auto orchestration"*, and the
+ladder in `plan-route.sh` still read `low|medium|high|max`. A research note and a
+gate disagreed about the vocabulary, and the gate lost 26 lines to it.
+
+**The distinction that kept the change small.** Two things looked like one:
+
+| | what it is | what changing it does |
+| --- | --- | --- |
+| `EFFORT_LADDER` | vocabulary + ordering | decides what is legal and which of two routes is higher |
+| `route-tiers.txt` | policy | decides which pairs are named tiers, and which one every plan's riskiest step must reach |
+
+Only the first was wrong. Adding a tier 4 would have moved the top tier and
+changed what every future plan is required to say — so the tier table was left
+alone, and the note says why.
+
+**Position, not membership.** `xhigh` goes *between* `high` and `max`. Appended
+after `max` it would rank `max` as the lower of the two and silently invert every
+comparison at the top of the ladder, while still passing any test that only
+asked whether the string was present. The arm asserts
+`index(high) < index(xhigh) < index(max)`.
+
+**Verified where it matters,** on the real corpus rather than a fixture: p13's
+three `opus/xhigh` transitions moved from *unrankable* to *an unrecorded upgrade
+over `opus/high`*, staying pre-cutoff notices with the tree green.
+
+**A note on the record this cycle wrote.** The first draft of its own telemetry
+recorded `route: opus/xhigh` — and the gate immediately failed it as an
+unrecorded upgrade. A session cannot observe its own effort setting, so claiming
+the rung it had just added would have been exactly the unverifiable evidence P18
+keeps out. The lines record `opus/high`, the tier the plan bought.
