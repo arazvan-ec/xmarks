@@ -1,7 +1,12 @@
 # Spec: P53 — three findings from review, each reproduced first
 
 **Slug:** `p53-three-findings-from-review` · **Created:** 2026-09-20 · **Backlog:** P53
-**Status:** in progress.
+**Status:** shipped as v0.69.0 — metric PASS. 27 discovered `scripts/test-*.sh`
+and 12 `check-*` gates green under an isolated `TMPDIR`. All three decisive
+clauses hold on the fixtures that reproduced the findings, and the gate now names
+12 uncompared plans on the real tree while staying green. T2 and T3 shipped in
+one commit, so the record says `T2-T3` rather than splitting a commit that was
+never split.
 
 **Prime:** P49 (`check-route-honored.sh`), P50 (the meter's new fields), and the
 ledger entry *"asserting a step is PRESENT says nothing about what it operates
