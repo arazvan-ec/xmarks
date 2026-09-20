@@ -163,6 +163,48 @@ RC=0; SKIP_ROUTE_CHECK="not now" bash "${GATE}" "${R}" >"${WORK}/out" 2>&1 || RC
 grep -qi "skip" "${WORK}/out" || fail "the skip must announce itself: $(cat "${WORK}/out")"
 pass "skip exits 0 with a logged notice"
 
+echo "== a record that drops a planned +delegate is a finding (P53/Codex) =="
+# The plan bought delegation and the record does not show it. Not "above" or
+# "below" — a different axis, and the one P41/P49 exist to track.
+R="$(repo lostdelegate)"; plan "${R}" alpha "opus/high" "haiku/low+delegate"
+line "${R}" alpha T1 "opus/high" "${POST}"; line "${R}" alpha T2 "haiku/low" "${POST}"
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a dropped +delegate must exit 1, got ${RC}: $(cat "${WORK}/out")"
+grep -q "T2" "${WORK}/out" || fail "the task must be named: $(cat "${WORK}/out")"
+grep -qi "delegat" "${WORK}/out" || fail "the finding must say what was lost: $(cat "${WORK}/out")"
+pass "a lost delegation is reported, not read as honored"
+
+echo "== the same transition passes once the record carries the suffix =="
+R="$(repo keptdelegate)"; plan "${R}" alpha "opus/high" "haiku/low+delegate"
+line "${R}" alpha T1 "opus/high" "${POST}"; line "${R}" alpha T2 "haiku/low+delegate" "${POST}"
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "a recorded delegation must pass, got ${RC}: $(cat "${WORK}/out")"
+pass "the suffix recorded is the suffix honored"
+
+echo "== delegating where the plan did not ask is a notice, not a failure =="
+# Paying for less than you were allowed is not a defect.
+R="$(repo extradelegate)"; plan "${R}" alpha "opus/high" "haiku/low"
+line "${R}" alpha T1 "opus/high" "${POST}"; line "${R}" alpha T2 "haiku/low+delegate" "${POST}"
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "extra delegation must not fail, got ${RC}: $(cat "${WORK}/out")"
+pass "extra delegation is not a finding"
+
+echo "== a plan with no run directory is named, never silently skipped =="
+R="$(repo noruns)"; plan "${R}" alpha "opus/high"
+plan "${R}" ghost "opus/high" "sonnet/medium"
+line "${R}" alpha T1 "opus/high" "${POST}"
+run "${R}"
+grep -q "ghost" "${WORK}/out" || fail "a plan with no run dir must be named: $(cat "${WORK}/out")"
+pass "an uncompared plan is named"
+
+echo "== an EMPTY run directory counts as no record either =="
+R="$(repo emptyruns)"; plan "${R}" alpha "opus/high"; plan "${R}" hollow "opus/high"
+line "${R}" alpha T1 "opus/high" "${POST}"
+mkdir -p "${R}/.claude/flywheel/runs/hollow"
+run "${R}"
+grep -q "hollow" "${WORK}/out" || fail "an empty run dir must be named too: $(cat "${WORK}/out")"
+pass "an empty run directory is an uncompared plan"
+
 echo "== the real repo is green =="
 run "${SRC}"
 [ "${RC}" -eq 0 ] || fail "this repo must pass its own route gate, got ${RC}: $(cat "${WORK}/out")"

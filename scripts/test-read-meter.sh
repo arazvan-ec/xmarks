@@ -289,4 +289,39 @@ case "${NOMAX}" in
 esac
 pass "no counter reports UNMEASURED for the new fields too, never max_read=0"
 
+# --- P53/Codex: the boundary second belongs to the transition that ended -----
+feed s53 Bash '{"stdout":"'"$(printf 'a%.0s' $(seq 1 900))"'","stderr":""}'
+feed s53 Read '{"type":"text","file":{"filePath":"/p/x","content":"'"$(printf 'b%.0s' $(seq 1 30))"'"}}'
+S53TS="$(FW_F="$(meter_for s53)" python3 -c '
+import json, os
+rows = [json.loads(l) for l in open(os.environ["FW_F"], encoding="utf-8") if l.strip()]
+print(rows[0]["ts"])')"
+
+echo "== an explicit --since excludes the boundary second =="
+# The caller passes the PREVIOUS transition's ts, and that transition already
+# counted every call bearing it. Including them again inherits a maximum this
+# transition never made — which is a wrong answer, not a rounding error.
+EXCL="$(CLAUDE_CODE_SESSION_ID=s53 bash "${SCRIPT}" --since "${S53TS}")"
+FW_OUT="${EXCL}" python3 - <<'EXCLPY' || fail "the boundary second was counted: ${EXCL}"
+import os, sys
+f = dict(kv.split("=", 1) for kv in os.environ["FW_OUT"].split() if "=" in kv)
+# Both calls share the boundary second in this fixture, so an exclusive cut
+# leaves nothing after it: an OBSERVED zero, not UNMEASURED.
+if int(f["tool_calls"]) != 0 or int(f["bytes_in"]) != 0 or int(f["max_read"]) != 0:
+    print("expected an empty window, got %r" % (f,), file=sys.stderr); sys.exit(1)
+EXCLPY
+pass "a caller-supplied cut is exclusive"
+
+echo "== --since first stays INCLUSIVE, or line 1 loses the call it measures =="
+FIRST53="$(CLAUDE_CODE_SESSION_ID=s53 bash "${SCRIPT}" --since first)"
+FW_OUT="${FIRST53}" python3 - <<'FIRSTPY' || fail "--since first dropped its earliest call: ${FIRST53}"
+import os, sys
+f = dict(kv.split("=", 1) for kv in os.environ["FW_OUT"].split() if "=" in kv)
+if int(f["tool_calls"]) != 2:
+    print("expected both calls, got %r" % (f,), file=sys.stderr); sys.exit(1)
+if int(f["max_read"]) < 900:
+    print("the first call's bytes must be in the max, got %r" % (f,), file=sys.stderr); sys.exit(1)
+FIRSTPY
+pass "--since first keeps the earliest call it cuts at"
+
 echo "read-meter: all assertions passed"
