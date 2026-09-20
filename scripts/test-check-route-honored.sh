@@ -100,11 +100,14 @@ grep -q "T2" "${WORK}/out" || fail "the absorbed task must be named: $(cat "${WO
 pass "a merge is reported and its cheaper task named"
 
 echo "== a route the ladder cannot rank is reported, never read as honored =="
+# The fixture must use an effort the ladder genuinely lacks. It used to say
+# `xhigh`, which v0.67.0 added — a stale fixture turns a live assertion into a
+# different one without anyone editing the assertion.
 R="$(repo unrankable)"; plan "${R}" alpha "opus/high"
-line "${R}" alpha T1 "opus/xhigh" "${POST}"
+line "${R}" alpha T1 "opus/turbo" "${POST}"
 run "${R}"
 grep -qiE "rank" "${WORK}/out" || fail "an unrankable route must be reported: $(cat "${WORK}/out")"
-grep -qi "xhigh" "${WORK}/out" || fail "the unrankable route must be quoted: $(cat "${WORK}/out")"
+grep -qi "turbo" "${WORK}/out" || fail "the unrankable route must be quoted: $(cat "${WORK}/out")"
 pass "an unrankable route is reported"
 
 echo "== a transition that maps to no plan task is ignored, not blamed =="
