@@ -74,6 +74,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P51 | The effort ladder has the rung the CLI has | ✅ shipped v0.67.0 | P49 left `xhigh` to the owner; the owner confirmed it and the CLI reference orders the levels `low < medium < high < xhigh < max` (`ultracode` = xhigh + orchestration, not a sixth rung). Inserted, never appended — appending would rank `max` below it and invert every comparison at the top of the ladder, which is what the test asserts. `route-tiers.txt` untouched on purpose: the ladder is vocabulary, the tier table is policy about where the riskiest step must run. 26 lines that no comparison could reach are now inside one |
 | P52 | A gate in the tree is a gate CI runs | ✅ shipped v0.68.0 | `check-supply-chain-pin.sh` — *"the only Critical in the pillar-2 threat model"* by its own header — was invoked by **no workflow**: it appeared in `.github/workflows/` twice, both times in a **comment**. Tested, passing, never executed. `check-ci-gate-parity.sh` now asserts both directions (every gate wired; every wired gate exists), strips comment lines because that is the whole defect, and is wired alongside the Critical gate so it polices its own enforcement. The hand-written step list is kept on purpose — a glob loop would call the two base-ref gates without their argument and leave them green having compared nothing |
 | P53 | Three findings from review, each reproduced first | ✅ shipped v0.69.0 | Codex on PR #91, all three confirmed on fixtures before any change: the `+delegate` suffix was discarded in the route comparison, so a plan buying `haiku/low+delegate` against a record saying `haiku/low` passed as **honored** — a subagent that never ran, reported as success; a plan with no run directory was never reached at all (**12** of them, not the 7 a hand count found); and the meter's inclusive `>= since` handed the previous transition's calls to the next one, reporting `max_read=50000` for a transition that never made that call |
+| P54 | Two dials nobody but their author has read | 🔵 needs a decision | Both were set inside P48-P53 by the same session that wrote the gates enforcing them, and the review that followed read the code, not the policy. **(a)** What `check-route-honored.sh` calls fatal — three rules — against what it calls a notice; too strict and the habit becomes `SKIP_ROUTE_CHECK`. **(b)** The cutoff `2026-09-17T20:00:00Z`, which forgives 36 phase-less lines and 6 route findings **permanently** and binds everything after — and which is a **literal duplicated in two scripts** behind two env vars, so one can move without the other |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -3136,3 +3137,74 @@ ledger's own entry — in three costumes: a comparison that ran on part of the
 route, a loop that ran on part of the corpus, and a filter that ran on part of a
 second. Each gate was green, correct in what it checked, and aimed slightly off
 the thing it claimed.
+
+## P54 — two dials nobody but their author has read (🔵 needs a decision)
+
+**Where it came from.** The merge conversation on PR #91. Six releases shipped in
+one session; Codex reviewed three of them and found three real defects, all in
+*code*. These two are **policy**, chosen by the same session that wrote the gates
+that enforce them, and nobody else has looked at either. Neither is a defect
+today. Both decide how much the discipline costs every future cycle, which is not
+a thing to discover by accident six months from now.
+
+### (a) What `check-route-honored.sh` fails on, against what it merely reports
+
+**Fatal** (from the cutoff on) — three rules:
+
+| | |
+| --- | --- |
+| a plan task with **no transition line** | the ledger cannot tell "ran and wrote nothing" from "never ran" |
+| a transition **above** its plan's tier with no `route_escalated_from` | an unrecorded upgrade |
+| a record that **drops a planned `+delegate`** | a subagent the plan bought that never appears |
+
+**Reported, never fatal** — a merged range absorbing a cheaper task, a route the
+ladder cannot rank, the plan's own route being unrankable, a transition mapping
+to no plan task, a plan with no usable run record, *extra* delegation, and
+running *below* the plan.
+
+**The question.** Is the fatal set right for everyday work? The first rule is the
+strict one: it means **every plan task must write a line, or CI is red** — the
+release chore, the metric run, the two-line doc fix. That is exactly the duty
+that was missing (eight tasks across p13/p42/p43 had no line, five of them the
+`haiku/low+delegate` ones), and it is also the rule most likely to redden a cycle
+that merged two tasks honestly and said so.
+
+**The failure mode to watch for** is not a red build. It is `SKIP_ROUTE_CHECK`
+becoming routine — a gate skipped by habit is worse than a gate that was never
+written, because the tree still looks guarded.
+
+**What would settle it:** the next handful of real cycles. Count how often the
+gate goes red, and for each red ask whether the run was actually wrong. If the
+answer is mostly no, demote rule 1 to a notice and keep the two deviation rules
+fatal. There is no need to guess now — the data arrives on its own.
+
+### (b) The cutoff, and the fact that there are two of them
+
+`2026-09-17T20:00:00Z` is the instant that splits *"this corpus predates the
+rule"* from *"this is live work"*. It was placed after the newest line then in
+the tree and before the first line of the cycle that shipped it, so the rule
+would bind its own author rather than lie dormant (P46's defect). That part is
+sound and was checked against the real corpus.
+
+Two things about it deserve an owner:
+
+1. **It forgives permanently.** 36 phase-less lines and 6 route findings are
+   counted notices forever. Nothing may be backfilled (P18), so they can never
+   become conforming — but the *notices* could eventually be retired, either by
+   deleting the pre-cutoff corpus or by accepting that the roll-up will always
+   report a partial phase breakdown. Today the honest answer is "leave them";
+   the question is whether that is still true once the post-cutoff corpus is
+   large enough to stand alone.
+2. **The literal is written twice.** `scripts/check-telemetry.sh:48`
+   (`FLYWHEEL_PHASE_REQUIRED_FROM`) and `scripts/check-route-honored.sh:58`
+   (`FLYWHEEL_ROUTE_CHECK_FROM`) each carry their own copy. Move one and the two
+   gates silently disagree about when the rules began — and nothing checks that
+   they agree. This repo's answer to exactly this shape is **one authority**
+   (`route-tiers.txt` is the single definition of a tier, read by both the
+   linter and the gate). A shared constant, or one variable read by both, is the
+   same move one level down.
+
+**Recommendation on (2), for whenever this is picked up:** one file, one value,
+both gates reading it — and a test that a gate cannot fall back to a literal of
+its own. The duplication is harmless *today* precisely because both copies say
+the same thing, which is also the reason nobody would notice the day they stop.
