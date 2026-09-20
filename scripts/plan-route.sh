@@ -32,7 +32,10 @@ from collections import Counter
 # Ascending cost/strength. These are the CLI's legal values; which point on each
 # axis defines a tier is policy, and lives in route-tiers.txt.
 MODEL_LADDER = ("haiku", "sonnet", "opus")
-EFFORT_LADDER = ("low", "medium", "high", "max")
+# The CLI's order (P51): low < medium < high < xhigh < max. `ultracode` is not a
+# sixth rung — it requests xhigh with orchestration on — so it stays illegal
+# here. xhigh is INSERTED, never appended: appending would rank max below it.
+EFFORT_LADDER = ("low", "medium", "high", "xhigh", "max")
 MODELS = MODEL_LADDER + ("inherit",)
 EFFORTS = EFFORT_LADDER
 TASK_RE = re.compile(r"^###\s+T(\d+)\s*[—–-]*\s*(.*)$")
