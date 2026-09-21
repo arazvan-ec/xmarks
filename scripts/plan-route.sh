@@ -162,6 +162,10 @@ for t in tasks:
         continue
     routed.append(r)
     records.append({"id": t["id"], "title": t["title"],
+                    # Verbatim: extracting the runnable command out of it is the
+                    # consumer's job, and pre-chewing it here would make this the
+                    # second reader of the format it is meant to be the only one of.
+                    "check": t["fields"].get("check", ""),
                     "route": f"{r[0]}/{r[1]}" + ("+delegate" if r[2] else ""),
                     "model": r[0], "effort": r[1], "delegate": r[2],
                     "tier": tier_of(r[0], r[1]), "rank": ranks(r[0], r[1]),
