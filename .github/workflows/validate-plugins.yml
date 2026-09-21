@@ -84,6 +84,12 @@ jobs:
       - name: Check the plan's ladder was honored (P49)
         run: bash scripts/check-route-honored.sh
 
+      # Runs each plan task's own `check:`. In this repo those checks cite
+      # scripts/test-*.sh, so a few of them run a second time here — bounded,
+      # and the price of the verdict being an exit code rather than a claim.
+      - name: Check every plan task's check actually passes
+        run: bash scripts/check-task-closure.sh
+
       - name: Check the supply-chain pin (P13)
         run: bash scripts/check-supply-chain-pin.sh
 
