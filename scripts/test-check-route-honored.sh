@@ -66,6 +66,23 @@ run "${R}"
 grep -q "T2" "${WORK}/out" || fail "the unrecorded task must be named: $(cat "${WORK}/out")"
 pass "an unrecorded plan task exits 1 and is named"
 
+echo "== a cycle with no line for ANY of its tasks has not started: named, never failed =="
+# The loop commits a plan at its APPROVAL gate, before the work. Failing then
+# calls every task unrecorded for not having happened yet, and a plan-only
+# commit is red by construction. check-task-closure.sh calls this PENDING
+# (v0.70.0); this is the same discriminator in the sibling gate.
+R="$(repo notstarted)"; plan "${R}" alpha "opus/high" "sonnet/medium"
+mkdir -p "${R}/.claude/flywheel/runs/alpha"
+printf '{"ts":"%s","task":"spec","phase":"spec","state":"completed","cost":{"bytes_out":1}}\n' \
+  "${POST}" > "${R}/.claude/flywheel/runs/alpha/2026-09-18.jsonl"
+printf '{"ts":"%s","task":"plan","phase":"plan","state":"completed","cost":{"bytes_out":1}}\n' \
+  "${POST}" >> "${R}/.claude/flywheel/runs/alpha/2026-09-18.jsonl"
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "a cycle whose work has not started must not fail, got ${RC}: $(cat "${WORK}/out")"
+grep -qi "not started" "${WORK}/out" || fail "it must be named, not silently skipped: $(cat "${WORK}/out")"
+grep -qi "unrecorded" "${WORK}/out" && fail "not-started must not be reported as unrecorded — they are different claims: $(cat "${WORK}/out")"
+pass "a cycle with no task line at all is NOT STARTED, reported and not failed"
+
 echo "== absence is reported as unrecorded, never as a wrong tier =="
 # The ledger cannot tell "ran and wrote nothing" from "never ran". A gate that
 # claimed to know which would be inventing the evidence it exists to protect.

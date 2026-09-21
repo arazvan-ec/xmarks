@@ -7,6 +7,10 @@
 # transition mapping 1:1 to a plan task honored its route. The ladder evaporates
 # three other ways, and no gate asked about any of them:
 #
+#   NOT STARTED — a plan whose cycle has NO line for ANY of its tasks. The loop
+#                commits a plan at its approval gate, before the work, so this is
+#                a plan waiting to be built, not a record that went missing. A
+#                notice; check-task-closure.sh calls the same state PENDING.
 #   UNRECORDED — a plan task with no transition line at all. Five across p42 and
 #                p43, including ALL FOUR haiku/low+delegate tasks. The ledger
 #                cannot tell "ran and wrote nothing" from "never ran", so this is
@@ -193,7 +197,17 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
             notices.append(f"{where} ran {got} below the plan's {planned}")
 
     missing = sorted(set(tasks) - covered, key=lambda i: int(i[1:]))
-    if missing:
+    if missing and not covered:
+        # NOT STARTED, and it is a different claim from UNRECORDED. The loop
+        # commits a plan at its APPROVAL gate, before any work, so a plan-only
+        # commit has a ledger (spec/plan transitions) and no task lines at all.
+        # Failing it calls every task unrecorded for not having happened yet.
+        # A cycle with SOME task lines has started, so a gap in it is genuinely
+        # unrecorded and stays fatal below — that distinction is the whole rule,
+        # and without it this branch would delete P49.
+        notices.append(f"{slug}: no transition line for any of its {len(tasks)} task(s)"
+                       f" — the cycle has not started, so there is no route to honor yet")
+    elif missing:
         post = newest >= CUT
         msg = (f"{slug}: {', '.join(missing)} ha{'s' if len(missing) == 1 else 've'} no"
                f" transition line — unrecorded, so the ledger cannot say whether"
