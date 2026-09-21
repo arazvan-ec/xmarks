@@ -55,6 +55,31 @@ P40a neither half was visible. Rules for every session in this repo:
   over a whole file, and a subagent's own context over this one's for work that
   must read widely. `cost.bytes_in` is what makes the difference checkable.
 
+## Task-list discipline: a list you were handed is a file, not a memory (owner convention, 2026-09-21)
+
+A multi-item list arrives in one message and is worked across many turns. By the
+close that message is far behind in the context, so "all done" gets written
+against a list reconstructed from memory — which is always complete, and
+sometimes wrong. The failure is silent on both sides: the dropped item is
+invisible to the session that dropped it. Rules for any session handed more than
+one item of work:
+
+- **Materialize the list before starting.** Write it numbered to a file —
+  `.claude/flywheel/specs/<slug>.plan.md` for cycle work, the scratchpad
+  otherwise — and re-read *that file* at close. Checking beats remembering.
+- **Close item by item, with evidence.** One row per item, each carrying a
+  `file:line`, a command that passes, or a commit. An item defensible only in
+  prose is reported unverified, never done.
+- **The count has to reconcile.** N items in, N rows out. A short table is the
+  cheapest detection a dropped item will ever get — never collapse rows or fold
+  two items into one line.
+- **Report what you did not do.** Blocked, skipped, or out-of-scope items each
+  get a row with the reason. Scaling the list down is the owner's call, not the
+  session's.
+- **This catches omissions, not misreadings.** An item written as a bare verb
+  can be done confidently in the wrong direction; one written with a success
+  criterion cannot. Ask for the criterion when the item is worth the round trip.
+
 ## Dev-loop discipline: flywheel develops flywheel (owner decision, 2026-07-29)
 
 The plugin prescribes TDD for every repo it is installed in; developing the
