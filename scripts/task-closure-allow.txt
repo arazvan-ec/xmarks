@@ -1,0 +1,24 @@
+# flywheel — which commands check-task-closure.sh may EXECUTE out of a plan's
+# `check:` field.
+#
+# This file is a security boundary, not a convenience list. The gate runs these
+# in CI and from /flywheel:verify on a contributor's machine, and a plan file is
+# repo content any PR can write. Every entry here must keep the blast radius at
+# "CI already runs this repo's own scripts" — the baseline exposure — and never
+# widen it to arbitrary shell. A `check:` naming anything not matched here is
+# reported UNRUNNABLE: named, counted, never executed and never read as green.
+#
+# Format: one Python regex per line, full-match against the backticked span.
+# Blank lines and #-comments ignored. Widen it here, with the reason, or not at
+# all — the gate has no inline exceptions.
+
+# The repo's own test and gate scripts, with or without the bash prefix. This is
+# what virtually every real check cites, and running them is the whole point.
+(bash )?(\./)?scripts/(test|check)-[a-z0-9._-]+\.sh( .*)?
+
+# The plugin CLI's own validator: read-only over the manifest.
+claude plugin validate( .*)?
+
+# Fixture primitives. Tests need a command that deterministically passes or
+# fails without shipping a script to do it.
+(true|false)

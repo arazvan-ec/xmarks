@@ -19,7 +19,7 @@ between "CI already runs these scripts" and "verify runs whatever a PR wrote".
 ### T2 — Red: the taxonomy, before it exists
 
 - route: `sonnet/medium`
-- check: `bash scripts/test-check-task-closure.sh` fails naming the missing script, with arms for PASS, FAIL, UNRUNNABLE, the allowlist refusal and the cutoff.
+- check: `bash scripts/test-check-task-closure.sh` green, with arms for PASS, FAIL, UNRUNNABLE, the allowlist refusal and the cutoff. (Written red first — it failed naming the missing script — but a `check:` states the condition that holds at close.)
 
 ### T3 — Green: extract, allowlist, execute, report
 
