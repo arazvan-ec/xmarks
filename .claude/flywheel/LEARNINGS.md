@@ -971,3 +971,41 @@ grepped for the literal route string, so it failed loudly instead of passing on 
 different code path. When a change edits a vocabulary, a ladder, a schema or an
 enum, grep the fixtures for the token that changed — they are the assertions most
 likely to be silently re-aimed.
+
+## gotcha: a gate that errors on its own corpus is a gate that can never be green
+
+<!-- fw: type=gotcha; date=2026-09-21; files=scripts/check-task-closure.sh,scripts/task-closure-allow.txt; spec=deterministic-task-closure; branch=claude/validar-lista-tareas-x0xy5u; evidence=first real-tree run exited 2 on p10-portability-installer.plan.md, which predates the pinned task format; the cutoff was read AFTER the linter, so corpus could not reach the branch that forgives it -->
+
+The new gate had a cutoff and honored it — for **verdicts**. Its `exit 2` for
+"the plan linter rejects this" ran *before* the cutoff was consulted, so the
+first plan in the tree old enough to predate the pinned task format stopped the
+gate dead. Every verdict behind it went unreported. A cutoff that only guards
+the happy path is not a cutoff.
+
+The fix is ordering, not logic: read how old the artifact is **before** deciding
+what a parse failure means. An unlintable plan is unusable input after the
+cutoff and a named debt before it.
+
+Generally: when a rule ships onto an existing corpus, its **error** paths need
+the exemption as much as its verdict paths — and the only way to find out is to
+run it on the real tree, not on fixtures. Fixtures are all born after the cutoff.
+
+## gotcha: an allowlist that matches nothing reads exactly like a corpus with nothing to run
+
+<!-- fw: type=gotcha; date=2026-09-21; files=scripts/task-closure-allow.txt; spec=deterministic-task-closure; branch=claude/validar-lista-tareas-x0xy5u; evidence=the pattern was `(bash )?\./?scripts/...` — a literal dot, optional slash — so `bash scripts/test-x.sh` never matched; all 5 tasks of the gate's own plan reported UNRUNNABLE and the gate still exited 0 on a tree where nothing had run -->
+
+`\./?` means *a dot, then an optional slash*. The intent was `(\./)?` — an
+optional `./` prefix. So the one spelling every real check uses,
+`bash scripts/test-thing.sh`, matched nothing.
+
+What makes this worth a ledger entry is the **failure mode**, not the typo. The
+gate's own verdict for "no command matched" is UNRUNNABLE, which is designed to
+be non-fatal on old plans. A broken allowlist therefore produces a tidy report
+full of UNRUNNABLE and an exit code that looks calm. The safe default and the
+total failure are the same output.
+
+The arms that caught it asserted a *shape* (bare, `bash`-prefixed and
+`./`-prefixed all run), not a count. A test fixture citing `true` passes an
+allowlist that matches nothing else — which is exactly what the first ten arms
+did. When a pattern file is the whole boundary, test the spellings the corpus
+actually uses, not the ones the fixture finds convenient.
