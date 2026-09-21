@@ -2646,6 +2646,17 @@ cheap model writing code Claude never sees) contradicts this repo's whole dev
 loop — its own authors note their workers missed thread-safety bugs Claude caught
 immediately.
 
+**Source** (recovered 2026-09-21; the four citations of it in this repo had never
+carried one): Dimitri Mazmanov, *Portal by Spotify cut my Claude Code token usage
+by 90%*, Spotify Engineering, 2026-09-03 —
+https://engineering.atspotify.com/2026/9/portal-by-spotify-cut-my-claude-code-token-usage-by-90
+The mechanism, for the record this section argues against: a Claude Code plugin
+(`Shunt`) whose `PreToolUse` hook blocks reads over **350 lines**
+(`SHUNT_MIN_LINES`) and routes them to a `bulk-reader` mode on **Gemini 2.5
+Flash**; `code-writer` is the second mode. The 90% is measured over bulk-read
+scenarios in a **Java monorepo** — the two facts P40b was rejected on, now
+checkable rather than remembered.
+
 What *was* portable is the observation underneath: flywheel routes **tasks** by
 tier (P27) and never the **I/O inside a task**, so an `opus/high` task reads its
 twelve files at opus prices, and reading is not reasoning.
