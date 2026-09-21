@@ -211,4 +211,16 @@ run "${SRC}"
 grep -qiE "p4[23]" "${WORK}/out" || fail "the historical drift must still be reported: $(cat "${WORK}/out")"
 pass "flywheel's own tree passes, with its debt named"
 
+echo "== the task-field reader is shared, not copied =="
+# Both this gate and check-task-closure.sh must agree on what "T2-T3" covers.
+# A second copy is how the two drift, so the drift guard is structural.
+grep -q "from fw_tasks import task_ids" "${SRC}/scripts/check-route-honored.sh" \
+  || fail "check-route-honored.sh must import the shared reader, not define its own"
+grep -q "^def task_ids" "${SRC}/scripts/check-route-honored.sh" \
+  && fail "check-route-honored.sh defines task_ids again — that is the copy this import removed"
+[ -f "${SRC}/scripts/fw_tasks.py" ] || fail "scripts/fw_tasks.py missing — the import cannot resolve"
+grep -q "from fw_tasks import task_ids" "${SRC}/scripts/check-task-closure.sh" \
+  || fail "check-task-closure.sh must read task ids through the same module"
+pass "one reader, imported by both gates"
+
 echo "ALL PASS"
