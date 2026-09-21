@@ -80,6 +80,38 @@ one item of work:
   can be done confidently in the wrong direction; one written with a success
   criterion cannot. Ask for the criterion when the item is worth the round trip.
 
+## Progress toolbar: every reply says where the list stands (owner convention, 2026-09-21)
+
+The closure table proves at the end what got done. It says nothing *during*, which
+is the whole stretch where the owner has to ask. So while a materialized list is
+open, **every reply opens with one line** — before any prose, no heading:
+
+```
+<state> <done>/<total> <bar> · ▶ <current item> · «<what you are doing, in the owner's own words>»
+```
+
+- **state** — 🟢 something closed or moved this turn · ⏸️ no advance (say why in
+  the note) · 🔴 blocked · 🏁 all items resolved.
+- **bar** — one glyph per item, in list order: `▓` closed · `▒` in flight ·
+  `░` untouched. Over 10 items, drop the bar and keep the count.
+- **▶ current item** — its number and a two-or-three-word name, so the line maps
+  onto a row of the table and not onto a mood.
+- **«…»** — the answer to "what are you doing right now", written the way the
+  owner asked for it, not the way the code names it. This is the field that
+  carries the value; the rest is bookkeeping.
+
+Rules that keep it honest:
+
+- **A turn with no progress still gets the line.** ⏸️ with the reason is the
+  point — silence and a stalled loop look identical otherwise, which is the same
+  failure the closure table exists to end.
+- **The count is the table's, not a feeling.** `<done>` counts rows closed with
+  evidence. An item in flight is not done, and the bar shows `▒`, never `▓`.
+- **Never let it replace the closing table.** The toolbar is the live view; the
+  item-by-item close with evidence still ships at the end.
+- **No open list, no toolbar.** A one-off question gets a plain answer — a bar
+  reading `1/1` on a question nobody listed is noise.
+
 ## Dev-loop discipline: flywheel develops flywheel (owner decision, 2026-07-29)
 
 The plugin prescribes TDD for every repo it is installed in; developing the
