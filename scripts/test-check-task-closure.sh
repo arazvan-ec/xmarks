@@ -208,6 +208,19 @@ run "${WORK}/u"; rc 1
 says "UNRUNNABLE"
 pass "self-reference is refused like any other command the gate will not run"
 
+echo "== refusing self-reference must not refuse the gate's own TEST =="
+# The first cut matched the substring, and `test-check-task-closure.sh`
+# contains it — so two real plans went UNRUNNABLE for citing their own suite,
+# which is depth 2 over fixtures and exactly what the arms here do.
+mkdir -p "${WORK}/v/scripts"
+printf '#!/usr/bin/env bash\nexit 0\n' > "${WORK}/v/scripts/test-check-task-closure.sh"
+chmod +x "${WORK}/v/scripts/test-check-task-closure.sh"
+plan "${WORK}/v" "${NOW}" \
+  '### T1 — cites the suite, not the gate' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/test-check-task-closure.sh` green.'
+run "${WORK}/v"; rc 0
+says "PASS"
+pass "the gate's own test is not the gate"
+
 echo "== the skip lever takes a reason and says so =="
 plan "${WORK}/g" "${NOW}" \
   '### T1 — red' '- route: `opus/high`' '- risk: highest' '- check: `false`'

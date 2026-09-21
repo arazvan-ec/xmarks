@@ -118,8 +118,6 @@ SPAN = re.compile(r"`([^`]+)`")
 # so neither layer alone is load-bearing.
 SHELL_META = re.compile(r"[&;|`$()<>\\\n\r]")
 
-SELF = os.path.basename(__file__) if "__file__" in dir() else "check-task-closure.sh"
-
 def runnable(span):
     """The argv to execute, or None when the span is not a single plain command."""
     if SHELL_META.search(span) or not any(p.match(span) for p in patterns):
@@ -128,7 +126,10 @@ def runnable(span):
     # task, which blew the per-check timeout the first time a plan tried it.
     # The claim such a check wants to make is about ANOTHER gate going quiet;
     # say that instead.
-    if "check-task-closure.sh" in span:
+    # Anchored on a path boundary: `test-check-task-closure.sh` CONTAINS this
+    # name and is a perfectly good thing to run, which a substring match got
+    # wrong on two real plans.
+    if re.search(r"(^|[\s/])check-task-closure\.sh\b", span):
         return None
     try:
         argv = shlex.split(span)
