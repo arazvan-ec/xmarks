@@ -432,6 +432,10 @@ rewrite "${SRC}/scripts/task-closure-allow.txt" | vendor_file ".claude/flywheel/
 # check-task-closure.sh and check-route-honored.sh both import this beside
 # themselves; vendored without it the gate dies on import rather than running.
 rewrite "${SRC}/scripts/fw_tasks.py" | vendor_file ".claude/flywheel/bin/fw_tasks.py"
+# check-task-closure.sh resolves its cutoff through these two before its python
+# starts; vendored without them it exits 2 on every run.
+rewrite "${SRC}/scripts/fw_cutoffs.py" | vendor_file ".claude/flywheel/bin/fw_cutoffs.py"
+rewrite "${SRC}/scripts/cutoffs.txt" | vendor_file ".claude/flywheel/bin/cutoffs.txt"
 # Smoke check: a vendored hook that doesn't parse breaks every future session
 # start. Abort before the manifest/VERSION swap so a broken refresh is never
 # recorded as installed (the rewrite sed above could itself introduce this).

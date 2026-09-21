@@ -68,7 +68,9 @@ command -v python3 >/dev/null 2>&1 || { echo "task-closure: no python3" >&2; exi
 TARGET="${1:-$(pwd)}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-FLYWHEEL_TASK_CLOSURE_FROM="${FLYWHEEL_TASK_CLOSURE_FROM:-2026-09-21T00:00:00Z}" \
+FW_CLOSURE_FROM="$(python3 "${HERE}/fw_cutoffs.py" task-closure FLYWHEEL_TASK_CLOSURE_FROM)" || exit 2
+[ -n "${FW_CLOSURE_FROM}" ] || { echo "task-closure: empty cutoff — an empty cut forgives the whole corpus" >&2; exit 2; }
+FLYWHEEL_TASK_CLOSURE_FROM="${FW_CLOSURE_FROM}" \
 FLYWHEEL_TASK_CLOSURE_TIMEOUT="${FLYWHEEL_TASK_CLOSURE_TIMEOUT:-300}" \
 TC_TARGET="${TARGET}" TC_HERE="${HERE}" python3 - <<'PY'
 import glob, json, os, re, shlex, subprocess, sys

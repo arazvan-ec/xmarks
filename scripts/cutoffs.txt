@@ -1,0 +1,20 @@
+# flywheel — where a gate's cutoff instant is declared (P54b).
+#
+# A cutoff decides which half of the corpus a rule binds. Before this file each
+# one was a date literal inside the gate that used it, behind its own env var,
+# so two that were placed by ONE decision could drift apart and nothing said
+# they were supposed to match.
+#
+# Format: <name> <ISO instant> <reason>. The reason is not optional — a bare
+# date is what made the coupling invisible in the first place.
+#
+# Moving a value here is a POLICY change, never a refactor: everything before a
+# cutoff is forgiven permanently and nothing may be backfilled to undo it (P18).
+# scripts/test-fw_cutoffs.sh pins all three against their pre-extraction values,
+# so a move has to be argued in the row and in that test together.
+#
+# Each gate still honours its own env var, which wins over the row.
+
+route-check     2026-09-17T20:00:00Z  P48 — placed with phase-required by one decision; these two MUST move together (check-route-honored.sh, FLYWHEEL_ROUTE_CHECK_FROM)
+phase-required  2026-09-17T20:00:00Z  P48 — placed after the whole existing corpus and before that cycle's first line, so the rule went live on its own first subject (check-telemetry.sh, FLYWHEEL_PHASE_REQUIRED_FROM)
+task-closure    2026-09-21T00:00:00Z  v0.70.0 — its own decision, deliberately NOT the P48 date: it sits just before the cycle that shipped the closure gate, so the first plan graded is the one that brought it (check-task-closure.sh, FLYWHEEL_TASK_CLOSURE_FROM)

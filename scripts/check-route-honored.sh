@@ -58,8 +58,11 @@ ROOT="${1:-$(cd "${HERE}/.." && pwd)}"
 
 command -v python3 >/dev/null 2>&1 || { echo "route-honored: no python3" >&2; exit 2; }
 
+CUT_FROM="$(python3 "${HERE}/fw_cutoffs.py" route-check FLYWHEEL_ROUTE_CHECK_FROM)" || exit 2
+[ -n "${CUT_FROM}" ] || { echo "route-honored: empty cutoff — an empty cut forgives the whole corpus" >&2; exit 2; }
+
 FW_ROOT="${ROOT}" FW_HERE="${HERE}" \
-FW_ROUTE_FROM="${FLYWHEEL_ROUTE_CHECK_FROM:-2026-09-17T20:00:00Z}" python3 - <<'PY'
+FW_ROUTE_FROM="${CUT_FROM}" python3 - <<'PY'
 import json, os, re, subprocess, sys
 
 root, here = os.environ["FW_ROOT"], os.environ["FW_HERE"]
