@@ -10,6 +10,15 @@
 # Verdicts, and they never collapse into one another:
 #   PASS       — a command was extracted, matched the allowlist, ran, exited 0.
 #   FAIL       — the same, and it exited non-zero.
+#   PENDING    — the cycle keeps a ledger and this task has no transition line
+#                in it, so it has not run. Reported, never graded, never failed:
+#                the loop commits a plan at its approval gate, BEFORE the work,
+#                and grading then would report "not started" as "broken". A
+#                cycle with no run directory keeps no ledger to be absent from,
+#                so its tasks are graded as normal rather than going ungraded.
+#                check-telemetry.sh owns failing a spec that keeps no ledger and
+#                check-route-honored.sh owns failing a task that never ran, so
+#                nothing is lost by not failing here.
 #   UNRUNNABLE — no backticked span matched scripts/task-closure-allow.txt:
 #                a prose-only check, or a command outside the boundary. Reported
 #                and counted, NEVER executed and never read as green. Reporting
@@ -42,7 +51,7 @@
 #   FLYWHEEL_TASK_CLOSURE_FROM      move the cutoff (ISO 8601)
 #   FLYWHEEL_TASK_CLOSURE_TIMEOUT   per-check seconds (default 300)
 #
-# Exit: 0 ok · 1 a FAIL, or an UNRUNNABLE check after the cutoff
+# Exit: 0 ok (PENDING included) · 1 a FAIL, or an UNRUNNABLE check after the cutoff
 #         · 2 unusable input (no python3, or a plan the linter rejects)
 
 set -uo pipefail
@@ -61,6 +70,9 @@ FLYWHEEL_TASK_CLOSURE_FROM="${FLYWHEEL_TASK_CLOSURE_FROM:-2026-09-21T00:00:00Z}"
 FLYWHEEL_TASK_CLOSURE_TIMEOUT="${FLYWHEEL_TASK_CLOSURE_TIMEOUT:-300}" \
 TC_TARGET="${TARGET}" TC_HERE="${HERE}" python3 - <<'PY'
 import glob, json, os, re, shlex, subprocess, sys
+
+sys.path.insert(0, os.environ["TC_HERE"])
+from fw_tasks import task_ids  # one reader, shared with check-route-honored.sh
 
 target = os.environ["TC_TARGET"]
 here = os.environ["TC_HERE"]
@@ -119,11 +131,37 @@ def added(path):
     except Exception:
         return ""
 
+def recorded_tasks(slug):
+    """-> the task ids this cycle's ledger has a line for, or None when the
+    cycle keeps no ledger at all.
+
+    The distinction is the whole rule. A cycle WITH a run directory is
+    instrumented, so a task with no line has not run and grading its check
+    would report "not started" as "broken" — which is what a plan committed at
+    its approval gate, before any work, looks like. A cycle with NO run
+    directory keeps no ledger to be absent from, so every task is graded as
+    before rather than silently going ungraded."""
+    d = os.path.join(root, ".claude", "flywheel", "runs", slug)
+    if not os.path.isdir(d):
+        return None
+    ids = set()
+    for f in sorted(glob.glob(os.path.join(d, "*.jsonl"))):
+        with open(f) as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    ids |= task_ids(json.loads(line).get("task"))
+                except (ValueError, AttributeError):
+                    continue
+    return ids
+
 if not plans:
     print("task-closure: no plans under .claude/flywheel/specs/ — nothing to close")
     sys.exit(0)
 
-failures, totals = [], {"PASS": 0, "FAIL": 0, "UNRUNNABLE": 0}
+failures, totals = [], {"PASS": 0, "FAIL": 0, "PENDING": 0, "UNRUNNABLE": 0}
 graded_plans = 0
 
 for plan in plans:
@@ -152,8 +190,14 @@ for plan in plans:
     graded_plans += 1
     print(f"task-closure: {rel}" + ("  [pre-cutoff corpus — reported, never failed]" if corpus else ""))
 
-    rows = {"PASS": 0, "FAIL": 0, "UNRUNNABLE": 0}
+    ran = recorded_tasks(os.path.basename(plan)[: -len(".plan.md")])
+    rows = {"PASS": 0, "FAIL": 0, "PENDING": 0, "UNRUNNABLE": 0}
     for t in tasks:
+        if ran is not None and t["id"] not in ran:
+            print(f"  {t['id']:<4} {'PENDING':<10} no transition line — not started")
+            rows["PENDING"] += 1
+            totals["PENDING"] += 1
+            continue
         cmds = [(s, a) for s in SPAN.findall(t.get("check", ""))
                 for a in [runnable(s)] if a]
         if not cmds:

@@ -63,31 +63,10 @@ CUT = os.environ["FW_ROUTE_FROM"]
 specs = os.path.join(root, ".claude", "flywheel", "specs")
 runs = os.path.join(root, ".claude", "flywheel", "runs")
 
-RANGE_RE = re.compile(r"^[Tt](\d+)\s*[-–—]\s*[Tt](\d+)$")
-ONE_RE = re.compile(r"^[Tt](\d+)$")
+sys.path.insert(0, here)
+from fw_tasks import task_ids  # one reader, shared with check-task-closure.sh
+
 ROUTE_RE = re.compile(r"^([^/+]+)/([^+]+)(?:\+(.+))?$")
-
-
-def task_ids(task):
-    """-> the plan task ids a transition's `task` field covers, possibly none.
-
-    `spec`, `plan` and phase names map to nothing on purpose: those transitions
-    precede the plan and have no route to honor."""
-    if isinstance(task, bool) or task is None:
-        return set()
-    if isinstance(task, int):
-        return {f"T{task}"}
-    s = str(task).strip()
-    m = ONE_RE.match(s)
-    if m:
-        return {f"T{m.group(1)}"}
-    m = RANGE_RE.match(s)
-    if m:
-        lo, hi = int(m.group(1)), int(m.group(2))
-        return {f"T{i}" for i in range(min(lo, hi), max(lo, hi) + 1)}
-    if s.isdigit():
-        return {f"T{s}"}
-    return set()
 
 
 def rank(route, models, efforts):

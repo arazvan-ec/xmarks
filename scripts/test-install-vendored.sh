@@ -81,6 +81,11 @@ pass "${AGENT_COUNT} agents vendored"
 [ -f "${TARGET}/.claude/flywheel/bin/route-tiers.txt" ] || fail "route-tiers.txt missing — plan-route.sh and delegation-guard.sh read it beside themselves"
 [ -x "${TARGET}/.claude/flywheel/bin/check-task-closure.sh" ] || fail "check-task-closure.sh missing or not executable — /flywheel:verify's closure step cannot run"
 [ -f "${TARGET}/.claude/flywheel/bin/task-closure-allow.txt" ] || fail "task-closure-allow.txt missing — without it every check reads UNRUNNABLE and the closure verdict silently means nothing"
+[ -f "${TARGET}/.claude/flywheel/bin/fw_tasks.py" ] || fail "fw_tasks.py missing — check-task-closure.sh imports it beside itself and dies on import without it"
+# Importing is the assertion that matters: a present-but-unimportable file
+# passes a -f check and still takes the gate down on first use.
+bash "${TARGET}/.claude/flywheel/bin/check-task-closure.sh" "${TARGET}" >/dev/null 2>&1
+[ "$?" -le 1 ] || fail "vendored check-task-closure.sh did not start (exit $? — an import error reads as unusable input)"
 # The delegation hooks are the case this test did not cover when they landed:
 # hooks/hooks.json reached installed plugins, but a VENDORED repo is wired by
 # THIS script, and its hook list is hand-maintained. Copied but unregistered is

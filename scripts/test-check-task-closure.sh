@@ -128,6 +128,57 @@ says "PASS"
 denies "127"
 pass "a plan passed by path runs its checks from the repo root"
 
+# run <dir> <json-line>   — give the fixture's cycle a telemetry record
+runline() { mkdir -p "$1/.claude/flywheel/runs/f"; printf '%s\n' "$2" >> "$1/.claude/flywheel/runs/f/d.jsonl"; }
+
+echo "== an instrumented cycle with no line for a task reports PENDING, and never runs its check =="
+mkdir -p "${WORK}/p/scripts"
+MARK="${WORK}/p-ran"
+printf '#!/usr/bin/env bash\ntouch %s\nexit 0\n' "${MARK}" > "${WORK}/p/scripts/test-mark.sh"
+chmod +x "${WORK}/p/scripts/test-mark.sh"
+plan "${WORK}/p" "${NOW}" \
+  '### T1 — not started' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/test-mark.sh` green.'
+# The spec transition exists, so the cycle IS instrumented; T1 simply has no line.
+runline "${WORK}/p" '{"ts":"2026-09-21T10:00:00Z","task":"spec","phase":"spec","state":"completed"}'
+run "${WORK}/p"; rc 0
+says "PENDING"; denies "FAIL"
+[ -e "${MARK}" ] && fail "a PENDING task's check was executed — not-started must not be graded"
+pass "a task the ledger never recorded is PENDING, not FAIL, and its check does not run"
+
+echo "== a recorded task is still graded beside a pending one =="
+mkdir -p "${WORK}/q/scripts"
+printf '#!/usr/bin/env bash\nexit 1\n' > "${WORK}/q/scripts/test-red.sh"
+chmod +x "${WORK}/q/scripts/test-red.sh"
+plan "${WORK}/q" "${NOW}" \
+  '### T1 — ran and fails' '- route: `sonnet/medium`' '- check: `bash scripts/test-red.sh` green.' \
+  '### T2 — not started' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/test-red.sh` green.'
+runline "${WORK}/q" '{"ts":"2026-09-21T10:00:00Z","task":"T1","phase":"work","state":"completed"}'
+run "${WORK}/q"; rc 1
+says "FAIL"; says "PENDING"
+pass "PENDING does not launder a recorded task's red"
+
+echo "== a merged transition line records every task it spans =="
+mkdir -p "${WORK}/r/scripts"
+printf '#!/usr/bin/env bash\nexit 0\n' > "${WORK}/r/scripts/test-ok.sh"
+chmod +x "${WORK}/r/scripts/test-ok.sh"
+plan "${WORK}/r" "${NOW}" \
+  '### T1 — a' '- route: `sonnet/medium`' '- check: `bash scripts/test-ok.sh` green.' \
+  '### T2 — b' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/test-ok.sh` green.'
+runline "${WORK}/r" '{"ts":"2026-09-21T10:00:00Z","task":"T1-T2","phase":"work","state":"completed"}'
+run "${WORK}/r"; rc 0
+says "PASS"; denies "PENDING"
+pass "T1-T2 records both, so neither reads as unstarted"
+
+echo "== an uninstrumented repo is graded as before, not silently un-graded =="
+mkdir -p "${WORK}/s/scripts"
+printf '#!/usr/bin/env bash\nexit 0\n' > "${WORK}/s/scripts/test-ok.sh"
+chmod +x "${WORK}/s/scripts/test-ok.sh"
+plan "${WORK}/s" "${NOW}" \
+  '### T1 — no telemetry anywhere' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/test-ok.sh` green.'
+run "${WORK}/s"; rc 0
+says "PASS"; denies "PENDING"
+pass "no run directory means the cycle keeps no ledger, so every task is still graded"
+
 echo "== the skip lever takes a reason and says so =="
 plan "${WORK}/g" "${NOW}" \
   '### T1 — red' '- route: `opus/high`' '- risk: highest' '- check: `false`'
