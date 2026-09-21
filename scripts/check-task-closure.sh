@@ -19,7 +19,9 @@
 #                check-telemetry.sh owns failing a spec that keeps no ledger and
 #                check-route-honored.sh owns failing a task that never ran, so
 #                nothing is lost by not failing here.
-#   UNRUNNABLE — no backticked span matched scripts/task-closure-allow.txt:
+#   UNRUNNABLE — the check could not be run: no backticked span matched
+#                scripts/task-closure-allow.txt, or the command it names is not
+#                installed here (a property of the machine, not of the task):
 #                a prose-only check, or a command outside the boundary. Reported
 #                and counted, NEVER executed and never read as green. Reporting
 #                absence as honored is the mistake check-route-honored.sh names.
@@ -212,6 +214,15 @@ for plan in plans:
                 except subprocess.TimeoutExpired:
                     ok, p = False, None
                     detail = f"{c} — timed out after {timeout}s"
+                except OSError as e:
+                    # Whether a tool is installed is a property of the machine,
+                    # not of the task, so this is "could not verify", never a
+                    # red task. Uncaught it is worse than either: argv raises
+                    # where `bash -c` returned 127, and the traceback aborted
+                    # the whole run, leaving every later plan ungraded.
+                    verdict = "UNRUNNABLE"
+                    detail = f"{c} — not available on this machine ({e.strerror})"
+                    break
                 if not ok:
                     verdict = "FAIL"
                     if p is not None:

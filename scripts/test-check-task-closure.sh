@@ -179,6 +179,25 @@ run "${WORK}/s"; rc 0
 says "PASS"; denies "PENDING"
 pass "no run directory means the cycle keeps no ledger, so every task is still graded"
 
+echo "== a command absent from this machine is UNRUNNABLE, and never aborts the run =="
+# Regression from the shell-free fix: `bash -c` gave a missing binary exit 127,
+# argv raises FileNotFoundError. Uncaught, it took down the whole gate mid-run
+# and every plan after it went ungraded — CI had no `claude` binary.
+mkdir -p "${WORK}/t/scripts"
+printf '#!/usr/bin/env bash\nexit 0\n' > "${WORK}/t/scripts/test-ok.sh"
+chmod +x "${WORK}/t/scripts/test-ok.sh"
+plan "${WORK}/t" "${NOW}" \
+  '### T1 — cites a tool this box lacks' '- route: `sonnet/medium`' '- check: `claude plugin validate . --strict` green.' \
+  '### T2 — runs fine, and must still be reached' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/test-ok.sh` green.'
+PATH=/usr/bin:/bin run "${WORK}/t"
+[ "${RC}" -eq 1 ] || fail "expected exit 1 (T1 unverifiable after the cutoff), got ${RC}: $(cat "${WORK}/out")"
+says "UNRUNNABLE"
+grep -qi "not available\|not on this machine\|no such" "${WORK}/out" \
+  || fail "the reason must name the missing command, not read as a task failure: $(cat "${WORK}/out")"
+grep -qE "^ *T2 +PASS" "${WORK}/out" \
+  || fail "the run aborted at T1 — a missing binary must not stop the gate reaching T2: $(cat "${WORK}/out")"
+pass "a missing binary is reported, not crashed on, and the run continues"
+
 echo "== the skip lever takes a reason and says so =="
 plan "${WORK}/g" "${NOW}" \
   '### T1 — red' '- route: `opus/high`' '- risk: highest' '- check: `false`'
