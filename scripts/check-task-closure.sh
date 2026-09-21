@@ -60,7 +60,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FLYWHEEL_TASK_CLOSURE_FROM="${FLYWHEEL_TASK_CLOSURE_FROM:-2026-09-21T00:00:00Z}" \
 FLYWHEEL_TASK_CLOSURE_TIMEOUT="${FLYWHEEL_TASK_CLOSURE_TIMEOUT:-300}" \
 TC_TARGET="${TARGET}" TC_HERE="${HERE}" python3 - <<'PY'
-import glob, json, os, re, subprocess, sys
+import glob, json, os, re, shlex, subprocess, sys
 
 target = os.environ["TC_TARGET"]
 here = os.environ["TC_HERE"]
@@ -91,6 +91,23 @@ except OSError:
     sys.exit(2)
 
 SPAN = re.compile(r"`([^`]+)`")
+# An allowlisted PREFIX is not an allowlisted COMMAND. `bash scripts/test-ok.sh
+# && touch PWNED` matches any pattern ending in an optional argument tail, and a
+# shell would then run both halves — the allowlist would be buying execution for
+# whatever follows it. Spans carrying an operator are refused before the
+# allowlist is consulted, and what survives is run as argv with no shell at all,
+# so neither layer alone is load-bearing.
+SHELL_META = re.compile(r"[&;|`$()<>\\\n\r]")
+
+def runnable(span):
+    """The argv to execute, or None when the span is not a single plain command."""
+    if SHELL_META.search(span) or not any(p.match(span) for p in patterns):
+        return None
+    try:
+        argv = shlex.split(span)
+    except ValueError:
+        return None
+    return argv or None
 
 def added(path):
     """ISO date the plan entered git, or '' when it is untracked (i.e. new)."""
@@ -137,15 +154,15 @@ for plan in plans:
 
     rows = {"PASS": 0, "FAIL": 0, "UNRUNNABLE": 0}
     for t in tasks:
-        cmds = [s for s in SPAN.findall(t.get("check", ""))
-                if any(p.match(s) for p in patterns)]
+        cmds = [(s, a) for s in SPAN.findall(t.get("check", ""))
+                for a in [runnable(s)] if a]
         if not cmds:
             verdict, detail = "UNRUNNABLE", "no allowlisted command in its check"
         else:
-            verdict, detail = "PASS", " && ".join(cmds)
-            for c in cmds:
+            verdict, detail = "PASS", " + ".join(c for c, _ in cmds)
+            for c, argv in cmds:
                 try:
-                    p = subprocess.run(["bash", "-c", c], cwd=root, capture_output=True,
+                    p = subprocess.run(argv, cwd=root, capture_output=True,
                                        text=True, timeout=timeout)
                     ok = p.returncode == 0
                 except subprocess.TimeoutExpired:

@@ -79,6 +79,8 @@ pass "${AGENT_COUNT} agents vendored"
 [ -x "${TARGET}/.claude/flywheel/bin/plan-route.sh" ] || fail "plan-route.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/run-cost.sh" ] || fail "run-cost.sh missing or not executable"
 [ -f "${TARGET}/.claude/flywheel/bin/route-tiers.txt" ] || fail "route-tiers.txt missing — plan-route.sh and delegation-guard.sh read it beside themselves"
+[ -x "${TARGET}/.claude/flywheel/bin/check-task-closure.sh" ] || fail "check-task-closure.sh missing or not executable — /flywheel:verify's closure step cannot run"
+[ -f "${TARGET}/.claude/flywheel/bin/task-closure-allow.txt" ] || fail "task-closure-allow.txt missing — without it every check reads UNRUNNABLE and the closure verdict silently means nothing"
 # The delegation hooks are the case this test did not cover when they landed:
 # hooks/hooks.json reached installed plugins, but a VENDORED repo is wired by
 # THIS script, and its hook list is hand-maintained. Copied but unregistered is

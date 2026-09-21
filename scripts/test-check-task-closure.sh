@@ -69,6 +69,35 @@ says "UNRUNNABLE"
 [ -e "${SENTINEL}" ] && fail "the gate EXECUTED a command outside the allowlist — the allowlist is the whole security boundary"
 pass "a non-allowlisted command is never executed and never green"
 
+echo "== a shell operator after an allowlisted script is refused, and never runs =="
+# Codex P1 on PR #92: `( .*)?` in the allowlist swallowed the whole suffix, and
+# the span then went to `bash -c`. An allowlisted prefix bought arbitrary
+# execution — the exact boundary the allowlist is claimed to be.
+mkdir -p "${WORK}/n/scripts"
+printf '#!/usr/bin/env bash\nexit 0\n' > "${WORK}/n/scripts/test-ok.sh"
+chmod +x "${WORK}/n/scripts/test-ok.sh"
+PWNED="${WORK}/PWNED"
+plan "${WORK}/n" "${NOW}" \
+  '### T1 — chained' '- route: `sonnet/medium`' "- check: \`bash scripts/test-ok.sh && touch ${PWNED}.a\` green." \
+  '### T2 — semicolon' '- route: `sonnet/medium`' "- check: \`bash scripts/test-ok.sh; touch ${PWNED}.b\` green." \
+  '### T3 — substitution' '- route: `opus/high`' '- risk: highest' "- check: \`bash scripts/test-ok.sh \$(touch ${PWNED}.c)\` green."
+run "${WORK}/n"; rc 1
+says "UNRUNNABLE"; denies "PASS"
+for sfx in a b c; do
+  [ -e "${PWNED}.${sfx}" ] && fail "a shell operator executed (${sfx}) — the allowlisted prefix bought arbitrary execution"
+done
+pass "an allowlisted prefix cannot smuggle a second command"
+
+echo "== ordinary arguments after an allowlisted script still run =="
+mkdir -p "${WORK}/o/scripts"
+printf '#!/usr/bin/env bash\n[ "$1" = "--flag" ] || exit 3\nexit 0\n' > "${WORK}/o/scripts/test-ok.sh"
+chmod +x "${WORK}/o/scripts/test-ok.sh"
+plan "${WORK}/o" "${NOW}" \
+  '### T1 — args' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/test-ok.sh --flag` green.'
+run "${WORK}/o"; rc 0
+says "PASS"
+pass "a plain argument list is not collateral damage"
+
 echo "== a plan predating the cutoff is reported, never failed (P18: no backfill) =="
 plan "${WORK}/e" "${OLD}" \
   '### T1 — old prose' '- route: `opus/high`' '- risk: highest' '- check: the operator agreed back then.'

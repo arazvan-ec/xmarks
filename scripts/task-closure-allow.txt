@@ -8,6 +8,11 @@
 # widen it to arbitrary shell. A `check:` naming anything not matched here is
 # reported UNRUNNABLE: named, counted, never executed and never read as green.
 #
+# A span carrying a shell operator (& ; | ` $ ( ) < > \\ newline) is refused
+# BEFORE these patterns are consulted, and what survives runs as argv with no
+# shell — so an entry ending in an argument tail cannot be used to append a
+# second command to an allowlisted prefix.
+#
 # Format: one Python regex per line, full-match against the backticked span.
 # Blank lines and #-comments ignored. Widen it here, with the reason, or not at
 # all — the gate has no inline exceptions.
