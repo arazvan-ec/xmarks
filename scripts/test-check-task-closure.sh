@@ -87,6 +87,18 @@ ROWS="$(grep -cE '^ *T[0-9]+ ' "${WORK}/out" || true)"
 says "3"
 pass "N tasks in, N rows out"
 
+echo "== a single plan path resolves the repo root, not its parent =="
+mkdir -p "${WORK}/m/scripts"
+printf '#!/usr/bin/env bash\nexit 0\n' > "${WORK}/m/scripts/test-thing.sh"
+chmod +x "${WORK}/m/scripts/test-thing.sh"
+plan "${WORK}/m" "${NOW}" \
+  '### T1 — cites a repo script' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/test-thing.sh` green.'
+run "${WORK}/m/.claude/flywheel/specs/f.plan.md"; rc 0
+says "PASS"
+# 127 is the tell: the check ran from a directory where scripts/ does not exist.
+denies "127"
+pass "a plan passed by path runs its checks from the repo root"
+
 echo "== the skip lever takes a reason and says so =="
 plan "${WORK}/g" "${NOW}" \
   '### T1 — red' '- route: `opus/high`' '- risk: highest' '- check: `false`'

@@ -70,7 +70,10 @@ linter = os.path.join(here, "plan-route.sh")
 
 if target.endswith(".plan.md"):
     plans = [target]
-    root = os.path.abspath(os.path.join(os.path.dirname(target), "..", "..", "..", ".."))
+    # specs/ -> flywheel/ -> .claude/ -> the repo root. A fourth level lands in
+    # the repo's PARENT, where nothing a check cites resolves and every task
+    # reports exit 127 — a failure that reads as the code being broken.
+    root = os.path.abspath(os.path.join(os.path.dirname(target), "..", "..", ".."))
 else:
     root = os.path.abspath(target)
     plans = sorted(glob.glob(os.path.join(root, ".claude/flywheel/specs/*.plan.md")))
