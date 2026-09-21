@@ -30,7 +30,7 @@ is a before/after equality on the served values, not a passing suite.
 ### T4 — The list-intake plan lands, now that nothing reddens on it
 
 - route: `sonnet/medium`
-- check: `bash scripts/check-route-honored.sh` and `bash scripts/check-task-closure.sh` both exit 0 with the plan committed and its work not started.
+- check: `bash scripts/check-route-honored.sh` green with the plan committed and its work not started — it was the gate that reddened on an unstarted plan, so it is the one that has to go quiet.
 
 ### T5 — Release: bump, note, backlog rows
 

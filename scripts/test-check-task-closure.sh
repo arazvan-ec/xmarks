@@ -198,6 +198,16 @@ grep -qE "^ *T2 +PASS" "${WORK}/out" \
   || fail "the run aborted at T1 — a missing binary must not stop the gate reaching T2: $(cat "${WORK}/out")"
 pass "a missing binary is reported, not crashed on, and the run continues"
 
+echo "== a check citing this gate is refused, not run =="
+# A plan tried it: the gate swept all 18 plans from inside one task and blew
+# the 300s per-check timeout. The claim is always about some OTHER gate.
+mkdir -p "${WORK}/u/scripts"
+plan "${WORK}/u" "${NOW}" \
+  '### T1 — cites the gate itself' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/check-task-closure.sh` green.'
+run "${WORK}/u"; rc 1
+says "UNRUNNABLE"
+pass "self-reference is refused like any other command the gate will not run"
+
 echo "== the skip lever takes a reason and says so =="
 plan "${WORK}/g" "${NOW}" \
   '### T1 — red' '- route: `opus/high`' '- risk: highest' '- check: `false`'

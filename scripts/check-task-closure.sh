@@ -42,8 +42,11 @@
 # word "fails" — a red-first expectation is transitional, and a `check:` written
 # after the cutoff states the condition that holds AT CLOSE.
 #
-# Recursion is bounded, not guarded: this gate may run a test that runs this
-# gate, but only ever against fixture plans citing trivial commands.
+# Self-reference is refused, not merely bounded: a `check:` naming this gate
+# made it sweep every plan in the tree from inside one task and time out. It is
+# reported UNRUNNABLE like any other command it will not run. A test that runs
+# this gate against fixture plans is still fine — that is depth 2 over trivial
+# commands, which is what the arms do.
 #
 # The plan is parsed by plan-route.sh --json, never here: two readers of one
 # format is how the two drift.
@@ -115,9 +118,17 @@ SPAN = re.compile(r"`([^`]+)`")
 # so neither layer alone is load-bearing.
 SHELL_META = re.compile(r"[&;|`$()<>\\\n\r]")
 
+SELF = os.path.basename(__file__) if "__file__" in dir() else "check-task-closure.sh"
+
 def runnable(span):
     """The argv to execute, or None when the span is not a single plain command."""
     if SHELL_META.search(span) or not any(p.match(span) for p in patterns):
+        return None
+    # A check citing this gate makes it sweep the whole corpus from inside one
+    # task, which blew the per-check timeout the first time a plan tried it.
+    # The claim such a check wants to make is about ANOTHER gate going quiet;
+    # say that instead.
+    if "check-task-closure.sh" in span:
         return None
     try:
         argv = shlex.split(span)
