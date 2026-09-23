@@ -139,6 +139,16 @@ run "${R}"
 [ "${RC}" -eq 1 ] || fail "a blank route_reason must exit 1, got ${RC}: $(cat "${WORK}/out")"
 pass "a blank reason is rejected"
 
+echo "== an escalation with no route field still needs its reason (Codex, PR #95) =="
+R="$(repo noroute)"; plan "${R}" alpha "opus/high" "sonnet/medium"
+line "${R}" alpha T1 "opus/high" "${LATE}"
+mkdir -p "${R}/.claude/flywheel/runs/alpha"
+printf '{"ts":"%s","task":"T2","phase":"work","state":"completed","route_escalated_from":"sonnet/medium","cost":{"bytes_out":1}}\n' \
+  "${LATE}" >> "${R}/.claude/flywheel/runs/alpha/2026-09-18.jsonl"
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "an escalation missing both route and reason must exit 1, got ${RC}: $(cat "${WORK}/out")"
+pass "the reason is checked independently of route"
+
 echo "== a dropped +delegate, even escalated, needs a reason too =="
 R="$(repo delegatenoreason)"; plan "${R}" alpha "opus/high" "haiku/low+delegate"
 line "${R}" alpha T1 "opus/high" "${LATE}"

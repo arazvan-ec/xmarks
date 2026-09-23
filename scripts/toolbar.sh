@@ -5,8 +5,8 @@
 #   toolbar.sh remind   UserPromptSubmit: with an open list, inject the format
 #                       and the live count as additionalContext.
 #   toolbar.sh stop     Stop: with an open list, a final reply whose first
-#                       non-empty line is not `<🟢|⏸️|🔴|🏁> <n>/<N> …` blocks
-#                       (exit 2). Mid-turn notes are exempt by construction:
+#                       non-empty line is not a complete toolbar with the live
+#                       count and bar blocks (exit 2). Mid-turn notes are exempt by construction:
 #                       Stop sees only the turn's final message.
 #
 # An open list is a `.claude/flywheel/specs/<slug>.plan.md` this branch touches
@@ -51,14 +51,18 @@ if git("rev-parse", "--git-dir") is None:
     sys.exit(0)
 
 SPECS = ".claude/flywheel/specs/"
+# Commits only this branch carries: reachable from HEAD and from no other
+# branch or remote, except this branch's own upstream. No base is named, so a
+# repo whose default is `trunk` or `develop` is read like one on `main`.
+cur = (git("rev-parse", "--abbrev-ref", "HEAD") or "").strip()
 touched = set()
-for ref in ("origin/HEAD", "origin/main", "origin/master", "main", "master"):
-    if git("rev-parse", "--verify", "-q", ref) is None:
-        continue
-    base = (git("merge-base", "HEAD", ref) or "").strip()
-    if base:
-        touched |= set((git("diff", "--name-only", base, "HEAD", "--", SPECS) or "").split())
-    break
+if cur and cur != "HEAD":
+    # --exclude binds to the next --branches/--remotes only, and takes the ref
+    # name without its refs/heads/ or refs/remotes/ prefix.
+    out = git("log", "--format=", "--name-only", "HEAD", "--not",
+              f"--exclude={cur}", "--branches", f"--exclude=*/{cur}", "--remotes",
+              "--", SPECS)
+    touched |= set((out or "").split())
 for line in (git("status", "--porcelain", "--untracked-files=all", "--", SPECS) or "").splitlines():
     touched.add(line[3:].strip())
 
@@ -125,10 +129,24 @@ if msg is None:
     sys.exit(0)
 
 first = next((l.strip() for l in msg.splitlines() if l.strip()), "")
-m = re.match(r"^(?:🟢|⏸️|⏸|🔴|🏁)\s*(\d+)/(\d+)", first)
-if m and int(m.group(2)) in {n for _, _, n, _ in open_lists}:
+LINE = re.compile(r"^(?:🟢|⏸️|⏸|🔴|🏁)\s+(\d+)/(\d+)(?:\s+([▓▒░]+))?\s+·\s+▶\s+\S.*?\s+·\s+«[^»]*\S[^»]*»")
+m = LINE.match(first)
+
+
+def fits(done, total, bar):
+    for _, d, n, _ in open_lists:
+        if (done, total) != (d, n):
+            continue
+        if n > 10:
+            return True
+        if bar and len(bar) == n and bar.count("▓") == d and "▓" not in bar.lstrip("▓"):
+            return True
+    return False
+
+
+if m and fits(int(m.group(1)), int(m.group(2)), m.group(3)):
     sys.exit(0)
-why = ("its total is not any open list's" if m else "it does not start with the toolbar")
+why = ("its count or bar is not the open list's" if m else "its first line is not a complete toolbar")
 sys.stderr.write(f"flywheel toolbar (P56): this reply cannot end the turn — {why}. Open list:"
                  f" {lists}. Re-send the final reply opening with: {FORMAT}\n")
 sys.exit(2)

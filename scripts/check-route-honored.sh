@@ -175,13 +175,13 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
                 notices.append(f"{where} covers {', '.join(sorted(mapped))} and runs at"
                                f" {planned} — {', '.join(cheaper)} routed cheaper and was"
                                f" absorbed, so the tier it bought was never used")
-        if got and (rec.get("route_escalated_from")
-                    or (tasks[planned_id].get("delegate") and not delegates(got))):
+        if rec.get("route_escalated_from") or (
+                got and tasks[planned_id].get("delegate") and not delegates(got)):
             reason = str(rec.get("route_reason") or "").strip()
             if reason:
-                deviations.append(f"{slug} {rec.get('task')} {planned} → {got}: {reason}")
+                deviations.append(f"{slug} {rec.get('task')} {planned} → {got or '?'}: {reason}")
             elif binds(rec.get("ts"), WHY_CUT):
-                fatal.append(f"{where} ran {got} where the plan routed {planned} with no"
+                fatal.append(f"{where} ran {got or 'an unrecorded route'} where the plan routed {planned} with no"
                              f" route_reason — the record says the ladder was declined"
                              f" and not why, so the decline cannot be studied (P55)")
         if not got:

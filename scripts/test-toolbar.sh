@@ -83,6 +83,14 @@ stop "${R}" "🟢 1/3 ▓░░ · ▶ 2 wire · «x»"
 [ "${RC}" -eq 2 ] || fail "a total that is not the plan's must exit 2, got ${RC}"
 pass "the count is the plan's, not a feeling"
 
+echo "== the whole line is validated, not its prefix (Codex, PR #95) =="
+for bad in "🟢999/2garbage" "🟢 0/2 ░░ · ▶ 2 wire · «x»" "🟢 1/2 ▓░░ · ▶ 2 wire · «x»" \
+           "🟢 1/2 ░▓ · ▶ 2 wire · «x»" "🟢 1/2 ▓░ · ▶ 2 wire" "🟢 1/2 ▓░ · «x»"; do
+  stop "${R}" "${bad}"
+  [ "${RC}" -eq 2 ] || fail "a malformed toolbar must exit 2, got ${RC} for: ${bad}"
+done
+pass "glyph, live done count, bar length and ▓ count, ▶ item and «note» are all required"
+
 echo "== stop_hook_active never re-traps =="
 RC=0; printf '{"cwd":"%s","stop_hook_active":true,"last_assistant_message":"bare"}' "${R}" \
   | CLAUDE_PROJECT_DIR="${R}" bash "${HOOK}" stop >/dev/null 2>&1 || RC=$?
@@ -116,6 +124,15 @@ R="${WORK}/onbase"; mkdir -p "${R}/.claude/flywheel/specs"
 g "${R}" init -q -b main; plan "${R}" old 2; g "${R}" add -A; g "${R}" commit -qm base; g "${R}" checkout -q -b feature
 stop "${R}" "bare"; [ "${RC}" -eq 0 ] || fail "a plan the branch did not touch must not bind, got ${RC}"
 pass "only plans this branch touches are open lists"
+
+echo "== a base with a nonstandard name is still found (Codex, PR #95) =="
+R="${WORK}/trunk"; mkdir -p "${R}/.claude/flywheel/specs"
+g "${R}" init -q -b trunk; echo x > "${R}/README"; g "${R}" add -A; g "${R}" commit -qm base
+g "${R}" checkout -q -b feature; plan "${R}" alpha 2 commit
+stop "${R}" "bare"; [ "${RC}" -eq 2 ] || fail "a plan committed on a branch cut from trunk must bind, got ${RC}"
+g "${R}" checkout -q trunk; stop "${R}" "bare"
+[ "${RC}" -eq 0 ] || fail "on the base itself the feature's plan is not this branch's list, got ${RC}"
+pass "the branch's own commits are found without naming its base"
 
 echo "== an uncommitted plan counts =="
 R="$(repo dirty)"; plan "${R}" beta 2
