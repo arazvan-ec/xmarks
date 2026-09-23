@@ -97,3 +97,16 @@ normative text, with the case table as the check; R3's sentence on cheaper model
 the owner asked for (measure the higher tier at low effort first); R5 now covers
 every step that needs a price, a context size or a model's effort support. The
 rounds are in the git log of this branch. Flagged to the owner.
+
+## Verify
+
+**S2 on `40dba7e` — PASS** (fresh session, sparse checkout of `skills/route/`
+and `scripts/`; https://github.com/arazvan-ec/xmarks/pull/96#issuecomment-5802767740).
+Mechanism 7/8, tier 7/8, against thresholds of 7 and 6. The one miss is case 4:
+the session answered `tool` (sed or an LSP rename) where the table expects a
+tier-1 subagent. It followed "first yes wins" correctly; the skill's own
+example ("apply this recorded rename") contradicted its step 1. The example
+was changed after the run, and the expected answer for case 4 was not, so the
+table still records what was measured. The same run surfaced three more
+ambiguities, fixed in the same commit: `here` with a route the caller cannot
+act on, whether a tier's effort is a floor, and an undefined `+delegate`.

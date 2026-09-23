@@ -31,10 +31,12 @@ what tier 1, 2 and 3 mean. Never restate a tier from memory.
    from. **Never a `fork`**: it inherits the whole context and ignores `model`.
 3. **Reads or edits with no judgment**, many identical ones or one that would
    flood this context (is this figure on this page, summarise this log, apply
-   this recorded rename) → `subagent` at tier 1,
+   this recorded recipe to each file). A rename that `sed` or an LSP can do is
+   step 1, not this one → `subagent` at tier 1,
    in parallel. Being expensive does not make a model better at reading.
 4. **Anything else** → `here`, or `subagent` if it would flood this context with
-   reading. Then pick the tier in step 3.
+   reading. Then pick the tier in step 3. `here` runs on this session's model:
+   if that is not the tier step 3 picks, make it a `subagent` at that tier.
 
 ## 3. Pick the tier, then the effort
 
@@ -51,7 +53,8 @@ Check tier 3 first, so risk inside an existing module is never tier 2.
   left for the brief and the answer, goes to tier 2. Context sizes are in
   `skills/route/references/models.md`.
 
-**Effort before model.** Recommend the lowest effort that holds within the tier
+**Effort before model.** A tier's effort in the table is its default, not a
+floor. Recommend the lowest effort that holds within the tier
 (a tier whose model takes no effort, per `skills/route/references/models.md`,
 has only the model as a lever).
 Raise it when the *check* is subtle, not when the work is large. Offer a cheaper
@@ -64,7 +67,8 @@ is not cheap. Compare prices only when two routes are close, with
 
 ```
 mechanism: tool | fresh-session | subagent | here
-route:     <model>/<effort>[+delegate]    (none for a tool)
+route:     <model>/<effort>[+delegate]    (none for a tool; +delegate = the
+           `executor` agent where registered, else a subagent with `model`)
 why:       one line per decision above
 escalate-if: <what you would see if this was too cheap>
 ```
