@@ -26,4 +26,4 @@ Spec: `.claude/flywheel/specs/p56-the-toolbar-is-enforced.md`
 ### T5 — Release: bump, note, backlog, full sweep
 
 - route: `opus/medium`
-- check: every `scripts/test-*.sh` and `scripts/check-*.sh` green and `claude plugin validate . --strict` passes.
+- check: `bash scripts/test-docs-consistency.sh` + `bash scripts/check-release-bump.sh origin/main` green (the full sweep and the strict plugin validation ran locally; the CLI is not on the CI runner, so it cannot be this task's check).
