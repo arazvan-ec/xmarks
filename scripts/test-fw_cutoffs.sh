@@ -23,12 +23,13 @@ echo "== the registry serves the value the gate used before extraction =="
 # must be argued in the row's reason, never arrive as a refactor.
 for pair in "route-check 2026-09-17T20:00:00Z" \
             "phase-required 2026-09-17T20:00:00Z" \
-            "task-closure 2026-09-21T00:00:00Z"; do
+            "task-closure 2026-09-21T00:00:00Z" \
+            "route-reason 2026-09-23T18:30:00Z"; do
   set -- ${pair}
   got="$(python3 "${CUT}" "$1")" || fail "fw_cutoffs.py $1 exited non-zero"
   [ "${got}" = "$2" ] || fail "cutoff '$1' serves '${got}', pinned at '$2' — extracting a literal must not move it"
 done
-pass "all three cutoffs serve their pre-extraction value byte for byte"
+pass "all four cutoffs serve their pre-extraction value byte for byte"
 
 echo "== two cutoffs share a date on purpose, and the registry says so =="
 [ "$(python3 "${CUT}" route-check)" = "$(python3 "${CUT}" phase-required)" ] \

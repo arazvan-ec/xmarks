@@ -37,16 +37,18 @@ plan() {
   done
 }
 
-# line <root> <slug> <task> <route> <ts> [escalated-from]
+# line <root> <slug> <task> <route> <ts> [escalated-from] [route-reason]
 line() {
   local esc=""
   [ -n "${6:-}" ] && esc=",\"route_escalated_from\":\"$6\""
+  [ -n "${7:-}" ] && esc="${esc},\"route_reason\":\"$7\""
   mkdir -p "$1/.claude/flywheel/runs/$2"
   printf '{"ts":"%s","task":"%s","phase":"work","state":"completed","route":"%s"%s,"cost":{"bytes_out":1}}\n' \
     "$5" "$3" "$4" "${esc}" >> "$1/.claude/flywheel/runs/$2/2026-09-18.jsonl"
 }
 
 POST="2026-09-18T10:00:00Z"   # after the cutoff
+LATE="2026-09-24T10:00:00Z"   # after the route-reason cutoff too (P55)
 PRE="2026-09-15T10:00:00Z"    # before it
 
 run() { RC=0; bash "${GATE}" "$@" >"${WORK}/out" 2>&1 || RC=$?; }
@@ -106,6 +108,52 @@ line "${R}" alpha T2 "opus/high" "${POST}" "sonnet/medium"
 run "${R}"
 [ "${RC}" -eq 0 ] || fail "a recorded escalation must pass, got ${RC}: $(cat "${WORK}/out")"
 pass "route_escalated_from is what makes an upgrade honest"
+
+echo "== after the route-reason cutoff, an escalation with no reason fails (P55) =="
+# 19 escalations in the tree, 0 reasons, 18 of them sonnet/medium -> opus/high:
+# the record said THAT the ladder was declined and never WHY.
+R="$(repo noreason)"; plan "${R}" alpha "opus/high" "sonnet/medium"
+line "${R}" alpha T1 "opus/high" "${LATE}"
+line "${R}" alpha T2 "opus/high" "${LATE}" "sonnet/medium"
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "an escalation with no route_reason must exit 1, got ${RC}: $(cat "${WORK}/out")"
+grep -q "T2" "${WORK}/out" && grep -q "route_reason" "${WORK}/out" \
+  || fail "the finding must name the task and the missing field: $(cat "${WORK}/out")"
+pass "an unexplained escalation exits 1 and is named"
+
+echo "== a reason makes it pass, and the reason is printed for study =="
+R="$(repo reason)"; plan "${R}" alpha "opus/high" "sonnet/medium"
+line "${R}" alpha T1 "opus/high" "${LATE}"
+line "${R}" alpha T2 "opus/high" "${LATE}" "sonnet/medium" "two-line edit, a subagent would re-read more than it writes"
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "an explained escalation must pass, got ${RC}: $(cat "${WORK}/out")"
+grep -q "alpha T2 sonnet/medium → opus/high: two-line edit" "${WORK}/out" \
+  || fail "the deviation must be listed with its reason: $(cat "${WORK}/out")"
+pass "the reason is required and readable in one place"
+
+echo "== a whitespace-only reason is no reason =="
+R="$(repo blankreason)"; plan "${R}" alpha "opus/high" "sonnet/medium"
+line "${R}" alpha T1 "opus/high" "${LATE}"
+line "${R}" alpha T2 "opus/high" "${LATE}" "sonnet/medium" "   "
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a blank route_reason must exit 1, got ${RC}: $(cat "${WORK}/out")"
+pass "a blank reason is rejected"
+
+echo "== a dropped +delegate, even escalated, needs a reason too =="
+R="$(repo delegatenoreason)"; plan "${R}" alpha "opus/high" "haiku/low+delegate"
+line "${R}" alpha T1 "opus/high" "${LATE}"
+line "${R}" alpha T2 "opus/high" "${LATE}" "haiku/low+delegate"
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a declined delegation with no reason must exit 1, got ${RC}: $(cat "${WORK}/out")"
+pass "a declined delegation says why"
+
+echo "== before the route-reason cutoff an unexplained escalation stays green (P18) =="
+R="$(repo oldnoreason)"; plan "${R}" alpha "opus/high" "sonnet/medium"
+line "${R}" alpha T1 "opus/high" "${POST}"
+line "${R}" alpha T2 "opus/high" "${POST}" "sonnet/medium"
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "a pre-cutoff escalation must not be backfilled into a failure, got ${RC}: $(cat "${WORK}/out")"
+pass "the corpus is counted, never backfilled"
 
 echo "== a merged range covers its tasks and is reported, not failed =="
 R="$(repo merged)"; plan "${R}" alpha "opus/high" "sonnet/medium"
