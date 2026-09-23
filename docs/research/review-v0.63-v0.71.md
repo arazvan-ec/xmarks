@@ -9,6 +9,21 @@ lines. #88–#90 (P40b re-decision, P47) are out of scope.
 session that wrote this; **agent** = reproduced by a delegated reviewer and only
 spot-read here, not re-run.
 
+**Sources.** Repository evidence is cited inline as commit, `file:line` or a
+command to re-run. The external evidence is on GitHub:
+
+- PRs: [#91](https://github.com/arazvan-ec/xmarks/pull/91),
+  [#92](https://github.com/arazvan-ec/xmarks/pull/92).
+- CI on `main` @ `1c72332`: `Validate plugins`
+  [red](https://github.com/arazvan-ec/xmarks/actions/runs/35535339405) (job
+  `test-installer`: `1 of 27 failed: scripts/test-read-meter.sh`); `Release`
+  [green](https://github.com/arazvan-ec/xmarks/actions/runs/35535339412) on the
+  same commit.
+- CI on `main` @ `e6b6efd`: `Validate plugins`
+  [green](https://github.com/arazvan-ec/xmarks/actions/runs/35894455269).
+- The Codex P1 on the closure allowlist, and its fix:
+  [#92 review thread](https://github.com/arazvan-ec/xmarks/pull/92#discussion_r4066300049).
+
 ## 1. What shipped
 
 **#91 — make the loop's own record measurable**

@@ -5,6 +5,11 @@ Everything here is **summarized in our own words from primary sources** (officia
 Claude Code docs and the claude-mem project docs), with source URLs on every
 page so claims are traceable. It is not a verbatim copy of any source.
 
+The exception is **internal analysis** of this repository (e.g.
+[`review-v0.63-v0.71.md`](review-v0.63-v0.71.md)). It is original work, and its
+evidence is the repo itself (commits, `file:line`, commands to re-run) plus
+links to the GitHub PRs, CI runs and review threads it cites.
+
 Compiled 2026-07-08.
 
 ## What's here
