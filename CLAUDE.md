@@ -178,9 +178,13 @@ plugin itself is no exception — "it's a small change" is the exact excuse
 - **A new skill must be listed in BOTH** the README command table **and** the
   `/flywheel:help` map — `scripts/test-docs-consistency.sh` fails otherwise. Every
   agent must be mentioned in the README.
-- Run before pushing: `bash scripts/test-docs-consistency.sh`,
-  `bash scripts/test-install-vendored.sh`, and `claude plugin validate . --strict`
-  if the CLI is available.
+- Run before pushing: `bash scripts/sweep.sh` (P60). It runs what
+  `validate-plugins.yml` runs, meaning `claude plugin validate . --strict` when the
+  CLI is present (`SKIPPED` otherwise), every workflow `check-*.sh` with CI's
+  `origin/<base>` argument, and every `scripts/test-*.sh`, one by one. The verdict
+  comes from each script's exit code, and it ends with `N/N passed`. Pass another
+  base ref as its argument. Don't paste a `for t in scripts/test-*.sh` loop in its
+  place.
 - Design/roadmap discussion lives in [`docs/research/`](docs/research/) —
   `improvement-proposals.md` (living backlog + decision log) and `journal.md`.
 - Keep `marketplace.json` and `plugin.json` descriptions in sync when the surface

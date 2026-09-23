@@ -230,6 +230,19 @@ run "${WORK}/v"; rc 0
 says "PASS"
 pass "the gate's own test is not the gate"
 
+echo "== a check runs with FW_TASK_CLOSURE_ACTIVE=1, so a sweep it runs can skip this gate =="
+# P60: a plan may cite `bash scripts/sweep.sh`, and the sweep runs this gate. The
+# marker is how that sweep knows it is already inside one, instead of re-grading
+# every plan from inside a single task's timeout.
+mkdir -p "${WORK}/w/scripts"
+printf '#!/usr/bin/env bash\n[ "${FW_TASK_CLOSURE_ACTIVE:-}" = 1 ]\n' > "${WORK}/w/scripts/test-marker.sh"
+chmod +x "${WORK}/w/scripts/test-marker.sh"
+plan "${WORK}/w" "${NOW}" \
+  '### T1 — needs the marker' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/test-marker.sh` green.'
+run "${WORK}/w"; rc 0
+says "PASS"
+pass "checks see FW_TASK_CLOSURE_ACTIVE=1"
+
 echo "== the skip lever takes a reason and says so =="
 plan "${WORK}/g" "${NOW}" \
   '### T1 — red' '- route: `opus/high`' '- risk: highest' '- check: `false`'
@@ -253,6 +266,15 @@ plan "${WORK}/j" "${NOW}" \
 run "${WORK}/j"; rc 0
 [ "$(grep -c "PASS" "${WORK}/out")" -ge 3 ] || fail "all three spellings of a repo script must be runnable: $(cat "${WORK}/out")"
 pass "bare, bash-prefixed and ./-prefixed repo scripts all run"
+
+echo "== the allowlist runs the sweep, with its base ref (P60) =="
+mkdir -p "${WORK}/x/scripts"
+printf '#!/usr/bin/env bash\n[ "$1" = origin/main ]\n' > "${WORK}/x/scripts/sweep.sh"
+plan "${WORK}/x" "${NOW}" \
+  '### T1 — cites the sweep' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/sweep.sh origin/main` green.'
+run "${WORK}/x"; rc 0
+says "PASS"
+pass "bash scripts/sweep.sh <base-ref> is runnable"
 
 echo "== a pre-cutoff plan the linter rejects is corpus, not a red gate =="
 mkdir -p "${WORK}/k/.claude/flywheel/specs"

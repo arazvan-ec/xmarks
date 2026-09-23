@@ -223,8 +223,11 @@ for plan in plans:
             verdict, detail = "PASS", " + ".join(c for c, _ in cmds)
             for c, argv in cmds:
                 try:
+                    # The marker lets a cited `scripts/sweep.sh` (P60) skip
+                    # this gate rather than re-grade every plan inside one check.
                     p = subprocess.run(argv, cwd=root, capture_output=True,
-                                       text=True, timeout=timeout)
+                                       text=True, timeout=timeout,
+                                       env={**os.environ, "FW_TASK_CLOSURE_ACTIVE": "1"})
                     ok = p.returncode == 0
                 except subprocess.TimeoutExpired:
                     ok, p = False, None
