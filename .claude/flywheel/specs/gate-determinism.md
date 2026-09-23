@@ -3,6 +3,11 @@
 **Slug:** `gate-determinism` · **Created:** 2026-09-23 · **Backlog:** findings 3–5 of
 `docs/research/review-v0.63-v0.71.md`
 
+**Status:** shipped as v0.72.0 — metric PASS. (1) with a forced 1.1 s gap the
+arm was red, and it is green after the fix. (2) seeds 0–15 went from a mix of
+exit 0 and exit 1 to one verdict. (3) four boundary arms, each red first for its
+own reason. The sweep ran with nothing in parallel.
+
 **Prime:** P48 and P49 (cutoffs, route gate), P53 (read-meter's exclusive cut),
 v0.71.0 (one cutoff registry).
 
