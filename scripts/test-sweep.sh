@@ -19,6 +19,8 @@ pass() { echo "  ok: $*"; }
 [ -f "${SWEEP}" ] || fail "scripts/sweep.sh does not exist"
 
 NOCLAUDE="fw-no-such-claude-$$"
+# Run as a plan check, this suite inherits the marker; its arms set it themselves.
+unset FW_TASK_CLOSURE_ACTIVE
 
 # tree <name> -> a throwaway repo: one passing test, one base-ref gate, one plain gate
 tree() {
