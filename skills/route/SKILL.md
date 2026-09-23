@@ -50,7 +50,8 @@ what tier 1, 2 and 3 mean. Never restate a tier from memory.
   `skills/route/references/models.md`.
 
 **Effort before model.** Recommend the lowest effort that holds within the tier
-(tier 1 has no effort lever: its model takes none, so `low` there is nominal).
+(a tier whose model takes no effort, per `skills/route/references/models.md`,
+has only the model as a lever).
 Raise it when the *check* is subtle, not when the work is large. Offer a cheaper
 model only when the next tier down at the same effort would do the job, and
 judge cost per **completed** task, not per call: a cheap model that needs a retry

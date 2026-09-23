@@ -28,9 +28,10 @@ inherits the caller's framing.
       would flood the caller's context? → `subagent` at tier 1, in parallel.
       Breadth never raises the tier; only an item that does not fit tier 1's
       context (per R5's reference, with room for the brief and the answer) does.
-   4. Is it ordinary work inside existing structure? → tier 2.
+   4. Is it ordinary work inside existing structure? → `here` at tier 2, or
+      `subagent` if it would flood the caller's context.
    5. Is it design, ambiguity, security or data risk, a change that needs
-      design across 3+ modules, or the riskiest step? → tier 3.
+      design across 3+ modules, or the riskiest step? → `here` at tier 3.
 3. **Effort before model.** Within a tier, recommend the lowest effort that
    holds; raise effort when the *check* is subtle, not when the work is large.
    Propose a cheaper model only when the next tier down, at the same effort,
@@ -40,7 +41,8 @@ inherits the caller's framing.
    The skill reads it; it never restates a tier as a rule of its own.
 5. **Prices and context windows live in `skills/route/references/models.md`**,
    dated, with a pointer to how to refresh them. They are cited only from the
-   step that compares cost, so the body stays free of numbers that go stale.
+   steps that need a price, a context size or a model's effort support, so the
+   body stays free of numbers that go stale.
 
 Out of scope: enforcing the choice (a repo can add its own hook, as veo's
 `delegar.py` does), changing `/flywheel:plan`'s rubric, and telemetry of routes.
