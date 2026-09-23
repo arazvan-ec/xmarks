@@ -267,6 +267,15 @@ run "${WORK}/j"; rc 0
 [ "$(grep -c "PASS" "${WORK}/out")" -ge 3 ] || fail "all three spellings of a repo script must be runnable: $(cat "${WORK}/out")"
 pass "bare, bash-prefixed and ./-prefixed repo scripts all run"
 
+echo "== the allowlist runs the sweep, with its base ref (P60) =="
+mkdir -p "${WORK}/x/scripts"
+printf '#!/usr/bin/env bash\n[ "$1" = origin/main ]\n' > "${WORK}/x/scripts/sweep.sh"
+plan "${WORK}/x" "${NOW}" \
+  '### T1 — cites the sweep' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/sweep.sh origin/main` green.'
+run "${WORK}/x"; rc 0
+says "PASS"
+pass "bash scripts/sweep.sh <base-ref> is runnable"
+
 echo "== a pre-cutoff plan the linter rejects is corpus, not a red gate =="
 mkdir -p "${WORK}/k/.claude/flywheel/specs"
 printf 'no task blocks here at all\n' > "${WORK}/k/.claude/flywheel/specs/f.plan.md"
