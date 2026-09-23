@@ -113,14 +113,14 @@ grep -q "upgrades/v${NEW}.md" "${WORK}/out" && fail "a 'Renumbered from' line is
 pass "runs/ + untouched file + 'Renumbered from' → not listed"
 
 echo "== fixing the pointers leaves only the unclassified history line =="
-sed -i "s/${OLD}/${NEW}/g" "${REPO}/${YML}"
+sed -i.bak "s/${OLD}/${NEW}/g" "${REPO}/${YML}" && rm "${REPO}/${YML}.bak"
 rn --check "${OLD}"
 [ "${RC}" -eq 1 ] || fail "an unclassified history line must still fail, got ${RC}: $(out)"
 grep -q "${YML}" "${WORK}/out" && fail "fixed pointers must not be listed: $(out)"
 pass "pointers fixed, history unclassified → exit 1"
 
 echo "== a keep marker classifies history; --check exits 0 =="
-sed -i "3s/\$/ <!-- renumber: keep -->/" "${REPO}/docs/journal.md"
+sed -i.bak "3s/\$/ <!-- renumber: keep -->/" "${REPO}/docs/journal.md" && rm "${REPO}/docs/journal.md.bak"
 rn --check "${OLD}"
 [ "${RC}" -eq 0 ] || fail "every leftover classified must exit 0, got ${RC}: $(out)"
 pass "all fixed or kept → exit 0"
