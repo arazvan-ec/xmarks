@@ -1,7 +1,7 @@
 # Spec: P56 — the progress toolbar is enforced, not remembered
 
 **Slug:** `p56-the-toolbar-is-enforced` · **Created:** 2026-09-23 · **Backlog:** P56
-**Status:** in progress
+**Status:** shipped as v0.74.0 — metric PASS: test-toolbar 13 arms green, installer asserts both hooks, 31 tests + 13 gates green, plugin validate --strict passes.
 
 **Prime:** CLAUDE.md "Progress toolbar" (2026-09-21), and the ledger entry *"an
 instruction nothing can observe failing is not enforced"*.
