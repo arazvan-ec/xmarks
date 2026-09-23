@@ -20,6 +20,10 @@ plus what the transition proved.
   Free text, so a pillar-2 run names its Rule phase instead.
 - `route_escalated_from: "<model>/<effort>"` — carry it on a transition that had
   to move up a tier. That pair is the only honest record of a mis-route.
+- `route_reason: "<why>"` — required with `route_escalated_from`, and on any
+  line that drops a planned `+delegate`. One sentence naming the cause, not the
+  outcome. `check-route-honored.sh` fails a deviation without it and lists every
+  reason, so the ladder's declines can be studied instead of guessed (P55).
 - `cost` — **observable proxies only**: `bytes_out` (bytes you wrote),
   `bytes_in` (bytes of tool output that entered context; a floor, never the
   conversation), `tool_calls`, `elapsed_s`, `max_read` (the largest single tool

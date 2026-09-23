@@ -12,14 +12,16 @@
 # — it still asks when the definition is missing, unreadable, or leaves a
 # field unpinned.
 #
-# Three families of check, because delegating badly costs three ways and only
-# one of them is visible:
+# Four families of check. The first three are how delegating badly costs, and
+# only one of them is visible:
 #   TIER    — the wrong model is paid in the bill.
 #   CONTEXT — the child burns its window rediscovering what was already known.
 #             It shows up in no metric; it just looks slow.
 #   FANOUT  — the child that should not exist. Two shapes: the DUPLICATE
 #             (delegating something that already has a live child) and the WIDTH
 #             (N sessions drain the same quota N times faster).
+#   REVIEW  — a delegated review that skips the start comment of
+#             skills/review/references/delegated-review.md (P57).
 #
 # Contract: this hook NEVER decides for you and never denies. It returns `ask`,
 # so the decision passes through a confirmation instead of an invisible default.
@@ -142,6 +144,22 @@ if prompt.strip():
             "edited" % len(prompt),
         ))
 
+# --- review (P57) --------------------------------------------------------
+# A delegated review that posts nothing looks the same whether it found
+# nothing, could not post, or is still running (PR #95). The template makes
+# the child announce itself on the PR first; its marker is what we look for.
+low = prompt.lower()
+is_review = ("/code-review" in low or "/flywheel:review" in low
+             or ("review" in low and re.search(r"(#\d+|\bpr\s*\d+|/pull/\d+)", low)))
+if is_review and "fw-review-start" not in low:
+    warnings.append((
+        "review",
+        "asks for a review but does not follow skills/review/references/"
+        "delegated-review.md: without its start comment (marker "
+        "`fw-review-start`) a child that posts nothing reads the same as one "
+        "that found nothing — on PR #95 that cost two relaunches",
+    ))
+
 # --- fanout -------------------------------------------------------------
 WIDTH_THRESHOLD = 4   # ask from the fourth child of this session onwards
 
@@ -225,6 +243,8 @@ if missing:
 for family, text_ in warnings:
     if family == "context":
         parts.append("CONTEXT — the prompt %s." % text_)
+    elif family == "review":
+        parts.append("REVIEW — the prompt %s." % text_)
     else:
         parts.append("FANOUT — %s." % text_)
 

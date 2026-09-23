@@ -238,6 +238,25 @@ done
 grep -qE '^PASS: check' "${WORK}/out" || fail "the check step must still have run after the probe failed — one red must not hide the rest: $(out)"
 pass "5 named result lines, and a mid-sequence failure does not stop the rest"
 
+echo "== --print-prompt refuses a workdir it is about to delete (P58) =="
+# 2026-09-23: --keep and --print-prompt as two calls made two dirs; the printed
+# one was torn down, and two executors started on a path that did not exist.
+run demo 1 --print-prompt
+[ "${RC}" -eq 2 ] || fail "--print-prompt without --keep/--into must exit 2, got ${RC}: $(out)"
+grep -qi "keep" "${WORK}/out" || fail "the refusal must name --keep: $(out)"
+! grep -qF "work in " "${WORK}/out" || fail "no prompt may be printed for a doomed dir: $(out)"
+pass "a prompt naming a dir that will not exist is never printed"
+
+echo "== --executor-prompt: the template lives in the tool, and its dir exists (P58) =="
+run demo 1 --executor-prompt
+[ "${RC}" -eq 0 ] || fail "--executor-prompt failed: $(out)"
+D="$(sed -n 's/^.*work in \(.*\) please$/\1/p' "${WORK}/out" | head -1)"
+[ -n "${D}" ] && [ -d "${D}" ] || fail "the named workdir must exist after the call: '${D}' — $(out)"
+grep -qF "skills/demo/SKILL.md" "${WORK}/out" || fail "the preamble must point at the skill body: $(out)"
+grep -qiF "only files inside ${D}" "${WORK}/out" || fail "the preamble must confine the executor to its dir: $(out)"
+rm -rf "${D}"
+pass "--executor-prompt keeps its dir, points at SKILL.md and confines the executor"
+
 echo "== --print-prompt substitutes {{WORKDIR}} =="
 run demo 1 --print-prompt --into "${WORK}/prompt"
 [ "${RC}" -eq 0 ] || fail "--print-prompt failed: $(out)"

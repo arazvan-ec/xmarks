@@ -84,7 +84,8 @@ one item of work:
 
 The closure table proves at the end what got done. It says nothing *during*, which
 is the whole stretch where the owner has to ask. So while a materialized list is
-open, **every reply opens with one line** — before any prose, no heading:
+open, **the final reply of every turn opens with one line** — before any prose, no
+heading. Mid-turn notes between tool calls are exempt (owner, 2026-09-23):
 
 ```
 <state> <done>/<total> <bar> · ▶ <current item> · «<what you are doing, in the owner's own words>»
@@ -111,6 +112,11 @@ Rules that keep it honest:
   item-by-item close with evidence still ships at the end.
 - **No open list, no toolbar.** A one-off question gets a plain answer — a bar
   reading `1/1` on a question nobody listed is noise.
+- **Enforced, not remembered (P56).** `scripts/toolbar.sh` runs as two plugin
+  hooks: `UserPromptSubmit` injects the format and the live count while a plan
+  this branch touches has unrecorded tasks, and `Stop` blocks a final reply that
+  does not open with the line or names the wrong total. A list that is not a
+  plan (a scratchpad list) is invisible to it — the rule still applies there.
 
 ## Dev-loop discipline: flywheel develops flywheel (owner decision, 2026-07-29)
 

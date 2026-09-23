@@ -77,6 +77,29 @@ pass "model without effort raises TIER"
 case "${out}" in *"sonnet/medium"*) pass "the ask names tiers read from route-tiers.txt" ;;
   *) fail "the ask does not name the ladder's tiers" ;; esac
 
+# --- REVIEW (P57) ----------------------------------------------------------
+# PR #95: a delegated /code-review --comment went idle having posted nothing,
+# and the parent could not tell "no findings" from "could not post".
+for rp in "/code-review 95 --comment. Route opus/medium, that effort. PR #95." \
+          "/flywheel:review on #95. Route opus/medium, that effort." \
+          "Review PR #95 and post inline comments. Route opus/medium, that effort."; do
+  out="$(FW_P="${rp}" python3 -c 'import json,os; print(json.dumps({"model":"opus","prompt":os.environ["FW_P"]}))' \
+    | FW_SID=s-review payload s-review-$RANDOM mcp__Claude_Code_Remote__create_session "$(cat)" | run_hook)"
+  assert_ask "${out}" "REVIEW" || fail "a delegated review without the start marker must raise REVIEW: ${rp}"
+  case "${out}" in *"delegated-review.md"*) ;; *) fail "REVIEW must name the template" ;; esac
+done
+pass "a delegated review that skips the template raises REVIEW, naming it"
+
+out="$(payload s-review-ok mcp__Claude_Code_Remote__create_session \
+  '{"model":"opus","prompt":"/code-review 95 --comment. First post a PR comment carrying fw-review-start. Route opus/medium, that effort. PR #95."}' | run_hook)"
+assert_silent "${out}" "a review prompt carrying fw-review-start must pass"
+pass "the template marker satisfies REVIEW"
+
+out="$(payload s-review-no mcp__Claude_Code_Remote__create_session \
+  '{"model":"sonnet","prompt":"Fix the flaky read-meter arm, issue #31. Route sonnet/medium, that effort."}' | run_hook)"
+case "${out}" in *"REVIEW —"*) fail "a non-review prompt must never raise REVIEW" ;; esac
+pass "a non-review prompt never raises REVIEW"
+
 # --- CONTEXT ---------------------------------------------------------------
 out="$(payload s-anchor mcp__Claude_Code_Remote__create_session \
   '{"model":"sonnet","prompt":"Build the thing. Route sonnet/medium, that effort."}' | run_hook)"

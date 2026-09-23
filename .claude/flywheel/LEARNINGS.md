@@ -1009,3 +1009,31 @@ The arms that caught it asserted a *shape* (bare, `bash`-prefixed and
 allowlist that matches nothing else — which is exactly what the first ten arms
 did. When a pattern file is the whole boundary, test the spellings the corpus
 actually uses, not the ones the fixture finds convenient.
+
+## pattern: a template for a repeated step earns its place only with a failure behind it, a check on it, and a pointer to it
+
+<!-- fw: type=pattern; date=2026-09-23; files=skills/review/references/delegated-review.md,skills/review/references/answering-review.md,scripts/fixture-scratch.sh,scripts/delegation-guard.sh; spec=p58-templates-for-repeated-steps; branch=claude/subagentes-detenidos-mut7l8; pr=95; evidence=one session hit the same class three times: a delegated /code-review posted nothing twice, two eval executors were sent to a torn-down dir, and review replies on #95 were assembled from memory -->
+
+A repeated step goes wrong on the same forgotten detail each time: the container
+has no `gh`, a silent child is ambiguous, `--keep` and `--print-prompt` as two
+calls make two dirs. A template stores that detail once and every run inherits
+it. The owner endorsed the practice on 2026-09-23 with three conditions, and
+each one is there because the template is worthless without it:
+
+1. **It is born from a failure, not from anticipation.** Cite the evidence (a
+   PR, a transcript, a count) in the backlog entry that ships it. Templates
+   written "just in case" pile up and nobody maintains them.
+2. **Something checks it was used.** A template that relies on being
+   remembered is the toolbar rule again: an instruction nothing observes. Best
+   is the template living *inside the tool* (`fixture-scratch.sh
+   --executor-prompt`), so there is no other path. Next best is a marker a hook
+   looks for (`fw-review-start`, read by the delegation guard). Weakest is a
+   citation from the skill step (`answering-review.md`). Say which one a
+   template has.
+3. **It is pointed to, never pasted.** It lives in `references/` and is cited
+   from the step that needs it, so it loads only then and counts in that
+   skill's `worst` budget. A pasted copy diverges the first time the original
+   is fixed.
+
+The risk is accumulation: each template is reasonable, and together they make
+the flow heavy. The invocation budget is what keeps that visible.
