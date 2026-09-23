@@ -1,0 +1,1 @@
+{"ts": "2026-09-23T17:44:40Z", "phase": "spec", "state": "completed", "cost": {"bytes_out": 5076, "bytes_in": 5832, "tool_calls": 5, "elapsed_s": 49, "max_read": 3561}, "proved": "spec + plan written; plan-route.sh OK, 4 tasks, riskiest T3; bytes_out estimated from the two files' size"}
