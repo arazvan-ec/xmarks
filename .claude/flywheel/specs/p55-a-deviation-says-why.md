@@ -1,7 +1,7 @@
 # Spec: P55 — a route deviation says why
 
 **Slug:** `p55-a-deviation-says-why` · **Created:** 2026-09-23 · **Backlog:** P55
-**Status:** in progress
+**Status:** shipped as v0.73.0 — metric PASS: 5 new arms green, 30 tests + 13 gates green, work evals 1–2 PASS.
 
 **Prime:** P49 (`check-route-honored.sh`), P53 (delegation participates), and the
 owner's question on 2026-09-23: *"¿no es mejor que se haga con el modelo
