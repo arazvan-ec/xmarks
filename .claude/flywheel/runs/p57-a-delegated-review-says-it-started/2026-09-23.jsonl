@@ -1,1 +1,5 @@
 {"ts":"2026-09-23T19:07:12Z","task":"spec","phase":"spec","state":"completed","route":"opus/medium","cost":{"tool_calls":4},"proved":"owner chose: start comment on the PR, template in the plugin"}
+{"ts":"2026-09-23T19:07:52Z","task":"T1","phase":"work","state":"completed","commit":"3815270","route":"opus/medium","route_reason":"ran below: session effort is medium","cost":{"tool_calls":2},"proved":"first REVIEW arm fails: no ask envelope for /code-review 95 --comment"}
+{"ts":"2026-09-23T19:08:02Z","task":"T2","phase":"work","state":"completed","commit":"6053a0c","route":"opus/medium","cost":{"tool_calls":2},"proved":"test-delegation-guard.sh all assertions passed incl. 3 REVIEW prompts, marker pass, non-review silent"}
+{"ts":"2026-09-23T19:08:23Z","task":"T3","phase":"work","state":"completed","commit":"eeabebc","route":"opus/medium","cost":{"tool_calls":1},"proved":"invocation budget OK with the new reference counted in review worst; docs-consistency green"}
+{"ts":"2026-09-23T19:08:49Z","task":"T4","phase":"ship","state":"completed","route":"opus/medium","cost":{"tool_calls":2},"proved":"bump 0.74.0->0.75.0 with note and backlog row; sweep below"}

@@ -1,7 +1,7 @@
 # Spec: P57 — a delegated review says it started
 
 **Slug:** `p57-a-delegated-review-says-it-started` · **Created:** 2026-09-23 · **Backlog:** P57
-**Status:** in progress
+**Status:** shipped as v0.75.0 — metric PASS: REVIEW arms green, 31 tests + 13 gates green, plugin validate --strict passes.
 
 **Prime:** `scripts/delegation-guard.sh` (P37/P41 ask-only contract), and PR #95.
 

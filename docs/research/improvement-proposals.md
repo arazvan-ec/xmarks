@@ -77,6 +77,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P54 | Two dials nobody but their author has read | 🟡 (b) shipped v0.71.0 · (a) still needs a decision | Both were set inside P48-P53 by the same session that wrote the gates enforcing them, and the review that followed read the code, not the policy. **(a)** What `check-route-honored.sh` calls fatal — three rules — against what it calls a notice; too strict and the habit becomes `SKIP_ROUTE_CHECK`. **(b)** ✅ v0.71.0 — there were **three** copies by v0.70.0, not two. `scripts/cutoffs.txt` declares each with its reason (and states that `route-check` and `phase-required` share a date because one decision placed both); `fw_cutoffs.py` resolves it, env first. An unknown name raises and an empty env var falls through, since `""` compares true against every timestamp. The test pins all three against their pre-extraction literals, so a move is argued, never refactored in. **(a) is still open** and is the actual decision: what route-honored calls fatal versus a notice — too strict and the habit becomes `SKIP_ROUTE_CHECK` |
 | P55 | A route deviation says why | ✅ shipped v0.73.0 | 19 escalations in the tree, 0 reasons, 18 of them `sonnet/medium → opus/high`. `route_reason` is required with `route_escalated_from` or a dropped `+delegate` from the `route-reason` cutoff on, and `check-route-honored.sh` lists every reason so the declines can be studied. Raised by the owner on 2026-09-23 after a session recorded that T1, routed `sonnet/medium`, ran in the main session |
 | P56 | The progress toolbar is enforced, not remembered | ✅ shipped v0.74.0 | The rule lived only in CLAUDE.md and a session with an open 4-task plan skipped it for several turns, then again right after being told. `toolbar.sh` runs as `UserPromptSubmit` (remind with live count) and `Stop` (block a final reply without it). Owner scoped it to the final reply; mid-turn notes exempt. Gap: lists that are not plans are invisible to it |
+| P57 | A delegated review says it started | ✅ shipped v0.75.0 | PR #95: a `/code-review --comment` child session posted nothing and the parent could not tell why. Template `skills/review/references/delegated-review.md` makes the child post a `fw-review-start` comment first via the GitHub MCP tools; the delegation guard asks when a review prompt lacks the marker |
 | P55 | A plan task's `check:` is executed, not read | ✅ shipped v0.70.0 | Every task must carry a `- check:` and nothing ever ran it, so "done" was a model grading its own work over a field that usually already held a command. `check-task-closure.sh` runs it: PASS / FAIL / PENDING / UNRUNNABLE, one row per task, count reconciled. Review found the allowlist was a **prefix** match handed to `bash -c`, so `bash scripts/t.sh && touch PWNED` executed — now operators are refused before the allowlist and what survives runs as argv with no shell |
 | P56 | List intake: a handed list becomes a plan without a REASONS spec | 🟢 spec + plan committed, not built | `plan`'s hard STOP is why an ad-hoc list never becomes a `.plan.md` and so never reaches the closure gate. The guard reuses the tier ladder — a list may skip the spec **iff every item routes T1 or T2** — so the hatch cannot be used for the work the refusal protects. No new artifact and no second verifier. Riskiest task is the fork itself: a guard that can be talked past removes a protection rather than a friction |
 ## Priority overview
@@ -3251,4 +3252,23 @@ of each turn; mid-turn notes exempt.
 **Open.** A scratchpad list (non-cycle work) is invisible to the hook. If that
 gap shows up in practice, the cheapest fix is a marker file the session writes
 when it materializes a list, read by the same hook.
+
+## P57 — a delegated review says it started (✅ shipped v0.75.0)
+
+**Evidence.** PR #95, 2026-09-23: `/code-review 95 --comment` was launched in a
+new cloud session. It went idle after about 8 minutes with nothing on the PR:
+no review, no comment. The container has no `gh`, the prompt never named the
+MCP tools, and the parent had no way to read the child's transcript. Silence
+fitted three different states.
+
+**Change.** A prompt template whose first step is a start comment on the PR
+(marker `fw-review-start`). A failed start comment means stop and report
+instead of reviewing blind. The delegation guard's REVIEW family asks when a
+delegated review prompt skips the marker. Owner decisions: confirm on the PR,
+not by pausing for approval; in the plugin.
+
+**Open.** The guard sees only the prompt. Whether the child actually posted is
+visible to the parent through PR events. A watchdog that flags "no
+`fw-review-start` comment N minutes after the child started" would close the
+loop mechanically, if the manual check proves easy to forget.
 
