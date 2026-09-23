@@ -66,9 +66,9 @@ is not cheap. Compare prices only when two routes are close, with
 
 ```
 mechanism: tool | fresh-session | subagent | here
-route:     <model>/<effort>[+delegate]    (none for a tool; +delegate is tier 1
-           only: the `executor` agent where registered, else a subagent
-           with `model`)
+route:     <model>/<effort>[+delegate]    (none for a tool; +delegate only for a tier-1
+           `subagent`: the `executor` agent where registered, else a
+           subagent with `model`; drop it for any other mechanism)
 why:       one line per decision above
 escalate-if: <what you would see if this was too cheap>
 ```
@@ -76,7 +76,7 @@ escalate-if: <what you would see if this was too cheap>
 Then say how to launch it: the tool command; `create_session` with `model` set
 explicitly (never inherited); `Agent` with `model` and an effort-pinned
 `subagent_type` where one exists; or keep it here, switching this session to
-the route's model first if it runs on another one. The caller decides. This is a
+the route's model and effort first if it runs on others. The caller decides. This is a
 recommendation, not a gate.
 
 **Escalate on evidence, not on worry.** A second red on the same check, or an
