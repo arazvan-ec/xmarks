@@ -1,0 +1,1 @@
+{"ts":"2026-09-23T19:18:45Z","task":"spec","phase":"spec","state":"completed","route":"opus/medium","cost":{"tool_calls":3},"proved":"root cause of the eval workdir error: two separate fixture-scratch calls, the printing one torn down"}
