@@ -1,7 +1,7 @@
 # Spec: route — recommend the mechanism, model and effort for delegated work
 
 **Slug:** `route` · **Created:** 2026-09-23 · **Backlog:** follow-up of P27 (stage routing)
-**Status:** draft — awaiting owner sign-off
+**Status:** signed 2026-09-23 (owner)
 **Prime:** P27 routes every *plan task* through `scripts/route-tiers.txt`, and its
 spec leaves everything outside a plan out of scope ("pillar-2 `run` routing — a
 follow-up once the rubric has evidence"). Child sessions, loose subagents and
@@ -94,4 +94,4 @@ paste into `create_session` or `Agent`, and the caller decides.
 
 ## S — Sign-off
 
-Pending.
+Signed by the owner on 2026-09-23.
