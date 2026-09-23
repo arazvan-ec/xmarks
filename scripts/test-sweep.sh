@@ -113,4 +113,17 @@ RC=0; SWEEP_ROOT="${R}" SWEEP_CLAUDE="${WORK}/bin/fakeclaude" bash "${SWEEP}" >"
 grep -qx '5/5 passed' "${WORK}/out" || fail "the validator counts when it runs: $(cat "${WORK}/out")"
 pass "SKIPPED when absent, run and counted when present"
 
+echo "== inside check-task-closure, the sweep skips that gate and says so =="
+R="$(tree nested)"
+printf '#!/usr/bin/env bash\ntouch "%s/closure.ran"\nexit 1\n' "${R}" > "${R}/scripts/check-task-closure.sh"
+printf '      - name: closure\n        run: bash scripts/check-task-closure.sh\n' >> "${R}/.github/workflows/validate-plugins.yml"
+RC=0; FW_TASK_CLOSURE_ACTIVE=1 SWEEP_ROOT="${R}" SWEEP_CLAUDE="${NOCLAUDE}" bash "${SWEEP}" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -eq 0 ] || fail "nested sweep must not run the enclosing gate: $(cat "${WORK}/out")"
+[ -e "${R}/closure.ran" ] && fail "check-task-closure.sh ran inside check-task-closure"
+grep -q '^SKIPPED bash scripts/check-task-closure.sh' "${WORK}/out" || fail "the skip must be said: $(cat "${WORK}/out")"
+grep -qx '4/4 passed' "${WORK}/out" || fail "a skipped gate is not counted: $(cat "${WORK}/out")"
+RC=0; SWEEP_ROOT="${R}" SWEEP_CLAUDE="${NOCLAUDE}" bash "${SWEEP}" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -eq 1 ] && [ -e "${R}/closure.ran" ] || fail "outside a closure the gate must run: $(cat "${WORK}/out")"
+pass "nested: SKIPPED, not run, not counted; top level: run"
+
 echo "test-sweep: OK"

@@ -16,6 +16,9 @@
 #   --list          print the commands, run nothing
 #   SWEEP_ROOT      repo to sweep (default: this script's repo)
 #   SWEEP_CLAUDE    claude CLI to use (default: claude); absent -> SKIPPED
+#   FW_TASK_CLOSURE_ACTIVE=1   set by check-task-closure.sh for the checks it
+#                   runs: a plan citing this sweep must not re-run that gate from
+#                   inside one of its own tasks (recursion, and its 300s timeout)
 #
 # Exit: 0 all passed · 1 any failed · 2 unusable input
 
@@ -69,6 +72,10 @@ else
 fi
 for c in "${cmds[@]}"; do
   read -ra argv <<<"${c}"
+  if [ "${argv[1]}" = scripts/check-task-closure.sh ] && [ "${FW_TASK_CLOSURE_ACTIVE:-}" = 1 ]; then
+    echo "SKIPPED ${c} (already inside check-task-closure.sh, which grades the plans)"
+    continue
+  fi
   step "${argv[1]}" "${argv[@]}"
 done
 
