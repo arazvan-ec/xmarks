@@ -26,7 +26,8 @@ what tier 1, 2 and 3 mean. Never restate a tier from memory.
    model, it gives the same answer every time, and it does not tire by the
    hundredth item. Name the command.
 2. **The work carries a point of view** (research, grading evidence, adversarial
-   review, synthesis, judging someone else's diff) → `fresh-session`. A subagent
+   review, synthesis that weighs evidence into a verdict, judging someone else's
+   diff) → `fresh-session`. A subagent
    inherits the caller's framing, which is exactly what this work must not start
    from. **Never a `fork`**: it inherits the whole context and ignores `model`.
 3. **Reads or edits with no judgment**, many identical ones or one that would

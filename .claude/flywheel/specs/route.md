@@ -15,7 +15,8 @@ inherits the caller's framing.
 1. **`/flywheel:route <task>`** returns one recommendation for a piece of work
    about to be delegated. There are four fields, each with a one-line reason:
    - `mechanism` — `tool` · `fresh-session` · `subagent` · `here`
-   - `route` — `<model>/<effort>[+delegate]`, the exact grammar `/flywheel:plan` uses
+   - `route` — `<model>/<effort>[+delegate]`, the exact grammar `/flywheel:plan` uses,
+     or `none` when the mechanism is `tool`
    - `why` — the reason for each decision
    - `escalate-if` — the observable signal that the choice was too cheap
 2. **The decision order lives in `skills/route/SKILL.md`, steps 2 and 3, and
