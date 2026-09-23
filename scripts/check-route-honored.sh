@@ -156,8 +156,12 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
         post = str(rec.get("ts") or "") >= CUT
         where = f"{slug} {rec.get('task')!r}"
         got = rec.get("route")
-        planned_id = max(mapped, key=lambda i: tuple(
-            -1 if v is None else v for v in (tasks[i]["rank"] or [None, None])))
+        # Over plan order, never the set: on a tier tie, set iteration follows
+        # PYTHONHASHSEED and one tree got two verdicts. A tie goes to the
+        # non-delegated task, so the delegated one is reported as absorbed.
+        planned_id = max((i for i in tasks if i in mapped), key=lambda i: tuple(
+            -1 if v is None else v for v in (tasks[i]["rank"] or [None, None]))
+            + (0 if tasks[i].get("delegate") else 1,))
         planned = tasks[planned_id]["route"]
         if len(mapped) > 1:
             cheaper = sorted(i for i in mapped if tasks[i]["route"] != planned)

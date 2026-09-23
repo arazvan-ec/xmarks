@@ -116,6 +116,22 @@ grep -qiE "merge|covers|absorb" "${WORK}/out" || fail "the merge must be reporte
 grep -q "T2" "${WORK}/out" || fail "the absorbed task must be named: $(cat "${WORK}/out")"
 pass "a merge is reported and its cheaper task named"
 
+echo "== a merge of two tasks tied on tier gets one verdict, whatever the hash seed =="
+# The planned task used to be max() over a set: on a tier tie, iteration order
+# (PYTHONHASHSEED) picked it, so one tree exited 0 or 1 from run to run.
+R="$(repo tied)"; plan "${R}" alpha "opus/high" "opus/high+delegate"
+line "${R}" alpha T1-T2 "opus/high" "${POST}"
+SEEN=""
+for seed in $(seq 0 15); do
+  RC=0; PYTHONHASHSEED="${seed}" bash "${GATE}" "${R}" >"${WORK}/out" 2>&1 || RC=$?
+  SEEN="${SEEN} ${RC}"
+done
+[ "$(echo "${SEEN}" | tr ' ' '\n' | sort -u | grep -c .)" -eq 1 ] \
+  || fail "one tree, several verdicts across hash seeds:${SEEN}"
+[ "${RC}" -eq 0 ] || fail "a tied merge is a notice, not a failure, got ${RC}: $(cat "${WORK}/out")"
+grep -q "T2 routed cheaper" "${WORK}/out" || fail "the delegated task must be named as absorbed: $(cat "${WORK}/out")"
+pass "a tied merge runs at the non-delegated task and names the delegated one"
+
 echo "== a route the ladder cannot rank is reported, never read as honored =="
 # The fixture must use an effort the ladder genuinely lacks. It used to say
 # `xhigh`, which v0.67.0 added — a stale fixture turns a live assertion into a
