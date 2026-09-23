@@ -18,20 +18,11 @@ inherits the caller's framing.
    - `route` — `<model>/<effort>[+delegate]`, the exact grammar `/flywheel:plan` uses
    - `why` — the reason for each decision
    - `escalate-if` — the observable signal that the choice was too cheap
-2. **The decision has two stages, in a fixed order, and within each the first
-   yes wins.** `skills/route/SKILL.md` steps 2 and 3 are the normative text;
-   this requirement pins their shape.
-   - **Mechanism:** (1) a deterministic tool already does it → `tool`;
-     (2) the work carries a point of view → `fresh-session`, never a subagent
-     and never a `fork`; (3) reads or edits with no judgment, many identical
-     ones or one that would flood the caller's context → `subagent`;
-     (4) anything else → `here`, or `subagent` if it would flood the context.
-   - **Tier**, from `route-tiers.txt`: tier 3 for design, ambiguity, security
-     or data risk, a change that needs design across 3+ modules, or the
-     riskiest step; tier 1 for fully specified work, and always for a
-     mechanism-(3) subagent however wide it fans out, unless one item does not
-     fit tier 1's context; tier 2 otherwise. Tier 3 is checked first, so risk
-     inside an existing module is never tier 2.
+2. **The decision order lives in `skills/route/SKILL.md`, steps 2 and 3, and
+   nowhere else.** It has two stages, mechanism then tier, and within each the
+   first yes wins. This spec does not restate the conditions: every restatement
+   drifted from the skill within one review round. What pins the behaviour is
+   the case table in S, which a fresh session can check.
 3. **Effort before model.** Within a tier, recommend the lowest effort that
    holds; raise effort when the *check* is subtle, not when the work is large.
    Propose a cheaper model only when the next tier down, at the same effort,
@@ -101,8 +92,8 @@ paste into `create_session` or `Agent`, and the caller decides.
 Signed by the owner on 2026-09-23.
 
 Amended the same day, before any release, after rounds of `/code-review` on the
-draft skill: R2 was rewritten to pin the skill's two-stage shape instead of
-restating it; R3's sentence on cheaper models read backwards and now says what
+draft skill: R2 no longer restates the order and points to the skill as its only
+normative text, with the case table as the check; R3's sentence on cheaper models read backwards and now says what
 the owner asked for (measure the higher tier at low effort first); R5 now covers
 every step that needs a price, a context size or a model's effort support. The
 rounds are in the git log of this branch. Flagged to the owner.
