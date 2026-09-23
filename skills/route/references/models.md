@@ -17,8 +17,9 @@ What the numbers mean for a route:
   is often cheaper per completed task than tier 2 run twice.
 - **Haiku has a 200K context and no effort control.** The `low` in tier 1's
   route is nominal, so inside tier 1 the only lever is the model itself. A
-  tier-1 task that must read more than 200K at once goes to tier 2, whatever
-  its difficulty.
+  tier-1 item that does not fit in 200K together with its brief and answer goes
+  to tier 2, whatever its difficulty. This file is the only place that number
+  lives.
 - **Fable is 2.5× Opus.** It is not a tier in `route-tiers.txt`. Use it only
   when the caller asks for it by name, or when tier 3 at `max` has already
   failed the same check.

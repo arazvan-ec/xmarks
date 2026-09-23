@@ -45,8 +45,9 @@ what tier 1, 2 and 3 mean. Never restate a tier from memory.
   `fresh-session` from step 2 is tier 3 unless the work is plainly mechanical.
 - **A step-2.3 subagent stays tier 1 however wide it fans out.** Breadth is not
   difficulty: a recorded rename across 12 files is still fully specified. The
-  one exception is size: a single item over 200K tokens outgrows tier 1's
-  model and goes to tier 2.
+  one exception is size: an item that does not fit tier 1's context, with room
+  left for the brief and the answer, goes to tier 2. Context sizes are in
+  `skills/route/references/models.md`.
 
 **Effort before model.** Recommend the lowest effort that holds within the tier
 (tier 1 has no effort lever: its model takes none, so `low` there is nominal).

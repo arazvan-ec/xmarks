@@ -26,7 +26,8 @@ inherits the caller's framing.
       inherits the whole context and ignores `model`.
    3. Is it reads or edits with no judgment — many identical ones, or one that
       would flood the caller's context? → `subagent` at tier 1, in parallel.
-      Breadth never raises the tier; only an item over 200K tokens does.
+      Breadth never raises the tier; only an item that does not fit tier 1's
+      context (per R5's reference, with room for the brief and the answer) does.
    4. Is it ordinary work inside existing structure? → tier 2.
    5. Is it design, ambiguity, security or data risk, a change that needs
       design across 3+ modules, or the riskiest step? → tier 3.
@@ -102,6 +103,7 @@ backwards ("only when the higher tier at low effort is not enough"). It now says
 what the skill does and the owner asked for: the higher tier at low effort is
 measured first, and a cheaper model is offered only when the tier below would do
 the job. R2.3 and R2.5 were aligned with the skill in the same pass: breadth
-does not raise a mechanical subagent above tier 1 (only an item over 200K tokens
-does), and "3+ modules" means a change that needs design across them. Found by
+does not raise a mechanical subagent above tier 1 (only an item that does not
+fit tier 1's context does, with the size kept in R5's reference so R4 and R5
+hold), and "3+ modules" means a change that needs design across them. Found by
 `/code-review`; flagged to the owner.
