@@ -5,10 +5,13 @@ a diff touches this skill. Not in CI: one iteration (3 evals × with-skill vs
 baseline) costs roughly 300-800k tokens. Full runbook: README.md → "Skill
 evals".
 
-To instantiate an eval: `bash scripts/fixture-scratch.sh verify <id> --keep`
-prints the workdir, and `--print-prompt` emits the prompt with `{{WORKDIR}}`
-already substituted. Point the executor at that copy — never at the fixture
-template.
+To instantiate an eval for a with-skill run: `bash scripts/fixture-scratch.sh verify <id> --executor-prompt`
+keeps the workdir and prints the whole executor prompt, preamble included, in
+ONE call (P58). Two separate calls (`--keep`, then `--print-prompt`) make two
+dirs, and the second is torn down on exit, which is why `--print-prompt` now
+refuses without `--keep` or `--into`. For the baseline arm, use
+`--keep --print-prompt`: the bare prompt, with no pointer to the skill. Point
+the executor at that copy, never at the fixture template.
 
 The exemplary artifacts each eval's grader must be able to pass on are committed
 under `solutions/tally-<case>-ideal/` (pure `overlay/`, since the fixture has

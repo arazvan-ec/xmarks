@@ -19,7 +19,10 @@
 #   --suite            run the skill's suite command in the scratch
 #   --probe <file>     run a probe file in the scratch (repeatable)
 #   --check            run skills/<skill>/evals/check.sh <eval-id> <scratch>
-#   --print-prompt     print the eval's prompt with {{WORKDIR}} substituted
+#   --print-prompt     print the eval's prompt with {{WORKDIR}} substituted;
+#                      needs --keep or --into, since a torn-down dir is no prompt
+#   --executor-prompt  print that prompt inside the executor preamble (read the
+#                      skill's SKILL.md, touch only the workdir); implies --keep
 #   --pristine         copy the fixture and skip the eval's own setup
 #   --into <dir>       populate this caller-owned dir; no mktemp, no teardown
 #   --keep             print the scratch path and skip teardown
@@ -67,7 +70,7 @@ run_in() {
 }
 
 SKILL="" ID="" SOLUTION="" INTO="" MODE=""
-DO_SUITE=0 DO_CHECK=0 DO_PROMPT=0 PRISTINE=0 KEEP=0
+DO_SUITE=0 DO_CHECK=0 DO_PROMPT=0 PRISTINE=0 KEEP=0 EXEC_PROMPT=0
 PROBES=()
 
 usage() { sed -n '2,32p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
@@ -82,6 +85,7 @@ while [ "$#" -gt 0 ]; do
     --suite) DO_SUITE=1 ;;
     --check) DO_CHECK=1 ;;
     --print-prompt) DO_PROMPT=1 ;;
+    --executor-prompt) DO_PROMPT=1; EXEC_PROMPT=1; KEEP=1 ;;
     --pristine) PRISTINE=1 ;;
     --keep) KEEP=1 ;;
     -*) die "unknown option: $1" ;;
@@ -91,6 +95,10 @@ while [ "$#" -gt 0 ]; do
 done
 
 [ -n "${SKILL}" ] && [ -n "${ID}" ] || { usage >&2; die "need <skill> <eval-id>"; }
+# P58: a prompt naming a dir that the teardown deletes sent two executors to a
+# path that did not exist.
+[ "${DO_PROMPT}" -eq 0 ] || [ "${KEEP}" -eq 1 ] || [ -n "${INTO}" ] \
+  || die "--print-prompt names the workdir, which is deleted on exit without --keep or --into (or use --executor-prompt)"
 
 EVALS_DIR="${ROOT}/skills/${SKILL}/evals"
 EVALS_JSON="${EVALS_DIR}/evals.json"
@@ -312,8 +320,14 @@ if [ "${DO_PROMPT}" -eq 1 ]; then
   # error status was swallowed by the echo that followed.
   if ! read_eval prompt | python3 -c '
 import sys
-sys.stdout.write(sys.stdin.read().replace("{{WORKDIR}}", sys.argv[1]) + "\n")
-' "${W}"; then
+body = sys.stdin.read().replace("{{WORKDIR}}", sys.argv[1]).strip()
+if sys.argv[2] == "1":
+    body = ("First read %s fully and follow it as your working method (you may"
+            " consult the references/ files it cites). Then do this task, touching"
+            " ONLY files inside %s:\n\n%s\n\nReport in under 100 words what you did."
+            % (sys.argv[3], sys.argv[1], body))
+sys.stdout.write(body + "\n")
+' "${W}" "${EXEC_PROMPT}" "${ROOT}/skills/${SKILL}/SKILL.md"; then
     step_fail "print-prompt"
   fi
 fi
