@@ -122,6 +122,14 @@ flywheel has exactly two deliberate approval gates, and both are *conversational
 
 The commands the plugin *cannot* know — your test/metric command, your `DATA.md` datastore write path — get their grant at the gate that approves them: `/flywheel:spec` and `/flywheel:process` **offer** at sign-off (never write unasked) to append the matching narrow rule (e.g. `Bash(npm test:*)`) to the project's `.claude/settings.json` `permissions.allow`, committed with the spec/contract; `/flywheel:sync` flags signed pre-v0.28.0 specs/contracts that lack their rule as drift.
 
+## Progress toolbar, enforced (P56, v0.74.0)
+
+While a `.claude/flywheel/specs/<slug>.plan.md` that the current branch touches (vs its base, or uncommitted) still has a task with no transition line, the final reply of each turn must open with `<🟢|⏸️|🔴|🏁> <done>/<total> <bar> · ▶ <item> · «<what, in the owner's words>»`. `scripts/toolbar.sh` enforces it as two hooks: **`UserPromptSubmit`** injects the format and the live count (`slug done/total`, open task ids) as context every prompt, and **`Stop`** blocks (exit 2) a final reply whose first line is not the toolbar or whose total is not the plan's. Mid-turn notes are exempt. `stop_hook_active` never re-traps, and anything it cannot read is a no-op.
+
+## A delegated review says it started (P57, v0.75.0)
+
+A review sent to another session (`create_session`) that posts nothing reads the same whether it found nothing, could not post, or is still running. `skills/review/references/delegated-review.md` is the child's prompt template: post a `🔎 Review started … fw-review-start` comment on the PR **first**, through the GitHub MCP tools (the container has no `gh`), then post the findings as one review with inline comments, or a "no findings" comment. The delegation guard's **REVIEW** family asks when a delegated review prompt lacks `fw-review-start`, naming the template.
+
 ## Deterministic completion gate (opt-in)
 
 Drop an executable `.claude/flywheel/gate.sh` in your project with your verification command (e.g. `npm test && npm run lint`). While it exists **and you've trusted it**, flywheel's `Stop` hook runs it whenever Claude tries to finish and **blocks** finishing if it fails — so nothing is declared "done" with checks red.

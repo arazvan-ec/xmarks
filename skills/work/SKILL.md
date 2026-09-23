@@ -35,7 +35,7 @@ Each task carries `route: <model>/<effort>[+delegate]` from the approved plan. E
 - **`+delegate`** → hand it to the **`executor`** agent with the task's `changes` and `check` verbatim. It returns the check output, or `ESCALATE: <reason>`. Never argue with an escalation — take the task back one tier up.
 - **A route above the session's current tier** → say so and switch, or ask once: `/model opus high`, or `--effort high` for the session.
 - **A route you could not honor** (no permission, agent unavailable) → run at the tier you have and **say which route was not honored**. Never downgrade silently.
-- **A route you ran *above*, or a task folded into a costlier sibling** → record `route_escalated_from`, and give every plan task its own line. An unrecorded upgrade is the mis-route nothing can see.
+- **A route you ran *above*, or a task folded into a costlier sibling** → record `route_escalated_from` + `route_reason` (why), and give every plan task its own line. An unrecorded upgrade is the mis-route nothing can see.
 
 A mis-route you **observed** — a T1 that needed escalating, a T3 that finished cheap — is worth a `decision` learning at compound time.
 

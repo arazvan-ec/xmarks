@@ -42,8 +42,11 @@
 # Usage: check-route-honored.sh [repo-root]
 #   SKIP_ROUTE_CHECK=<reason>     skip with a logged notice, never silently
 #   FLYWHEEL_ROUTE_CHECK_FROM     move the cutoff (default: the P48 constant)
+#   FLYWHEEL_ROUTE_REASON_FROM    move the cutoff from which a deviation needs
+#                                 route_reason (P55; default: cutoffs.txt)
 #
-# Exit: 0 ok · 1 an unrecorded task or an unsaid upgrade after the cutoff
+# Exit: 0 ok · 1 an unrecorded task, an unsaid upgrade, or a deviation with no
+#         route_reason after its cutoff
 #         · 2 unusable input (no python3, or a plan the linter rejects)
 
 set -uo pipefail
@@ -60,13 +63,15 @@ command -v python3 >/dev/null 2>&1 || { echo "route-honored: no python3" >&2; ex
 
 CUT_FROM="$(python3 "${HERE}/fw_cutoffs.py" route-check FLYWHEEL_ROUTE_CHECK_FROM)" || exit 2
 [ -n "${CUT_FROM}" ] || { echo "route-honored: empty cutoff — an empty cut forgives the whole corpus" >&2; exit 2; }
+WHY_FROM="$(python3 "${HERE}/fw_cutoffs.py" route-reason FLYWHEEL_ROUTE_REASON_FROM)" || exit 2
 
 FW_ROOT="${ROOT}" FW_HERE="${HERE}" \
-FW_ROUTE_FROM="${CUT_FROM}" python3 - <<'PY'
+FW_ROUTE_FROM="${CUT_FROM}" FW_REASON_FROM="${WHY_FROM}" python3 - <<'PY'
 import json, os, re, subprocess, sys
 
 root, here = os.environ["FW_ROOT"], os.environ["FW_HERE"]
 CUT = os.environ["FW_ROUTE_FROM"]
+WHY_CUT = os.environ["FW_REASON_FROM"]
 specs = os.path.join(root, ".claude", "flywheel", "specs")
 runs = os.path.join(root, ".claude", "flywheel", "runs")
 
@@ -103,7 +108,7 @@ def delegates(route):
     return bool(m and (m.group(3) or "").strip() == "delegate")
 
 
-fatal, notices, checked, pre = [], [], 0, 0
+fatal, notices, deviations, checked, pre = [], [], [], 0, 0
 no_plan, compared = [], set()
 
 for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
@@ -170,6 +175,15 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
                 notices.append(f"{where} covers {', '.join(sorted(mapped))} and runs at"
                                f" {planned} — {', '.join(cheaper)} routed cheaper and was"
                                f" absorbed, so the tier it bought was never used")
+        if rec.get("route_escalated_from") or (
+                got and tasks[planned_id].get("delegate") and not delegates(got)):
+            reason = str(rec.get("route_reason") or "").strip()
+            if reason:
+                deviations.append(f"{slug} {rec.get('task')} {planned} → {got or '?'}: {reason}")
+            elif binds(rec.get("ts"), WHY_CUT):
+                fatal.append(f"{where} ran {got or 'an unrecorded route'} where the plan routed {planned} with no"
+                             f" route_reason — the record says the ladder was declined"
+                             f" and not why, so the decline cannot be studied (P55)")
         if not got:
             notices.append(f"{where} records no route, so it cannot be compared with"
                            f" the plan's {planned}")
@@ -243,6 +257,9 @@ for f in fatal:
     print(f"route-honored: {f}")
 for n in notices:
     print(f"route-honored: note — {n}")
+
+for v in deviations:
+    print(f"route-honored: deviation — {v}")
 
 for u in uncompared:
     print(f"route-honored: note — {u} has a plan and no usable run record, so none"

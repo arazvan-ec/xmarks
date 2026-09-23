@@ -1,0 +1,5 @@
+{"ts":"2026-09-23T18:17:46Z","task":"spec","phase":"spec","state":"completed","route":"opus/medium","cost":{"tool_calls":8},"proved":"19 escalations in tree, 0 reasons, 18 sonnet/medium->opus/high"}
+{"ts":"2026-09-23T18:17:46Z","task":"T1","phase":"work","state":"completed","commit":"2d8241b","route":"opus/medium","cost":{"tool_calls":1},"proved":"5 new arms; first fails with exit 0 where 1 is wanted; cutoff pin fails on missing row"}
+{"ts":"2026-09-23T18:18:51Z","task":"T2","phase":"work","state":"completed","commit":"8b14a81","route":"opus/medium","cost":{"tool_calls":5},"proved":"all P55 arms green; fw_cutoffs pins four rows; real tree red only on T3/T4 unrecorded"}
+{"ts":"2026-09-23T18:20:00Z","task":"T3","phase":"work","state":"completed","route":"opus/medium","cost":{"tool_calls":3},"proved":"invocation budget OK at work body 5682/5700 after trimming the body clause; detail lives in work-detail.md"}
+{"ts":"2026-09-23T18:21:01Z","task":"T4","phase":"ship","state":"completed","route":"opus/medium","cost":{"tool_calls":9},"proved":"release-bump 0.72.0->0.73.0 OK; docs-consistency, version-citations green; work evals 1 and 2 graded PASS by check.sh"}

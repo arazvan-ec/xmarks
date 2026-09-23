@@ -75,6 +75,10 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P52 | A gate in the tree is a gate CI runs | ✅ shipped v0.68.0 | `check-supply-chain-pin.sh` — *"the only Critical in the pillar-2 threat model"* by its own header — was invoked by **no workflow**: it appeared in `.github/workflows/` twice, both times in a **comment**. Tested, passing, never executed. `check-ci-gate-parity.sh` now asserts both directions (every gate wired; every wired gate exists), strips comment lines because that is the whole defect, and is wired alongside the Critical gate so it polices its own enforcement. The hand-written step list is kept on purpose — a glob loop would call the two base-ref gates without their argument and leave them green having compared nothing |
 | P53 | Three findings from review, each reproduced first | ✅ shipped v0.69.0 | Codex on PR #91, all three confirmed on fixtures before any change: the `+delegate` suffix was discarded in the route comparison, so a plan buying `haiku/low+delegate` against a record saying `haiku/low` passed as **honored** — a subagent that never ran, reported as success; a plan with no run directory was never reached at all (**12** of them, not the 7 a hand count found); and the meter's inclusive `>= since` handed the previous transition's calls to the next one, reporting `max_read=50000` for a transition that never made that call |
 | P54 | Two dials nobody but their author has read | 🟡 (b) shipped v0.71.0 · (a) still needs a decision | Both were set inside P48-P53 by the same session that wrote the gates enforcing them, and the review that followed read the code, not the policy. **(a)** What `check-route-honored.sh` calls fatal — three rules — against what it calls a notice; too strict and the habit becomes `SKIP_ROUTE_CHECK`. **(b)** ✅ v0.71.0 — there were **three** copies by v0.70.0, not two. `scripts/cutoffs.txt` declares each with its reason (and states that `route-check` and `phase-required` share a date because one decision placed both); `fw_cutoffs.py` resolves it, env first. An unknown name raises and an empty env var falls through, since `""` compares true against every timestamp. The test pins all three against their pre-extraction literals, so a move is argued, never refactored in. **(a) is still open** and is the actual decision: what route-honored calls fatal versus a notice — too strict and the habit becomes `SKIP_ROUTE_CHECK` |
+| P55 | A route deviation says why | ✅ shipped v0.73.0 | 19 escalations in the tree, 0 reasons, 18 of them `sonnet/medium → opus/high`. `route_reason` is required with `route_escalated_from` or a dropped `+delegate` from the `route-reason` cutoff on, and `check-route-honored.sh` lists every reason so the declines can be studied. Raised by the owner on 2026-09-23 after a session recorded that T1, routed `sonnet/medium`, ran in the main session |
+| P56 | The progress toolbar is enforced, not remembered | ✅ shipped v0.74.0 | The rule lived only in CLAUDE.md and a session with an open 4-task plan skipped it for several turns, then again right after being told. `toolbar.sh` runs as `UserPromptSubmit` (remind with live count) and `Stop` (block a final reply without it). Owner scoped it to the final reply; mid-turn notes exempt. Gap: lists that are not plans are invisible to it |
+| P57 | A delegated review says it started | ✅ shipped v0.75.0 | PR #95: a `/code-review --comment` child session posted nothing and the parent could not tell why. Template `skills/review/references/delegated-review.md` makes the child post a `fw-review-start` comment first via the GitHub MCP tools; the delegation guard asks when a review prompt lacks the marker |
+| P58 | Templates for two steps that went wrong by hand | ✅ shipped v0.76.0 | Eval executors were sent to a torn-down workdir (two fixture-scratch calls), and review replies on #95 were assembled from memory. `--executor-prompt` puts the executor template in the tool, `--print-prompt` refuses a doomed dir, and `answering-review.md` is cited from `/flywheel:review`. The practice's three conditions are in the ledger |
 | P55 | A plan task's `check:` is executed, not read | ✅ shipped v0.70.0 | Every task must carry a `- check:` and nothing ever ran it, so "done" was a model grading its own work over a field that usually already held a command. `check-task-closure.sh` runs it: PASS / FAIL / PENDING / UNRUNNABLE, one row per task, count reconciled. Review found the allowlist was a **prefix** match handed to `bash -c`, so `bash scripts/t.sh && touch PWNED` executed — now operators are refused before the allowlist and what survives runs as argv with no shell |
 | P56 | List intake: a handed list becomes a plan without a REASONS spec | 🟢 spec + plan committed, not built | `plan`'s hard STOP is why an ad-hoc list never becomes a `.plan.md` and so never reaches the closure gate. The guard reuses the tier ladder — a list may skip the spec **iff every item routes T1 or T2** — so the hatch cannot be used for the work the refusal protects. No new artifact and no second verifier. Riskiest task is the fork itself: a guard that can be talked past removes a protection rather than a friction |
 ## Priority overview
@@ -3210,3 +3214,79 @@ Two things about it deserve an owner:
 both gates reading it — and a test that a gate cannot fall back to a literal of
 its own. The duplication is harmless *today* precisely because both copies say
 the same thing, which is also the reason nobody would notice the day they stop.
+
+## P55 — a route deviation says why (✅ shipped v0.73.0)
+
+**Evidence.** On 2026-09-23 the owner saw a session correct its T1 telemetry:
+routed `sonnet/medium`, it had run in the main session, and recording the plan's
+route "would be false". The honesty was right; the question it left — *"¿no es
+mejor que se haga con el modelo planeado?"* — had no data behind it. The tree's
+record of every past decline: 19 lines with `route_escalated_from`, 0 with a
+reason, 18 of them `sonnet/medium → opus/high`, 1 `haiku/low+delegate →
+opus/high`.
+
+**Change.** `route_reason` is required with `route_escalated_from` or a dropped
+`+delegate`, fatal from its own cutoff, and the gate prints each reason.
+
+**What to do with it.** After a handful of post-cutoff cycles, read
+`bash scripts/check-route-honored.sh | grep deviation` and sort the reasons.
+If most say "too small to delegate", the plan's rubric is routing trivial tasks
+to a subagent and should stop; if most say "needed more judgment", the rubric is
+under-routing; if they are vague, the field needs a closed vocabulary. The
+decision belongs to that data, not to this entry.
+
+## P56 — the progress toolbar is enforced, not remembered (✅ shipped v0.74.0)
+
+**Evidence.** 2026-09-23: a session wrote a 4-task P55 plan and answered for
+several turns without the toolbar. Asked why, it put the line on the apology and
+omitted it from the next note. Cause: the rule was in CLAUDE.md only — loaded at
+session start, far back in context by the time it binds, and checked by nothing.
+
+**Change.** `scripts/toolbar.sh` as two hooks. `UserPromptSubmit` keeps the rule
+at the end of context with the live count; `Stop` refuses a final reply that
+does not open with it. The open list is read from state (a plan the branch
+touches with unrecorded tasks), never from the conversation.
+
+**Owner decisions.** In the plugin, not repo-local. Required on the final reply
+of each turn; mid-turn notes exempt.
+
+**Open.** A scratchpad list (non-cycle work) is invisible to the hook. If that
+gap shows up in practice, the cheapest fix is a marker file the session writes
+when it materializes a list, read by the same hook.
+
+## P57 — a delegated review says it started (✅ shipped v0.75.0)
+
+**Evidence.** PR #95, 2026-09-23: `/code-review 95 --comment` was launched in a
+new cloud session. It went idle after about 8 minutes with nothing on the PR:
+no review, no comment. The container has no `gh`, the prompt never named the
+MCP tools, and the parent had no way to read the child's transcript. Silence
+fitted three different states.
+
+**Change.** A prompt template whose first step is a start comment on the PR
+(marker `fw-review-start`). A failed start comment means stop and report
+instead of reviewing blind. The delegation guard's REVIEW family asks when a
+delegated review prompt skips the marker. Owner decisions: confirm on the PR,
+not by pausing for approval; in the plugin.
+
+**Open.** The guard sees only the prompt. Whether the child actually posted is
+visible to the parent through PR events. A watchdog that flags "no
+`fw-review-start` comment N minutes after the child started" would close the
+loop mechanically, if the manual check proves easy to forget.
+
+## P58 — templates for two steps that went wrong by hand (✅ shipped v0.76.0)
+
+**Evidence.** 2026-09-23. `fixture-scratch.sh work 1 --keep` and then
+`--print-prompt` as a second call produced two scratch dirs. The one in the
+printed prompt was torn down, and both executors reported a missing directory.
+On PR #95 three Codex findings were answered by a procedure held only in memory.
+
+**Change.** The executor preamble moves into `fixture-scratch.sh
+--executor-prompt` (one call, the dir kept), and a prompt naming a doomed dir
+is refused. `answering-review.md` gives the per-thread order.
+
+**How strong each check is.** Of the three templates this session shipped, the
+executor prompt is enforced by construction, since the tool is the only path.
+The delegated review is enforced by a marker the guard reads. The review-answer
+procedure is cited from the skill step and nothing more. If it is skipped in
+practice, the next step is a marker in replies that a check can read.
+

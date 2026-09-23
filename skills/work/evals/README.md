@@ -4,9 +4,13 @@ Manual release gate for `skills/work` — run before bumping the version when a
 diff touches this skill. Not in CI (see README.md → "Skill evals" for cost and
 runbook).
 
-To instantiate an eval: `bash scripts/fixture-scratch.sh work <id> --keep`
-prints the workdir, and `--print-prompt` emits the prompt with `{{WORKDIR}}`
-substituted. Point the executor at that copy.
+To instantiate an eval for a with-skill run: `bash scripts/fixture-scratch.sh work <id> --executor-prompt`
+keeps the workdir and prints the whole executor prompt, preamble included, in
+ONE call (P58). Two separate calls (`--keep`, then `--print-prompt`) make two
+dirs, and the second is torn down on exit, which is why `--print-prompt` now
+refuses without `--keep` or `--into`. For the baseline arm, use
+`--keep --print-prompt`: the bare prompt, with no pointer to the skill. Point
+the executor at that copy, never at the fixture template.
 
 The ideal outcome per eval is committed under `solutions/cart-<case>-ideal/`:
 two `patch/` entries and an `apply.sh` that writes the red→green `.check-log`
