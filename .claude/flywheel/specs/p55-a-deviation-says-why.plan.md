@@ -4,7 +4,7 @@ Spec: `.claude/flywheel/specs/p55-a-deviation-says-why.md`
 
 ### T1 — Red: the reason arms
 
-- route: `opus/medium`
+- route: `opus/high`
 - risk: highest
 - check: `bash scripts/test-check-route-honored.sh` fails on the new arms only.
 
