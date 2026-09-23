@@ -27,4 +27,6 @@ If dispatch is unavailable in this context — no `Task` tool, so nothing can be
 
 Synthesize their findings into one prioritized list: deduplicated and sorted by severity (Critical → High → Medium → Low). For each finding give `file:line`, a one-line problem statement, and a concrete fix.
 
+Findings posted on a PR (by a person, Codex or `/code-review --comment`) are answered per `references/answering-review.md`: reproduce each one red, fix, reply on each thread naming the commit, then push and resolve.
+
 GATE: unresolved **Critical/High** findings block `/flywheel:compound` and shipping — either fix them (loop back to `/flywheel:work`) or get an explicit waiver from the user with a stated reason. Medium/Low can be logged as follow-ups.
