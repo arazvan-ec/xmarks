@@ -1,7 +1,7 @@
 # Spec: P59 — a renumber is performed, not remembered
 
 **Slug:** `p59-a-renumber-is-performed` · **Created:** 2026-09-23 · **Backlog:** P59
-**Status:** spec + plan committed, not built. It builds after P60, and its release check uses `sweep.sh`.
+**Status:** ✅ shipped v0.78.0 — `scripts/renumber.sh` + `skills/ship/references/renumber.md`. T4 ran the sweep by hand: `sweep.sh` (P60) was not yet merged.
 
 **Prime:** `docs/research/template-opportunities-2026-09.md` § P59, and the owner's
 decision (2026-09-23): the script does the mechanics, the AI classifies what needs
