@@ -75,6 +75,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P52 | A gate in the tree is a gate CI runs | ✅ shipped v0.68.0 | `check-supply-chain-pin.sh` — *"the only Critical in the pillar-2 threat model"* by its own header — was invoked by **no workflow**: it appeared in `.github/workflows/` twice, both times in a **comment**. Tested, passing, never executed. `check-ci-gate-parity.sh` now asserts both directions (every gate wired; every wired gate exists), strips comment lines because that is the whole defect, and is wired alongside the Critical gate so it polices its own enforcement. The hand-written step list is kept on purpose — a glob loop would call the two base-ref gates without their argument and leave them green having compared nothing |
 | P53 | Three findings from review, each reproduced first | ✅ shipped v0.69.0 | Codex on PR #91, all three confirmed on fixtures before any change: the `+delegate` suffix was discarded in the route comparison, so a plan buying `haiku/low+delegate` against a record saying `haiku/low` passed as **honored** — a subagent that never ran, reported as success; a plan with no run directory was never reached at all (**12** of them, not the 7 a hand count found); and the meter's inclusive `>= since` handed the previous transition's calls to the next one, reporting `max_read=50000` for a transition that never made that call |
 | P54 | Two dials nobody but their author has read | 🟡 (b) shipped v0.71.0 · (a) still needs a decision | Both were set inside P48-P53 by the same session that wrote the gates enforcing them, and the review that followed read the code, not the policy. **(a)** What `check-route-honored.sh` calls fatal — three rules — against what it calls a notice; too strict and the habit becomes `SKIP_ROUTE_CHECK`. **(b)** ✅ v0.71.0 — there were **three** copies by v0.70.0, not two. `scripts/cutoffs.txt` declares each with its reason (and states that `route-check` and `phase-required` share a date because one decision placed both); `fw_cutoffs.py` resolves it, env first. An unknown name raises and an empty env var falls through, since `""` compares true against every timestamp. The test pins all three against their pre-extraction literals, so a move is argued, never refactored in. **(a) is still open** and is the actual decision: what route-honored calls fatal versus a notice — too strict and the habit becomes `SKIP_ROUTE_CHECK` |
+| P55 | A route deviation says why | ✅ shipped v0.73.0 | 19 escalations in the tree, 0 reasons, 18 of them `sonnet/medium → opus/high`. `route_reason` is required with `route_escalated_from` or a dropped `+delegate` from the `route-reason` cutoff on, and `check-route-honored.sh` lists every reason so the declines can be studied. Raised by the owner on 2026-09-23 after a session recorded that T1, routed `sonnet/medium`, ran in the main session |
 | P55 | A plan task's `check:` is executed, not read | ✅ shipped v0.70.0 | Every task must carry a `- check:` and nothing ever ran it, so "done" was a model grading its own work over a field that usually already held a command. `check-task-closure.sh` runs it: PASS / FAIL / PENDING / UNRUNNABLE, one row per task, count reconciled. Review found the allowlist was a **prefix** match handed to `bash -c`, so `bash scripts/t.sh && touch PWNED` executed — now operators are refused before the allowlist and what survives runs as argv with no shell |
 | P56 | List intake: a handed list becomes a plan without a REASONS spec | 🟢 spec + plan committed, not built | `plan`'s hard STOP is why an ad-hoc list never becomes a `.plan.md` and so never reaches the closure gate. The guard reuses the tier ladder — a list may skip the spec **iff every item routes T1 or T2** — so the hatch cannot be used for the work the refusal protects. No new artifact and no second verifier. Riskiest task is the fork itself: a guard that can be talked past removes a protection rather than a friction |
 ## Priority overview
@@ -3210,3 +3211,24 @@ Two things about it deserve an owner:
 both gates reading it — and a test that a gate cannot fall back to a literal of
 its own. The duplication is harmless *today* precisely because both copies say
 the same thing, which is also the reason nobody would notice the day they stop.
+
+## P55 — a route deviation says why (✅ shipped v0.73.0)
+
+**Evidence.** On 2026-09-23 the owner saw a session correct its T1 telemetry:
+routed `sonnet/medium`, it had run in the main session, and recording the plan's
+route "would be false". The honesty was right; the question it left — *"¿no es
+mejor que se haga con el modelo planeado?"* — had no data behind it. The tree's
+record of every past decline: 19 lines with `route_escalated_from`, 0 with a
+reason, 18 of them `sonnet/medium → opus/high`, 1 `haiku/low+delegate →
+opus/high`.
+
+**Change.** `route_reason` is required with `route_escalated_from` or a dropped
+`+delegate`, fatal from its own cutoff, and the gate prints each reason.
+
+**What to do with it.** After a handful of post-cutoff cycles, read
+`bash scripts/check-route-honored.sh | grep deviation` and sort the reasons.
+If most say "too small to delegate", the plan's rubric is routing trivial tasks
+to a subagent and should stop; if most say "needed more judgment", the rubric is
+under-routing; if they are vague, the field needs a closed vocabulary. The
+decision belongs to that data, not to this entry.
+
