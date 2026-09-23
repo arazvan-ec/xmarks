@@ -105,6 +105,15 @@ run "${WORK}/e"; rc 0
 says "UNRUNNABLE"
 pass "pre-cutoff corpus is named and counted without reddening the gate"
 
+echo "== an author date with an offset is placed by its instant, not its text =="
+# 22:00-03:00 is 01:00Z, after a 00:00Z cut. As text it sorts before the cut,
+# which read a plan added after the rule as corpus and forgave its prose check.
+plan "${WORK}/tz" "2026-09-20T22:00:00-0300" \
+  '### T1 — offset' '- route: `opus/high`' '- risk: highest' '- check: the operator agreed.'
+RC=0; FLYWHEEL_TASK_CLOSURE_FROM=2026-09-21T00:00:00Z bash "${GATE}" "${WORK}/tz" >"${WORK}/out" 2>&1 || RC=$?
+rc 1; denies "pre-cutoff corpus"
+pass "a post-cutoff plan with an offset author date is graded, not forgiven"
+
 echo "== rows equal tasks: nothing collapses two items into one line =="
 plan "${WORK}/f" "${NOW}" \
   '### T1 — one' '- route: `sonnet/medium`' '- check: `true`' \

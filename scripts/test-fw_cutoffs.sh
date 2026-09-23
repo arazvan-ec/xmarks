@@ -79,4 +79,38 @@ sys.exit(1 if bad else 0)
 PY
 pass "every row is <name> <instant> <reason>"
 
+echo "== binds() compares instants, through the one parser every gate uses =="
+FW_HERE="${SRC}/scripts" python3 - <<'PY' || fail "binds() must place a timestamp by its instant"
+import os, sys
+sys.path.insert(0, os.environ["FW_HERE"])
+from fw_cutoffs import binds
+CUT = "2026-09-17T20:00:00Z"
+cases = [
+    ("2026-09-17T20:00:00Z", True),        # at the cut
+    ("2026-09-17T20:00:00.5Z", True),      # as text, sorts before the cut
+    ("2026-09-17T19:59:59.999999Z", False),
+    ("2026-09-17T17:30:00-03:00", True),   # 20:30Z; as text, before
+    ("2026-09-17T20:30:00+02:00", False),  # 18:30Z; as text, after
+    ("2026-09-17T20:00:00+00:00", True),
+    ("2026-09-17T20:00:00", True),         # naive reads as UTC
+    ("", False),                           # absent: the telemetry gate's to fail
+    ("not-a-time", True),                  # unplaceable: never buys forgiveness
+]
+bad = [(ts, want) for ts, want in cases if binds(ts, CUT) is not want]
+for ts, want in bad:
+    print(f"FAIL: binds({ts!r}, {CUT!r}) should be {want}", file=sys.stderr)
+try:
+    binds("2026-09-18T00:00:00Z", "yesterday")
+    print("FAIL: an unparsable cut must raise, not compare", file=sys.stderr); bad.append(1)
+except ValueError:
+    pass
+sys.exit(1 if bad else 0)
+PY
+pass "fractional seconds, offsets and naive times are placed by instant; a bad cut raises"
+
+echo "== an override that is not an instant fails loudly, before any gate compares =="
+RC=0; out="$(FW_X=yesterday python3 "${CUT}" route-check FW_X 2>&1)" || RC=$?
+[ "${RC}" -eq 2 ] || fail "an unparsable override must exit 2, got ${RC}: ${out}"
+pass "a malformed cut exits 2 instead of comparing as text"
+
 echo "fw-cutoffs: all assertions passed"

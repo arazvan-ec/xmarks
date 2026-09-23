@@ -205,6 +205,19 @@ RC=0; FLYWHEEL_PHASE_REQUIRED_FROM=2026-01-01T00:00:00Z bash "${GATE}" "${R}" >"
 [ "${RC}" -eq 1 ] || fail "the same line must fail under an earlier cutoff, got ${RC}: $(cat "${WORK}/out")"
 pass "the cutoff is one constant, and it is what decides"
 
+echo "== the cutoff compares instants, not strings =="
+# As text, "20:00:00.5Z" sorts before "20:00:00Z" and "17:30-03:00" before
+# "20:00Z", though both are after the cut; "20:30+02:00" sorts after, though
+# it is 18:30Z. Each case is one line so the verdict is that line's alone.
+for c in "2026-09-17T20:00:00.5Z:1" "2026-09-17T17:30:00-03:00:1" "2026-09-17T20:30:00+02:00:0" "not-a-time:1"; do
+  ts="${c%:*}"; want="${c##*:}"
+  R="$(repo "inst-${want}-$(echo "${ts}" | tr -c 'a-zA-Z0-9' _)")"; spec "${R}" alpha
+  telemetry "${R}" alpha '{"ts":"'"${ts}"'","state":"completed","task":3,"cost":{"bytes_out":1}}'
+  RC=0; FLYWHEEL_PHASE_REQUIRED_FROM=2026-09-17T20:00:00Z bash "${GATE}" "${R}" >"${WORK}/out" 2>&1 || RC=$?
+  [ "${RC}" -eq "${want}" ] || fail "a phase-less line at ${ts} must exit ${want}, got ${RC}: $(cat "${WORK}/out")"
+done
+pass "fractional seconds and offsets are placed by their instant; an unplaceable ts binds"
+
 echo "== a baselined slug's post-cutoff phase-less line is a notice, not a failure =="
 R="$(repo exemptphase)"; spec "${R}" alpha
 telemetry "${R}" alpha '{"ts":"2026-09-18T10:00:00Z","state":"completed","task":3,"phase":"work","cost":{"bytes_out":1}}'

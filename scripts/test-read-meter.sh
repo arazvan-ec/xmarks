@@ -292,9 +292,17 @@ pass "no counter reports UNMEASURED for the new fields too, never max_read=0"
 # --- P53/Codex: the boundary second belongs to the transition that ended -----
 feed s53 Bash '{"stdout":"'"$(printf 'a%.0s' $(seq 1 900))"'","stderr":""}'
 feed s53 Read '{"type":"text","file":{"filePath":"/p/x","content":"'"$(printf 'b%.0s' $(seq 1 30))"'"}}'
+# The arm's claim is about calls sharing the cut second, so the fixture pins
+# that: the meter stamps with the wall clock, which ticks between two feeds
+# often enough to have turned main red after #91.
 S53TS="$(FW_F="$(meter_for s53)" python3 -c '
 import json, os
-rows = [json.loads(l) for l in open(os.environ["FW_F"], encoding="utf-8") if l.strip()]
+p = os.environ["FW_F"]
+rows = [json.loads(l) for l in open(p, encoding="utf-8") if l.strip()]
+for r in rows:
+    r["ts"] = rows[0]["ts"]
+with open(p, "w", encoding="utf-8") as fh:
+    fh.writelines(json.dumps(r) + "\n" for r in rows)
 print(rows[0]["ts"])')"
 
 echo "== an explicit --since excludes the boundary second =="

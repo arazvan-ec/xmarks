@@ -116,6 +116,32 @@ grep -qiE "merge|covers|absorb" "${WORK}/out" || fail "the merge must be reporte
 grep -q "T2" "${WORK}/out" || fail "the absorbed task must be named: $(cat "${WORK}/out")"
 pass "a merge is reported and its cheaper task named"
 
+echo "== a merge of two tasks tied on tier gets one verdict, whatever the hash seed =="
+# The planned task used to be max() over a set: on a tier tie, iteration order
+# (PYTHONHASHSEED) picked it, so one tree exited 0 or 1 from run to run.
+R="$(repo tied)"; plan "${R}" alpha "opus/high" "opus/high+delegate"
+line "${R}" alpha T1-T2 "opus/high" "${POST}"
+SEEN=""
+for seed in $(seq 0 15); do
+  RC=0; PYTHONHASHSEED="${seed}" bash "${GATE}" "${R}" >"${WORK}/out" 2>&1 || RC=$?
+  SEEN="${SEEN} ${RC}"
+done
+[ "$(echo "${SEEN}" | tr ' ' '\n' | sort -u | grep -c .)" -eq 1 ] \
+  || fail "one tree, several verdicts across hash seeds:${SEEN}"
+[ "${RC}" -eq 0 ] || fail "a tied merge is a notice, not a failure, got ${RC}: $(cat "${WORK}/out")"
+grep -q "T2 routed cheaper" "${WORK}/out" || fail "the delegated task must be named as absorbed: $(cat "${WORK}/out")"
+pass "a tied merge runs at the non-delegated task and names the delegated one"
+
+echo "== a timestamp with an offset is placed by its instant, not its text =="
+# 17:30-03:00 is 20:30Z, after the 20:00Z cut; as text it sorts before it, and
+# an unsaid upgrade was downgraded from a failure to a pre-cutoff notice.
+R="$(repo offset)"; plan "${R}" alpha "opus/high" "sonnet/medium"
+line "${R}" alpha T1 "opus/high" "${POST}"
+line "${R}" alpha T2 "opus/high" "2026-09-17T17:30:00-03:00"
+run "${R}"
+[ "${RC}" -eq 1 ] || fail "a post-cutoff upgrade with an offset ts must fail, got ${RC}: $(cat "${WORK}/out")"
+pass "an offset timestamp after the cut binds"
+
 echo "== a route the ladder cannot rank is reported, never read as honored =="
 # The fixture must use an effort the ladder genuinely lacks. It used to say
 # `xhigh`, which v0.67.0 added — a stale fixture turns a live assertion into a
