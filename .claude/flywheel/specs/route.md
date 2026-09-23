@@ -70,7 +70,7 @@ contracts.
 | 1 | Check whether 300 URLs still respond | tool | — |
 | 2 | Confirm that a quoted figure appears on the cited page, ×200 | subagent | 1 |
 | 3 | Find counter-evidence for hypothesis H3 | fresh-session | 3 |
-| 4 | Rename a function across 12 files | subagent | 1 |
+| 4 | Rename a function across 12 files | tool | — |
 | 5 | Add one validation rule to an existing parser, test-first | here | 2 |
 | 6 | Design the persistence schema for a new process | here | 3 |
 | 7 | Independent review of a PR's diff | fresh-session | 3 |
@@ -106,7 +106,9 @@ Mechanism 7/8, tier 7/8, against thresholds of 7 and 6. The one miss is case 4:
 the session answered `tool` (sed or an LSP rename) where the table expects a
 tier-1 subagent. It followed "first yes wins" correctly; the skill's own
 example ("apply this recorded rename") contradicted its step 1. The example
-was changed after the run, and the expected answer for case 4 was not, so the
-table still records what was measured. The same run surfaced three more
-ambiguities, fixed in the same commit: `here` with a route the caller cannot
-act on, whether a tier's effort is a floor, and an undefined `+delegate`.
+was changed after the run, and case 4's expected answer was then revised to
+`tool`: the old one contradicted the skill's own step 1, and the measured
+answer is what that rule gives. This is a revision after measurement, recorded
+here so it is not read as a result. The same run surfaced three more
+ambiguities, fixed afterwards: how to launch `here` when this session runs on
+another model, whether a tier's effort is a floor, and an undefined `+delegate`.

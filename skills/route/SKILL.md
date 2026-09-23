@@ -35,8 +35,7 @@ what tier 1, 2 and 3 mean. Never restate a tier from memory.
    step 1, not this one → `subagent` at tier 1,
    in parallel. Being expensive does not make a model better at reading.
 4. **Anything else** → `here`, or `subagent` if it would flood this context with
-   reading. Then pick the tier in step 3. `here` runs on this session's model:
-   if that is not the tier step 3 picks, make it a `subagent` at that tier.
+   reading. Then pick the tier in step 3.
 
 ## 3. Pick the tier, then the effort
 
@@ -48,7 +47,7 @@ Check tier 3 first, so risk inside an existing module is never tier 2.
   a change that needs design across 3+ modules, or the riskiest step. A
   `fresh-session` from step 2 is tier 3 unless the work is plainly mechanical.
 - **A step-2.3 subagent stays tier 1 however wide it fans out.** Breadth is not
-  difficulty: a recorded rename across 12 files is still fully specified. The
+  difficulty: a recorded recipe applied to 12 files is still fully specified. The
   one exception is size: an item that does not fit tier 1's context, with room
   left for the brief and the answer, goes to tier 2. Context sizes are in
   `skills/route/references/models.md`.
@@ -67,15 +66,17 @@ is not cheap. Compare prices only when two routes are close, with
 
 ```
 mechanism: tool | fresh-session | subagent | here
-route:     <model>/<effort>[+delegate]    (none for a tool; +delegate = the
-           `executor` agent where registered, else a subagent with `model`)
+route:     <model>/<effort>[+delegate]    (none for a tool; +delegate is tier 1
+           only: the `executor` agent where registered, else a subagent
+           with `model`)
 why:       one line per decision above
 escalate-if: <what you would see if this was too cheap>
 ```
 
 Then say how to launch it: the tool command; `create_session` with `model` set
 explicitly (never inherited); `Agent` with `model` and an effort-pinned
-`subagent_type` where one exists; or keep it here. The caller decides. This is a
+`subagent_type` where one exists; or keep it here, switching this session to
+the route's model first if it runs on another one. The caller decides. This is a
 recommendation, not a gate.
 
 **Escalate on evidence, not on worry.** A second red on the same check, or an
