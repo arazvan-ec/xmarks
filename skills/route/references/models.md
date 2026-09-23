@@ -15,8 +15,10 @@ What the numbers mean for a route:
 
 - **Opus costs twice Sonnet, not five times.** At this gap, tier 3 at low effort
   is often cheaper per completed task than tier 2 run twice.
-- **Haiku has a 200K context and no effort control.** A tier-1 task that must
-  read more than that at once goes to tier 2, whatever its difficulty.
+- **Haiku has a 200K context and no effort control.** The `low` in tier 1's
+  route is nominal, so inside tier 1 the only lever is the model itself. A
+  tier-1 task that must read more than 200K at once goes to tier 2, whatever
+  its difficulty.
 - **Fable is 2.5× Opus.** It is not a tier in `route-tiers.txt`. Use it only
   when the caller asks for it by name, or when tier 3 at `max` has already
   failed the same check.

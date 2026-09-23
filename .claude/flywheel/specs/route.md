@@ -31,8 +31,8 @@ inherits the caller's framing.
       riskiest step? → tier 3.
 3. **Effort before model.** Within a tier, recommend the lowest effort that
    holds; raise effort when the *check* is subtle, not when the work is large.
-   Propose a cheaper model only when the higher tier at low effort is not
-   enough. The cost that counts is cost per **completed** task, not per call:
+   Propose a cheaper model only when the next tier down, at the same effort,
+   would do the job: measure the higher tier at low effort first. The cost that counts is cost per **completed** task, not per call:
    a cheap model that needs a retry is not cheap.
 4. **`scripts/route-tiers.txt` stays the single authority** on what a tier is.
    The skill reads it; it never restates a tier as a rule of its own.
@@ -95,3 +95,9 @@ paste into `create_session` or `Agent`, and the caller decides.
 ## S — Sign-off
 
 Signed by the owner on 2026-09-23.
+
+Amended the same day, before any release: R3's sentence on cheaper models read
+backwards ("only when the higher tier at low effort is not enough"). It now says
+what the skill does and the owner asked for: the higher tier at low effort is
+measured first, and a cheaper model is offered only when the tier below would do
+the job. Found by `/code-review`; flagged to the owner.
