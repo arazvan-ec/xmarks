@@ -24,11 +24,12 @@ inherits the caller's framing.
       framing (research, adversarial review, grading, synthesis)? →
       `fresh-session`. It is never a subagent, and never a `fork`: a fork
       inherits the whole context and ignores `model`.
-   3. Is it many identical, independent reads with no judgment? → `subagent`
-      at tier 1, in parallel.
+   3. Is it reads or edits with no judgment — many identical ones, or one that
+      would flood the caller's context? → `subagent` at tier 1, in parallel.
+      Breadth never raises the tier; only an item over 200K tokens does.
    4. Is it ordinary work inside existing structure? → tier 2.
-   5. Is it design, ambiguity, security or data risk, 3+ modules, or the
-      riskiest step? → tier 3.
+   5. Is it design, ambiguity, security or data risk, a change that needs
+      design across 3+ modules, or the riskiest step? → tier 3.
 3. **Effort before model.** Within a tier, recommend the lowest effort that
    holds; raise effort when the *check* is subtle, not when the work is large.
    Propose a cheaper model only when the next tier down, at the same effort,
@@ -100,4 +101,7 @@ Amended the same day, before any release: R3's sentence on cheaper models read
 backwards ("only when the higher tier at low effort is not enough"). It now says
 what the skill does and the owner asked for: the higher tier at low effort is
 measured first, and a cheaper model is offered only when the tier below would do
-the job. Found by `/code-review`; flagged to the owner.
+the job. R2.3 and R2.5 were aligned with the skill in the same pass: breadth
+does not raise a mechanical subagent above tier 1 (only an item over 200K tokens
+does), and "3+ modules" means a change that needs design across them. Found by
+`/code-review`; flagged to the owner.

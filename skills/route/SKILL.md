@@ -29,8 +29,9 @@ what tier 1, 2 and 3 mean. Never restate a tier from memory.
    review, synthesis, judging someone else's diff) → `fresh-session`. A subagent
    inherits the caller's framing, which is exactly what this work must not start
    from. **Never a `fork`**: it inherits the whole context and ignores `model`.
-3. **Many identical, independent reads or edits with no judgment** (is this
-   figure on this page, summarise this log, apply this recorded rename) → `subagent` at tier 1,
+3. **Reads or edits with no judgment**, many identical ones or one that would
+   flood this context (is this figure on this page, summarise this log, apply
+   this recorded rename) → `subagent` at tier 1,
    in parallel. Being expensive does not make a model better at reading.
 4. **Anything else** → `here`, or `subagent` if it would flood this context with
    reading. Then pick the tier in step 3.
@@ -43,7 +44,9 @@ what tier 1, 2 and 3 mean. Never restate a tier from memory.
   a change that needs design across 3+ modules, or the riskiest step. A
   `fresh-session` from step 2 is tier 3 unless the work is plainly mechanical.
 - **A step-2.3 subagent stays tier 1 however wide it fans out.** Breadth is not
-  difficulty: a recorded rename across 12 files is still fully specified.
+  difficulty: a recorded rename across 12 files is still fully specified. The
+  one exception is size: a single item over 200K tokens outgrows tier 1's
+  model and goes to tier 2.
 
 **Effort before model.** Recommend the lowest effort that holds within the tier
 (tier 1 has no effort lever: its model takes none, so `low` there is nominal).
