@@ -5,6 +5,11 @@ Everything here is **summarized in our own words from primary sources** (officia
 Claude Code docs and the claude-mem project docs), with source URLs on every
 page so claims are traceable. It is not a verbatim copy of any source.
 
+The exception is **internal analysis** of this repository (e.g.
+[`review-v0.63-v0.71.md`](review-v0.63-v0.71.md)). It is original work, and its
+evidence is the repo itself (commits, `file:line`, commands to re-run) plus
+links to the GitHub PRs, CI runs and review threads it cites.
+
 Compiled 2026-07-08.
 
 ## What's here
@@ -21,6 +26,7 @@ Compiled 2026-07-08.
 | [`git-native-memory-design.md`](git-native-memory-design.md) | The concrete design spec for git-native memory (entry format, hook indexing, `/recall`, read-priming) — P2/P3. |
 | [`journal.md`](journal.md) | The **design journal** — session log, open-threads queue, and parking lot for resuming without losing ideas. |
 | [`briefs/`](briefs/README.md) | **Async-ready task briefs** — one self-contained kickoff per remaining proposal (P2–P7) so each can be built in its own bounded session. |
+| [`review-v0.63-v0.71.md`](review-v0.63-v0.71.md) | Review of PR #91 + #92 (v0.63→v0.71): 12 ranked findings with provenance, plus a retro on how the review was done. |
 | [`sources.md`](sources.md) | Consolidated list of every source URL, grouped by topic. |
 
 The companion narrative reference, [`../getting-started-with-loops.md`](../getting-started-with-loops.md),
