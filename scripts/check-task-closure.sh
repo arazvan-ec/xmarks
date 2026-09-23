@@ -80,6 +80,7 @@ import glob, json, os, re, shlex, subprocess, sys
 
 sys.path.insert(0, os.environ["TC_HERE"])
 from fw_tasks import task_ids  # one reader, shared with check-route-honored.sh
+from fw_cutoffs import binds  # instants, not strings: one parser for every gate
 
 target = os.environ["TC_TARGET"]
 here = os.environ["TC_HERE"]
@@ -186,7 +187,7 @@ for plan in plans:
     # to name, and failing on it would make this gate permanently red on the
     # very trees it shipped into.
     when = added(plan)
-    corpus = bool(when) and when < cutoff
+    corpus = bool(when) and not binds(when, cutoff)
     rel = os.path.relpath(plan, root)
     try:
         r = subprocess.run(["bash", linter, "--json", plan],

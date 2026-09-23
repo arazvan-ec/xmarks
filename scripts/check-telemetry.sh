@@ -48,9 +48,12 @@ command -v python3 >/dev/null 2>&1 || { echo "telemetry: no python3" >&2; exit 2
 CUT_FROM="$(python3 "${HERE}/fw_cutoffs.py" phase-required FLYWHEEL_PHASE_REQUIRED_FROM)" || exit 2
 [ -n "${CUT_FROM}" ] || { echo "telemetry: empty cutoff — an empty cut forgives the whole corpus" >&2; exit 2; }
 
-FW_SPECS="${SPECS}" FW_RUNS="${RUNS}" FW_BASELINE="${BASELINE}" \
+FW_SPECS="${SPECS}" FW_RUNS="${RUNS}" FW_BASELINE="${BASELINE}" FW_HERE="${HERE}" \
 FW_PHASE_FROM="${CUT_FROM}" python3 - <<'PY'
 import json, os, sys
+
+sys.path.insert(0, os.environ["FW_HERE"])
+from fw_cutoffs import binds  # instants, not strings: one parser for every gate
 
 specs, runs, baseline = os.environ["FW_SPECS"], os.environ["FW_RUNS"], os.environ["FW_BASELINE"]
 PHASE_FROM = os.environ["FW_PHASE_FROM"]
@@ -130,7 +133,7 @@ for dirpath, _, files in os.walk(runs):
             # failure to fix — backfilling it would fabricate the evidence.
             phase = rec.get("phase")
             if problem is None and not (isinstance(phase, str) and phase.strip()):
-                if str(rec.get("ts") or "") >= PHASE_FROM:
+                if binds(rec.get("ts"), PHASE_FROM):
                     problem = (f"carries no phase — required from {PHASE_FROM} so the"
                                " ledger can be totalled by phase (P48)")
                 else:

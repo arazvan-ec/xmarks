@@ -72,6 +72,7 @@ runs = os.path.join(root, ".claude", "flywheel", "runs")
 
 sys.path.insert(0, here)
 from fw_tasks import task_ids  # one reader, shared with check-task-closure.sh
+from fw_cutoffs import binds  # instants, not strings: one parser for every gate
 
 ROUTE_RE = re.compile(r"^([^/+]+)/([^+]+)(?:\+(.+))?$")
 
@@ -144,7 +145,7 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
         continue
 
     compared.add(slug)
-    newest = max((str(r.get("ts") or "") for r in rows), default="")
+    live = any(binds(r.get("ts"), CUT) for r in rows)
     covered = set()
 
     for rec in rows:
@@ -153,7 +154,7 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
             continue
         covered |= mapped
         checked += 1
-        post = str(rec.get("ts") or "") >= CUT
+        post = binds(rec.get("ts"), CUT)
         where = f"{slug} {rec.get('task')!r}"
         got = rec.get("route")
         # Over plan order, never the set: on a tier tie, set iteration follows
@@ -215,7 +216,7 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
         notices.append(f"{slug}: no transition line for any of its {len(tasks)} task(s)"
                        f" — the cycle has not started, so there is no route to honor yet")
     elif missing:
-        post = newest >= CUT
+        post = live
         msg = (f"{slug}: {', '.join(missing)} ha{'s' if len(missing) == 1 else 've'} no"
                f" transition line — unrecorded, so the ledger cannot say whether"
                f" {'it' if len(missing) == 1 else 'they'} ran"
