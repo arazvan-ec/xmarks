@@ -1,7 +1,7 @@
 # Spec: P58 — templates for two steps that went wrong by hand
 
 **Slug:** `p58-templates-for-repeated-steps` · **Created:** 2026-09-23 · **Backlog:** P58
-**Status:** in progress
+**Status:** shipped as v0.76.0 — metric PASS: fixture-scratch arms green, 31 tests + 13 gates green, plugin validate --strict passes.
 
 **Prime:** P57 (the delegated-review template) and the owner's ask to record the
 practice and apply it to the two candidates the same session surfaced.

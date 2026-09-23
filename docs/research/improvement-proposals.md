@@ -78,6 +78,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P55 | A route deviation says why | ✅ shipped v0.73.0 | 19 escalations in the tree, 0 reasons, 18 of them `sonnet/medium → opus/high`. `route_reason` is required with `route_escalated_from` or a dropped `+delegate` from the `route-reason` cutoff on, and `check-route-honored.sh` lists every reason so the declines can be studied. Raised by the owner on 2026-09-23 after a session recorded that T1, routed `sonnet/medium`, ran in the main session |
 | P56 | The progress toolbar is enforced, not remembered | ✅ shipped v0.74.0 | The rule lived only in CLAUDE.md and a session with an open 4-task plan skipped it for several turns, then again right after being told. `toolbar.sh` runs as `UserPromptSubmit` (remind with live count) and `Stop` (block a final reply without it). Owner scoped it to the final reply; mid-turn notes exempt. Gap: lists that are not plans are invisible to it |
 | P57 | A delegated review says it started | ✅ shipped v0.75.0 | PR #95: a `/code-review --comment` child session posted nothing and the parent could not tell why. Template `skills/review/references/delegated-review.md` makes the child post a `fw-review-start` comment first via the GitHub MCP tools; the delegation guard asks when a review prompt lacks the marker |
+| P58 | Templates for two steps that went wrong by hand | ✅ shipped v0.76.0 | Eval executors were sent to a torn-down workdir (two fixture-scratch calls), and review replies on #95 were assembled from memory. `--executor-prompt` puts the executor template in the tool, `--print-prompt` refuses a doomed dir, and `answering-review.md` is cited from `/flywheel:review`. The practice's three conditions are in the ledger |
 | P55 | A plan task's `check:` is executed, not read | ✅ shipped v0.70.0 | Every task must carry a `- check:` and nothing ever ran it, so "done" was a model grading its own work over a field that usually already held a command. `check-task-closure.sh` runs it: PASS / FAIL / PENDING / UNRUNNABLE, one row per task, count reconciled. Review found the allowlist was a **prefix** match handed to `bash -c`, so `bash scripts/t.sh && touch PWNED` executed — now operators are refused before the allowlist and what survives runs as argv with no shell |
 | P56 | List intake: a handed list becomes a plan without a REASONS spec | 🟢 spec + plan committed, not built | `plan`'s hard STOP is why an ad-hoc list never becomes a `.plan.md` and so never reaches the closure gate. The guard reuses the tier ladder — a list may skip the spec **iff every item routes T1 or T2** — so the hatch cannot be used for the work the refusal protects. No new artifact and no second verifier. Riskiest task is the fork itself: a guard that can be talked past removes a protection rather than a friction |
 ## Priority overview
@@ -3271,4 +3272,21 @@ not by pausing for approval; in the plugin.
 visible to the parent through PR events. A watchdog that flags "no
 `fw-review-start` comment N minutes after the child started" would close the
 loop mechanically, if the manual check proves easy to forget.
+
+## P58 — templates for two steps that went wrong by hand (✅ shipped v0.76.0)
+
+**Evidence.** 2026-09-23. `fixture-scratch.sh work 1 --keep` and then
+`--print-prompt` as a second call produced two scratch dirs. The one in the
+printed prompt was torn down, and both executors reported a missing directory.
+On PR #95 three Codex findings were answered by a procedure held only in memory.
+
+**Change.** The executor preamble moves into `fixture-scratch.sh
+--executor-prompt` (one call, the dir kept), and a prompt naming a doomed dir
+is refused. `answering-review.md` gives the per-thread order.
+
+**How strong each check is.** Of the three templates this session shipped, the
+executor prompt is enforced by construction, since the tool is the only path.
+The delegated review is enforced by a marker the guard reads. The review-answer
+procedure is cited from the skill step and nothing more. If it is skipped in
+practice, the next step is a marker in replies that a check can read.
 
