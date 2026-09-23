@@ -1,0 +1,2 @@
+{"ts":"2026-09-23T18:17:46Z","task":"spec","phase":"spec","state":"completed","route":"opus/medium","cost":{"tool_calls":8},"proved":"19 escalations in tree, 0 reasons, 18 sonnet/medium->opus/high"}
+{"ts":"2026-09-23T18:17:46Z","task":"T1","phase":"work","state":"completed","commit":"2d8241b","route":"opus/medium","cost":{"tool_calls":1},"proved":"5 new arms; first fails with exit 0 where 1 is wanted; cutoff pin fails on missing row"}
