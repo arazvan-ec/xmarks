@@ -15,6 +15,7 @@
 
 atomic-commits                     shipped before the duty had an owner that runs (P42)
 blocked-cycle-eval                 shipped before the duty had an owner that runs (P42)
+list-intake                        spec committed at its gate; no plan and no work yet, and the stretch that wrote it also carried another cycle's review fixes, so no window measures the spec phase alone — paid by the cycle that implements it
 loop-telemetry-eval                shipped before the duty had an owner that runs (P42)
 p10-portability-installer          shipped before the duty had an owner that runs (P42)
 p11-gate-hardening                 shipped before the duty had an owner that runs (P42)

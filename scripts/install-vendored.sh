@@ -418,7 +418,7 @@ fi
 # Hooks, plus the analysis scripts the skills invoke (plan-route, run-cost):
 # without those a vendored repo cannot lint its plan's routes or read its own
 # run cost, and the skills' fail-open makes that absence silent.
-for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/delegation-guard.sh "${SRC}"/scripts/delegation-record.sh "${SRC}"/scripts/git-tracking-refs.sh "${SRC}"/scripts/read-meter.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh; do
+for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/delegation-guard.sh "${SRC}"/scripts/delegation-record.sh "${SRC}"/scripts/git-tracking-refs.sh "${SRC}"/scripts/read-meter.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh "${SRC}"/scripts/check-task-closure.sh; do
   rewrite "${f}" | vendor_file ".claude/flywheel/bin/$(basename "${f}")"
   chmod +x "${BIN_DST}/$(basename "${f}")"
 done
@@ -426,6 +426,16 @@ done
 # themselves, so the data file has to travel with them. Not executable: it is
 # data, not a script.
 rewrite "${SRC}/scripts/route-tiers.txt" | vendor_file ".claude/flywheel/bin/route-tiers.txt"
+# The allowlist travels with the gate: vendored without it, every check reads
+# as UNRUNNABLE and the closure verdict silently means nothing.
+rewrite "${SRC}/scripts/task-closure-allow.txt" | vendor_file ".claude/flywheel/bin/task-closure-allow.txt"
+# check-task-closure.sh and check-route-honored.sh both import this beside
+# themselves; vendored without it the gate dies on import rather than running.
+rewrite "${SRC}/scripts/fw_tasks.py" | vendor_file ".claude/flywheel/bin/fw_tasks.py"
+# check-task-closure.sh resolves its cutoff through these two before its python
+# starts; vendored without them it exits 2 on every run.
+rewrite "${SRC}/scripts/fw_cutoffs.py" | vendor_file ".claude/flywheel/bin/fw_cutoffs.py"
+rewrite "${SRC}/scripts/cutoffs.txt" | vendor_file ".claude/flywheel/bin/cutoffs.txt"
 # Smoke check: a vendored hook that doesn't parse breaks every future session
 # start. Abort before the manifest/VERSION swap so a broken refresh is never
 # recorded as installed (the rewrite sed above could itself introduce this).

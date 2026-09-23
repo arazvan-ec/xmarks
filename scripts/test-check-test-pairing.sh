@@ -92,6 +92,35 @@ run_check
 [ "${RC}" -eq 0 ] || fail "deleting foo.sh + test-foo.sh must pass, got ${RC}"
 pass "delete script → fails alone, passes with its test"
 
+echo "== a .py script added without its test is caught =="
+# scripts/fw_tasks.py (v0.70.0) was the repo's first .py under scripts/, and the
+# gate globbed 'scripts/*.sh' — it could not see the file at all. The ledger
+# already carries this defect once, on a branch of install-vendored.sh.
+branch
+echo 'x = 1' > "${REPO}/scripts/helper.py"
+g add -A && g commit -qm "py, no test"
+run_check
+[ "${RC}" -eq 1 ] || fail "a .py script with no test must fail, got ${RC}: $(cat "${WORK}/out")"
+grep -q "helper.py" "${WORK}/out" || fail "the gate must name the file: $(cat "${WORK}/out")"
+pass "a .py without its test reddens the gate"
+
+echo "== the pair is keyed on the stem: helper.py pairs with test-helper.sh =="
+# The test is a RUNNER, not a translation — a .py is exercised by a .sh harness
+# like everything else here, so the pair cannot key on the extension.
+echo 'echo ok' > "${REPO}/scripts/test-helper.sh"
+g add -A && g commit -qm "and its test"
+run_check
+[ "${RC}" -eq 0 ] || fail "helper.py + test-helper.sh must pass, got ${RC}: $(cat "${WORK}/out")"
+pass "stem-keyed pairing accepts a .sh harness for a .py subject"
+
+echo "== a data file is not a script and needs no test =="
+branch
+echo 'some data' > "${REPO}/scripts/table.txt"
+g add -A && g commit -qm data
+run_check
+[ "${RC}" -eq 0 ] || fail "a .txt data file must not demand a test, got ${RC}: $(cat "${WORK}/out")"
+pass "scripts/*.txt stays out of the pairing rule"
+
 echo "== SKIP_TEST_PAIRING=1 escape =="
 branch
 echo 'echo changed' >> "${REPO}/scripts/foo.sh"

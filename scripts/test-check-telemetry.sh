@@ -233,4 +233,17 @@ run "${SRC}"
 [ "${RC}" -eq 0 ] || fail "this repo must pass its own telemetry gate, got ${RC}: $(cat "${WORK}/out")"
 pass "flywheel's own tree passes"
 
+echo "== the phase cutoff comes from the registry, not a literal in this script =="
+# P54b: the literal lived here and in check-route-honored.sh, and one could move
+# without the other. The gate must now report exactly what cutoffs.txt declares.
+WANT="$(python3 "${SRC}/scripts/fw_cutoffs.py" phase-required)"
+bash "${SRC}/scripts/check-telemetry.sh" >"${WORK}/cut" 2>&1 || true
+grep -q "${WANT}" "${WORK}/cut" \
+  || fail "the gate must report the registry's cutoff ${WANT}: $(cat "${WORK}/cut")"
+grep -qx "${WANT}" <(python3 "${SRC}/scripts/fw_cutoffs.py" route-check) \
+  || fail "route-check and phase-required share a date by decision (P48) and have drifted"
+OVR="$(FLYWHEEL_PHASE_REQUIRED_FROM=2020-01-01T00:00:00Z bash "${SRC}/scripts/check-telemetry.sh" 2>&1 || true)"
+case "${OVR}" in *2020-01-01T00:00:00Z*) ;; *) fail "the env override must still win over the registry" ;; esac
+pass "the cutoff is the registry's, and the env override still wins"
+
 echo "ALL PASS"

@@ -36,7 +36,8 @@ if [ "${SKIP_TELEMETRY_CHECK:-0}" = "1" ]; then
   exit 0
 fi
 
-ROOT="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="${1:-$(cd "${HERE}/.." && pwd)}"
 SPECS="${ROOT}/.claude/flywheel/specs"
 RUNS="${ROOT}/.claude/flywheel/runs"
 BASELINE="${FLYWHEEL_TELEMETRY_BASELINE:-${ROOT}/scripts/telemetry-baseline.txt}"
@@ -44,8 +45,11 @@ BASELINE="${FLYWHEEL_TELEMETRY_BASELINE:-${ROOT}/scripts/telemetry-baseline.txt}
 [ -d "${SPECS}" ] || { echo "telemetry: no ${SPECS} — nothing to check" >&2; exit 2; }
 command -v python3 >/dev/null 2>&1 || { echo "telemetry: no python3" >&2; exit 2; }
 
+CUT_FROM="$(python3 "${HERE}/fw_cutoffs.py" phase-required FLYWHEEL_PHASE_REQUIRED_FROM)" || exit 2
+[ -n "${CUT_FROM}" ] || { echo "telemetry: empty cutoff — an empty cut forgives the whole corpus" >&2; exit 2; }
+
 FW_SPECS="${SPECS}" FW_RUNS="${RUNS}" FW_BASELINE="${BASELINE}" \
-FW_PHASE_FROM="${FLYWHEEL_PHASE_REQUIRED_FROM:-2026-09-17T20:00:00Z}" python3 - <<'PY'
+FW_PHASE_FROM="${CUT_FROM}" python3 - <<'PY'
 import json, os, sys
 
 specs, runs, baseline = os.environ["FW_SPECS"], os.environ["FW_RUNS"], os.environ["FW_BASELINE"]

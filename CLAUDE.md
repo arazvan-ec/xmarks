@@ -55,6 +55,63 @@ P40a neither half was visible. Rules for every session in this repo:
   over a whole file, and a subagent's own context over this one's for work that
   must read widely. `cost.bytes_in` is what makes the difference checkable.
 
+## Task-list discipline: a list you were handed is a file, not a memory (owner convention, 2026-09-21)
+
+A multi-item list arrives in one message and is worked across many turns. By the
+close that message is far behind in the context, so "all done" gets written
+against a list reconstructed from memory — which is always complete, and
+sometimes wrong. The failure is silent on both sides: the dropped item is
+invisible to the session that dropped it. Rules for any session handed more than
+one item of work:
+
+- **Materialize the list before starting.** Write it numbered to a file —
+  `.claude/flywheel/specs/<slug>.plan.md` for cycle work, the scratchpad
+  otherwise — and re-read *that file* at close. Checking beats remembering.
+- **Close item by item, with evidence.** One row per item, each carrying a
+  `file:line`, a command that passes, or a commit. An item defensible only in
+  prose is reported unverified, never done.
+- **The count has to reconcile.** N items in, N rows out. A short table is the
+  cheapest detection a dropped item will ever get — never collapse rows or fold
+  two items into one line.
+- **Report what you did not do.** Blocked, skipped, or out-of-scope items each
+  get a row with the reason. Scaling the list down is the owner's call, not the
+  session's.
+- **This catches omissions, not misreadings.** An item written as a bare verb
+  can be done confidently in the wrong direction; one written with a success
+  criterion cannot. Ask for the criterion when the item is worth the round trip.
+
+## Progress toolbar: every reply says where the list stands (owner convention, 2026-09-21)
+
+The closure table proves at the end what got done. It says nothing *during*, which
+is the whole stretch where the owner has to ask. So while a materialized list is
+open, **every reply opens with one line** — before any prose, no heading:
+
+```
+<state> <done>/<total> <bar> · ▶ <current item> · «<what you are doing, in the owner's own words>»
+```
+
+- **state** — 🟢 something closed or moved this turn · ⏸️ no advance (say why in
+  the note) · 🔴 blocked · 🏁 all items resolved.
+- **bar** — one glyph per item, in list order: `▓` closed · `▒` in flight ·
+  `░` untouched. Over 10 items, drop the bar and keep the count.
+- **▶ current item** — its number and a two-or-three-word name, so the line maps
+  onto a row of the table and not onto a mood.
+- **«…»** — the answer to "what are you doing right now", written the way the
+  owner asked for it, not the way the code names it. This is the field that
+  carries the value; the rest is bookkeeping.
+
+Rules that keep it honest:
+
+- **A turn with no progress still gets the line.** ⏸️ with the reason is the
+  point — silence and a stalled loop look identical otherwise, which is the same
+  failure the closure table exists to end.
+- **The count is the table's, not a feeling.** `<done>` counts rows closed with
+  evidence. An item in flight is not done, and the bar shows `▒`, never `▓`.
+- **Never let it replace the closing table.** The toolbar is the live view; the
+  item-by-item close with evidence still ships at the end.
+- **No open list, no toolbar.** A one-off question gets a plain answer — a bar
+  reading `1/1` on a question nobody listed is noise.
+
 ## Dev-loop discipline: flywheel develops flywheel (owner decision, 2026-07-29)
 
 The plugin prescribes TDD for every repo it is installed in; developing the

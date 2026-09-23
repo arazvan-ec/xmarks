@@ -7,6 +7,10 @@
 # transition mapping 1:1 to a plan task honored its route. The ladder evaporates
 # three other ways, and no gate asked about any of them:
 #
+#   NOT STARTED — a plan whose cycle has NO line for ANY of its tasks. The loop
+#                commits a plan at its approval gate, before the work, so this is
+#                a plan waiting to be built, not a record that went missing. A
+#                notice; check-task-closure.sh calls the same state PENDING.
 #   UNRECORDED — a plan task with no transition line at all. Five across p42 and
 #                p43, including ALL FOUR haiku/low+delegate tasks. The ledger
 #                cannot tell "ran and wrote nothing" from "never ran", so this is
@@ -54,8 +58,11 @@ ROOT="${1:-$(cd "${HERE}/.." && pwd)}"
 
 command -v python3 >/dev/null 2>&1 || { echo "route-honored: no python3" >&2; exit 2; }
 
+CUT_FROM="$(python3 "${HERE}/fw_cutoffs.py" route-check FLYWHEEL_ROUTE_CHECK_FROM)" || exit 2
+[ -n "${CUT_FROM}" ] || { echo "route-honored: empty cutoff — an empty cut forgives the whole corpus" >&2; exit 2; }
+
 FW_ROOT="${ROOT}" FW_HERE="${HERE}" \
-FW_ROUTE_FROM="${FLYWHEEL_ROUTE_CHECK_FROM:-2026-09-17T20:00:00Z}" python3 - <<'PY'
+FW_ROUTE_FROM="${CUT_FROM}" python3 - <<'PY'
 import json, os, re, subprocess, sys
 
 root, here = os.environ["FW_ROOT"], os.environ["FW_HERE"]
@@ -63,31 +70,10 @@ CUT = os.environ["FW_ROUTE_FROM"]
 specs = os.path.join(root, ".claude", "flywheel", "specs")
 runs = os.path.join(root, ".claude", "flywheel", "runs")
 
-RANGE_RE = re.compile(r"^[Tt](\d+)\s*[-–—]\s*[Tt](\d+)$")
-ONE_RE = re.compile(r"^[Tt](\d+)$")
+sys.path.insert(0, here)
+from fw_tasks import task_ids  # one reader, shared with check-task-closure.sh
+
 ROUTE_RE = re.compile(r"^([^/+]+)/([^+]+)(?:\+(.+))?$")
-
-
-def task_ids(task):
-    """-> the plan task ids a transition's `task` field covers, possibly none.
-
-    `spec`, `plan` and phase names map to nothing on purpose: those transitions
-    precede the plan and have no route to honor."""
-    if isinstance(task, bool) or task is None:
-        return set()
-    if isinstance(task, int):
-        return {f"T{task}"}
-    s = str(task).strip()
-    m = ONE_RE.match(s)
-    if m:
-        return {f"T{m.group(1)}"}
-    m = RANGE_RE.match(s)
-    if m:
-        lo, hi = int(m.group(1)), int(m.group(2))
-        return {f"T{i}" for i in range(min(lo, hi), max(lo, hi) + 1)}
-    if s.isdigit():
-        return {f"T{s}"}
-    return set()
 
 
 def rank(route, models, efforts):
@@ -214,7 +200,17 @@ for slug in sorted(os.listdir(runs)) if os.path.isdir(runs) else []:
             notices.append(f"{where} ran {got} below the plan's {planned}")
 
     missing = sorted(set(tasks) - covered, key=lambda i: int(i[1:]))
-    if missing:
+    if missing and not covered:
+        # NOT STARTED, and it is a different claim from UNRECORDED. The loop
+        # commits a plan at its APPROVAL gate, before any work, so a plan-only
+        # commit has a ledger (spec/plan transitions) and no task lines at all.
+        # Failing it calls every task unrecorded for not having happened yet.
+        # A cycle with SOME task lines has started, so a gap in it is genuinely
+        # unrecorded and stays fatal below — that distinction is the whole rule,
+        # and without it this branch would delete P49.
+        notices.append(f"{slug}: no transition line for any of its {len(tasks)} task(s)"
+                       f" — the cycle has not started, so there is no route to honor yet")
+    elif missing:
         post = newest >= CUT
         msg = (f"{slug}: {', '.join(missing)} ha{'s' if len(missing) == 1 else 've'} no"
                f" transition line — unrecorded, so the ledger cannot say whether"

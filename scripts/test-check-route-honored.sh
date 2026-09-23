@@ -66,6 +66,23 @@ run "${R}"
 grep -q "T2" "${WORK}/out" || fail "the unrecorded task must be named: $(cat "${WORK}/out")"
 pass "an unrecorded plan task exits 1 and is named"
 
+echo "== a cycle with no line for ANY of its tasks has not started: named, never failed =="
+# The loop commits a plan at its APPROVAL gate, before the work. Failing then
+# calls every task unrecorded for not having happened yet, and a plan-only
+# commit is red by construction. check-task-closure.sh calls this PENDING
+# (v0.70.0); this is the same discriminator in the sibling gate.
+R="$(repo notstarted)"; plan "${R}" alpha "opus/high" "sonnet/medium"
+mkdir -p "${R}/.claude/flywheel/runs/alpha"
+printf '{"ts":"%s","task":"spec","phase":"spec","state":"completed","cost":{"bytes_out":1}}\n' \
+  "${POST}" > "${R}/.claude/flywheel/runs/alpha/2026-09-18.jsonl"
+printf '{"ts":"%s","task":"plan","phase":"plan","state":"completed","cost":{"bytes_out":1}}\n' \
+  "${POST}" >> "${R}/.claude/flywheel/runs/alpha/2026-09-18.jsonl"
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "a cycle whose work has not started must not fail, got ${RC}: $(cat "${WORK}/out")"
+grep -qi "not started" "${WORK}/out" || fail "it must be named, not silently skipped: $(cat "${WORK}/out")"
+grep -qi "unrecorded" "${WORK}/out" && fail "not-started must not be reported as unrecorded — they are different claims: $(cat "${WORK}/out")"
+pass "a cycle with no task line at all is NOT STARTED, reported and not failed"
+
 echo "== absence is reported as unrecorded, never as a wrong tier =="
 # The ledger cannot tell "ran and wrote nothing" from "never ran". A gate that
 # claimed to know which would be inventing the evidence it exists to protect.
@@ -210,5 +227,17 @@ run "${SRC}"
 [ "${RC}" -eq 0 ] || fail "this repo must pass its own route gate, got ${RC}: $(cat "${WORK}/out")"
 grep -qiE "p4[23]" "${WORK}/out" || fail "the historical drift must still be reported: $(cat "${WORK}/out")"
 pass "flywheel's own tree passes, with its debt named"
+
+echo "== the task-field reader is shared, not copied =="
+# Both this gate and check-task-closure.sh must agree on what "T2-T3" covers.
+# A second copy is how the two drift, so the drift guard is structural.
+grep -q "from fw_tasks import task_ids" "${SRC}/scripts/check-route-honored.sh" \
+  || fail "check-route-honored.sh must import the shared reader, not define its own"
+grep -q "^def task_ids" "${SRC}/scripts/check-route-honored.sh" \
+  && fail "check-route-honored.sh defines task_ids again — that is the copy this import removed"
+[ -f "${SRC}/scripts/fw_tasks.py" ] || fail "scripts/fw_tasks.py missing — the import cannot resolve"
+grep -q "from fw_tasks import task_ids" "${SRC}/scripts/check-task-closure.sh" \
+  || fail "check-task-closure.sh must read task ids through the same module"
+pass "one reader, imported by both gates"
 
 echo "ALL PASS"
