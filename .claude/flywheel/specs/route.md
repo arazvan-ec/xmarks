@@ -18,20 +18,20 @@ inherits the caller's framing.
    - `route` — `<model>/<effort>[+delegate]`, the exact grammar `/flywheel:plan` uses
    - `why` — the reason for each decision
    - `escalate-if` — the observable signal that the choice was too cheap
-2. **The decision order is fixed, and the first question that answers wins:**
-   1. Does a deterministic tool or script already do it? → `tool`, no model.
-   2. Does the work carry a point of view that must not inherit the caller's
-      framing (research, adversarial review, grading, synthesis)? →
-      `fresh-session`. It is never a subagent, and never a `fork`: a fork
-      inherits the whole context and ignores `model`.
-   3. Is it reads or edits with no judgment — many identical ones, or one that
-      would flood the caller's context? → `subagent` at tier 1, in parallel.
-      Breadth never raises the tier; only an item that does not fit tier 1's
-      context (per R5's reference, with room for the brief and the answer) does.
-   4. Is it ordinary work inside existing structure? → `here` at tier 2, or
-      `subagent` if it would flood the caller's context.
-   5. Is it design, ambiguity, security or data risk, a change that needs
-      design across 3+ modules, or the riskiest step? → `here` at tier 3.
+2. **The decision has two stages, in a fixed order, and within each the first
+   yes wins.** `skills/route/SKILL.md` steps 2 and 3 are the normative text;
+   this requirement pins their shape.
+   - **Mechanism:** (1) a deterministic tool already does it → `tool`;
+     (2) the work carries a point of view → `fresh-session`, never a subagent
+     and never a `fork`; (3) reads or edits with no judgment, many identical
+     ones or one that would flood the caller's context → `subagent`;
+     (4) anything else → `here`, or `subagent` if it would flood the context.
+   - **Tier**, from `route-tiers.txt`: tier 3 for design, ambiguity, security
+     or data risk, a change that needs design across 3+ modules, or the
+     riskiest step; tier 1 for fully specified work, and always for a
+     mechanism-(3) subagent however wide it fans out, unless one item does not
+     fit tier 1's context; tier 2 otherwise. Tier 3 is checked first, so risk
+     inside an existing module is never tier 2.
 3. **Effort before model.** Within a tier, recommend the lowest effort that
    holds; raise effort when the *check* is subtle, not when the work is large.
    Propose a cheaper model only when the next tier down, at the same effort,
@@ -100,12 +100,9 @@ paste into `create_session` or `Agent`, and the caller decides.
 
 Signed by the owner on 2026-09-23.
 
-Amended the same day, before any release: R3's sentence on cheaper models read
-backwards ("only when the higher tier at low effort is not enough"). It now says
-what the skill does and the owner asked for: the higher tier at low effort is
-measured first, and a cheaper model is offered only when the tier below would do
-the job. R2.3 and R2.5 were aligned with the skill in the same pass: breadth
-does not raise a mechanical subagent above tier 1 (only an item that does not
-fit tier 1's context does, with the size kept in R5's reference so R4 and R5
-hold), and "3+ modules" means a change that needs design across them. Found by
-`/code-review`; flagged to the owner.
+Amended the same day, before any release, after rounds of `/code-review` on the
+draft skill: R2 was rewritten to pin the skill's two-stage shape instead of
+restating it; R3's sentence on cheaper models read backwards and now says what
+the owner asked for (measure the higher tier at low effort first); R5 now covers
+every step that needs a price, a context size or a model's effort support. The
+rounds are in the git log of this branch. Flagged to the owner.

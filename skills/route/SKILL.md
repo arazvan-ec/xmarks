@@ -38,6 +38,8 @@ what tier 1, 2 and 3 mean. Never restate a tier from memory.
 
 ## 3. Pick the tier, then the effort
 
+Check tier 3 first, so risk inside an existing module is never tier 2.
+
 - **Tier 1**: fully specified, no design choice left.
 - **Tier 2**: ordinary work inside structure that already exists. Most work.
 - **Tier 3**: design, ambiguous requirements, security, secrets or data risk,
