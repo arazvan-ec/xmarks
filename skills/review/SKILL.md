@@ -21,6 +21,8 @@ Dispatch the routed reviewers **in parallel** — launch them in a single batch 
 - `reviewer-security` — secret/credential handling, injection, authz, unsafe input, data exposure.
 - `reviewer-performance` — hot paths, N+1 queries, unnecessary work, resource use.
 
+Running the review in **another session** (`create_session`)? Its prompt is `references/delegated-review.md`: the child posts a start comment on the PR before anything else, so silence is never ambiguous.
+
 If dispatch is unavailable in this context — no `Task` tool, so nothing can be spawned — **say so in the report** and review each routed lens yourself, inline. A report that reads as if specialists ran when none did is the same defect as a silent cap, one layer up.
 
 Synthesize their findings into one prioritized list: deduplicated and sorted by severity (Critical → High → Medium → Low). For each finding give `file:line`, a one-line problem statement, and a concrete fix.
