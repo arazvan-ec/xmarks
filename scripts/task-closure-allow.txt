@@ -21,6 +21,11 @@
 # what virtually every real check cites, and running them is the whole point.
 (bash )?(\./)?scripts/(test|check)-[a-z0-9._-]+\.sh( .*)?
 
+# The local mirror of CI (P60), with at most a base-ref argument. It runs only
+# the repo's own gates and tests, which the entry above already allows; run from
+# a check it skips check-task-closure.sh (FW_TASK_CLOSURE_ACTIVE) to not recurse.
+(bash )?(\./)?scripts/sweep\.sh( [A-Za-z0-9/._-]+)?
+
 # The plugin CLI's own validator: read-only over the manifest.
 claude plugin validate( .*)?
 
