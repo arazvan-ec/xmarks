@@ -81,8 +81,8 @@ contracts.
 
 `skills/route/SKILL.md`, `skills/route/references/models.md`, the README
 command table, the `/flywheel:help` map, a version bump and
-`upgrades/v0.77.0.md` (`requires-action: false`). Renumbered from 0.73.0
-when `main` shipped 0.73.0–0.76.0 (#95) before this release merged.
+`upgrades/v0.79.0.md` (`requires-action: false`). Renumbered twice before
+merging: `main` shipped 0.73.0–0.76.0 (#95), then 0.77.0 and 0.78.0 (P60, P59).
 
 ## N — Non-goals
 
