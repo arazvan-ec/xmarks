@@ -69,6 +69,7 @@ Full vision + the worked car example: [`docs/research/agent-native-processes.md`
 | `/flywheel:review <ref>` | Multi-specialist review routed by diff type (docs diff ≠ full fan-out), synthesized. |
 | `/flywheel:compound` | Append this cycle's decisions, gotchas, and patterns to the ledger. |
 | `/flywheel:recall <query>` | On-demand ledger search — list matching learnings cheaply, expand one on request. |
+| `/flywheel:route <task>` | Before delegating work outside a plan: recommends tool, fresh session, subagent or here, at which model and effort, from `route-tiers.txt`. |
 | `/flywheel:ship <title>` | Clean commit + push + PR to close out the cycle. |
 | `/flywheel:process <desc>` | Define an **agent-native process** — a reusable prompt-contract (fixed rules + output schema + persistence) for a recurring domain operation Claude runs as the backend. |
 | `/flywheel:run <slug> [input]` | Execute a defined process as the runtime — follow its rules, persist the result to the repo's datastore, then mature the contract from the run. |
