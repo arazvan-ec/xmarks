@@ -115,7 +115,9 @@ here so it is not read as a result. The same run surfaced three more
 ambiguities, fixed afterwards: how to launch `here` when this session runs on
 another model, whether a tier's effort is a floor, and an undefined `+delegate`.
 
-**S2 on `d814153` — PASS** (second fresh session, same sparse checkout, after the
-revision above; https://github.com/arazvan-ec/xmarks/pull/96#issuecomment-5802882642).
-Mechanism 8/8, tier 8/8. This is the run that confirms the revised case 4 holds
-against the skill as shipped, not only against the table.
+**S2 on `d814153` — PASS** (same setup, second run; in the PR comments).
+Mechanism 8/8, tier 8/8. `d6cd6d5` later reworded step 2 and allowed
+`route: none` for `tool`, and the 28-sep review fixes (`d4f11e4`, then a follow-up PR) tightened step 3 after an
+independent review (tier 3 still applies to a step-2.3 subagent, `+delegate`
+needs a check). Neither was re-measured: both only restate rules the case table
+already expects, so no expected answer changed.
