@@ -51,4 +51,4 @@ pattern, the root cause and the regression test for a bugfix.>
 
 Old free-prose entries already in the ledger are untouched — this format only applies going forward; the SessionStart hook and `/flywheel:recall` both still load them (as always-eligible, low-priority entries).
 
-Then stage the ledger (`git add .claude/flywheel/LEARNINGS.md`) so it is committed with the work. Report a one-line summary of what you compounded.
+Then stage the ledger (`git add .claude/flywheel/LEARNINGS.md`) so it is committed with the work. **Record the outcome** (P69): append `{"phase": "compound", "task": "compound", "state": "completed", "entries": <N>}` to `.claude/flywheel/runs/<spec-slug>/<date>.jsonl`, with a `"reason"` when N is 0. A shipped run without that line is blocked at Stop. Report a one-line summary of what you compounded.
