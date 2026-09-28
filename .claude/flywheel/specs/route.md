@@ -114,3 +114,10 @@ answer is what that rule gives. This is a revision after measurement, recorded
 here so it is not read as a result. The same run surfaced three more
 ambiguities, fixed afterwards: how to launch `here` when this session runs on
 another model, whether a tier's effort is a floor, and an undefined `+delegate`.
+
+**S2 on `d814153` — PASS** (same setup, second run; in the PR comments).
+Mechanism 8/8, tier 8/8. `d6cd6d5` later reworded step 2 and allowed
+`route: none` for `tool`, and the 28-sep review fixes (`d4f11e4`, then a follow-up PR) tightened step 3 after an
+independent review (tier 3 still applies to a step-2.3 subagent, `+delegate`
+needs a check). Neither was re-measured: both only restate rules the case table
+already expects, so no expected answer changed.
