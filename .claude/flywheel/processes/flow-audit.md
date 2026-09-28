@@ -29,6 +29,11 @@ backend function is "audit(scope) → prioritized findings + backlog delta".
 1. **Recall** — read `docs/research/improvement-proposals.md` (Status table +
    Decision log) and root `CLAUDE.md`. Note every still-open question from prior
    entries; the audit must not re-open what a logged decision already settled.
+   Then read the **feedback channel** (P70): every open issue labelled
+   `flywheel-feedback` on the plugin's repo (GitHub MCP `list_issues`). Each is a
+   finding input like a reviewer's, weighed by its `Evidence` field. If the
+   issues cannot be read, record `feedback: not read (<why>)`; an empty result
+   and an unread one must not look the same.
 2. **Verify** — run `bash scripts/test-docs-consistency.sh`,
    `bash scripts/test-install-vendored.sh`, `bash scripts/test-read-prime.sh`;
    record each exit code. Any red check is automatically a **Critical** finding.
@@ -52,6 +57,9 @@ backend function is "audit(scope) → prioritized findings + backlog delta".
    Status + Priority rows, and **one** decision-log entry (date, scope, finding
    counts by severity, proposals opened, verify status). Stage everything with
    `git add`.
+   Each feedback issue read in Rule 1 gets one disposition in the entry, `#N →
+   P<n>` or `#N → dropped: <reason>`. After the owner signs, comment it on the
+   issue; close the issue only when it was dropped or its proposal ships.
 8. **Prove the write** — grep the new decision-log entry and each new `P<n>`
    heading back out of the file; report the matches. Unproven = not persisted.
 9. **Mature** — append ≤1 evidence-based refinement from this run to the
@@ -66,6 +74,7 @@ backend function is "audit(scope) → prioritized findings + backlog delta".
 | `verify_status` | 3 × `pass\|fail` | one per test script, with exit codes |
 | `findings[]` | list | `{severity: Critical\|High\|Medium\|Low, location: file:line-or-area, problem: 1 line, fix: 1 line}` |
 | `proposals_opened[]` | list | `{id: P<n>, title, value, effort, risk, version_bump: yes\|no}` — ids continue the existing sequence |
+| `feedback[]` | list | `{issue: #N, disposition: P<n>\|dropped: <reason>}`, or `not read (<why>)` |
 | `decision_log_entry` | string | the exact text persisted |
 
 ## Persistence
