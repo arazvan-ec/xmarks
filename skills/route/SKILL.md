@@ -32,9 +32,9 @@ what tier 1, 2 and 3 mean. Never restate a tier from memory.
    from. **Never a `fork`**: it inherits the whole context and ignores `model`.
 3. **Reads or edits with no judgment**, many identical ones or one that would
    flood this context (is this figure on this page, summarise this log, apply
-   this recorded recipe to each file). A rename that `sed` or an LSP can do is
-   step 1, not this one → `subagent` at tier 1,
-   in parallel. Being expensive does not make a model better at reading.
+   this recorded recipe to each file) → `subagent` at tier 1, in parallel. A
+   rename that `sed` or an LSP can do is step 1, not this one. Being expensive
+   does not make a model better at reading.
 4. **Anything else** → `here`, or `subagent` if it would flood this context with
    reading. Then pick the tier in step 3.
 
@@ -69,8 +69,8 @@ is not cheap. Compare prices only when two routes are close, with
 ```
 mechanism: tool | fresh-session | subagent | here
 route:     <model>/<effort>[+delegate]    (none for a tool; +delegate only for a tier-1
-           `subagent`: the `executor` agent where registered, else a
-           subagent with `model`; drop it for any other mechanism)
+           `subagent`: the `executor` agent where registered and the brief
+           names a check, else a subagent with `model`; drop it otherwise)
 why:       one line per decision above
 escalate-if: <what you would see if this was too cheap>
 ```
