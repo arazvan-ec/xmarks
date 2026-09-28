@@ -26,6 +26,7 @@ It has a **second pillar** too: where the loop *builds* software, `/flywheel:pro
 | `/flywheel:review <ref>` | Multi-specialist review, routed by diff type (docs diff ≠ full fan-out). |
 | `/flywheel:compound` | Capture this cycle's decisions and gotchas into the ledger. |
 | `/flywheel:recall <query>` | Look up a past decision/gotcha/pattern the ledger has, on demand. |
+| `/flywheel:route <task>` | About to delegate work outside a plan — pick tool, fresh session or subagent, and its model and effort. |
 | `/flywheel:ship <title>` | Clean commit + push + PR. |
 | `/flywheel:process <desc>` | Define an **agent-native process** — a reusable contract (fixed rules + output schema + persistence) for a recurring domain operation Claude runs as the backend. |
 | `/flywheel:run <slug> [input]` | Run a defined process as the runtime — follow its rules, persist to the repo's datastore, mature the contract. |
