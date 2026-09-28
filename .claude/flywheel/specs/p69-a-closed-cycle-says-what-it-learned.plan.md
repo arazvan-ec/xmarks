@@ -12,17 +12,17 @@ branches or never fires at all.
 - route: `opus/high`
 - risk: highest
 - changes: scripts/compound-due.sh, scripts/test-compound-due.sh
-- check: bash scripts/test-compound-due.sh
+- check: `bash scripts/test-compound-due.sh`
 - test-first: yes
 
 ### T2 — wire both delivery paths
 - route: `opus/high`
 - changes: hooks/hooks.json, scripts/install-vendored.sh, scripts/test-install-vendored.sh
-- check: bash scripts/check-hook-parity.sh
+- check: `bash scripts/check-hook-parity.sh`
 - test-first: yes
 
 ### T3 — compound records its outcome line
 - route: `sonnet/medium`
 - changes: skills/compound/SKILL.md, skills/work/references/work-detail.md
-- check: bash scripts/check-invocation-budget.sh
+- check: `bash scripts/check-invocation-budget.sh`
 - test-first: no
