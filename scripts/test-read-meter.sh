@@ -331,5 +331,74 @@ if int(f["max_read"]) < 900:
     print("the first call's bytes must be in the max, got %r" % (f,), file=sys.stderr); sys.exit(1)
 FIRSTPY
 pass "--since first keeps the earliest call it cuts at"
+# --- the payload reaches the meter whatever its size -----------------------
+# It used to reach python through an environment variable; a single env string
+# is capped (128 KiB on Linux) and the exec fails WHOLE, so the largest tool
+# responses — the ones that actually fill the context — were dropped in silence
+# while the meter still called its total a floor. This harness's own `feed` has
+# the same cap, which is why the big payload is built inside the helper.
+
+feed_big() {  # sid bytes [budget]
+  FW_SID="$1" FW_N="$2" python3 -c '
+import json, os
+print(json.dumps({"session_id": os.environ["FW_SID"], "tool_name": "Bash",
+                  "hook_event_name": "PostToolUse",
+                  "tool_response": {"stdout": "x" * int(os.environ["FW_N"])}}))' \
+  | FLYWHEEL_CONTEXT_BUDGET_BYTES="${3-}" bash "${SCRIPT}"
+}
+
+feed_big s9 200000 >/dev/null
+BIG="$(CLAUDE_CODE_SESSION_ID=s9 bash "${SCRIPT}" --since first)"
+case "${BIG}" in
+  *"bytes_in=200000"*) : ;;
+  *) fail "a 200 KB response must be counted, not dropped for its size: ${BIG}" ;;
+esac
+pass "a tool response larger than the env-var cap is metered, not silently lost"
+
+# --- the context budget: the meter says when the session should hand off ----
+# The cost of one more tool call is the whole context re-read, so it grows with
+# the session's own length. The meter already holds the running total; these
+# assertions are what turns it from a post-hoc number into a live advisory.
+
+QUIET="$(feed_big b1 100000 600000)"
+[ -z "${QUIET}" ] || fail "under the budget the meter must stay silent: ${QUIET}"
+pass "under the budget the meter says nothing"
+
+WARN="$(feed_big b1 550000 600000)"
+[ -n "${WARN}" ] || fail "crossing the budget must produce an advisory"
+FW_W="${WARN}" python3 -c '
+import json, os
+h = json.loads(os.environ["FW_W"])["hookSpecificOutput"]
+assert h["hookEventName"] == "PostToolUse", h
+t = h["additionalContext"]
+for word in ("handoff", "budget"):
+    assert word in t.lower(), f"advisory must name {word}: {t}"
+' || fail "the advisory is not a PostToolUse additionalContext envelope naming the handoff: ${WARN}"
+pass "crossing the budget emits a handoff advisory"
+
+AGAIN="$(feed_big b1 10000 600000)"
+[ -z "${AGAIN}" ] || fail "the advisory must not repeat inside the same multiple: ${AGAIN}"
+pass "the advisory fires once per threshold, not once per call"
+
+SECOND="$(feed_big b1 600000 600000)"
+[ -n "${SECOND}" ] || fail "crossing twice the budget must advise again"
+pass "a session that keeps going is told again at the next multiple"
+
+OFF="$(feed_big b2 900000 0)"
+[ -z "${OFF}" ] || fail "budget 0 must disable the advisory: ${OFF}"
+pass "FLYWHEEL_CONTEXT_BUDGET_BYTES=0 disables the advisory"
+
+# The advisory is not a measurement: it must not add a call or a byte to what
+# the transition line reports, or the meter would be inflating its own numbers.
+COUNT="$(CLAUDE_CODE_SESSION_ID=b1 bash "${SCRIPT}" --since first)"
+case "${COUNT}" in
+  *"tool_calls=4"*) : ;;
+  *) fail "four calls were fed; the advisory must not count as a fifth: ${COUNT}" ;;
+esac
+case "${COUNT}" in
+  *"bytes_in=1260000"*) : ;;
+  *) fail "the advisory must not add bytes to the total: ${COUNT}" ;;
+esac
+pass "advising does not inflate what the meter reports"
 
 echo "read-meter: all assertions passed"
