@@ -59,6 +59,13 @@ V="$(python3 -c 'import json;print(json.load(open("'"${SRC}"'/.claude-plugin/plu
 [ "$(q "${URL}" version)" = "${V}" ] || fail "version: $(q "${URL}" version) != ${V}"
 pass "version ${V}"
 
+echo "== a vendored copy reads the version from VERSION's first line =="
+B="${WORK}/vend/.claude/flywheel/bin"; mkdir -p "${B}"; cp "${SCRIPT}" "${B}/"
+printf 'flywheel 9.9.9\nsource-commit: abc\ninstalled: 2026-09-28\n' > "${B}/../VERSION"
+VURL="$(CLAUDE_PROJECT_DIR="${P}" bash "${B}/upstream-issue.sh")"
+[ "$(q "${VURL}" version)" = "9.9.9" ] || fail "vendored version: $(q "${VURL}" version)"
+pass "vendored version"
+
 echo "== a title match, missing evidence, long prose =="
 run "DATA.md example"
 [ "${RC}" -eq 0 ] || fail "match must succeed, got ${RC}"

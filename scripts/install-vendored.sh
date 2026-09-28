@@ -438,7 +438,7 @@ fi
 # Hooks, plus the analysis scripts the skills invoke (plan-route, run-cost):
 # without those a vendored repo cannot lint its plan's routes or read its own
 # run cost, and the skills' fail-open makes that absence silent.
-for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/delegation-guard.sh "${SRC}"/scripts/delegation-record.sh "${SRC}"/scripts/git-tracking-refs.sh "${SRC}"/scripts/read-meter.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh "${SRC}"/scripts/check-task-closure.sh "${SRC}"/scripts/toolbar.sh "${SRC}"/scripts/compound-due.sh; do
+for f in "${SRC}"/scripts/session-start.sh "${SRC}"/scripts/read-prime.sh "${SRC}"/scripts/write-allow.sh "${SRC}"/scripts/bash-allow.sh "${SRC}"/scripts/gate.sh "${SRC}"/scripts/delegation-guard.sh "${SRC}"/scripts/delegation-record.sh "${SRC}"/scripts/git-tracking-refs.sh "${SRC}"/scripts/read-meter.sh "${SRC}"/scripts/plan-route.sh "${SRC}"/scripts/run-cost.sh "${SRC}"/scripts/check-task-closure.sh "${SRC}"/scripts/toolbar.sh "${SRC}"/scripts/compound-due.sh "${SRC}"/scripts/upstream-issue.sh; do
   rewrite "${f}" | vendor_file ".claude/flywheel/bin/$(basename "${f}")"
   chmod +x "${BIN_DST}/$(basename "${f}")"
 done

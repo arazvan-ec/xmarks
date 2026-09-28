@@ -101,6 +101,7 @@ bash "${TARGET}/.claude/flywheel/bin/check-task-closure.sh" "${TARGET}" >/dev/nu
 [ -x "${TARGET}/.claude/flywheel/bin/read-meter.sh" ] || fail "read-meter.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/toolbar.sh" ] || fail "toolbar.sh missing or not executable (P56)"
 [ -x "${TARGET}/.claude/flywheel/bin/compound-due.sh" ] || fail "compound-due.sh missing or not executable (P69)"
+[ -x "${TARGET}/.claude/flywheel/bin/upstream-issue.sh" ] || fail "upstream-issue.sh missing or not executable (P70)"
 [ -x "${TARGET}/.claude/flywheel/bin/git-tracking-refs.sh" ] || fail "git-tracking-refs.sh missing or not executable"
 
 # End-to-end from the vendored location: the linter must find its tier table

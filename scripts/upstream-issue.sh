@@ -61,7 +61,8 @@ try:
     version = json.load(open(os.path.join(here, "../.claude-plugin/plugin.json")))["version"]
 except (OSError, ValueError, KeyError):
     try:
-        version = open(os.path.join(here, "../VERSION")).read().strip()
+        first = (open(os.path.join(here, "../VERSION")).read().splitlines() or [""])[0]
+        version = first.split()[-1] if first.split() else ""
     except OSError:
         pass
 
