@@ -65,6 +65,16 @@ g "${R}" checkout -q feature; g "${R}" merge -q main
 stop "${R}"; [ "${RC}" -eq 0 ] || fail "base-only run must not block, got ${RC}: $(cat "${WORK}/err")"
 pass "base run ignored"
 
+echo "== on the only branch there is nothing to compare against: old runs never block =="
+R="${WORK}/solo"; mkdir -p "${R}/.claude/flywheel/runs"
+g "${R}" init -q -b main; line "${R}" hist ship; commit "${R}" old
+stop "${R}"; [ "${RC}" -eq 0 ] || fail "main-only history must not block, got ${RC}: $(cat "${WORK}/err")"
+C="${WORK}/clone"; g "${WORK}" clone -q "${R}" "${C}"
+stop "${C}"; [ "${RC}" -eq 0 ] || fail "a clone with only main + origin/main must not block, got ${RC}"
+line "${C}" fresh ship
+stop "${C}"; [ "${RC}" -eq 2 ] || fail "an uncommitted ship on the only branch must still block, got ${RC}"
+pass "no comparison ref: only uncommitted runs count"
+
 echo "== no ship line: not due =="
 R="$(repo noship)"; line "${R}" gamma work; line "${R}" gamma verify; commit "${R}" run
 stop "${R}"; [ "${RC}" -eq 0 ] || fail "no ship line must not block, got ${RC}"
