@@ -280,7 +280,8 @@ enough to earn a proposal.
   a law.** One person's reading habits, one day, one codebase.
 - **This codebase is atypical**: shell scripts, Markdown and JSON, no application
   source, no compile step, no large generated files. The Spotify Portal result
-  P40 came from was a Java monorepo. A repo with 3,000-line source files could
+  P40 came from was a Java monorepo (source linked at
+  `docs/research/improvement-proposals.md`, P40). A repo with 3,000-line source files could
   have a tail this one structurally cannot.
 - **29 transitions, in groups of 2 to 8.** Every per-cycle figure rests on a
   handful of lines; p44's on two.
