@@ -4,6 +4,10 @@ Snapshot of 2026-06-24, Anthropic first-party API. Prices go stale: refresh them
 from the Models API (`client.models.list()`) or the `claude-api` skill before
 you quote a number to anyone.
 
+On Bedrock, Vertex, Foundry and Claude Platform on AWS an alias can resolve to
+an older model, so the ratios below do not hold there; check what `/model`
+reports before comparing.
+
 | Alias (`model`) | Model | Input $/1M | Output $/1M | Context | Effort |
 | --- | --- | --- | --- | --- | --- |
 | `haiku` | Claude Haiku 4.5 | 1 | 5 | 200K | none |

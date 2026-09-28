@@ -47,7 +47,8 @@ Check tier 3 first, so risk inside an existing module is never tier 2.
 - **Tier 3**: design, ambiguous requirements, security, secrets or data risk,
   a change that needs design across 3+ modules, or the riskiest step. A
   `fresh-session` from step 2 is tier 3 unless the work is plainly mechanical.
-- **A step-2.3 subagent stays tier 1 however wide it fans out.** Breadth is not
+- **Unless tier 3 applies, a step-2.3 subagent stays tier 1 however wide it
+  fans out.** Breadth is not
   difficulty: a recorded recipe applied to 12 files is still fully specified. The
   one exception is size: an item that does not fit tier 1's context, with room
   left for the brief and the answer, goes to tier 2. Context sizes are in
