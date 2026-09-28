@@ -100,6 +100,7 @@ bash "${TARGET}/.claude/flywheel/bin/check-task-closure.sh" "${TARGET}" >/dev/nu
 [ -x "${TARGET}/.claude/flywheel/bin/delegation-record.sh" ] || fail "delegation-record.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/read-meter.sh" ] || fail "read-meter.sh missing or not executable"
 [ -x "${TARGET}/.claude/flywheel/bin/toolbar.sh" ] || fail "toolbar.sh missing or not executable (P56)"
+[ -x "${TARGET}/.claude/flywheel/bin/compound-due.sh" ] || fail "compound-due.sh missing or not executable (P69)"
 [ -x "${TARGET}/.claude/flywheel/bin/git-tracking-refs.sh" ] || fail "git-tracking-refs.sh missing or not executable"
 
 # End-to-end from the vendored location: the linter must find its tier table
@@ -228,6 +229,8 @@ assert ss.count('"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/git-tracking-refs.sh
     "flywheel SessionStart git-tracking-refs hook missing or duplicated"
 assert stop.count('"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/toolbar.sh stop') == 1, \
     "flywheel Stop toolbar hook missing or duplicated (P56)"
+assert stop.count('"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/compound-due.sh') == 1, \
+    "flywheel Stop compound-due hook missing or duplicated (P69)"
 ups = [h["command"] for g in s["hooks"].get("UserPromptSubmit", []) for h in g["hooks"]]
 assert ups.count('"$CLAUDE_PROJECT_DIR"/.claude/flywheel/bin/toolbar.sh remind') == 1, \
     "flywheel UserPromptSubmit toolbar hook missing or duplicated (P56)"
