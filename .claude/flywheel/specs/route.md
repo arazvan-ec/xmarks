@@ -114,3 +114,8 @@ answer is what that rule gives. This is a revision after measurement, recorded
 here so it is not read as a result. The same run surfaced three more
 ambiguities, fixed afterwards: how to launch `here` when this session runs on
 another model, whether a tier's effort is a floor, and an undefined `+delegate`.
+
+**S2 on `d814153` — PASS** (second fresh session, same sparse checkout, after the
+revision above; https://github.com/arazvan-ec/xmarks/pull/96#issuecomment-5802882642).
+Mechanism 8/8, tier 8/8. This is the run that confirms the revised case 4 holds
+against the skill as shipped, not only against the table.
