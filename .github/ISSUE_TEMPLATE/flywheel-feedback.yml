@@ -1,0 +1,54 @@
+name: flywheel feedback
+description: A lesson about flywheel itself, learned in a repo that uses it
+title: "<type>: <one-line lesson>"
+labels: [flywheel-feedback]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Usually prefilled by `scripts/upstream-issue.sh` from a LEARNINGS.md entry. Review the text before submitting, since it leaves the source repo. Drop anything private.
+
+  - type: dropdown
+    attributes:
+      label: Type
+      options:
+        - decision
+        - gotcha
+        - pattern
+        - bugfix
+        - fixture
+    validations:
+      required: true
+    id: type
+
+  - type: textarea
+    attributes:
+      label: What happened
+      description: The trap and the guard, the choice and the rejected alternative, or the recipe
+    validations:
+      required: true
+    id: what
+
+  - type: input
+    attributes:
+      label: Evidence
+      description: "What proved it — a command and its result, a PR, a run id. `unverified` if nothing did"
+    validations:
+      required: true
+    id: evidence
+
+  - type: input
+    attributes:
+      label: flywheel version
+    validations:
+      required: false
+    id: version
+
+  - type: input
+    attributes:
+      label: flywheel files involved
+      description: "Paths inside flywheel (skills/, scripts/, hooks/...), never the source repo's own"
+    validations:
+      required: false
+    id: files

@@ -1,0 +1,23 @@
+name: Labels
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/labels.yml]
+
+permissions:
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or update labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh label create flywheel-feedback --force \
+            --color 5319E7 \
+            --description "A lesson about flywheel learned in a repo that uses it (P70)"
