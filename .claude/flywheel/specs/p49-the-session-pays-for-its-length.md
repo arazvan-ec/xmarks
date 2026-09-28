@@ -1,7 +1,7 @@
-# Spec: P65 — a session pays for its own length, and the loop has no way to stop
+# Spec: P68 — a session pays for its own length, and the loop has no way to stop
 
-**Slug:** `p49-the-session-pays-for-its-length` · **Created:** 2026-09-17 · **Backlog:** P65 (Renumbered from P49)
-**Status:** shipped as v0.81.0 (Renumbered from v0.65.0: main gave that number to the ladder check) — metric **PASS** (35/35 `scripts/{test,check}-*.sh`
+**Slug:** `p49-the-session-pays-for-its-length` · **Created:** 2026-09-17 · **Backlog:** P68 (Renumbered from P49)
+**Status:** shipped as v0.82.0 (Renumbered from v0.65.0: main gave that number to the ladder check) — metric **PASS** (35/35 `scripts/{test,check}-*.sh`
 green under an isolated `TMPDIR`; `claude plugin validate . --strict` green; the
 budget's six assertions and the env-cap assertion each watched red first).
 
@@ -91,7 +91,7 @@ proxies. Absent is not zero: no meter, no numbers.
   with rather than inherited.
 - **The hole under the measurement.** The budget could not be built without
   fixing it: the payload reached python through an env var, capped at 128 KiB,
-  failing whole and silently. Every run before v0.81.0 under-reports any
+  failing whole and silently. Every run before v0.82.0 under-reports any
   transition that read a large file. Not backfilled (P18).
 
 ## Success metric
