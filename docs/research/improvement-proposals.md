@@ -90,6 +90,7 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P65 | A split route: a tool first, a model only for its misses | 🔵 needs a decision | Both S2 runs of `/flywheel:route` (#96) hesitated between step 2.1 (tool) and 2.3 (subagent) on cases 2 and 8, and the second proposed a split route: a deterministic tool resolves most items and a tier-1 model handles only what it cannot. Changes the expected answers of cases 2 and 8, so it needs its own spec signed by the owner and a new S2 run. Applies to veo's `/elegir-modelo` too |
 | P66 | Haiku takes no effort, but three docs say `low` | 🔵 proposed | `README.md` (lines 85 and 87), `skills/help/references/good-to-know.md:13` and `agents/executor.md:3` describe Haiku agents as running at `low` effort; Haiku 4.5 takes no effort parameter (`skills/route/references/models.md`). Predates #96; fix the wording, and check whether `route-tiers.txt`'s tier 1 `low` should read as "no effort" for Haiku |
 | P67 | `renumber.sh --check` skips a pointer on a history line | ✅ shipped v0.81.0 (#102) | `--check` treats any line containing "Renumbered from" as history, even when the same line carries a path to the old note. In #96 it let `upgrades/v0.77.0.md` through in the route spec (fixed by hand in `ad774d9`). Fix: exempt the prose, still flag a link or path on the same line; test-first in `test-renumber.sh` |
+| P68 | A session pays for its own length, not for its work | ✅ shipped v0.82.0 (Renumbered from P49; Renumbered from v0.65.0) | Measured end to end on a real 2h40m debug session: **21,404,993 cache-read tokens against 120,280 written** — 178 re-read per token produced, **58% of the bill** — with the first call re-reading ~30K tokens of context and the last re-reading 279,203. Its output was 10 commits over 3 PRs: 4 instrumentation, 3 documentation, 3 candidate fixes, **0 verifications**, because the log that would have discriminated lived on a phone the session could not read. The identical call sequence split across three chained sessions costs 9.9M against 21.3M, so the lever is the **handoff**, not reading less. Shipped: a `PostToolUse` budget advisory (once per multiple, a read of the total the meter already holds), `/flywheel:debug` suspending when the evidence is out of reach, and two bans — a second instrumentation round with nothing learned, and raising effort to replace a missing discriminator. **This is the run P40b was waiting for**, and it weakens it: the peak is not read volume but read *position* |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -341,6 +342,56 @@ budget — it doesn't replace the metric-command check, it independently
 re-verifies it.
 
 ---
+
+## P68 — a session pays for its own length, not for its work (✅ shipped v0.82.0; Renumbered from P49; Renumbered from v0.65.0)
+
+**Where it came from.** An owner asked why a session that was told about one bug
+had executed 31 steps, and whether that could be optimised. The session record
+answered it in four numbers, and none of them was the step count.
+
+**Evidence.** The session's own usage record, decomposed by token class. The
+model reproduces this bill and two other sessions' of the same day to within
+0.3%, so the split is measured rather than asserted:
+
+| class | tokens | share of bill |
+| --- | --- | --- |
+| cache read | 21,404,993 | 58.5% |
+| cache write | 456,818 | 25.0% |
+| output (reasoning + writing) | 120,280 | 16.4% |
+| input | 4,938 | 0.1% |
+
+**83.5% of it was context, not work.** And the cost per call is not flat: the
+first call re-read ~30K tokens, the last 279,203 — nine times the price for the
+same work, by position alone. cache-read is `Σ(context at each call)`, so a
+session's bill grows with the *square* of its length. Split into three chained
+sessions the same call sequence costs 9.9M instead of 21.3M.
+
+**What it says about P40b.** P40b (an extractor agent + a read-size threshold)
+was rejected as *unjustified, not disproven*, pending "real runs saying whether
+read volume is a peak here". This is such a run, and it does not justify P40b —
+it weakens it. The peak is not the size of any read; it is the number of times
+everything already read is read again. An extractor shrinks one term of a
+product whose other term is the one that runs away.
+
+**Where the 31 steps came from.** 10 commits, 3 merged PRs, 446 lines: four
+commits of instrumentation, three of documentation, three candidate fixes, zero
+verifications. The bug was on a phone. `/flywheel:debug` step 3 said *run it and
+read the actual evidence* and offered no move for the case where the session
+cannot run it, so it instrumented, guessed, and instrumented again — three
+rounds, each re-reading the context of the last, at `xhigh`, where ~$3 of
+reasoning generated candidates that no available evidence could kill.
+
+**What shipped.** One primitive, three places: the **handoff**. A budget
+advisory in the meter (mechanical), a suspend in `debug` step 3, and two bans on
+the exits that get taken instead. Plus the defect found underneath: the meter
+passed its payload through an env var capped at 128 KiB and failed whole, so the
+largest tool responses were never counted at all — `bytes_in` has been a floor
+with a hole in it since P44.
+
+**Still open.** The advisory fires on a floor (`bytes_in`), not on context, so
+600 KB is a break-even derived from a conversion, not a measurement of context
+itself; a session that reasons a great deal and reads little crosses late. And
+nothing yet grades whether a session that is advised actually hands off.
 
 ## P5 — Token-usage discipline
 
