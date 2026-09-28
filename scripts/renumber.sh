@@ -9,7 +9,8 @@
 #                                    x.y.z or a P-number (P55).
 #
 # A leftover is classified by fixing it (the token is gone) or keeping it as
-# history (`<!-- renumber: keep -->` on the line, or a `Renumbered from` line).
+# history (`<!-- renumber: keep -->` on the line). `Renumbered from v<old>` exempts
+# that token only: a pointer on the same line is still listed.
 # Nothing else counts. .claude/flywheel/runs/** is immutable and never listed.
 # Which leftover is a pointer is a judgment: skills/ship/references/renumber.md.
 #
@@ -50,7 +51,9 @@ if [ "${CHECK}" -eq 1 ]; then
     [ -f "${f}" ] || continue
     case "${f}" in .claude/flywheel/runs/*) continue ;; esac
     n=$((n + 1))
-    h="$(grep -nIE -- "${RE}" "${f}" | grep -vF -e 'Renumbered from' -e '<!-- renumber: keep -->')" || true
+    h="$(grep -nIE -- "${RE}" "${f}" | grep -vF '<!-- renumber: keep -->' | while IFS= read -r l; do
+      printf '%s\n' "${l}" | sed -E "s/Renumbered from v?${TOK}//g" | grep -qE -- "${RE}" && printf '%s\n' "${l}"
+    done)" || true
     [ -n "${h}" ] && hits+="$(printf '%s\n' "${h}" | sed "s|^|  ${f}:|")"$'\n'
   done < <({ git diff --name-only "${MB}"; git ls-files --others --exclude-standard; } | sort -u)
   if [ -n "${hits}" ]; then

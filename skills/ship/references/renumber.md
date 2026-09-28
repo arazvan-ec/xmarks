@@ -13,6 +13,7 @@ flywheel, `bash "${CLAUDE_PLUGIN_ROOT}/scripts/renumber.sh"` on a marketplace in
    `*-v<old>` dir, rewrites the note's frontmatter and `plugin.json`. It refuses a
    `<new>` not ahead of the base or already taken; pick again, never force it.
 3. Add a `Renumbered from v<old>: the base took it with <what>.` line to the note.
+   It exempts that token only; keep pointers to other files off that line.
 4. `bash scripts/renumber.sh --check <old>` lists every leftover `<old>` in files
    the branch touches as `file:line`. Classify **each** one:
 
