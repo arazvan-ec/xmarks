@@ -58,7 +58,7 @@ SETTINGS="${TARGET}/.claude/settings.json"
 [ -f "${SETTINGS}" ] || { echo "hook-parity: installer produced no ${SETTINGS}" >&2; exit 2; }
 
 python3 - "${HOOKS_JSON}" "${SETTINGS}" "${TARGET}/.claude/flywheel/bin" "${SRC}/.claude/settings.json" <<'PY'
-import json, os, sys
+import json, os, shlex, sys
 
 hooks_json_path, settings_path, bin_dir, self_settings_path = sys.argv[1:5]
 
@@ -83,9 +83,17 @@ def triples(hooks_by_event):
         for g in groups:
             matcher = g.get("matcher") or ""
             for h in g.get("hooks", []):
-                cmd = h.get("command", "")
-                if cmd.endswith(".sh"):
-                    out.add((event, matcher, os.path.basename(cmd)))
+                try:
+                    argv = shlex.split(h.get("command", ""))
+                except ValueError:
+                    continue
+                # An argument is part of the identity: `toolbar.sh stop` and
+                # `toolbar.sh remind` are two hooks, and an endswith(".sh") test
+                # skipped both.
+                for i, tok in enumerate(argv):
+                    if tok.endswith(".sh"):
+                        out.add((event, matcher, " ".join([os.path.basename(tok), *argv[i + 1:]])))
+                        break
     return out
 
 hooks_json = triples(load_hooks(hooks_json_path))
@@ -112,7 +120,7 @@ for t in extra_in_installer:
 # Registration and landing are checked separately: a script hooks.json names
 # can be registered by the installer while never having been copied into bin/.
 not_landed = []
-for _, _, name in sorted({(e, m, n) for e, m, n in hooks_json}):
+for name in sorted({n.split(" ")[0] for _, _, n in hooks_json}):
     path = os.path.join(bin_dir, name)
     if not (os.path.isfile(path) and os.access(path, os.X_OK)):
         not_landed.append(name)

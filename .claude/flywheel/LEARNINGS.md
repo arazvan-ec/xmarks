@@ -1,5 +1,15 @@
 # flywheel learnings
 
+## gotcha: `producer | grep -q` under pipefail fails on a match, now and then
+<!-- fw: type=gotcha; date=2026-09-28; files=scripts/test-fixture-scratch.sh,scripts/check-task-closure.sh; spec=p70-a-lesson-about-flywheel-reaches-flywheel; branch=ccr-04feb7c6-e0w1l1; evidence=`set -o pipefail; sed ... | grep -q` returned false on a matching file 5 of 300 times, the here-string form 0 of 300; test-fixture-scratch looped 0/40 after the fix; the instrumented closure run printed the failing assertion -->
+
+`grep -q` exits at its first match; if the producer is still writing it dies of SIGPIPE (141) and pipefail reports the whole pipeline false. The assertion reads "not found" on a file that contains the string, about once in 60 runs, and only where timing differs — here inside `check-task-closure.sh`, which is why four sweeps went red on a different nested task each time and never at top level. Feed `grep -q` from a variable or a here-string, never from a pipe, in any script that sets pipefail. A red that moves between tasks is a harness symptom: capture the failing check's own output before guessing at a cause.
+
+## gotcha: a gate that keys on a suffix sees only the hooks with no arguments
+<!-- fw: type=gotcha; date=2026-09-28; files=scripts/check-hook-parity.sh,scripts/test-check-hook-parity.sh; spec=p69-a-closed-cycle-says-what-it-learned; branch=ccr-04feb7c6-e0w1l1; evidence=parity reported OK on main with toolbar.sh stop/remind absent from this repo's settings.json; after keying on the argv, 12 registrations agree instead of 10 and the new arm is red without the fix -->
+
+`check-hook-parity.sh` built its triples from commands ending in `.sh`, so every hook invoked with an argument was invisible in all three directions, and the toolbar hooks were never registered on flywheel itself while the gate stayed green. A filter that decides what a gate looks at is part of the gate: test it with an instance it must catch in each shape the input can take, not only the common one.
+
 ## decision: when a rule would redden on the description of its own bug, grade the claim, not the token
 
 <!-- fw: type=decision; date=2026-09-17; files=scripts/check-version-citations.sh,scripts/test-check-version-citations.sh; spec=p47-release-gate-direction; branch=claude/p47-release-gate-direction; evidence=exactly one cited upgrade note is absent from the tree (0.59.0) and both of its citations sit in the improvement-proposals.md entry that documents this defect; the shipped rule is green on that corpus with no exclusions and red on it with the 0.61.0 renumber put back -->

@@ -18,6 +18,9 @@ plus what the transition proved.
   `task` says which transition it is; `phase` is what the ledger is summed by,
   and a line carrying only the first cannot be totalled with the rest (P48).
   Free text, so a pillar-2 run names its Rule phase instead.
+- `entries: N` / `reason` — on the `phase: compound` line only: how many ledger
+  entries the cycle wrote, and why when it is 0. A run with a `ship` line and no
+  compound line blocks at Stop (P69, `scripts/compound-due.sh`).
 - `route_escalated_from: "<model>/<effort>"` — carry it on a transition that had
   to move up a tier. That pair is the only honest record of a mis-route.
 - `route_reason: "<why>"` — required with `route_escalated_from`, and on any

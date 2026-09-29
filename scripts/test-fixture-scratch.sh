@@ -336,12 +336,17 @@ FW_EVAL_ROOT="${DRIFT}" run demo 1 --solution mini-ideal --into "${WORK}/drift"
 [ "${RC}" -ne 0 ] || fail "a patch whose context moved must fail to apply, not apply at a guess"
 pass "context drift in the fixture reddens the apply"
 
+# Stripped once into a variable: `sed | grep -q` under pipefail reads a match as
+# a failure whenever grep exits before sed finishes writing (SIGPIPE, 141), which
+# made the checks below fail about 1 run in 60.
+CODE="$(sed 's/#.*//' "${SUT}")"
+
 # Code only: the script's own comment explains why the flag is refused, and a
 # bare grep would read that explanation as the violation.
-if sed 's/#.*//' "${SUT}" | grep -q 'ignore-whitespace'; then
+if grep -q 'ignore-whitespace' <<<"${CODE}"; then
   fail "git apply must not be given --ignore-whitespace: it disables exactly the drift detection being bought"
 fi
-sed 's/#.*//' "${SUT}" | grep -q 'git apply' \
+grep -q 'git apply' <<<"${CODE}" \
   || fail "no git apply call found — the patch step is what the drift assertion above is about"
 pass "git apply is called, and never with --ignore-whitespace"
 
@@ -366,10 +371,10 @@ echo "== the digest and overlay walk use portable tools =="
 # fallback this must match.
 for gnuism in 'sort -z' 'xargs -0r' -- '-printf'; do
   [ "${gnuism}" = -- ] && continue
-  sed 's/#.*//' "${SUT}" | grep -q -- "${gnuism}" \
+  grep -q -- "${gnuism}" <<<"${CODE}" \
     && fail "fixture-scratch.sh uses the GNU-only '${gnuism}'; scripts/gate.sh shows the portable pattern"
 done
-sed 's/#.*//' "${SUT}" | grep -q 'command -v sha256sum' \
+grep -q 'command -v sha256sum' <<<"${CODE}" \
   || fail "fixture-scratch.sh must probe for sha256sum and fall back to shasum -a 256, as scripts/gate.sh does"
 pass "no GNU-only sort/xargs/find flags, and sha256 is probed with a fallback"
 

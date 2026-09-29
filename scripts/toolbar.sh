@@ -56,7 +56,17 @@ SPECS = ".claude/flywheel/specs/"
 # repo whose default is `trunk` or `develop` is read like one on `main`.
 cur = (git("rev-parse", "--abbrev-ref", "HEAD") or "").strip()
 touched = set()
-if cur and cur != "HEAD":
+# With no ref besides this branch and its upstream, `--not` has nothing to
+# subtract and every plan in history would read as this branch's list (P71).
+def other(ref):
+    if ref.startswith("refs/heads/"):
+        return ref[len("refs/heads/"):] != cur
+    return ref.split("/", 3)[-1] not in (cur, "HEAD")
+
+
+others = [r for r in (git("for-each-ref", "--format=%(refname)",
+                          "refs/heads", "refs/remotes") or "").split() if other(r)]
+if cur and cur != "HEAD" and others:
     # --exclude binds to the next --branches/--remotes only, and takes the ref
     # name without its refs/heads/ or refs/remotes/ prefix.
     out = git("log", "--format=", "--name-only", "HEAD", "--not",

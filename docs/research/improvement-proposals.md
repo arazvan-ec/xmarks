@@ -91,6 +91,9 @@ Legend: 🔵 proposed · 🟡 discussing · 🟢 approved to build · ✅ done �
 | P66 | Haiku takes no effort, but three docs say `low` | 🔵 proposed | `README.md` (lines 85 and 87), `skills/help/references/good-to-know.md:13` and `agents/executor.md:3` describe Haiku agents as running at `low` effort; Haiku 4.5 takes no effort parameter (`skills/route/references/models.md`). Predates #96; fix the wording, and check whether `route-tiers.txt`'s tier 1 `low` should read as "no effort" for Haiku |
 | P67 | `renumber.sh --check` skips a pointer on a history line | ✅ shipped v0.81.0 (#102) | `--check` treats any line containing "Renumbered from" as history, even when the same line carries a path to the old note. In #96 it let `upgrades/v0.77.0.md` through in the route spec (fixed by hand in `ad774d9`). Fix: exempt the prose, still flag a link or path on the same line; test-first in `test-renumber.sh` |
 | P68 | A session pays for its own length, not for its work | ✅ shipped v0.82.0 (Renumbered from P49; Renumbered from v0.65.0) | Measured end to end on a real 2h40m debug session: **21,404,993 cache-read tokens against 120,280 written** — 178 re-read per token produced, **58% of the bill** — with the first call re-reading ~30K tokens of context and the last re-reading 279,203. Its output was 10 commits over 3 PRs: 4 instrumentation, 3 documentation, 3 candidate fixes, **0 verifications**, because the log that would have discriminated lived on a phone the session could not read. The identical call sequence split across three chained sessions costs 9.9M against 21.3M, so the lever is the **handoff**, not reading less. Shipped: a `PostToolUse` budget advisory (once per multiple, a read of the total the meter already holds), `/flywheel:debug` suspending when the evidence is out of reach, and two bans — a second instrumentation round with nothing learned, and raising effort to replace a missing discriminator. **This is the run P40b was waiting for**, and it weakens it: the peak is not read volume but read *position* |
+| P69 | A shipped cycle says what it learned | ✅ shipped v0.83.0 | 14 of 16 run dirs with a `phase: ship` line had no `phase: compound` line, and 22 of 56 specs are named by no ledger entry. `scripts/compound-due.sh` (Stop) blocks a run this branch shipped until it records a compound outcome, `entries: 0` with a `reason` included. Found on the way: `check-hook-parity.sh` keyed on commands ending in `.sh`, so `toolbar.sh stop/remind` were invisible to it and never registered on this repo |
+| P70 | A lesson about flywheel reaches flywheel | ✅ shipped v0.83.0 | Across the owner's repos, 3 ledgers hold 61 entries, 4 clearly about flywheel and 10 borderline; none reached this backlog. `scripts/upstream-issue.sh` renders an entry as a prefilled `flywheel-feedback` issue URL (only flywheel paths kept, human submits); `compound` offers it outside this repo; `flow-audit` reads the open issues and gives each a disposition. Deferred: packaged-skill runs with no repo (case 2) until one exists |
+| P71 | `toolbar.sh` scoped an open list the same way P69 did before its fix | ✅ shipped v0.83.0 | Codex on #105 found that `compound-due.sh` read all history as branch work when no ref besides the branch and its upstream exists (main-only repo); fixed there in c0ead78. `toolbar.sh` carried the same `--not --exclude` scope code, so on such a checkout every historical plan with an unrecorded task opened a list. Same fix, owner-requested into #105; a new arm in `test-toolbar.sh` was red first |
 ## Priority overview
 
 | # | Proposal | Value | Effort | Risk | Version bump? |
@@ -3361,3 +3364,45 @@ The delegated review is enforced by a marker the guard reads. The review-answer
 procedure is cited from the skill step and nothing more. If it is skipped in
 practice, the next step is a marker in replies that a check can read.
 
+## P69 — a shipped cycle says what it learned (✅ shipped v0.83.0)
+
+**Evidence.** 14 of 16 run dirs carrying a `phase: ship` line carry no
+`phase: compound` line; 22 of 56 specs are named by no ledger entry, 15 of them
+shipped. `compound` legitimately yields 0 entries, so the rule asks for an
+explicit outcome, not for an entry.
+
+**Shipped.** `scripts/compound-due.sh`, a `Stop` hook on both delivery paths:
+a `runs/<slug>/*.jsonl` this branch touches, with a ship line and no compound
+line, blocks the turn and names both fixes. Triggering on ship rather than a
+verify PASS keeps review, which sits between them, free of a per-turn nag.
+`compound` now appends its own line with `entries: N`.
+
+**Found on the way.** `check-hook-parity.sh` built its triples only from
+commands ending in `.sh`, so `toolbar.sh stop` and `toolbar.sh remind` were
+invisible in all three directions, and this repo never registered them on
+itself. The triple now keeps the arguments: 12 registrations agree, not 10.
+
+**cannot see:** a cycle that stops after verify and never ships.
+
+## P70 — a lesson about flywheel reaches flywheel (✅ shipped v0.83.0)
+
+**Evidence.** Over the owner's 8 candidate repos, 3 carry a ledger: 61 entries,
+4 clearly about flywheel (dead-impact: vendored-only install, enriching a split
+plan by column, a `DATA.md` write lands at commit; car: the run-report format)
+and 10 borderline. None had reached this backlog.
+
+**Shipped.** One channel for three sources: a session in another repo, the
+owner away from any session, a marketplace user. `scripts/upstream-issue.sh`
+renders an entry as a prefilled issue-form URL on this repo (label
+`flywheel-feedback`): only flywheel paths in `files`, a missing `evidence=`
+shown as `unverified`, prose truncated under 7,500 characters, refusal inside
+this repo. The URL is the consent step. A private repo's prose reaches a public
+one only after a human reads the form. `compound` offers it
+(`skills/compound/references/upstream.md`); `flow-audit` Rule 1 reads the open
+issues and Rule 7 records one disposition per issue.
+
+**Deferred.** Runs of a packaged skill with no repo (case 2), until one exists.
+A Routine that schedules `flow-audit` is the owner's call.
+
+**cannot see:** a lesson never compounded, and one compounded as domain when it
+is about flywheel.

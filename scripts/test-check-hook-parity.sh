@@ -144,6 +144,27 @@ bash "${SELF}/scripts/check-hook-parity.sh" >"${WORK}/out" 2>&1 || RC=$?
 grep -q "delegation-guard" "${WORK}/out" || fail "the report must name the missing hook: $(cat "${WORK}/out")"
 pass "an unregistered hook in the repo's own settings.json is caught and named"
 
+echo "== a hook whose command takes an argument is seen too =="
+ARGS="${WORK}/args"
+copy_repo "${ARGS}"
+bash "${ARGS}/scripts/install-vendored.sh" --hooks-only "${ARGS}" >/dev/null 2>&1 \
+  || fail "setup: --hooks-only must wire the copy's own settings.json"
+FW_SETTINGS="${ARGS}/.claude/settings.json" python3 - <<'PYDROP'
+import json, os
+p = os.environ["FW_SETTINGS"]
+d = json.load(open(p))
+for ev in list(d["hooks"]):
+    for grp in d["hooks"][ev]:
+        grp["hooks"] = [h for h in grp["hooks"] if not h.get("command", "").endswith("toolbar.sh stop")]
+    d["hooks"][ev] = [g for g in d["hooks"][ev] if g["hooks"]]
+json.dump(d, open(p, "w"), indent=2)
+PYDROP
+RC=0
+bash "${ARGS}/scripts/check-hook-parity.sh" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -ne 0 ] || fail "a missing hook with an argument must fail parity: $(cat "${WORK}/out")"
+grep -q "toolbar.sh stop" "${WORK}/out" || fail "the report must name it with its argument: $(cat "${WORK}/out")"
+pass "a hook with an argument is compared, not skipped"
+
 echo "== a real repo was never touched by any of the above =="
 # Hashes, not `git diff`: the question is whether THIS TEST changed the files,
 # and git diff answers a different one — whether the working tree is dirty —

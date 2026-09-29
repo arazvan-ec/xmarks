@@ -134,6 +134,17 @@ g "${R}" checkout -q trunk; stop "${R}" "bare"
 [ "${RC}" -eq 0 ] || fail "on the base itself the feature's plan is not this branch's list, got ${RC}"
 pass "the branch's own commits are found without naming its base"
 
+echo "== on the only branch there is nothing to compare against: old plans are not a list (P71) =="
+R="${WORK}/solo"; mkdir -p "${R}/.claude/flywheel/specs" "${R}/.claude/flywheel/runs"
+g "${R}" init -q -b main; plan "${R}" hist 2 commit
+remind "${R}"; [ "${RC}" -eq 0 ] && [ ! -s "${WORK}/out" ] || fail "main-only history must not open a list: $(cat "${WORK}/out")"
+stop "${R}" "all done"; [ "${RC}" -eq 0 ] || fail "main-only history must not block, got ${RC}"
+C="${WORK}/soloclone"; g "${WORK}" clone -q "${R}" "${C}"
+stop "${C}" "all done"; [ "${RC}" -eq 0 ] || fail "a clone with only main + origin/main must not block, got ${RC}"
+plan "${C}" fresh 2
+stop "${C}" "all done"; [ "${RC}" -eq 2 ] || fail "an uncommitted plan on the only branch must still count, got ${RC}"
+pass "no comparison ref: only uncommitted plans count"
+
 echo "== an uncommitted plan counts =="
 R="$(repo dirty)"; plan "${R}" beta 2
 stop "${R}" "bare"; [ "${RC}" -eq 2 ] || fail "an untracked open plan must bind, got ${RC}"

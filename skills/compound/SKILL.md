@@ -1,7 +1,7 @@
 ---
 name: compound
 description: Capture this cycle's decisions, gotchas, patterns, and fixtures into the learnings ledger so the next cycle starts smarter. Use at the end of a unit of work, after review.
-allowed-tools: Read, Edit, Write, Bash(git *), Bash(date *)
+allowed-tools: Read, Edit, Write, Bash(git *), Bash(date *), Bash(bash "${CLAUDE_PLUGIN_ROOT}/scripts/upstream-issue.sh":*), Bash(bash .claude/flywheel/bin/upstream-issue.sh:*)
 ---
 
 # /flywheel:compound — close the loop (learning capture)
@@ -51,4 +51,6 @@ pattern, the root cause and the regression test for a bugfix.>
 
 Old free-prose entries already in the ledger are untouched — this format only applies going forward; the SessionStart hook and `/flywheel:recall` both still load them (as always-eligible, low-priority entries).
 
-Then stage the ledger (`git add .claude/flywheel/LEARNINGS.md`) so it is committed with the work. Report a one-line summary of what you compounded.
+Then stage the ledger (`git add .claude/flywheel/LEARNINGS.md`) so it is committed with the work. **Record the outcome** (P69): append `{"phase": "compound", "task": "compound", "state": "completed", "entries": <N>}` to `.claude/flywheel/runs/<spec-slug>/<date>.jsonl`, with a `"reason"` when N is 0. A shipped run without that line is blocked at Stop.
+
+**An entry about flywheel itself**, outside flywheel's repo: offer it upstream per `skills/compound/references/upstream.md`. Report a one-line summary of what you compounded.

@@ -127,6 +127,14 @@ The commands the plugin *cannot* know — your test/metric command, your `DATA.m
 
 While a `.claude/flywheel/specs/<slug>.plan.md` that the current branch touches (vs its base, or uncommitted) still has a task with no transition line, the final reply of each turn must open with `<🟢|⏸️|🔴|🏁> <done>/<total> <bar> · ▶ <item> · «<what, in the owner's words>»`. `scripts/toolbar.sh` enforces it as two hooks: **`UserPromptSubmit`** injects the format and the live count (`slug done/total`, open task ids) as context every prompt, and **`Stop`** blocks (exit 2) a final reply whose first line is not the toolbar or whose total is not the plan's. Mid-turn notes are exempt. `stop_hook_active` never re-traps, and anything it cannot read is a no-op.
 
+## A shipped cycle says what it learned (P69, v0.83.0)
+
+`scripts/compound-due.sh` is a **`Stop`** hook: a `runs/<slug>/*.jsonl` this branch touches that has a `phase: ship` line and no `phase: compound` line blocks the turn (exit 2). `/flywheel:compound` appends that line with `entries: N`; a cycle that proved nothing durable records `entries: 0` with a `reason`. Before it, 14 of 16 shipped runs in this repo carried no compound line.
+
+## Feedback about flywheel reaches flywheel (P70, v0.83.0)
+
+A lesson about the plugin, learned in a repo that only uses it, used to stay in that repo's ledger. When `/flywheel:compound` writes one outside this repo, it offers `scripts/upstream-issue.sh`, which renders the entry as a prefilled **flywheel feedback** issue URL (label `flywheel-feedback`) with only flywheel paths kept. Nothing is sent until a human reviews the form and submits it. The same form is open to anyone using the plugin. The `flow-audit` process reads the open issues as input and gives each one a disposition.
+
 ## A delegated review says it started (P57, v0.75.0)
 
 A review sent to another session (`create_session`) that posts nothing reads the same whether it found nothing, could not post, or is still running. `skills/review/references/delegated-review.md` is the child's prompt template: post a `🔎 Review started … fw-review-start` comment on the PR **first**, through the GitHub MCP tools (the container has no `gh`), then post the findings as one review with inline comments, or a "no findings" comment. The delegation guard's **REVIEW** family asks when a delegated review prompt lacks `fw-review-start`, naming the template.
