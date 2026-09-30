@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .slide-container { width: 1280px; min-height: 720px; background: #F4F1EA; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
+  .pad { padding-left: 64px; padding-right: 64px; }
+  .head { padding-top: 52px; display: grid; grid-template-columns: 1fr auto; align-items: end; column-gap: 20px; }
+  .accent-rule { width: 48px; height: 3px; background: #A7552B; }
+  h2 { font-family: 'Archivo', sans-serif; font-size: 32px; color: #1A1D1A; font-weight: 600; letter-spacing: -0.01em; padding-top: 16px; }
+  .tag { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; letter-spacing: 0.1em; text-transform: uppercase; }
+  .zone { flex: 1; padding-top: 28px; }
+  .top { display: grid; grid-template-columns: 1fr 380px; column-gap: 32px; align-items: start; }
+  .p { font-size: 18px; line-height: 1.55; color: #2E332E; }
+  .p b { color: #1A1D1A; font-weight: 600; }
+  .quote { border-left: 3px solid #A7552B; padding-left: 16px; margin-top: 16px; font-size: 17px; line-height: 1.5; color: #2E332E; }
+  .quote b { color: #1A1D1A; font-weight: 600; }
+  .worst { }
+  .lbl { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; letter-spacing: 0.1em; text-transform: uppercase; }
+  .wrow { border-top: 1px solid #CBC4B4; padding-top: 9px; margin-top: 9px; display: grid; grid-template-columns: 74px 1fr; column-gap: 12px; }
+  .wrow .k { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #A7552B; font-weight: 500; }
+  .wrow .t { font-size: 15px; color: #2E332E; line-height: 1.4; }
+  .rw { padding-top: 26px; }
+  .ba { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; padding-top: 12px; }
+  .box { background: #E8E3D7; border-radius: 2px; padding: 18px; }
+  .box .k { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; letter-spacing: 0.1em; text-transform: uppercase; }
+  .box .v { font-size: 16px; color: #2E332E; line-height: 1.55; padding-top: 10px; font-style: italic; }
+  .box .v u { text-decoration: none; background: rgba(167,85,43,0.16); }
+  .gate { font-size: 16px; color: #2E332E; line-height: 1.5; padding-top: 16px; }
+  .gate b { color: #1A1D1A; font-weight: 600; }
+  .foot { padding-top: 16px; }
+  .foot .rule { border-top: 1px solid #CBC4B4; }
+  .mark { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; text-align: right; padding-top: 8px; letter-spacing: 0.04em; }
+  .spacer { height: 28px; }
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="pad head">
+    <div>
+      <div class="accent-rule"></div>
+      <h2>Producto: la description contamina el disparador</h2>
+    </div>
+    <div class="tag">17 de 18 skills</div>
+  </div>
+  <div class="pad zone">
+    <div class="top">
+      <div>
+        <div class="p"><b>writing-skills</b> documenta con un caso reproducido que si la description resume el flujo, el agente <b>sigue la description y no lee el body</b>. En ese caso hizo una revisión en vez de dos.</div>
+        <div class="quote">El riesgo concreto aquí: <b>review</b> describe el enrutamiento por tipo de diff en su propia description — así que un agente puede decidir el fan-out <b>sin leer la lógica real</b>.</div>
+      </div>
+      <div class="worst">
+        <div class="lbl">Los cuatro peores</div>
+        <div class="wrow"><div class="k">loop</div><div class="t">enumera las 6 fases del ciclo</div></div>
+        <div class="wrow"><div class="k">work</div><div class="t">el inner loop completo, paso a paso</div></div>
+        <div class="wrow"><div class="k">run</div><div class="t">los 5 pasos del contrato</div></div>
+        <div class="wrow"><div class="k">review</div><div class="t">el enrutamiento y la síntesis</div></div>
+      </div>
+    </div>
+    <div class="rw">
+      <div class="lbl">La corrección, sobre el caso de <span style="text-transform:none;letter-spacing:0;">loop</span></div>
+      <div class="ba">
+        <div class="box">
+          <div class="k">Hoy — resume el workflow</div>
+          <div class="v">«…<u>spec → plan → work → verify → review → compound</u>, gating between phases, with a tight inner micro-cycle. Use when…»</div>
+        </div>
+        <div class="box">
+          <div class="k">Propuesto — solo disparador</div>
+          <div class="v">«Use when starting a new feature or task and you want <u>the full gated cycle</u> instead of running one phase manually.»</div>
+        </div>
+      </div>
+      <div class="gate">El gate existente <b>check-description-budget.sh</b> mide cuánto pesa (3538/3600 chars), no de qué tipo es: una description puede cumplir el presupuesto y violar la regla. Falta una heurística que exija «Use when» al inicio y marque los encadenamientos de proceso.</div>
+    </div>
+  </div>
+  <div class="pad foot">
+    <div class="rule"></div>
+    <div class="mark">fw · v0.83.0 · 08/12</div>
+  </div>
+  <div class="spacer"></div>
+</div>
+</body>
+</html>

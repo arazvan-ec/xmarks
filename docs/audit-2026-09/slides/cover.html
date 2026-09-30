@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .slide-container { width: 1280px; min-height: 720px; background: #F4F1EA; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
+  .pad { padding-left: 64px; padding-right: 64px; }
+  .tophair { padding-top: 40px; }
+  .tophair .rule { border-top: 1px solid #CBC4B4; }
+  .mark { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; text-align: right; padding-top: 8px; letter-spacing: 0.04em; }
+  .body-zone { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding-top: 56px; }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #A7552B; letter-spacing: 0.14em; text-transform: uppercase; }
+  h1 { font-family: 'Archivo', sans-serif; font-size: 50px; line-height: 1.1; color: #1A1D1A; font-weight: 600; letter-spacing: -0.015em; padding-top: 20px; max-width: 760px; }
+  .accent-rule { width: 48px; height: 3px; background: #A7552B; }
+  .cols { display: grid; grid-template-columns: 520px 1fr; column-gap: 20px; padding-top: 44px; }
+  .lbl { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; letter-spacing: 0.1em; text-transform: uppercase; padding-top: 0; }
+  .meta { background: #E8E3D7; border-radius: 2px; padding: 20px; margin-top: 12px; }
+  .meta div { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #2E332E; line-height: 1.85; }
+  .meta span { color: #6E7268; display: inline-block; width: 92px; }
+  .method { margin-top: 12px; }
+  .method div { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #2E332E; line-height: 1.85; }
+  .method div b { color: #A7552B; font-weight: 500; padding-right: 8px; }
+  .spacer { height: 44px; }
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="pad tophair">
+    <div class="rule"></div>
+    <div class="mark">fw · 5249626</div>
+  </div>
+  <div class="pad body-zone">
+    <div>
+      <div class="accent-rule"></div>
+      <div class="eyebrow" style="padding-top:18px;">Auditoría técnica · 2026-09-30</div>
+      <h1>flywheel: análisis y<br>propuestas de refactor<br>del plugin</h1>
+    </div>
+    <div class="cols">
+      <div>
+        <div class="lbl">Objeto</div>
+        <div class="meta">
+          <div><span>repo</span>arazvan-ec/xmarks</div>
+          <div><span>versión</span>0.83.0</div>
+          <div><span>commit</span>5249626</div>
+          <div><span>superficie</span>18 skills · 6 agentes · 66 scripts</div>
+        </div>
+      </div>
+      <div>
+        <div class="lbl">Método</div>
+        <div class="method">
+          <div><b>01</b>sweep propio ejecutado (48 pasos)</div>
+          <div><b>02</b>shellcheck sobre 12.604 líneas de bash</div>
+          <div><b>03</b>cuatro auditorías paralelas por dominio</div>
+          <div><b>04</b>contraste con agent-development, writing-skills,<br><span style="display:inline-block;width:26px;"></span>skill-creator y claude-automation-recommender</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .slide-container { width: 1280px; min-height: 720px; background: #F4F1EA; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
+  .pad { padding-left: 64px; padding-right: 64px; }
+  .head { padding-top: 52px; }
+  .accent-rule { width: 48px; height: 3px; background: #A7552B; }
+  h2 { font-family: 'Archivo', sans-serif; font-size: 32px; color: #1A1D1A; font-weight: 600; letter-spacing: -0.01em; padding-top: 16px; }
+  .zone { flex: 1; display: grid; grid-template-columns: 1fr 300px; column-gap: 32px; padding-top: 28px; align-items: start; }
+  .item { border-top: 1px solid #CBC4B4; padding-top: 14px; margin-top: 14px; }
+  .item:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+  .item .k { font-family: 'Archivo', sans-serif; font-size: 21px; color: #1A1D1A; font-weight: 600; line-height: 1.2; }
+  .item .v { font-size: 17px; color: #2E332E; line-height: 1.52; padding-top: 8px; }
+  .item .v b { color: #1A1D1A; font-weight: 600; }
+  .item .v code { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #A7552B; }
+  .item .q { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #6E7268; line-height: 1.75; padding-top: 8px; }
+  .side { }
+  .lbl { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; letter-spacing: 0.1em; text-transform: uppercase; }
+  .m { background: #E8E3D7; border-radius: 2px; padding: 16px 18px; margin-top: 12px; }
+  .m .n { font-family: 'JetBrains Mono', monospace; font-size: 26px; color: #1A1D1A; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+  .m .t { font-size: 14px; color: #2E332E; line-height: 1.45; padding-top: 8px; }
+  .m .t b { color: #1A1D1A; font-weight: 600; }
+  .foot { padding-top: 16px; }
+  .foot .rule { border-top: 1px solid #CBC4B4; }
+  .mark { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; text-align: right; padding-top: 8px; letter-spacing: 0.04em; }
+  .spacer { height: 28px; }
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="pad head">
+    <div class="accent-rule"></div>
+    <h2>Documentación y estado acumulado</h2>
+  </div>
+  <div class="pad zone">
+    <div>
+      <div class="item">
+        <div class="k">El README mezcla tres audiencias en el mismo párrafo</div>
+        <div class="v">Referencia de uso, rationale de diseño y bitácora de versiones, intercalados línea a línea. <b>11 párrafos de más de 150 palabras</b> y 6 de los 19 encabezados llevan la versión en el título.</div>
+      </div>
+      <div class="item">
+        <div class="k">Buena parte documenta el pasado, no el estado actual</div>
+        <div class="q">README:152 — «It <b>used to</b> git clone this repo's main and bash the result…»<br>README:132 — «Before it, <b>14 of 16</b> shipped runs carried no compound line.»</div>
+        <div class="v">Son notas de migración disfrazadas de referencia, y ya existen mejor contadas en <code>upgrades/</code> y <code>docs/research/</code>.</div>
+      </div>
+      <div class="item">
+        <div class="k">La rotación del ledger está diseñada y nunca se construyó</div>
+        <div class="v"><code>docs/research/git-native-memory-design.md:115-121</code> especifica el archivado por trimestres. El directorio no existe. Y <b>LEARNINGS.md se inyecta en cada sesión</b>: es el producto que vende disciplina de tokens creciendo sin rotación.</div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="lbl">Las cifras</div>
+      <div class="m"><div class="n">5.431</div><div class="t">palabras de README, con <b>31 menciones de versión</b></div></div>
+      <div class="m"><div class="n">1.049</div><div class="t">líneas de <b>LEARNINGS.md</b> sin política de archivado</div></div>
+      <div class="m"><div class="n">1,2 MB</div><div class="t">de estado en <b>.claude/flywheel/</b>, 133 ficheros versionados</div></div>
+      <div class="m"><div class="n">0</div><div class="t">CHANGELOG, con <b>80 notas de upgrade</b> ya escritas</div></div>
+    </div>
+  </div>
+  <div class="pad foot">
+    <div class="rule"></div>
+    <div class="mark">fw · v0.83.0 · 11/12</div>
+  </div>
+  <div class="spacer"></div>
+</div>
+</body>
+</html>

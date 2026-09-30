@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .slide-container { width: 1280px; min-height: 720px; background: #F4F1EA; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
+  .pad { padding-left: 64px; padding-right: 64px; }
+  .head { padding-top: 52px; display: grid; grid-template-columns: 1fr auto; align-items: end; column-gap: 20px; }
+  .accent-rule { width: 48px; height: 3px; background: #A7552B; }
+  h2 { font-family: 'Archivo', sans-serif; font-size: 32px; color: #1A1D1A; font-weight: 600; letter-spacing: -0.01em; padding-top: 16px; }
+  .tag { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; letter-spacing: 0.1em; text-transform: uppercase; }
+  .zone { flex: 1; display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; padding-top: 32px; align-items: start; }
+  .sub { font-family: 'Archivo', sans-serif; font-size: 21px; color: #1A1D1A; font-weight: 600; }
+  .p { font-size: 17px; line-height: 1.55; color: #2E332E; padding-top: 12px; }
+  .p b { color: #1A1D1A; font-weight: 600; }
+  .code { background: #E8E3D7; border-radius: 2px; padding: 18px; margin-top: 16px; }
+  .code div { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #2E332E; line-height: 1.95; white-space: nowrap; }
+  .code div b { color: #A7552B; font-weight: 700; }
+  .code div s { text-decoration: none; color: #6E7268; }
+  .rows { padding-top: 6px; }
+  .row { border-top: 1px solid #CBC4B4; padding-top: 12px; margin-top: 12px; display: grid; grid-template-columns: 150px 1fr; column-gap: 14px; }
+  .row .k { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #A7552B; font-weight: 500; line-height: 1.5; }
+  .row .t { font-size: 16px; color: #2E332E; line-height: 1.45; }
+  .row .t b { color: #1A1D1A; font-weight: 600; }
+  .kicker { background: #E8E3D7; border-radius: 2px; padding: 18px; margin-top: 18px; font-size: 16px; line-height: 1.5; color: #2E332E; }
+  .kicker b { color: #1A1D1A; font-weight: 600; }
+  .foot { padding-top: 16px; }
+  .foot .rule { border-top: 1px solid #CBC4B4; }
+  .mark { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; text-align: right; padding-top: 8px; letter-spacing: 0.04em; }
+  .spacer { height: 28px; }
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="pad head">
+    <div>
+      <div class="accent-rule"></div>
+      <h2>Retorno inmediato 2: shellcheck y supply chain</h2>
+    </div>
+    <div class="tag">Esfuerzo S · dos gates</div>
+  </div>
+  <div class="pad zone">
+    <div>
+      <div class="sub">El repo es 100 % bash y no tiene linter de shell</div>
+      <div class="p">Ningún workflow ejecuta shellcheck. Y como <b>hoy pasa limpio</b>, el gate entra en verde el primer día: no hay deuda que pagar antes de instalarlo, solo deuda que impedir.</div>
+      <div class="kicker">El caso raro en que añadir un gate <b>no cuesta nada</b> y a partir de ahí la calidad no puede degradarse sin que CI lo diga.</div>
+      <div class="sub" style="padding-top:26px;">Lo que además falta</div>
+      <div class="rows">
+        <div class="row"><div class="k">concurrency:</div><div class="t">ausente en los 4 workflows: dos pushes casi simultáneos pueden correr <b>release.yml</b> en paralelo sobre tags</div></div>
+        <div class="row"><div class="k">cache: npm</div><div class="t">el CLI se reinstala entero en cada corrida</div></div>
+        <div class="row"><div class="k">dependabot</div><div class="t">no existe, con 2 acciones externas en juego</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="sub">El pinning protege un workflow y deja tres fuera</div>
+      <div class="p"><b>check-supply-chain-pin.sh</b> blinda con rigor el caso crítico. Los otros tres siguen en tag móvil — y uno de ellos es justo el pipeline que <b>valida el propio plugin</b>.</div>
+      <div class="code">
+        <div><s>flywheel-update.yml:64</s> &nbsp;checkout@<b>11bd719…</b></div>
+        <div><s>flywheel-update.yml:161</s> create-pull-request@<b>271a8d0…</b></div>
+        <div style="padding-top:8px;"><s>release.yml:36</s> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;checkout@<b>v4</b></div>
+        <div><s>validate-plugins.yml:29</s> checkout@<b>v4</b></div>
+        <div><s>validate-plugins.yml:31</s> setup-node@<b>v4</b></div>
+        <div><s>validate-plugins.yml:50</s> checkout@<b>v4</b></div>
+      </div>
+      <div class="p" style="padding-top:16px;">Un tag <b>v4</b> re-apuntado es el vector clásico contra GitHub Actions. El estándar que el repo se exige en un sitio no se aplica en los otros tres.</div>
+    </div>
+  </div>
+  <div class="pad foot">
+    <div class="rule"></div>
+    <div class="mark">fw · v0.83.0 · 06/12</div>
+  </div>
+  <div class="spacer"></div>
+</div>
+</body>
+</html>

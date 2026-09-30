@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .slide-container { width: 1280px; min-height: 720px; background: #F4F1EA; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
+  .pad { padding-left: 64px; padding-right: 64px; }
+  .head { padding-top: 52px; }
+  .accent-rule { width: 48px; height: 3px; background: #A7552B; }
+  h2 { font-family: 'Archivo', sans-serif; font-size: 32px; color: #1A1D1A; font-weight: 600; letter-spacing: -0.01em; padding-top: 16px; }
+  .zone { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding-top: 26px; }
+  .band { display: grid; grid-template-columns: 178px 1fr; column-gap: 26px; }
+  .band + .band { border-top: 1px solid #CBC4B4; padding-top: 22px; margin-top: 22px; }
+  .bt { font-family: 'Archivo', sans-serif; font-size: 21px; color: #1A1D1A; font-weight: 600; line-height: 1.2; }
+  .bs { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; padding-top: 8px; line-height: 1.6; }
+  .items { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; }
+  .it { }
+  .it .k { font-size: 17px; color: #1A1D1A; font-weight: 600; line-height: 1.4; }
+  .it .v { font-size: 16px; color: #2E332E; line-height: 1.5; padding-top: 7px; }
+  .it .v code { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #A7552B; }
+  .it .v b { color: #1A1D1A; font-weight: 600; }
+  .it + .it { padding-top: 16px; }
+  .conseq { background: #E8E3D7; border-radius: 2px; padding: 16px 18px; margin-top: 16px; font-size: 16px; line-height: 1.5; color: #2E332E; }
+  .conseq b { color: #1A1D1A; font-weight: 600; }
+  .foot { padding-top: 16px; }
+  .foot .rule { border-top: 1px solid #CBC4B4; }
+  .mark { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; text-align: right; padding-top: 8px; letter-spacing: 0.04em; }
+  .spacer { height: 28px; }
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="pad head">
+    <div class="accent-rule"></div>
+    <h2>Agentes y hooks: lo que falta y lo que se pisa</h2>
+  </div>
+  <div class="pad zone">
+    <div class="band">
+      <div>
+        <div class="bt">Agentes</div>
+        <div class="bs">6 ficheros<br>agents/*.md</div>
+      </div>
+      <div>
+        <div class="items">
+          <div class="it">
+            <div class="k">Falta un campo que la guía marca como requerido</div>
+            <div class="v">Ninguno declara <code>color:</code>, ni tiene la sección <b>When to invoke</b> en el cuerpo. El campo propio <code>effort:</code> es una extensión legítima, pero no sustituye a color.</div>
+          </div>
+          <div class="it">
+            <div class="k">El menor privilegio está en la prosa, no en el frontmatter</div>
+            <div class="v">Los tres <code>reviewer-*</code> declaran <code>Bash</code> mientras su system prompt dice <b>«Do not modify files»</b>. Bash permite <code>sed -i</code>: la restricción no se aplica sola.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="band">
+      <div>
+        <div class="bt">Hooks</div>
+        <div class="bs">3 en Stop<br>1 en cada tool call</div>
+      </div>
+      <div>
+        <div class="items">
+          <div class="it">
+            <div class="k">Tres bloqueadores independientes en Stop</div>
+            <div class="v"><code>gate.sh</code>, <code>toolbar.sh</code> y <code>compound-due.sh</code> hacen <code>exit 2</code> por razones no relacionadas: suite roja, formato de la barra, compound pendiente.</div>
+          </div>
+          <div class="it">
+            <div class="k">read-meter.sh corre en cada llamada</div>
+            <div class="v">Con matcher <code>.*</code>: arranca CPython y relee el log completo cada vez. <b>Reproduce a nivel de hooks el coste cuadrático del que advierte.</b></div>
+          </div>
+        </div>
+        <div class="conseq">El modelo recibe los motivos <b>fragmentados en reintentos sucesivos</b>: arregla el formato, reintenta, ahora falla el compound, reintenta, ahora falla el gate. Un orquestador que agregue los tres motivos en un solo mensaje convierte tres ciclos en uno, a coste cero.</div>
+      </div>
+    </div>
+  </div>
+  <div class="pad foot">
+    <div class="rule"></div>
+    <div class="mark">fw · v0.83.0 · 09/12</div>
+  </div>
+  <div class="spacer"></div>
+</div>
+</body>
+</html>

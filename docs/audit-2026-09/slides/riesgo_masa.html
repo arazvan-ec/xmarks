@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .slide-container { width: 1280px; min-height: 720px; background: #F4F1EA; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
+  .pad { padding-left: 64px; padding-right: 64px; }
+  .head { padding-top: 52px; }
+  .accent-rule { width: 48px; height: 3px; background: #A7552B; }
+  h2 { font-family: 'Archivo', sans-serif; font-size: 32px; color: #1A1D1A; font-weight: 600; letter-spacing: -0.01em; padding-top: 16px; }
+  .zone { flex: 1; display: grid; grid-template-columns: 1fr 420px; column-gap: 20px; padding-top: 30px; align-items: start; }
+  .lbl { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; letter-spacing: 0.1em; text-transform: uppercase; }
+  .chartnote { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; padding-top: 10px; line-height: 1.65; }
+  .read { font-size: 18px; line-height: 1.58; color: #2E332E; padding-top: 14px; }
+  .read b { color: #1A1D1A; font-weight: 600; }
+  .figs { padding-top: 22px; }
+  .fig { border-top: 1px solid #CBC4B4; padding-top: 12px; margin-top: 12px; display: grid; grid-template-columns: 116px 1fr; column-gap: 14px; align-items: baseline; }
+  .fig .n { font-family: 'JetBrains Mono', monospace; font-size: 26px; color: #A7552B; font-weight: 700; letter-spacing: -0.02em; }
+  .fig .t { font-size: 15px; color: #2E332E; line-height: 1.45; }
+  .fig .t b { color: #1A1D1A; font-weight: 600; }
+  .foot { padding-top: 16px; }
+  .foot .rule { border-top: 1px solid #CBC4B4; }
+  .mark { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; text-align: right; padding-top: 8px; letter-spacing: 0.04em; }
+  .spacer { height: 28px; }
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="pad head">
+    <div class="accent-rule"></div>
+    <h2>Dónde está el riesgo real: la masa</h2>
+  </div>
+  <div class="pad zone">
+    <div>
+      <div class="lbl">Reparto de las 12.604 líneas de bash</div>
+      <div style="height: 300px; padding-top: 14px;"><canvas id="c1"></canvas></div>
+      <div class="chartnote">Las 2.616 líneas de Python viven dentro de los scripts de producción: son un subconjunto, no una cuarta pila. Fuente: wc -l sobre scripts/ en 5249626.</div>
+    </div>
+    <div>
+      <div class="lbl">La lectura</div>
+      <div class="read">Cada cifra es trabajo hecho. Juntas son el <b>precio de cada cambio futuro</b>: nada de esto está roto, y todo encarece la siguiente línea.</div>
+      <div class="figs">
+        <div class="fig"><div class="n">5-26 %</div><div class="t">de las líneas de test es <b>aserción real</b>; el resto es arnés repetido</div></div>
+        <div class="fig"><div class="n">34×</div><div class="t"><b>pass()</b> definido de nuevo, casi byte a byte, en cada suite</div></div>
+        <div class="fig"><div class="n">80</div><div class="t">notas de upgrade en <b>90 días</b> — un release al día, sin CHANGELOG</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="pad foot">
+    <div class="rule"></div>
+    <div class="mark">fw · v0.83.0 · 04/12</div>
+  </div>
+  <div class="spacer"></div>
+<script>
+new Chart(document.getElementById('c1'), {
+  type: 'bar',
+  data: {
+    labels: ['Suites de test', 'Scripts de producción', '· Python en heredocs'],
+    datasets: [{
+      data: [7188, 5416, 2616],
+      backgroundColor: ['#A7552B', '#5E6B52', '#CBC4B4'],
+      barThickness: 42
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    animation: false,
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(203,196,180,0.5)' }, ticks: { color: '#6E7268', font: { family: "'JetBrains Mono', monospace", size: 12 } } },
+      y: { grid: { display: false }, ticks: { color: '#2E332E', font: { family: "'Inter', sans-serif", size: 14 } } }
+    }
+  }
+});
+</script>
+</div>
+</body>
+</html>
