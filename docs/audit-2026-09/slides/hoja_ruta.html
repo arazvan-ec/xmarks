@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .slide-container { width: 1280px; height: 720px; overflow: hidden; background: #F4F1EA; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
+  .pad { padding-left: 64px; padding-right: 64px; }
+  .head { padding-top: 34px; display: grid; grid-template-columns: 1fr auto; align-items: end; column-gap: 20px; }
+  .accent-rule { width: 48px; height: 3px; background: #A7552B; }
+  h2 { font-family: 'Archivo', sans-serif; font-size: 31px; color: #1A1D1A; font-weight: 600; letter-spacing: -0.01em; padding-top: 14px; }
+  .tag { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; letter-spacing: 0.1em; text-transform: uppercase; }
+  .zone { flex: 1; display: grid; grid-template-columns: 1fr 336px; column-gap: 32px; padding-top: 20px; align-items: start; }
+  .wave { display: grid; grid-template-columns: 108px 1fr; column-gap: 18px; }
+  .wave + .wave { border-top: 1px solid #CBC4B4; padding-top: 13px; margin-top: 13px; }
+  .wn { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #A7552B; font-weight: 700; letter-spacing: 0.06em; line-height: 1.5; }
+  .wn small { display: block; color: #6E7268; font-weight: 400; font-size: 12px; letter-spacing: 0; padding-top: 4px; }
+  .wt { font-family: 'Archivo', sans-serif; font-size: 18.5px; color: #1A1D1A; font-weight: 600; line-height: 1.25; }
+  .wl { padding-top: 6px; }
+  .wl div { font-size: 15px; color: #2E332E; line-height: 1.46; padding-top: 3px; }
+  .wl div b { color: #1A1D1A; font-weight: 600; }
+  .wl div code { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #6E7268; }
+  .panel { background: #E8E3D7; border-radius: 2px; padding: 18px 20px; }
+  .panel .k { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A7552B; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+  .panel .i { border-top: 1px solid #CBC4B4; padding-top: 9px; margin-top: 9px; font-size: 14.5px; color: #2E332E; line-height: 1.4; }
+  .panel .i:first-of-type { border-top: none; padding-top: 10px; }
+  .panel .i b { color: #1A1D1A; font-weight: 600; }
+  .gatenote { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; padding-top: 12px; line-height: 1.6; }
+  .foot { padding-top: 12px; }
+  .foot .rule { border-top: 1px solid #CBC4B4; }
+  .mark { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; text-align: right; padding-top: 7px; letter-spacing: 0.04em; }
+  .spacer { height: 18px; }
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="pad head">
+    <div>
+      <div class="accent-rule"></div>
+      <h2>Hoja de ruta: doce specs, tres olas</h2>
+    </div>
+    <div class="tag">Cada una con su gate</div>
+  </div>
+  <div class="pad zone">
+    <div>
+      <div class="wave">
+        <div class="wn">P72–P74<small>días · riesgo casi nulo</small></div>
+        <div>
+          <div class="wt">Lo que se cobra solo</div>
+          <div class="wl">
+            <div><b>P72</b> Sweep paralelo, 3,9× medido — <code>test-sweep.sh</code></div>
+            <div><b>P73</b> shellcheck en CI, pin SHA ×4, concurrency, cache, dependabot — <code>check-supply-chain-pin.sh</code></div>
+            <div><b>P74</b> Convención de <code>set</code>, fix SIGPIPE ×2, trap y nullglob, límite 128 KiB — <code>check-shell-conventions.sh</code></div>
+          </div>
+        </div>
+      </div>
+      <div class="wave">
+        <div class="wn">P75–P78<small>comportamiento</small></div>
+        <div>
+          <div class="wt">Lo que cambia cómo se comporta el producto</div>
+          <div class="wl">
+            <div><b>P75</b> Rotación de LEARNINGS.md · <b>P76</b> descriptions = disparador</div>
+            <div><b>P77</b> color, When to invoke y menor privilegio en los 6 agentes</div>
+            <div><b>P78</b> Consolidar los tres hooks Stop en un orquestador</div>
+          </div>
+        </div>
+      </div>
+      <div class="wave">
+        <div class="wn">P79–P83<small>incremental</small></div>
+        <div>
+          <div class="wt">El gran refactor, nunca de golpe</div>
+          <div class="wl">
+            <div><b>P79</b> fwtest.sh con self-test · <b>P80</b> fw_common.sh y los 4 heredocs</div>
+            <div><b>P81</b> README → docs/ y CHANGELOG generado · <b>P82</b> descomponer el instalador</div>
+            <div><b>P83</b> Subagente <code>bash-reviewer</code> enrutado por diff</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="k">Qué NO tocar</div>
+        <div class="i"><b>La disciplina de gates.</b> 13 gates con test propio es infraestructura cara de construir y barata de mantener.</div>
+        <div class="i"><b>El sistema de paridad.</b> Cierra la clase de bug más difícil de ver con dos rutas de distribución.</div>
+        <div class="i"><b>Los presupuestos versionados.</b> Retunear es un cambio de datos revisable, no de código.</div>
+        <div class="i"><b>La honestidad sobre las evals.</b> Admitir que las katas son regression-only vale más que un número bonito.</div>
+        <div class="i"><b>El modelo de confianza de gate.sh.</b> Hash fuera del repo y re-consentimiento al editar.</div>
+      </div>
+      <div class="gatenote">Ninguna propuesta pide abandonar el método del repo: cada una llega con el gate que la mantiene viva.</div>
+    </div>
+  </div>
+  <div class="pad foot">
+    <div class="rule"></div>
+    <div class="mark">fw · 5249626 · 12/12</div>
+  </div>
+  <div class="spacer"></div>
+</div>
+</body>
+</html>

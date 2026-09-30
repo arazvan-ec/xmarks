@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .slide-container { width: 1280px; min-height: 720px; background: #F4F1EA; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
+  .pad { padding-left: 64px; padding-right: 64px; }
+  .head { padding-top: 52px; }
+  .accent-rule { width: 48px; height: 3px; background: #A7552B; }
+  h2 { font-family: 'Archivo', sans-serif; font-size: 32px; color: #1A1D1A; font-weight: 600; letter-spacing: -0.01em; padding-top: 16px; }
+  .zone { flex: 1; display: grid; grid-template-columns: 1fr 440px; column-gap: 20px; padding-top: 48px; align-items: start; }
+  .thesis { font-family: 'Archivo', sans-serif; font-size: 50px; line-height: 1.14; color: #1A1D1A; font-weight: 600; letter-spacing: -0.015em; }
+  .thesis em { font-style: normal; color: #A7552B; }
+  .sub { font-size: 18px; line-height: 1.62; color: #2E332E; padding-top: 28px; max-width: 660px; }
+  .sub b { font-weight: 600; color: #1A1D1A; }
+  .kpis { display: flex; flex-direction: column; }
+  .kpi { background: #E8E3D7; border-radius: 2px; padding: 20px; margin-top: 14px; }
+  .kpi:first-child { margin-top: 0; }
+  .kpi .n { font-family: 'JetBrains Mono', monospace; font-size: 42px; color: #1A1D1A; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+  .kpi .n small { font-size: 20px; color: #6E7268; font-weight: 500; }
+  .kpi .t { font-size: 15px; color: #2E332E; line-height: 1.5; padding-top: 10px; }
+  .kpi .t b { color: #1A1D1A; font-weight: 600; }
+  .note { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; padding-top: 26px; line-height: 1.7; }
+  .foot { padding-top: 18px; }
+  .foot .rule { border-top: 1px solid #CBC4B4; }
+  .mark { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; text-align: right; padding-top: 8px; letter-spacing: 0.04em; }
+  .spacer { height: 28px; }
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="pad head">
+    <div class="accent-rule"></div>
+    <h2>Veredicto</h2>
+  </div>
+  <div class="pad zone">
+    <div>
+      <div class="thesis">El repo está sano.<br>No es un caso de<br><em>arreglar lo roto.</em></div>
+      <div class="sub">El riesgo dominante es el <b>coste marginal de cada cambio futuro</b> —masa y acoplamiento—, no un defecto presente. Todo lo que el repo se propone verificar, lo verifica; lo que no tiene es una forma barata de seguir creciendo.</div>
+      <div class="note">Las tres cifras de la derecha se midieron ejecutando el repo, no leyéndolo.</div>
+    </div>
+    <div class="kpis">
+      <div class="kpi">
+        <div class="n">48/48</div>
+        <div class="t"><b>Sweep completo en verde.</b> 13 gates de CI más 35 suites de test, ejecutados en este análisis.</div>
+      </div>
+      <div class="kpi">
+        <div class="n">0 <small>errores</small></div>
+        <div class="t"><b>shellcheck sobre 12.604 líneas.</b> Los 3 warnings son falsos positivos, revisados uno a uno.</div>
+      </div>
+      <div class="kpi">
+        <div class="n">3 <small>gates</small></div>
+        <div class="t"><b>Paridad vigilada.</b> Hooks, agentes y sweep↔CI no pueden divergir en silencio.</div>
+      </div>
+    </div>
+  </div>
+  <div class="pad foot">
+    <div class="rule"></div>
+    <div class="mark">fw · v0.83.0 · 02/12</div>
+  </div>
+  <div class="spacer"></div>
+</div>
+</body>
+</html>

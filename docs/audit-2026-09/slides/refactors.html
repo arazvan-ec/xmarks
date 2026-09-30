@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .slide-container { width: 1280px; min-height: 720px; background: #F4F1EA; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; }
+  .pad { padding-left: 64px; padding-right: 64px; }
+  .head { padding-top: 52px; display: grid; grid-template-columns: 1fr auto; align-items: end; column-gap: 20px; }
+  .accent-rule { width: 48px; height: 3px; background: #A7552B; }
+  h2 { font-family: 'Archivo', sans-serif; font-size: 32px; color: #1A1D1A; font-weight: 600; letter-spacing: -0.01em; padding-top: 16px; }
+  .tag { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; letter-spacing: 0.1em; text-transform: uppercase; }
+  .zone { flex: 1; display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; padding-top: 28px; align-items: start; }
+  .col { }
+  .num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A7552B; letter-spacing: 0.12em; font-weight: 700; }
+  .ct { font-family: 'Archivo', sans-serif; font-size: 21px; color: #1A1D1A; font-weight: 600; padding-top: 7px; line-height: 1.2; }
+  .cp { font-size: 17px; color: #2E332E; line-height: 1.52; padding-top: 11px; }
+  .cp b { color: #1A1D1A; font-weight: 600; }
+  .cp code { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #A7552B; }
+  .ev { padding-top: 14px; }
+  .evrow { border-top: 1px solid #CBC4B4; padding-top: 9px; margin-top: 9px; display: grid; grid-template-columns: 56px 1fr; column-gap: 12px; align-items: baseline; }
+  .evrow .n { font-family: 'JetBrains Mono', monospace; font-size: 20px; color: #1A1D1A; font-weight: 700; letter-spacing: -0.02em; }
+  .evrow .t { font-size: 15px; color: #2E332E; line-height: 1.4; }
+  .evrow .t code { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #6E7268; }
+  .risk { background: #E8E3D7; border-radius: 2px; padding: 16px 18px; margin-top: 16px; }
+  .risk .k { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A7552B; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+  .risk .t { font-size: 15px; color: #2E332E; line-height: 1.5; padding-top: 8px; }
+  .risk .t b { color: #1A1D1A; font-weight: 600; }
+  .foot { padding-top: 16px; }
+  .foot .rule { border-top: 1px solid #CBC4B4; }
+  .mark { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; text-align: right; padding-top: 8px; letter-spacing: 0.04em; }
+  .spacer { height: 28px; }
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="pad head">
+    <div>
+      <div class="accent-rule"></div>
+      <h2>Los dos refactors de mayor apalancamiento</h2>
+    </div>
+    <div class="tag">Esfuerzo L · incrementales</div>
+  </div>
+  <div class="pad zone">
+    <div class="col">
+      <div class="num">A · TESTS</div>
+      <div class="ct">scripts/lib/fwtest.sh</div>
+      <div class="cp">Un arnés común, porque hoy la mayoría de cada suite es plomería y la deriva ya empezó: <b>dos semánticas distintas de «test rojo»</b> conviven en el repo.</div>
+      <div class="ev">
+        <div class="evrow"><div class="n">34×</div><div class="t"><code>pass()</code> redefinido, casi byte a byte</div></div>
+        <div class="evrow"><div class="n">33×</div><div class="t"><code>fail()</code> redefinido</div></div>
+        <div class="evrow"><div class="n">7×</div><div class="t"><code>run_hook()</code> reimplementado</div></div>
+        <div class="evrow"><div class="n">3×</div><div class="t">graders de evals <b>idénticos byte a byte</b></div></div>
+      </div>
+      <div class="risk">
+        <div class="k">Riesgo honesto</div>
+        <div class="t">Un arnés roto rompe <b>41 suites a la vez</b>. Mitigación en tres capas: self-test del arnés que corre <b>primero</b> en el sweep, migración empezando por los 7 <code>run_hook</code> —el grupo más homogéneo— y <b>nunca big-bang</b>.</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="num">B · PRODUCCIÓN</div>
+      <div class="ct">fw_common.sh + fw_allowlist.py</div>
+      <div class="cp">Sacar la lógica del heredoc: <b>2.616 líneas de Python</b> viven como texto dentro de bash, así que no son lintables ni testeables unitariamente.</div>
+      <div class="ev">
+        <div class="evrow"><div class="n">3</div><div class="t">implementaciones <b>distintas</b> del parser de allow-list, con semánticas divergentes</div></div>
+        <div class="evrow"><div class="n">8</div><div class="t">copias del patrón <code>SKIP_&lt;GATE&gt;</code></div></div>
+        <div class="evrow"><div class="n">7</div><div class="t">copias de la resolución de <code>CLAUDE_PROJECT_DIR</code></div></div>
+        <div class="evrow"><div class="n">996</div><div class="t">líneas en los <b>4 heredocs mayores</b>, las primeras candidatas a extraer</div></div>
+      </div>
+      <div class="risk">
+        <div class="k">El precedente es propio</div>
+        <div class="t"><code>fw_cutoffs.py</code> y <code>fw_tasks.py</code> ya están extraídos e invocados como CLI desde <code>check-route-honored.sh:64</code>. <b>El patrón funciona en este repo; solo falta aplicarlo al resto.</b></div>
+      </div>
+    </div>
+  </div>
+  <div class="pad foot">
+    <div class="rule"></div>
+    <div class="mark">fw · v0.83.0 · 10/12</div>
+  </div>
+  <div class="spacer"></div>
+</div>
+</body>
+</html>

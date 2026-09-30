@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .slide-container { width: 1280px; height: 720px; background: #F4F1EA; display: flex; flex-direction: column; font-family: 'Inter', sans-serif; overflow: hidden; }
+  .pad { padding-left: 64px; padding-right: 64px; }
+  .head { padding-top: 40px; }
+  .accent-rule { width: 48px; height: 3px; background: #A7552B; }
+  h2 { font-family: 'Archivo', sans-serif; font-size: 31px; color: #1A1D1A; font-weight: 600; letter-spacing: -0.01em; padding-top: 14px; }
+  .lead { font-size: 17px; color: #2E332E; line-height: 1.5; padding-top: 10px; max-width: 900px; }
+  .zone { flex: 1; padding-top: 22px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; letter-spacing: 0.1em; text-transform: uppercase; background: #E8E3D7; text-align: left; padding: 9px 14px; font-weight: 500; }
+  thead th.r { text-align: right; }
+  tbody td { font-size: 15.5px; color: #2E332E; padding: 11px 14px; border-bottom: 1px solid #CBC4B4; line-height: 1.35; vertical-align: top; }
+  tbody td.m { font-family: 'JetBrains Mono', monospace; font-size: 14px; text-align: right; color: #1A1D1A; font-weight: 500; white-space: nowrap; }
+  tbody td.src { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #6E7268; }
+  tbody td b { color: #1A1D1A; font-weight: 600; }
+  tbody td .acc { color: #A7552B; font-weight: 700; }
+  .note { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; padding-top: 12px; line-height: 1.6; }
+  .foot { padding-top: 12px; }
+  .foot .rule { border-top: 1px solid #CBC4B4; }
+  .mark { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6E7268; text-align: right; padding-top: 6px; letter-spacing: 0.04em; }
+  .spacer { height: 20px; }
+</style>
+</head>
+<body>
+<div class="slide-container">
+  <div class="pad head">
+    <div class="accent-rule"></div>
+    <h2>La evidencia de salud</h2>
+    <div class="lead">No es una impresión: son seis señales medidas ejecutando el repositorio en su commit actual.</div>
+  </div>
+  <div class="pad zone">
+    <table>
+      <thead>
+        <tr><th style="width:38%">Señal</th><th class="r" style="width:20%">Medición</th><th style="width:42%">Cómo se verifica</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Sweep completo</b><br>13 gates de CI + 35 suites de test</td>
+          <td class="m"><span class="acc">48/48</span> PASS</td>
+          <td class="src">bash scripts/sweep.sh</td>
+        </tr>
+        <tr>
+          <td><b>Lint de shell</b><br>66 scripts, 12.604 líneas de bash</td>
+          <td class="m"><span class="acc">0</span> errores<br>3 warnings</td>
+          <td class="src">shellcheck -S warning scripts/*.sh</td>
+        </tr>
+        <tr>
+          <td>Los 3 warnings, revisados uno a uno</td>
+          <td class="m">falsos<br>positivos</td>
+          <td class="src">SC1007 sobre <b>VAR= cmd</b>, un prefijo<br>de entorno legítimo</td>
+        </tr>
+        <tr>
+          <td><b>Paridad de hooks y agentes</b><br>lo distribuido frente a lo autoaplicado</td>
+          <td class="m">vigilada</td>
+          <td class="src">check-hook-parity.sh<br>check-agent-parity.sh</td>
+        </tr>
+        <tr>
+          <td><b>Paridad sweep local ↔ CI</b><br>no hay lista paralela que mantener</td>
+          <td class="m">vigilada</td>
+          <td class="src">check-ci-gate-parity.sh<br>lee los <b>run:</b> del propio YAML</td>
+        </tr>
+        <tr>
+          <td>Presupuesto de descriptions de skills</td>
+          <td class="m">3538/3600</td>
+          <td class="src">check-description-budget.sh</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">Ejecutado en sandbox el 2026-09-30 sobre 5249626 · `claude plugin validate --strict` quedó SKIPPED por ausencia del CLI local, único paso no reproducido.</div>
+  </div>
+  <div class="pad foot">
+    <div class="rule"></div>
+    <div class="mark">fw · v0.83.0 · 03/12</div>
+  </div>
+  <div class="spacer"></div>
+</div>
+</body>
+</html>
