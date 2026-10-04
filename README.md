@@ -150,6 +150,7 @@ Claude Code mods ship from this marketplace as **separate, opt-in plugins** unde
 | `big-brother-token` | Live bytes read, session cost and context % in the status line; a toast for any single read over 8 KB and for a `Write` that rewrites a file already read; `/ministry` gives the dossier by tool. Stores each session's summary for the Ration Book. | `/plugin install big-brother-token@xmarks` |
 | `memory-hole` | A prompt carrying a list (2+ numbered items or 3+ bullets, code fences ignored) holds `Edit`/`Write`/`NotebookEdit` until the list is written to a `.plan.md`, the scratchpad, or `tasks.md`/`todo.md`. `/memory-hole release` lets it go, logged. | `/plugin install memory-hole@xmarks` |
 | `ventanilla-unica` | `/ventanilla [base]` runs `scripts/sweep.sh` in the background and stamps each gate in a pane as its line arrives; a toast gives the verdict. A sweep the model runs through Bash is stamped too. `/ventanilla status` answers in text. | `/plugin install ventanilla-unica@xmarks` |
+| `social-credit` | A citizen score in the status line, kept across sessions: +1 per `Edit`, −5 for a `Write` over a file already read, ±3 for test-first on `scripts/`, +1 per commit, −10 per `SKIP_*=` or `--no-verify`. Below 80 a re-education section joins the system prompt. `/social-credit` lists acts; `amnesty` resets. | `/plugin install social-credit@xmarks` |
 
 ## Deterministic completion gate (opt-in)
 

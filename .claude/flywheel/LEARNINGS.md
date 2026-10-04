@@ -1253,3 +1253,22 @@ One sweep run is now ~10 minutes, because every mod plan's `check:` runs the
 engine tests through `check-task-closure`. So sweeping the exact commit in a
 detached worktree in the background, and pushing when it is green, keeps
 "sweep before push" without stalling the next step.
+
+## decision: a system-prompt section a mod adds must change on *events*, not on counters — or it busts the cache every turn
+
+<!-- fw: type=decision; date=2026-10-04; files=mods/social-credit/hooks/register.ts; spec=p72-t4-social-credit; branch=ccr-ad2de139-xfsj6z; evidence=arm "below 80 … stable across points": the re-education text is byte-identical before and after an extra +1; PromptComposeSection docs: `session` scope sits after the cache boundary, and any byte change there re-sends everything after it -->
+
+`prompt.compose` lets a mod add a `session`-scoped section to the system prompt.
+The tempting version prints the live score ("you are at 76"). That changes
+every few tool calls and turns each change into a full re-read of the
+conversation. Social Credit's section depends only on the *set* of rules broken
+since the last amnesty, sorted. It appears when the score crosses 80, changes
+only when a new rule is broken, and disappears on amnesty. The score itself goes
+to the status line, which costs no tokens.
+
+T4's gate question, whether such a section changes behaviour, has no answer
+yet, because there are no live sessions. Keeping the section rare and stable
+makes it cheap to measure later: fewer invalidations means a clean before/after
+on the same cache. Same principle as the Committee switching models only per
+prompt. Anything that reaches the model should change on an event, never on a
+tick.

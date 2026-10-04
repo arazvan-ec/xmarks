@@ -1,0 +1,6 @@
+{
+  "name": "social-credit",
+  "version": "0.1.0",
+  "description": "Every act is scored: edits over rewrites, tests first, no silent skips. Fall below 80 and the system prompt re-educates you.",
+  "author": { "name": "arazvan" }
+}

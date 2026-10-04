@@ -43,6 +43,12 @@
       "source": "./mods/ventanilla-unica",
       "description": "Mod: the single window — /ventanilla runs flywheel's sweep and stamps each gate as it clears; a missing stamp sends you back tomorrow.",
       "category": "workflow"
+    },
+    {
+      "name": "social-credit",
+      "source": "./mods/social-credit",
+      "description": "Mod: every act is scored — edits over rewrites, tests first, no silent skips; below 80 the system prompt re-educates you.",
+      "category": "workflow"
     }
   ]
 }
