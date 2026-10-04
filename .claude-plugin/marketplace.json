@@ -67,6 +67,12 @@
       "source": "./mods/ration-book",
       "description": "Mod: every session gets a ration of read bytes, set from its own history; when the coupons run out, reads wait for an authorized grant.",
       "category": "workflow"
+    },
+    {
+      "name": "black-market",
+      "source": "./mods/black-market",
+      "description": "Mod: every exception is contraband — SKIP_*/--no-verify/Release-Exception use is ledgered with its reason, and /black-market audit totals the standing permits.",
+      "category": "workflow"
     }
   ]
 }

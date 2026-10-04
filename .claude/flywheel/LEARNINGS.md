@@ -1330,3 +1330,21 @@ is a declared `dependencies` contract (`$.state` types per plugin), not a
 second meter; and `Bash` is never held, although it carries most read volume
 (85% in P44). Holding it would stop tests and git. A Bash ration needs a
 command-aware design, not a blunt deny.
+
+## pattern: measure the debt before building its ledger — this repo's exceptions are standing permits, not one-off skips
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/black-market/hooks/register.ts,scripts/telemetry-baseline.txt,scripts/fixture-leak-allow.txt,scripts/invocation-budget.txt; spec=p72-t8-black-market; branch=ccr-ad2de139-xfsj6z; evidence=git log: 0 Release-Exception trailers, 0 SKIP_*= commits; standing: 31 telemetry-baseline exemptions, 6 fixture-leak allows, 4 named budget exceptions (41 permits); the fs.read stub missed until it matched by suffix — the engine resolves paths to absolute before hooks see them -->
+
+The roadmap pictured the Black Market as a live ledger of `SKIP_*` use. Counting
+first turned that around. In this repo's whole history nobody used a one-off
+escape: zero `Release-Exception` trailers, zero `SKIP_*=` in commit messages.
+The real debt is **41 standing permits** sitting in exception files. 31 of them
+are telemetry exemptions, which is three quarters of all the debt and the place
+to pay first. So `/black-market audit` became the main ledger and live
+contraband the secondary one. Thirty seconds of counting changed what the mod
+is for, which is the understanding gate doing its job.
+
+Engine detail: `$.fs.read("scripts/x.txt")` reaches the hook as an **absolute**
+path, resolved against the session's working directory. A test stub keyed by
+the relative path returns nothing and the audit reads zeros quietly. Match the
+stub by suffix.
