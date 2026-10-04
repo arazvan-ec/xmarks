@@ -6,7 +6,7 @@
 This document records *what the repo owner asked flywheel to become*, and the
 design that answers it. It is the durable home for the vision so any future
 session understands the direction without replaying the conversation. The
-one-paragraph north-star also lives in the root [`CLAUDE.md`](../../CLAUDE.md).
+one-paragraph north-star also lives in [`.claude/CLAUDE.md`](../../.claude/CLAUDE.md).
 
 ## The ask, in the owner's words (paraphrased)
 

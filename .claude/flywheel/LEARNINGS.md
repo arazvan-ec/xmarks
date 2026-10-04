@@ -1094,3 +1094,19 @@ move. Owner convention for long plans (first applied to P72):
 4. **Learn** — every closed step appends one ledger entry (`/flywheel:compound`),
    even when the lesson is "the assumption held": that is the evidence the next
    step's gate reads. A step with no entry is not closed.
+
+## gotcha: a CLI upgrade can turn a file that was always there into a strict-mode failure
+
+<!-- fw: type=gotcha; date=2026-10-04; files=.claude/CLAUDE.md,docs/research/agent-native-processes.md; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=`claude plugin validate . --strict` exit 1 on clean main with 2.1.289 ("CLAUDE.md at the plugin root is not loaded as project context"); passes on a git-archive copy with the file at .claude/CLAUDE.md; sweep went 47/49 → see the fixing commit -->
+
+CI installs `@anthropic-ai/claude-code` unpinned, so a new validator rule lands
+on `main` without any commit in this repo. 2.1.289 warns about a `CLAUDE.md` at
+a plugin root (plugins don't load it), and `--strict` turns that warning into an
+error. This repo *is* a plugin root and its `CLAUDE.md` is for sessions working
+on the repo, not for the plugin, so the fix is the path Claude Code also loads
+as project memory: `.claude/CLAUDE.md`. Not a reason to drop `--strict` — the
+warning was right about the plugin.
+
+Second-order cost: `sweep.sh` is itself a `check:` in P59/P60's plans, so one
+red gate showed up as three. When `check-task-closure` fails only on tasks whose
+check is the sweep, look at the sweep's other failures first.
