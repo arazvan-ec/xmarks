@@ -1432,3 +1432,28 @@ the owner runs `/strike end`, which is toasted and never silent.
 Across all 13 P72 steps, deny-mods needed this more than anything else: each
 allow-arm only means something once a mutation proves it can fail. T2, T5, T6
 and T12 each had arms that passed against an empty module.
+
+## gotcha: cloud sessions skip marketplace plugins, but load a mod by folder through `CLAUDE_CODE_PLUGIN_DIRS`
+
+<!-- fw: type=gotcha; date=2026-10-04; files=README.md,mods/big-brother-token/hooks/register.ts,mods/memory-hole/hooks/register.ts; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=cloud container, CLI 2.1.289: `claude plugin list` → "No plugins installed" despite enabledPlugins flywheel@xmarks in .claude/settings.json; `claude -p /ministry` → "isn't installed"; with CLAUDE_CODE_PLUGIN_DIRS=…/mods/big-brother-token → "The Ministry has recorded 0.0 KB read this session."; memory-hole via the same variable made a live -p run write its plan before the two Writes; a copy under a project's .claude/skills/<mod> did not load (untrusted workspace) -->
+
+The first time any P72 mod ran on a real engine, not the test kit, was in a cloud
+container. Two facts for anyone wiring mods into Claude Code web:
+
+1. **Marketplace plugins don't load there.** `enabledPlugins` plus
+   `extraKnownMarketplaces` in a project's settings install nothing
+   (`claude plugin list` is empty). That's why flywheel is vendored on web, and
+   the same goes for every mod.
+2. **A folder does load.** `CLAUDE_CODE_PLUGIN_DIRS` (absolute paths,
+   `:`-separated, read from the process environment or from `~/.claude/settings.json`'s
+   `env`, never from a project's settings) loads each folder as a `--plugin-dir`. In
+   a cloud environment that means the setup script clones the mods
+   (`git clone --depth 1 https://github.com/arazvan-ec/xmarks /opt/xmarks`) and an
+   environment variable names them. The memory-hole run shows the hooks are live,
+   not just loaded: the context note reached the model, which wrote the plan before
+   writing the files.
+
+Not settled: copying a mod into a project's `.claude/skills/<name>/` did not load it,
+but the test workspace was untrusted, so this proves nothing either way. And the
+interactive path (environment variable plus setup script in a new web session)
+follows from the headless result but hasn't been run end to end.

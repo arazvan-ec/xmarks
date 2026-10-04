@@ -144,6 +144,12 @@ A review sent to another session (`create_session`) that posts nothing reads the
 Claude Code mods ship from this marketplace as **separate, opt-in plugins** under
 `mods/<name>/`, each with its own version and tests (`scripts/check-mods.sh`).
 
+**Claude Code web (cloud sessions):** marketplace plugins are not installed there, mods included. Load mods by folder instead, with
+`CLAUDE_CODE_PLUGIN_DIRS`, verified in a cloud container on CLI 2.1.289. In the environment's settings (cloud environment
+menu → Edit), add to the setup script `git clone --depth 1 https://github.com/arazvan-ec/xmarks /opt/xmarks`, and set the
+environment variable `CLAUDE_CODE_PLUGIN_DIRS=/opt/xmarks/mods/resource-committee:/opt/xmarks/mods/big-brother-token`
+(absolute paths, `:`-separated). New sessions load them. A project's own `settings.json` cannot set this variable.
+
 | Mod | What it does | Install |
 | --- | --- | --- |
 | `resource-committee` | Assigns every turn its model and effort: `sonnet/medium` by default, `opus/high` for judgment, `sonnet/low` for mechanical work, classified once per prompt by Haiku so the cache survives. `/committee` shows the decision or pins `haiku`/`sonnet`/`opus`/`auto`. Subagents keep their own model. | `/plugin install resource-committee@xmarks` |
