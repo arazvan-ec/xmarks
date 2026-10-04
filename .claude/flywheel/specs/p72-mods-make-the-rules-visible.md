@@ -97,8 +97,8 @@ when it closes. Order and per-step questions as signed:
 | T6 | Newspeak | `sonnet/medium` | `… newspeak` | ✅ mod 0.1.0 — `p72-t6-newspeak` |
 | T7 | Ration Book | `sonnet/medium` | `… ration-book` | ✅ mod 0.1.0 — `p72-t7-ration-book` |
 | T8 | Black Market | `sonnet/medium` | `… black-market` | ✅ mod 0.1.0 (permit audit added at the gate) — `p72-t8-black-market` |
-| T9 | Citizen File | `sonnet/medium` | `… citizen-file` | next |
-| T10 | Telescreen | `sonnet/medium` | `… telescreen` | — |
+| T9 | Citizen File | `sonnet/medium` | `… citizen-file` | ✅ mod 0.1.0 — `p72-t9-citizen-file` |
+| T10 | Telescreen | `sonnet/medium` | `… telescreen` | next |
 | T11 | The Supervisor | `opus/high` | `… supervisor` | — |
 | T12 | General Strike | `opus/high` | `… general-strike` | — |
 

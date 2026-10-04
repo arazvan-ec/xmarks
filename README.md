@@ -155,6 +155,7 @@ Claude Code mods ship from this marketplace as **separate, opt-in plugins** unde
 | `newspeak` | For a prompt carrying a list, names the items with no success criterion (English or Spanish markers: `so that`, `must`, `passes`, `para que`, `en verde`, a number with a unit…) in a context note asking the model to get one first. Never blocks. `/newspeak` shows the running share. | `/plugin install newspeak@xmarks` |
 | `ration-book` | A per-session read ration: p75 of the last 10 sessions once 5 are recorded (floor 100 KB), else 400 KB. Coupons left in the status line, a toast at 80%, and at 100% `Read`/`Grep`/`Glob`/`WebFetch`/`WebSearch` are held (`Bash` and writes never). `/ration grant <KB>` adds coupons, announced. | `/plugin install ration-book@xmarks` |
 | `black-market` | Ledgers every `SKIP_*=<reason>`, `--no-verify` and `Release-Exception:` the session uses, with its reason; one without a reason (`1`, empty) raises a toast. `/black-market audit` totals the standing permits in `scripts/*allow*.txt`, `*baseline*.txt`, `invocation-budget.txt` and the git log's trailers. | `/plugin install black-market@xmarks` |
+| `citizen-file` | `/expediente [slug]` opens a pane on a cycle's run record (`.claude/flywheel/runs/<slug>/*.jsonl`, newest by default): each transition with its route, escalations marked, then transitions, bytes in and escalations totalled. `list` and `status` answer in text. | `/plugin install citizen-file@xmarks` |
 
 ## Deterministic completion gate (opt-in)
 

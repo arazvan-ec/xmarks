@@ -73,6 +73,12 @@
       "source": "./mods/black-market",
       "description": "Mod: every exception is contraband — SKIP_*/--no-verify/Release-Exception use is ledgered with its reason, and /black-market audit totals the standing permits.",
       "category": "workflow"
+    },
+    {
+      "name": "citizen-file",
+      "source": "./mods/citizen-file",
+      "description": "Mod: your file, opened — /expediente shows a flywheel cycle's run record live: every transition, route and escalation, with totals.",
+      "category": "workflow"
     }
   ]
 }

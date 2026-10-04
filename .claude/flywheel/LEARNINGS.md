@@ -1348,3 +1348,21 @@ Engine detail: `$.fs.read("scripts/x.txt")` reaches the hook as an **absolute**
 path, resolved against the session's working directory. A test stub keyed by
 the relative path returns nothing and the audit reads zeros quietly. Match the
 stub by suffix.
+
+## pattern: a live view over the ledger adds a reader, not a source — the pane and the HTML report read the same JSONL
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/citizen-file/hooks/register.tsx; spec=p72-t9-citizen-file; branch=ccr-ad2de139-xfsj6z; evidence=the mod only lists and reads .claude/flywheel/runs/<slug>/*.jsonl, never writes; 6/6 arms incl. a malformed line skipped and the pane on terminal and desktop -->
+
+T9's question was whether a live pane replaces the gate-time HTML report or
+duplicates it. Neither, as long as it adds no data of its own. The Citizen
+File reads the same `runs/<slug>/*.jsonl` the report is rendered from, and
+writes nothing. So there is one record and two views. The HTML report is the
+artifact that gets shared at a gate; the pane is for "where is this cycle right
+now", mid-flight, when the report doesn't exist yet. It skips malformed lines
+rather than failing, because the ledger is append-only and written by hand
+in places (this run's lines carry `cost_note: not metered`).
+
+Something this view makes cheap to see: every P72 cycle so far is one
+`opus/high` task, because plan-route forces the single riskiest task to the
+top tier. Once the Resource Committee runs in a real session, the pane is
+where a `route_escalated_from` row would show whether it held a plan's route.
