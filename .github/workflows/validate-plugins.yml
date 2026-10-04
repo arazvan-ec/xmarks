@@ -27,6 +27,9 @@ jobs:
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: check-mods.sh compares each changed mod's version to the base's.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -37,6 +40,10 @@ jobs:
 
       - name: Validate marketplace and plugin
         run: claude plugin validate . --strict
+
+      # Each mod is its own plugin: validated, tested by the engine, versioned (P72).
+      - name: Check mods
+        run: bash scripts/check-mods.sh "origin/${{ github.base_ref }}"
 
   test-installer:
     # End-to-end test of the vendored install path used for Claude Code web:

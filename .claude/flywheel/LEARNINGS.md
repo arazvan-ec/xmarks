@@ -1110,3 +1110,41 @@ warning was right about the plugin.
 Second-order cost: `sweep.sh` is itself a `check:` in P59/P60's plans, so one
 red gate showed up as three. When `check-task-closure` fails only on tasks whose
 check is the sweep, look at the sweep's other failures first.
+
+## decision: a mod that can deny a tool ships as its own plugin, never as a module of the plugin everyone installs
+
+<!-- fw: type=decision; date=2026-10-04; files=scripts/check-mods.sh,scripts/test-check-mods.sh,.github/workflows/validate-plugins.yml,.claude/CLAUDE.md; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=CLI 2.1.289 on git-archive copies: `modules` beside `hooks` in flywheel's hooks.json validates --strict (one module path only); a mods/probe plugin listed in marketplace.json validates once it has `author`; `claude plugin test` ran its *.test.ts, with TestBody `($, on)`, not `({ $ })` (a destructured body got undefined) -->
+
+T0's question, whether one plugin can carry bash hooks and TS modules, had the
+wrong answer to look for: **yes, it can**, and that's the trap. `hooks.json`
+takes one `modules` path, so all mods would load together on every flywheel
+install, deny-hooks included, with one version for all of them. The question
+that mattered was *who opts in*. A separate plugin per mod (`mods/<name>/`,
+listed in the marketplace) makes each one a `/plugin install` and a version of
+its own. The vendored installer has no part in it, which dropped one T0 item
+the spec had assumed.
+
+Two engine facts the next mod needs. A test body is `($, on) => …`: writing
+`({ $ })` fails quietly, `$` coming back `undefined`. Root `validate --strict`
+also reads every marketplace entry's manifest, so a mod missing `author` turns
+the *flywheel* validation red, not only its own.
+
+Answer to the gate question for T1: the assumption that a mod can be graded
+without the engine held only halfway. Structure and versions can be checked
+anywhere; `validate` and `test` need the CLI, so `check-mods.sh` reports them
+SKIPPED, never green, when it is absent.
+
+## gotcha: a plan is one cycle; a roadmap of many cycles written as a plan reddens on its first closed step
+
+<!-- fw: type=gotcha; date=2026-10-04; files=.claude/flywheel/specs/p72-mods-make-the-rules-visible.md; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=after T0's transition line, check-route-honored.sh exit 1: "T1 … T12 have no transition line — unrecorded"; it also failed test-check-route-honored (the repo must pass its own gate) and three task-closure rows that cite it -->
+
+`check-route-honored.sh` reads a plan with no lines at all as "not started" (a
+notice), and a plan with *some* lines as a cycle whose missing tasks are
+unrecorded (fatal). That's right for a cycle, which ships whole. A 13-step
+roadmap spread over many PRs is not a cycle, so the first honest transition
+line turned it red. The fix is not to write placeholder lines for steps that
+never ran (that would be a false record). The roadmap moves into the spec as a
+table, and each step opens its own `p72-tN-*` spec + plan when its
+understanding gate says go. One gate failure showed up as five: the gate itself,
+its test, and three task-closure rows citing it. Same shape as the P73 sweep
+echo.
