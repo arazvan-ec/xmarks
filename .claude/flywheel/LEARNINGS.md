@@ -1047,3 +1047,485 @@ each one is there because the template is worthless without it:
 
 The risk is accumulation: each template is reasonable, and together they make
 the flow heavy. The invocation budget is what keeps that visible.
+
+## pattern: a mod earns its place by making an existing rule visible or enforced — the theme is the skin, never the reason
+
+<!-- fw: type=pattern; date=2026-10-04; files=.claude/flywheel/specs/p72-mods-make-the-rules-visible.md,.claude/flywheel/specs/p72-mods-make-the-rules-visible.plan.md; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=Claude Code 2.1.289 ships mods (plugin-authoring skill): its types file names 80 `$` calls incl. tool.call, prompt.submit, prompt.compose, session.usage, model.classify, agent.register, store.*, audio.play, clock.every; 12 dystopian mod ideas were brainstormed and every one that survived maps onto a rule or meter flywheel already has (read-meter.sh, toolbar.sh, check-task-closure.sh, invocation budget, sweep.sh, LEARNINGS.md) -->
+
+Claude Code now loads **mods**: a plugin folder whose `hooks/hooks.json` is
+`{ "modules": ["./register.tsx"] }`, a TS module `register(on, options)` hooking
+events with `($, e, next)`. It can draw a Pane, a band above the prompt, a status
+entry, a toast; block or rewrite a tool call (`tool.call` → `{ deny }`); rewrite a
+prompt (`prompt.submit`) or the system prompt (`prompt.compose`); keep state per
+session (`$.state`) or across sessions (`$.store`); classify with a model
+(`$.model.classify`); register a subagent (`$.agent.register`). It runs with no
+DOM and no Node — everything outside goes through `$`. Hot reload needs the
+person's yes, asked once per session; nothing else can grant it.
+
+The brainstorm (owner ask: "mods distópicos") produced 12 ideas. What separated a
+keeper from decoration was one question: **which flywheel rule does this make
+visible, or which instruction does it turn into a mechanism?** Big Brother Token
+is `read-meter.sh` shown live instead of at close; Memory Hole is CLAUDE.md's
+"a list is a file" turned into a `tool.call` deny; Ventanilla Única is
+`sweep.sh` drawn as stamps. An idea with no rule behind it is a joke that costs
+tokens forever. The dystopian voice is legitimate only as the *message* of a
+real signal — it makes a cost or a skipped rule felt — never as the payload.
+
+Two things the brainstorm left open, and a plan must close before building:
+where a mod lives in this repo and how the installer ships it to repos that use
+flywheel (today's surface is `skills/ agents/ hooks/ scripts/`), and whether a
+`hooks.json` can carry both the bash hooks and `modules` at once.
+
+## decision: every step of a multi-step plan opens with an understanding gate — is the next step still the right one for the purpose?
+
+<!-- fw: type=decision; date=2026-10-04; files=.claude/flywheel/specs/p72-mods-make-the-rules-visible.plan.md; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=owner, 2026-10-04: "cada avance tiene que tener su learning y entender que el progreso siempre pasa por un proceso de entendimiento y análisis para ver si el paso siguiente es el correcto para cumplir el propósito de un proceso" -->
+
+A plan written up front orders steps by what was known on day one. Each step
+then produces evidence that may say the next one is wrong, redundant, or should
+move. Owner convention for long plans (first applied to P72):
+
+1. **Understand** — before a step starts, re-read the purpose and the learning
+   the previous step left. State in one line what that learning changes.
+2. **Analyze (go / reorder / drop)** — decide whether this step still serves the
+   purpose, given that evidence. The verdict and its reason are written into the
+   plan before any code. Reordering or dropping is allowed; *silently* doing
+   either is not — dropping a step the owner asked for is the owner's call.
+3. **Build** — test-first, as `/flywheel:work` already requires.
+4. **Learn** — every closed step appends one ledger entry (`/flywheel:compound`),
+   even when the lesson is "the assumption held": that is the evidence the next
+   step's gate reads. A step with no entry is not closed.
+
+## gotcha: a CLI upgrade can turn a file that was always there into a strict-mode failure
+
+<!-- fw: type=gotcha; date=2026-10-04; files=.claude/CLAUDE.md,docs/research/agent-native-processes.md; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=`claude plugin validate . --strict` exit 1 on clean main with 2.1.289 ("CLAUDE.md at the plugin root is not loaded as project context"); passes on a git-archive copy with the file at .claude/CLAUDE.md; sweep went 47/49 → see the fixing commit -->
+
+CI installs `@anthropic-ai/claude-code` unpinned, so a new validator rule lands
+on `main` without any commit in this repo. 2.1.289 warns about a `CLAUDE.md` at
+a plugin root (plugins don't load it), and `--strict` turns that warning into an
+error. This repo *is* a plugin root and its `CLAUDE.md` is for sessions working
+on the repo, not for the plugin, so the fix is the path Claude Code also loads
+as project memory: `.claude/CLAUDE.md`. Not a reason to drop `--strict` — the
+warning was right about the plugin.
+
+Second-order cost: `sweep.sh` is itself a `check:` in P59/P60's plans, so one
+red gate showed up as three. When `check-task-closure` fails only on tasks whose
+check is the sweep, look at the sweep's other failures first.
+
+## decision: a mod that can deny a tool ships as its own plugin, never as a module of the plugin everyone installs
+
+<!-- fw: type=decision; date=2026-10-04; files=scripts/check-mods.sh,scripts/test-check-mods.sh,.github/workflows/validate-plugins.yml,.claude/CLAUDE.md; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=CLI 2.1.289 on git-archive copies: `modules` beside `hooks` in flywheel's hooks.json validates --strict (one module path only); a mods/probe plugin listed in marketplace.json validates once it has `author`; `claude plugin test` ran its *.test.ts, with TestBody `($, on)`, not `({ $ })` (a destructured body got undefined) -->
+
+T0's question, whether one plugin can carry bash hooks and TS modules, had the
+wrong answer to look for: **yes, it can**, and that's the trap. `hooks.json`
+takes one `modules` path, so all mods would load together on every flywheel
+install, deny-hooks included, with one version for all of them. The question
+that mattered was *who opts in*. A separate plugin per mod (`mods/<name>/`,
+listed in the marketplace) makes each one a `/plugin install` and a version of
+its own. The vendored installer has no part in it, which dropped one T0 item
+the spec had assumed.
+
+Two engine facts the next mod needs. A test body is `($, on) => …`: writing
+`({ $ })` fails quietly, `$` coming back `undefined`. Root `validate --strict`
+also reads every marketplace entry's manifest, so a mod missing `author` turns
+the *flywheel* validation red, not only its own.
+
+Answer to the gate question for T1: the assumption that a mod can be graded
+without the engine held only halfway. Structure and versions can be checked
+anywhere; `validate` and `test` need the CLI, so `check-mods.sh` reports them
+SKIPPED, never green, when it is absent.
+
+## gotcha: a plan is one cycle; a roadmap of many cycles written as a plan reddens on its first closed step
+
+<!-- fw: type=gotcha; date=2026-10-04; files=.claude/flywheel/specs/p72-mods-make-the-rules-visible.md; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=after T0's transition line, check-route-honored.sh exit 1: "T1 … T12 have no transition line — unrecorded"; it also failed test-check-route-honored (the repo must pass its own gate) and three task-closure rows that cite it -->
+
+`check-route-honored.sh` reads a plan with no lines at all as "not started" (a
+notice), and a plan with *some* lines as a cycle whose missing tasks are
+unrecorded (fatal). That's right for a cycle, which ships whole. A 13-step
+roadmap spread over many PRs is not a cycle, so the first honest transition
+line turned it red. The fix is not to write placeholder lines for steps that
+never ran (that would be a false record). The roadmap moves into the spec as a
+table, and each step opens its own `p72-tN-*` spec + plan when its
+understanding gate says go. One gate failure showed up as five: the gate itself,
+its test, and three task-closure rows citing it. Same shape as the P73 sweep
+echo.
+
+## gotcha: a mod's test kit answers `$` calls as `{ value }`, can't stub `model.classify`, and won't load a closure that takes `$`
+
+<!-- fw: type=gotcha; date=2026-10-04; files=mods/resource-committee/hooks/register.ts,mods/resource-committee/hooks/committee.test.ts; spec=p72-t0b-resource-committee; branch=ccr-ad2de139-xfsj6z; evidence=claude plugin test on CLI 2.1.289: "hooks module did not load: $ is passed to show, which is not a function declared at the top of this file"; "test's model.classify hook was skipped: returned something that is not a result object"; "test's model.complete hook was skipped: returned neither { value } nor { deny }"; 9/9 green only after all three -->
+
+Three things the 2.1.289 engine enforces, and the mod docs don't make obvious:
+
+1. **`$` only travels to top-level functions.** A helper that takes `$` has to be
+   a `function` declaration (or a `const` bound to one) at the top of the file,
+   never a closure inside `register`. So session state that helper reads lives
+   at module scope, reset at the top of `register` (a reload re-runs it).
+2. **A test answers a `$` call with `{ value: … }`**, not with the bare result
+   (`model.complete`, `ui.status`, `ui.toast`). Events like `prompt.submit`
+   answer with their own result shape (`{ text }`). If the shape is wrong, the
+   test's hook is *skipped* and the engine reports "no implementation" one line
+   further down, which reads like a missing hook.
+3. **`$.model.classify` cannot be stubbed in a test**: no shape is accepted.
+   Calling `$.model.complete` with a one-word system prompt and parsing the
+   label is testable and gives the same result. It also lets the mod catch a
+   rejected request (classify *rejects* on failure; it does not return undefined).
+
+A test whose stub already returns the expected value passes with no
+implementation at all. Four of the first eight arms did, because the fake step
+arrived as Opus. A neutral stub (`session-model`, effort `max`) turned them red,
+and two mutations (dropping the mid-turn guard, then the subagent guard) were
+each caught by their arm.
+
+## decision: route the model per prompt, never per request — a switch costs the cache
+
+<!-- fw: type=decision; date=2026-10-04; files=mods/resource-committee/hooks/register.ts,skills/route/references/models.md; spec=p72-t0b-resource-committee; branch=ccr-ad2de139-xfsj6z; evidence=claude-api skill (cache 2026-09-25): caches are model-scoped and a mid-conversation top-level effort change invalidates the messages cache; Haiku 4.5 has 200K context and no effort; "measure the most capable model at lower effort before a cascade"; route gate: p69 T3, p70 T2/T4/T5 "session model; not switched"; followup=Committee phase 2: hold plan-task routes once big-brother-token has numbers; backlog=P78 -->
+
+`turn.step` can rewrite `model` and `effort` on every request, and that is
+exactly why it has to be used sparingly. Each switch makes the next request
+re-read the whole context at the new model's input price, uncached. So the
+Committee decides once, on an idle `prompt.submit`, and holds that route for
+the whole turn. A prompt delivered into a running turn does not re-decide.
+Subagent steps are left alone, because they already carry their own `model`.
+
+Haiku is not a main-thread tier. With 200K context and no effort control, a
+long session would overflow it, and the API's own advice is to try the stronger
+model at lower effort first. So "mechanical" means `sonnet/low`, and Haiku
+appears only as the classifier and as an explicit pin. Whether this saves
+money is still open: T1 (Big Brother Token) is the instrument that can say, and
+plan-task routes (phase 2) wait on its numbers.
+
+## pattern: the live meter and the closing meter count different bytes on purpose — say which one a number came from
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/big-brother-token/hooks/register.ts,scripts/read-meter.sh; spec=p72-t1-big-brother-token; branch=ccr-ad2de139-xfsj6z; evidence=read-meter.sh counts every string leaf of `tool_response` and zero bytes for write tools; the mod counts `ToolCallResult.text`, the mapped text the model actually reads, Write confirmations included; 5/5 mod arms green; no live session compared yet -->
+
+T1's gate question was whether the live bytes agree with what `read-meter.sh`
+records at close. They are not the same quantity, and neither is wrong.
+`read-meter.sh` is a PostToolUse hook that sees the raw `tool_response`: a
+`Read` comes back as a nested file object, every string leaf counts, and write
+tools count zero. The mod sees the result after the tool's own mapper, which is
+what enters context. That makes it closer to the cost and can differ from the
+raw size in either direction. Neither replaces the other. A number quoted from
+one must say which, or two honest meters will look like one broken one.
+
+Still unmeasured: the size of the gap on a real session. That needs the mod
+loaded (hot reload or `--plugin-dir`), and this run had neither. The store key
+`sessions` is what T7 reads to set its budget, so the Ration Book will be the
+first consumer to find out whether these numbers are useful.
+
+## gotcha: a test that only asserts "it was allowed" passes against an empty mod — pair every allow with the deny it follows
+
+<!-- fw: type=gotcha; date=2026-10-04; files=mods/memory-hole/hooks/hole.test.ts,mods/memory-hole/hooks/register.ts; spec=p72-t2-memory-hole; branch=ccr-ad2de139-xfsj6z; evidence=first red run: 4 of 7 arms passed with `register = () => {}`; two were allow-after-close arms that never proved anything was held. With a denied edit first, 5 red; then a review found an Edit to an existing .plan.md was denied, and that got a new arm -->
+
+A deny-mod's tests come in two kinds: "this is held" and "this is let through".
+The second kind passes against a no-op mod, so it proves nothing on its own.
+The plan-closes-the-hole arm only means something once it first shows an edit
+being *denied* and then the same kind of edit allowed after the plan is written.
+Two arms that assert "not a list" (fenced, single item) are rightly green with
+no implementation. Their worth only shows once the mod exists and could
+over-trigger.
+
+On the T2 gate question, false positives: the trigger is 2+ numbered items or
+3+ bullets, with code fences stripped first. Two bullets don't count, because
+pasted prose has them all the time. The open risk is a pasted error log with
+numbered frames, which would hold edits until `/memory-hole release`. One
+command with a toast is the escape, and it is logged, never silent. Measuring
+how often that happens needs real sessions. The ledger has no number for it yet.
+
+## pattern: a mod observes a script by its printed contract, not by re-running its logic — and a streaming stub returns `{ value }` too
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/ventanilla-unica/hooks/register.tsx,mods/ventanilla-unica/hooks/ventanilla.test.ts,scripts/sweep.sh; spec=p72-t3-ventanilla-unica; branch=ccr-ad2de139-xfsj6z; evidence=6/6 arms red then green; first green attempt failed with "test's process.spawn hook was skipped: returned neither { value } nor { deny }" until the generator returned { value: { code, signal } }; Pane mounted on terminal and desktop; followup=sweep.sh takes 10-30 min: check-task-closure re-runs whole sweeps nested (P59/P60 T4) and the slow route test; backlog=P75 -->
+
+T3's question was whether a mod can show the sweep gate by gate without
+re-implementing it. It can, because `sweep.sh` already prints one line per gate
+(`PASS x`, `FAIL x`, `SKIPPED x`) and a closing `N/M passed`, and that is the
+interface. The mod streams `$.process.spawn` and stamps each line as it arrives.
+A sweep the model runs through Bash is parsed from the tool result instead. A
+gate added to the sweep tomorrow shows up with no change to the mod. The cost is
+coupling to a print format, which `test-sweep.sh` already pins.
+
+Engine detail for the next streaming mod: a test's `process.spawn` stub is an
+async generator that yields the chunks and **returns `{ value: { code, signal } }`**,
+the same wrapping as every other `$` call. Without it the spawn is skipped and the
+mod's catch shows "no implementation". The test runtime has `setTimeout`, but the
+recommended `lib` has no type for it. Declare it in the test and don't widen
+`lib`, which would let DOM or Node types into the module itself.
+
+One sweep run is now ~10 minutes, because every mod plan's `check:` runs the
+engine tests through `check-task-closure`. So sweeping the exact commit in a
+detached worktree in the background, and pushing when it is green, keeps
+"sweep before push" without stalling the next step.
+
+## decision: a system-prompt section a mod adds must change on *events*, not on counters — or it busts the cache every turn
+
+<!-- fw: type=decision; date=2026-10-04; files=mods/social-credit/hooks/register.ts; spec=p72-t4-social-credit; branch=ccr-ad2de139-xfsj6z; evidence=arm "below 80 … stable across points": the re-education text is byte-identical before and after an extra +1; PromptComposeSection docs: `session` scope sits after the cache boundary, and any byte change there re-sends everything after it -->
+
+`prompt.compose` lets a mod add a `session`-scoped section to the system prompt.
+The tempting version prints the live score ("you are at 76"). That changes
+every few tool calls and turns each change into a full re-read of the
+conversation. Social Credit's section depends only on the *set* of rules broken
+since the last amnesty, sorted. It appears when the score crosses 80, changes
+only when a new rule is broken, and disappears on amnesty. The score itself goes
+to the status line, which costs no tokens.
+
+T4's gate question, whether such a section changes behaviour, has no answer
+yet, because there are no live sessions. Keeping the section rare and stable
+makes it cheap to measure later: fewer invalidations means a clean before/after
+on the same cache. Same principle as the Committee switching models only per
+prompt. Anything that reaches the model should change on an event, never on a
+tick.
+
+## decision: one rule, one enforcer — a new mod takes the rule nothing enforces, not the one a hook already blocks
+
+<!-- fw: type=decision; date=2026-10-04; files=mods/thought-police/hooks/register.ts,scripts/toolbar.sh; spec=p72-t5-thought-police; branch=ccr-ad2de139-xfsj6z; evidence=roadmap T5 = "toolbar parity + never echo files"; toolbar.sh stop (P56) already blocks a reply missing the toolbar line; the echo rule had no observer anywhere in hooks/ or scripts/; 4 mutations each caught by one allow-arm -->
+
+The roadmap gave T5 two jobs: replace `toolbar.sh stop` and catch replies that
+paste code back. The understanding gate cut the first. A second blocker on a
+rule the P56 hook already enforces gives two reasons for one fault, and the
+model has to satisfy both phrasings. The echo rule ("never echo file contents
+into chat") had no observer at all, so that is where a new mechanism adds
+something.
+
+The classifier the roadmap assumed became a deterministic overlap: lines of
+12+ characters written this turn, and 8+ of them repeated *inside a fence* in
+the final reply. It is cheaper (no model call per stop) and testable
+(`model.classify` can't be stubbed), and it grades exactly what the rule says.
+It blocks once and never twice in a row (`stop_hook_active`), so the worst case
+is one extra short turn. A block-mod's allow-arms are vacuous until a mutation
+proves them. Here the four arms each caught exactly one mutation.
+
+## gotcha: the owner hands work over in prose, so a rule keyed on lists may rarely fire for the person it was written for
+
+<!-- fw: type=gotcha; date=2026-10-04; files=mods/newspeak/hooks/register.ts,mods/memory-hole/hooks/register.ts; spec=p72-t6-newspeak; branch=ccr-ad2de139-xfsj6z; evidence=the owner's 10 prompts in session ccr-ad2de139 carried 0 numbered lists and 0 bullet lists, yet held multi-item asks ("arregla esos 2 fallos", "todas hasta terminarlas") and criterion-free ones ("sigue con T1"); a threshold mutation passed until the single-item arm used a numbered line; followup=count prose multi-item asks before any nudge; backlog=P77 -->
+
+T6's question was what share of owner prompts arrive with no success
+criterion. The first data point is this session: ten prompts, **no lists at
+all**, several multi-item asks written as prose ("arregla esos 2 fallos",
+"con todas hasta terminarlas"), and most with no criterion. Newspeak and
+Memory Hole both trigger on list syntax. They are right for pasted task lists
+and silent for the way this owner actually delegates. That doesn't argue for
+dropping them. It argues for a follow-up that reads *prose* multi-item asks
+("these 2", "all of them", "y luego") with a counter first, before any nudge,
+so the false-positive rate is known before it costs a turn.
+
+The test lesson repeats from T2 and T5. The single-item arm used "fix the login"
+with no number, so it could never catch a threshold change. Written as "1. fix
+the login", the threshold mutation fails it. An allow-arm has to sit right next
+to the boundary it protects.
+
+## gotcha: `$.store` is per plugin — one mod's data is invisible to the next unless a contract shares it
+
+<!-- fw: type=gotcha; date=2026-10-04; files=mods/ration-book/hooks/register.ts,mods/big-brother-token/hooks/register.ts; spec=p72-t7-ration-book; branch=ccr-ad2de139-xfsj6z; evidence=types 2.1.289: "$.store — This plugin's own key-value store … A JSON file of the plugin's own under the user's Claude Code configuration directory"; T1 wrote `sessions` for T7 to read, and T7 cannot; followup=shared measurements via a declared dependencies contract | a command-aware Bash ration; backlog=P79,P80 -->
+
+T1 stored each session's summary "for the Ration Book", and T7 then found it
+can't read it. `$.store` is one JSON file per plugin. Reaching into another
+plugin's file through `$.fs` would work and is wrong: it couples two opt-in
+plugins with no declared interface, and fails silently when one is not
+installed. The Ration Book keeps its own history and sets the ration from it
+(p75 of its last 10 sessions, floor 100 KB, 400 KB until 5 exist). That is
+still "set from data", and it corrects itself.
+
+T7's question, which budget is right, has a mechanism but no number. The first
+five sessions run on the default, so the calibrated ration only exists after
+real use. Two things for later: if mods should share measurements, the place
+is a declared `dependencies` contract (`$.state` types per plugin), not a
+second meter; and `Bash` is never held, although it carries most read volume
+(85% in P44). Holding it would stop tests and git. A Bash ration needs a
+command-aware design, not a blunt deny.
+
+## pattern: measure the debt before building its ledger — this repo's exceptions are standing permits, not one-off skips
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/black-market/hooks/register.ts,scripts/telemetry-baseline.txt,scripts/fixture-leak-allow.txt,scripts/invocation-budget.txt; spec=p72-t8-black-market; branch=ccr-ad2de139-xfsj6z; evidence=git log: 0 Release-Exception trailers, 0 SKIP_*= commits; standing: 31 telemetry-baseline exemptions, 6 fixture-leak allows, 4 named budget exceptions (41 permits); the fs.read stub missed until it matched by suffix — the engine resolves paths to absolute before hooks see them; followup=pay down the 31 telemetry-baseline exemptions, 3/4 of the 41 standing permits; backlog=P76 -->
+
+The roadmap pictured the Black Market as a live ledger of `SKIP_*` use. Counting
+first turned that around. In this repo's whole history nobody used a one-off
+escape: zero `Release-Exception` trailers, zero `SKIP_*=` in commit messages.
+The real debt is **41 standing permits** sitting in exception files. 31 of them
+are telemetry exemptions, which is three quarters of all the debt and the place
+to pay first. So `/black-market audit` became the main ledger and live
+contraband the secondary one. Thirty seconds of counting changed what the mod
+is for, which is the understanding gate doing its job.
+
+Engine detail: `$.fs.read("scripts/x.txt")` reaches the hook as an **absolute**
+path, resolved against the session's working directory. A test stub keyed by
+the relative path returns nothing and the audit reads zeros quietly. Match the
+stub by suffix.
+
+## pattern: a live view over the ledger adds a reader, not a source — the pane and the HTML report read the same JSONL
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/citizen-file/hooks/register.tsx; spec=p72-t9-citizen-file; branch=ccr-ad2de139-xfsj6z; evidence=the mod only lists and reads .claude/flywheel/runs/<slug>/*.jsonl, never writes; 6/6 arms incl. a malformed line skipped and the pane on terminal and desktop -->
+
+T9's question was whether a live pane replaces the gate-time HTML report or
+duplicates it. Neither, as long as it adds no data of its own. The Citizen
+File reads the same `runs/<slug>/*.jsonl` the report is rendered from, and
+writes nothing. So there is one record and two views. The HTML report is the
+artifact that gets shared at a gate; the pane is for "where is this cycle right
+now", mid-flight, when the report doesn't exist yet. It skips malformed lines
+rather than failing, because the ledger is append-only and written by hand
+in places (this run's lines carry `cost_note: not metered`).
+
+Something this view makes cheap to see: every P72 cycle so far is one
+`opus/high` task, because plan-route forces the single riskiest task to the
+top tier. Once the Resource Committee runs in a real session, the pane is
+where a `route_escalated_from` row would show whether it held a plan's route.
+
+## pattern: a lesson shown by relevance can fire for every entry — the ledger's `files=` field already does the targeting
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/telescreen/hooks/register.tsx,.claude/flywheel/LEARNINGS.md; spec=p72-t10-telescreen; branch=ccr-ad2de139-xfsj6z; evidence=92 headed entries, 93 fw lines carrying files= (every entry targetable); most-cited: skills/run/SKILL.md (10), skills/work/SKILL.md (9), skills/run/evals/check.sh (7); a test's ui.render stand-in must return a tree (h(Box, {})) — null is "not a tree element" -->
+
+T10's question was whether a lesson shown at use-time prevents a repeat or just
+adds noise. The design answers the noise half. The band shows only when a touched
+file is cited by an entry's `files=`, and stays quiet otherwise; there is no
+rotation and no "lesson of the day". Measuring the ledger shows this costs no
+coverage: every one of the 92 entries carries `files=`, so every lesson can fire
+and none floods. The most-cited files (`skills/run/SKILL.md` 10, `skills/work/SKILL.md`
+9) are where the band will speak most, and those are the files where repeats have
+historically happened. Whether it prevents repeats needs live sessions; `/telescreen`
+counts slogans shown, which is the start of that measure.
+
+Test-kit detail: a band that defers with `next(e)` needs something beneath it in
+a test. The stand-in for the engine's own drawing has to return a **tree**
+(`h(Box, {})`, with `h` declared). `null` is refused as "not a tree element" and
+the mount fails with "no implementation".
+
+## decision: supervise with a sentence on a turn that happens anyway, not with a subagent that re-reads the conversation
+
+<!-- fw: type=decision; date=2026-10-04; files=mods/supervisor/hooks/register.ts,agents/verifier.md,agents/evaluator.md; spec=p72-t11-supervisor; branch=ccr-ad2de139-xfsj6z; evidence=roadmap T11 = "$.agent.register; asks every N turns"; a subagent check re-reads the context at each firing, the note is ~60 tokens added to a turn already running; verifier/evaluator agents already exist for on-demand re-checks; 8/8 arms -->
+
+T11's question was what a supervising subagent costs per turn against what it
+catches. Settled before building. A subagent that audits every N turns has to
+read the conversation each time, which is the most expensive token class
+(CLAUDE.md: reads by volume) and is paid whether or not anything is wrong.
+The cheaper supervisor is one sentence riding a turn that is happening anyway:
+"name what closed and its evidence, or say nothing closed". It is followed by a
+deterministic check of the reply (`path:line`, a backticked command, a 7+ hex
+commit) and a toast when there is none. Re-running a claimed check is still
+available on demand through the `verifier` and `evaluator` agents flywheel
+already ships, so the Supervisor adds no second agent.
+
+What it catches still needs live use. `/supervisor` counts checks asked and
+replies that named evidence, and that ratio is the number the gate asked for. A
+regex for "evidence" can be fooled by any backticked word. It grades presence,
+not truth, the same as the closure table's own rule ("an item defensible only
+in prose is reported unverified").
+
+## pattern: a stuck loop is the same check red three times with edits between — re-runs and other checks are not attempts
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/general-strike/hooks/register.ts; spec=p72-t12-general-strike; branch=ccr-ad2de139-xfsj6z; evidence=10 arms; five mutations (threshold 2, count re-runs, no reset on pass, count any command, one shared counter) each turned at least one allow-arm red -->
+
+T12's question was what threshold separates a stuck loop from honest red→green
+TDD. Three conditions, each one an arm a mutation broke:
+
+1. **The same check.** Counters are kept per normalised command. Two different
+   tests failing in turn is a broad change, not a loop. With one shared
+   counter, "a different check is counted separately" goes red.
+2. **An edit between failures.** Re-running a red test without changing
+   anything is reading the failure, not a new attempt. Counting re-runs breaks
+   the re-run arm.
+3. **No green.** A pass resets the count. Three reds spread across a session
+   with passes between them is normal work.
+
+Two reds can still be an honest second try; the third is guessing. The strike
+holds only the editing tools. Read, Grep and Bash keep running, because the way
+out is diagnosis, and a strike that blocked diagnosis would lock the session.
+It ends three ways: the check passes, a `Skill` call opens `flywheel:debug`, or
+the owner runs `/strike end`, which is toasted and never silent.
+
+Across all 13 P72 steps, deny-mods needed this more than anything else: each
+allow-arm only means something once a mutation proves it can fail. T2, T5, T6
+and T12 each had arms that passed against an empty module.
+
+## gotcha: cloud sessions skip marketplace plugins, but load a mod by folder through `CLAUDE_CODE_PLUGIN_DIRS`
+
+<!-- fw: type=gotcha; date=2026-10-04; files=README.md,mods/big-brother-token/hooks/register.ts,mods/memory-hole/hooks/register.ts; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=cloud container, CLI 2.1.289: `claude plugin list` → "No plugins installed" despite enabledPlugins flywheel@xmarks in .claude/settings.json; `claude -p /ministry` → "isn't installed"; with CLAUDE_CODE_PLUGIN_DIRS=…/mods/big-brother-token → "The Ministry has recorded 0.0 KB read this session."; memory-hole via the same variable made a live -p run write its plan before the two Writes; a copy under a project's .claude/skills/<mod> did not load (untrusted workspace) -->
+
+The first time any P72 mod ran on a real engine, not the test kit, was in a cloud
+container. Two facts for anyone wiring mods into Claude Code web:
+
+1. **Marketplace plugins don't load there.** `enabledPlugins` plus
+   `extraKnownMarketplaces` in a project's settings install nothing
+   (`claude plugin list` is empty). That's why flywheel is vendored on web, and
+   the same goes for every mod.
+2. **A folder does load.** `CLAUDE_CODE_PLUGIN_DIRS` (absolute paths,
+   `:`-separated, read from the process environment or from `~/.claude/settings.json`'s
+   `env`, never from a project's settings) loads each folder as a `--plugin-dir`. In
+   a cloud environment that means the setup script clones the mods
+   (`git clone --depth 1 https://github.com/arazvan-ec/xmarks /opt/xmarks`) and an
+   environment variable names them. The memory-hole run shows the hooks are live,
+   not just loaded: the context note reached the model, which wrote the plan before
+   writing the files.
+
+Not settled: copying a mod into a project's `.claude/skills/<name>/` did not load it,
+but the test workspace was untrusted, so this proves nothing either way. And the
+interactive path (environment variable plus setup script in a new web session)
+follows from the headless result but hasn't been run end to end.
+
+## pattern: open work written into a lesson is invisible to scheduling — give it a field and a gate, the way `evidence=` got one
+
+<!-- fw: type=pattern; date=2026-10-04; files=scripts/check-followups.sh,skills/compound/SKILL.md,skills/compound/references/followups.md,docs/research/improvement-proposals.md; spec=p74-open-work-lands-in-the-backlog; branch=ccr-ad2de139-xfsj6z; evidence=six follow-ups in P72 lessons, 0 backlog rows until the owner asked; check-followups exit 1 naming all six on the tagged tree, exit 0 after P75–P80 -->
+
+Each P72 step answered its gate question and, honestly, left some work open:
+"a follow-up should count prose asks", "two things for later". All six went
+into the ledger as prose. None reached the backlog until the owner asked why,
+and the session itself had listed them as "fronts" in chat without filing any.
+The ledger is read for *context*, and the backlog is read for *scheduling*, so
+work left in the first never gets picked up from the second. Same shape as P70
+(lessons from other repos never reaching this backlog), here inside one repo.
+
+The fix copies the one that already worked for `evidence=`: a metadata field
+(`followup=…; backlog=P<n>`) and a gate that grades the field, not the prose
+(`check-followups.sh`). A gate can't find a follow-up hidden in prose, so the
+convention moves the burden to the writer, and `compound` tells the writer.
+Before shipping, the gate was seen red on the real tree with the six tagged
+and green once their rows existed.
+
+## pattern: when a gate is slow, count distinct work before optimizing — 127 runs were 48 commands and two copies of the gate itself
+
+<!-- fw: type=pattern; date=2026-10-04; files=scripts/check-task-closure.sh,scripts/sweep.sh,scripts/test-check-task-closure.sh,scripts/test-sweep.sh; spec=p75-the-sweep-stops-re-running-itself; branch=ccr-ad2de139-xfsj6z; evidence=check-task-closure 556 s → 228 s standalone, verdicts identical row by row (diff of the two outputs); new arms red first: a green check cited twice ran 2×, the closure step saw FW_SWEEP_ACTIVE unset -->
+
+The pre-push sweep had grown to 10–30 minutes, and the first guess was "the
+mods' engine tests". Counting showed otherwise. `check-task-closure` graded 127
+tasks that cite only 48 distinct commands (`test-docs-consistency` 26 times,
+`check-invocation-budget` 23), and two of those tasks run the whole sweep from
+inside the sweep. Neither needed a faster test. One fix was a memo keyed by argv
+for a single gate run, safe because the tree does not change between tasks. The
+other was a marker the sweep hands only to its closure step, so a sweep cited
+from there skips itself. That mirrors the `FW_TASK_CLOSURE_ACTIVE` skip, which
+already stopped the other direction of the same recursion.
+
+The memo had to keep the gate's contract, which is one row and verdict per task.
+So it caches the result, red ones and timeouts included, never the row. The
+before/after outputs were diffed row by row, and the diff is empty. The marker
+goes to the closure step and nowhere else, because `test-sweep.sh` runs
+`sweep.sh` as a fixture inside the real sweep and would otherwise skip its own
+subject.
+
+## decision: a permit for a past you cannot repeat is not debt — count before calling a list "the place to pay first"
+
+<!-- fw: type=decision; date=2026-10-04; files=scripts/telemetry-baseline.txt,scripts/check-telemetry.sh,mods/black-market/hooks/register.ts; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=31 baseline entries audited one by one: 28 "shipped before the duty had an owner (P42)", 3 with specific reasons still true; 0 slugs without a spec; the 2 slugs with run files keep their exemption because those files fail the contract's shape -->
+
+T8's lesson called the 31 telemetry exemptions "three quarters of all the debt
+and the place to pay first". Auditing them as P76 showed that was wrong. 28 are
+cycles that shipped before P42 made telemetry a duty. Their numbers can't be
+recovered, and writing them now would be fabrication, which P18 forbids. The
+other three name a specific reason that still holds. None is stale. So the
+list is history with reasons attached, not work waiting to be done.
+`/black-market audit` counts *permits*, and a count says nothing about whether
+any of them can be paid off. A follow-up only deserves a backlog row once
+someone has checked that the thing can actually be changed.
+
+No new gate was added for stale exemptions, for the same reason as P58's rule
+on templates: no stale entry has ever been seen, and a gate against a failure
+that never happened is one more thing to maintain.
+
+## pattern: for a `needs data` item, the step you can ship today is the meter, placed in the mod that will be turned on first
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/newspeak/hooks/register.ts,mods/resource-committee/hooks/register.ts,mods/big-brother-token/hooks/register.ts,docs/mods-in-the-cloud.md; spec=p77-p78-p80-measure-first; branch=ccr-ad2de139-xfsj6z; evidence=newspeak 9/9, resource-committee 11/11, big-brother-token 6/6 with new arms red first; backlog rows P77/P78/P80 moved to "step 1 shipped — needs data" -->
+
+The owner asked to finish everything autonomously. Three of the open items
+could only be decided with numbers from real sessions. Building their fixes
+(a prose nudge, plan-route holding, a Bash ration) would have meant shipping
+guesses with tests around them. What could ship was the instrument for each
+one, put in the three mods the activation guide turns on first: newspeak counts
+prose asks by kind, the Committee keeps its tally, and big-brother-token breaks
+Bash bytes down by command and records cost. A meter in a mod nobody loads
+measures nothing, so `docs/mods-in-the-cloud.md` lists exactly those three
+first and says which command reads each number back.

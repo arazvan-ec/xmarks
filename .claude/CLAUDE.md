@@ -155,6 +155,11 @@ plugin itself is no exception — "it's a small change" is the exact excuse
   on a commit in the diff** — it reaches CI, is read where the reason has to be
   argued, and expires with the branch. `SKIP_RELEASE_BUMP=<reason>` is the
   operator's local lever and reaches no runner. Both take the reason, not a `1`.
+- **Mods are their own plugins** (P72): a Claude Code mod (TS hook module) lives
+  at `mods/<name>/`, listed in `marketplace.json` with `source: ./mods/<name>`,
+  never as `modules` in flywheel's own `hooks.json` — some mods deny tools, so
+  each is opt-in. A change to a mod bumps **that mod's** `plugin.json` version;
+  each ships `*.test.ts`. `scripts/check-mods.sh` enforces all of it.
 - **A version you send a reader to must exist** (P47):
   `scripts/check-version-citations.sh` fails when a link, or a `see`/`read`/
   `follow`/`consult`/`refer to` immediately before the path, names an upgrade

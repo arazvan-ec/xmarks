@@ -1,0 +1,6 @@
+{
+  "name": "newspeak",
+  "version": "0.2.0",
+  "description": "Ungood items: a list item with no success criterion is named, and the model is told to ask for one before doing it.",
+  "author": { "name": "arazvan" }
+}

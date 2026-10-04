@@ -1,0 +1,6 @@
+{
+  "name": "ration-book",
+  "version": "0.1.0",
+  "description": "Every session gets a ration of read bytes, set from its own history; when the coupons run out, reads wait for an authorized grant.",
+  "author": { "name": "arazvan" }
+}

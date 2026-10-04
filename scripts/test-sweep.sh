@@ -20,7 +20,7 @@ pass() { echo "  ok: $*"; }
 
 NOCLAUDE="fw-no-such-claude-$$"
 # Run as a plan check, this suite inherits the marker; its arms set it themselves.
-unset FW_TASK_CLOSURE_ACTIVE
+unset FW_TASK_CLOSURE_ACTIVE FW_SWEEP_ACTIVE
 
 # tree <name> -> a throwaway repo: one passing test, one base-ref gate, one plain gate
 tree() {
@@ -127,5 +127,21 @@ grep -qx '4/4 passed' "${WORK}/out" || fail "a skipped gate is not counted: $(ca
 RC=0; SWEEP_ROOT="${R}" SWEEP_CLAUDE="${NOCLAUDE}" bash "${SWEEP}" >"${WORK}/out" 2>&1 || RC=$?
 [ "${RC}" -eq 1 ] && [ -e "${R}/closure.ran" ] || fail "outside a closure the gate must run: $(cat "${WORK}/out")"
 pass "nested: SKIPPED, not run, not counted; top level: run"
+
+echo "== a sweep nested inside the enclosing sweep's closure step skips itself (P75) =="
+R="$(tree marker)"
+printf '#!/usr/bin/env bash\necho "${FW_SWEEP_ACTIVE:-unset}" > "%s/closure.marker"\n' "${R}" > "${R}/scripts/check-task-closure.sh"
+printf '#!/usr/bin/env bash\necho "${FW_SWEEP_ACTIVE:-unset}" > "%s/test.marker"\n' "${R}" > "${R}/scripts/test-marker.sh"
+printf '      - name: closure\n        run: bash scripts/check-task-closure.sh\n' >> "${R}/.github/workflows/validate-plugins.yml"
+run "${R}"
+[ "${RC}" -eq 0 ] || fail "marker tree must pass: $(cat "${WORK}/out")"
+[ "$(cat "${R}/closure.marker")" = 1 ] || fail "the closure step must get FW_SWEEP_ACTIVE=1, got $(cat "${R}/closure.marker")"
+[ "$(cat "${R}/test.marker")" = unset ] || fail "only the closure step gets the marker; a test got $(cat "${R}/test.marker")"
+rm -f "${R}/test.marker"
+RC=0; FW_SWEEP_ACTIVE=1 SWEEP_ROOT="${R}" SWEEP_CLAUDE="${NOCLAUDE}" bash "${SWEEP}" >"${WORK}/out" 2>&1 || RC=$?
+[ "${RC}" -eq 0 ] || fail "a nested sweep exits 0: $(cat "${WORK}/out")"
+grep -q '^SKIPPED nested sweep' "${WORK}/out" || fail "the skip must be said: $(cat "${WORK}/out")"
+[ -e "${R}/test.marker" ] && fail "a nested sweep must not run any step"
+pass "marker reaches the closure step only; a sweep that sees it runs nothing and says so"
 
 echo "test-sweep: OK"

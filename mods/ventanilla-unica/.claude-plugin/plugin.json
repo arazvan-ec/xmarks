@@ -1,0 +1,7 @@
+{
+  "name": "ventanilla-unica",
+  "version": "0.1.0",
+  "description": "The single window: /ventanilla runs flywheel's sweep and stamps each gate as it clears; the missing stamp sends you back tomorrow.",
+  "author": { "name": "arazvan" },
+  "types": "./types/index.d.ts"
+}

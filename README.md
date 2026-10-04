@@ -139,6 +139,33 @@ A lesson about the plugin, learned in a repo that only uses it, used to stay in 
 
 A review sent to another session (`create_session`) that posts nothing reads the same whether it found nothing, could not post, or is still running. `skills/review/references/delegated-review.md` is the child's prompt template: post a `🔎 Review started … fw-review-start` comment on the PR **first**, through the GitHub MCP tools (the container has no `gh`), then post the findings as one review with inline comments, or a "no findings" comment. The delegation guard's **REVIEW** family asks when a delegated review prompt lacks `fw-review-start`, naming the template.
 
+## Mods (P72, v0.84.0+)
+
+Claude Code mods ship from this marketplace as **separate, opt-in plugins** under
+`mods/<name>/`, each with its own version and tests (`scripts/check-mods.sh`).
+
+**Claude Code web (cloud sessions):** marketplace plugins are not installed there, mods included. Load mods by folder instead, with
+`CLAUDE_CODE_PLUGIN_DIRS`, verified in a cloud container on CLI 2.1.289. In the environment's settings (cloud environment
+menu → Edit), add to the setup script `git clone --depth 1 https://github.com/arazvan-ec/xmarks /opt/xmarks`, and set the
+environment variable `CLAUDE_CODE_PLUGIN_DIRS=/opt/xmarks/mods/resource-committee:/opt/xmarks/mods/big-brother-token`
+(absolute paths, `:`-separated). New sessions load them. A project's own `settings.json` cannot set this variable. Step by step, and what each mod measures: [`docs/mods-in-the-cloud.md`](docs/mods-in-the-cloud.md).
+
+| Mod | What it does | Install |
+| --- | --- | --- |
+| `resource-committee` | Assigns every turn its model and effort: `sonnet/medium` by default, `opus/high` for judgment, `sonnet/low` for mechanical work, classified once per prompt by Haiku so the cache survives. `/committee` shows the decision or pins `haiku`/`sonnet`/`opus`/`auto`; `/committee stats` sums each session's tally. Subagents keep their own model. | `/plugin install resource-committee@xmarks` |
+| `big-brother-token` | Live bytes read, session cost and context % in the status line; a toast for any single read over 8 KB and for a `Write` that rewrites a file already read; `/ministry` gives the dossier by tool and Bash bytes by command. Stores each session's summary, with its cost. | `/plugin install big-brother-token@xmarks` |
+| `memory-hole` | A prompt carrying a list (2+ numbered items or 3+ bullets, code fences ignored) holds `Edit`/`Write`/`NotebookEdit` until the list is written to a `.plan.md`, the scratchpad, or `tasks.md`/`todo.md`. `/memory-hole release` lets it go, logged. | `/plugin install memory-hole@xmarks` |
+| `ventanilla-unica` | `/ventanilla [base]` runs `scripts/sweep.sh` in the background and stamps each gate in a pane as its line arrives; a toast gives the verdict. A sweep the model runs through Bash is stamped too. `/ventanilla status` answers in text. | `/plugin install ventanilla-unica@xmarks` |
+| `social-credit` | A citizen score in the status line, kept across sessions: +1 per `Edit`, −5 for a `Write` over a file already read, ±3 for test-first on `scripts/`, +1 per commit, −10 per `SKIP_*=` or `--no-verify`. Below 80 a re-education section joins the system prompt. `/social-credit` lists acts; `amnesty` resets. | `/plugin install social-credit@xmarks` |
+| `thought-police` | At `Stop`, a reply whose fenced code repeats 8+ lines written this turn (`Write`/`Edit`) is blocked once with the reason: report what and where, the diff is in git. Never blocks twice in a row. | `/plugin install thought-police@xmarks` |
+| `newspeak` | For a prompt carrying a list, names the items with no success criterion (English or Spanish markers: `so that`, `must`, `passes`, `para que`, `en verde`, a number with a unit…) in a context note asking the model to get one first. Never blocks. Also counts multi-item asks written in prose, without nudging. `/newspeak` shows both. | `/plugin install newspeak@xmarks` |
+| `ration-book` | A per-session read ration: p75 of the last 10 sessions once 5 are recorded (floor 100 KB), else 400 KB. Coupons left in the status line, a toast at 80%, and at 100% `Read`/`Grep`/`Glob`/`WebFetch`/`WebSearch` are held (`Bash` and writes never). `/ration grant <KB>` adds coupons, announced. | `/plugin install ration-book@xmarks` |
+| `black-market` | Ledgers every `SKIP_*=<reason>`, `--no-verify` and `Release-Exception:` the session uses, with its reason; one without a reason (`1`, empty) raises a toast. `/black-market audit` totals the standing permits in `scripts/*allow*.txt`, `*baseline*.txt`, `invocation-budget.txt` and the git log's trailers. | `/plugin install black-market@xmarks` |
+| `citizen-file` | `/expediente [slug]` opens a pane on a cycle's run record (`.claude/flywheel/runs/<slug>/*.jsonl`, newest by default): each transition with its route, escalations marked, then transitions, bytes in and escalations totalled. `list` and `status` answer in text. | `/plugin install citizen-file@xmarks` |
+| `telescreen` | When a `Read`/`Edit`/`Write` touches a file a `LEARNINGS.md` entry cites (`files=`), a band above the prompt shows the newest such lesson, with Hide. No match, no band. `/telescreen` counts lessons loaded and slogans shown. | `/plugin install telescreen@xmarks` |
+| `supervisor` | Every N prompts (default 5, `/supervisor every <n>`) the turn is asked to name what closed with its evidence; a reply naming no `file:line`, backticked command or commit gets a toast. Never blocks, spawns nothing. `/supervisor` counts checks and evidenced replies. | `/plugin install supervisor@xmarks` |
+| `general-strike` | Tracks check commands (`test`, `check`, `sweep`, `pytest`, `jest`, `go test`…): the 3rd consecutive failure of the same one, with an edit since the last, holds `Edit`/`Write`/`NotebookEdit` and tells the next prompt to run `/flywheel:debug`. Reads and Bash keep running. Ends on a pass, on opening `flywheel:debug`, or `/strike end`. | `/plugin install general-strike@xmarks` |
+
 ## Deterministic completion gate (opt-in)
 
 Drop an executable `.claude/flywheel/gate.sh` in your project with your verification command (e.g. `npm test && npm run lint`). While it exists **and you've trusted it**, flywheel's `Stop` hook runs it whenever Claude tries to finish and **blocks** finishing if it fails — so nothing is declared "done" with checks red.

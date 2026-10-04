@@ -1,0 +1,7 @@
+{
+  "name": "telescreen",
+  "version": "0.1.0",
+  "description": "The screen that knows what you touched: the flywheel learning about the file you just opened, in a band above the prompt.",
+  "author": { "name": "arazvan" },
+  "types": "./types/index.d.ts"
+}

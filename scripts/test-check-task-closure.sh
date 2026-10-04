@@ -267,6 +267,22 @@ run "${WORK}/j"; rc 0
 [ "$(grep -c "PASS" "${WORK}/out")" -ge 3 ] || fail "all three spellings of a repo script must be runnable: $(cat "${WORK}/out")"
 pass "bare, bash-prefixed and ./-prefixed repo scripts all run"
 
+echo "== an identical check cited by several tasks runs once per gate run (P75) =="
+mkdir -p "${WORK}/dd/scripts"
+printf '#!/usr/bin/env bash\necho x >> "%s/green.count"\n' "${WORK}/dd" > "${WORK}/dd/scripts/test-green.sh"
+printf '#!/usr/bin/env bash\necho x >> "%s/red.count"\nexit 1\n' "${WORK}/dd" > "${WORK}/dd/scripts/test-red.sh"
+plan "${WORK}/dd" "${NOW}" \
+  '### T1 — a' '- route: `sonnet/medium`' '- check: `bash scripts/test-green.sh` green.' \
+  '### T2 — b' '- route: `sonnet/medium`' '- check: `bash scripts/test-green.sh` green.' \
+  '### T3 — c' '- route: `sonnet/medium`' '- check: `bash scripts/test-red.sh` green.' \
+  '### T4 — d' '- route: `opus/high`' '- risk: highest' '- check: `bash scripts/test-red.sh` green.'
+run "${WORK}/dd"; rc 1
+[ "$(wc -l < "${WORK}/dd/green.count")" -eq 1 ] || fail "a green check cited twice must run once, ran $(wc -l < "${WORK}/dd/green.count")"
+[ "$(wc -l < "${WORK}/dd/red.count")" -eq 1 ] || fail "a red check cited twice must run once, ran $(wc -l < "${WORK}/dd/red.count")"
+[ "$(grep -cE '^ +T[12] +PASS' "${WORK}/out")" -eq 2 ] || fail "both tasks citing the green check are PASS: $(cat "${WORK}/out")"
+[ "$(grep -cE '^ +T[34] +FAIL' "${WORK}/out")" -eq 2 ] || fail "both tasks citing the red check are FAIL: $(cat "${WORK}/out")"
+pass "one run per distinct check; every citing task still gets its own row and verdict"
+
 echo "== the allowlist runs the sweep, with its base ref (P60) =="
 mkdir -p "${WORK}/x/scripts"
 printf '#!/usr/bin/env bash\n[ "$1" = origin/main ]\n' > "${WORK}/x/scripts/sweep.sh"

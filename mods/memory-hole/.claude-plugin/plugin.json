@@ -1,0 +1,6 @@
+{
+  "name": "memory-hole",
+  "version": "0.1.0",
+  "description": "A list you were handed is a file, not a memory: a prompt with a list blocks edits until the list is written to a plan or scratchpad file.",
+  "author": { "name": "arazvan" }
+}

@@ -19,6 +19,84 @@
         "code-review",
         "compound-engineering"
       ]
+    },
+    {
+      "name": "resource-committee",
+      "source": "./mods/resource-committee",
+      "description": "Mod: assigns each turn its model and effort (sonnet/medium default, opus/high for judgment, sonnet/low for mechanical), decided once per prompt so the cache survives.",
+      "category": "workflow"
+    },
+    {
+      "name": "big-brother-token",
+      "source": "./mods/big-brother-token",
+      "description": "Mod: the Ministry watches every byte — live bytes read, cost and context in the status line; toasts for oversized reads and full rewrites; /ministry dossier.",
+      "category": "workflow"
+    },
+    {
+      "name": "memory-hole",
+      "source": "./mods/memory-hole",
+      "description": "Mod: a list you were handed is a file, not a memory — a prompt with a list holds edits until it is written to a plan or scratchpad file.",
+      "category": "workflow"
+    },
+    {
+      "name": "ventanilla-unica",
+      "source": "./mods/ventanilla-unica",
+      "description": "Mod: the single window — /ventanilla runs flywheel's sweep and stamps each gate as it clears; a missing stamp sends you back tomorrow.",
+      "category": "workflow"
+    },
+    {
+      "name": "social-credit",
+      "source": "./mods/social-credit",
+      "description": "Mod: every act is scored — edits over rewrites, tests first, no silent skips; below 80 the system prompt re-educates you.",
+      "category": "workflow"
+    },
+    {
+      "name": "thought-police",
+      "source": "./mods/thought-police",
+      "description": "Mod: never echo a file into chat — a reply that pastes back code just written is stopped once and sent back to say what and where.",
+      "category": "workflow"
+    },
+    {
+      "name": "newspeak",
+      "source": "./mods/newspeak",
+      "description": "Mod: ungood items — a list item with no success criterion is named, and the model is told to ask for one before doing it.",
+      "category": "workflow"
+    },
+    {
+      "name": "ration-book",
+      "source": "./mods/ration-book",
+      "description": "Mod: every session gets a ration of read bytes, set from its own history; when the coupons run out, reads wait for an authorized grant.",
+      "category": "workflow"
+    },
+    {
+      "name": "black-market",
+      "source": "./mods/black-market",
+      "description": "Mod: every exception is contraband — SKIP_*/--no-verify/Release-Exception use is ledgered with its reason, and /black-market audit totals the standing permits.",
+      "category": "workflow"
+    },
+    {
+      "name": "citizen-file",
+      "source": "./mods/citizen-file",
+      "description": "Mod: your file, opened — /expediente shows a flywheel cycle's run record live: every transition, route and escalation, with totals.",
+      "category": "workflow"
+    },
+    {
+      "name": "telescreen",
+      "source": "./mods/telescreen",
+      "description": "Mod: the screen that knows what you touched — the flywheel learning about the file you just opened, in a band above the prompt.",
+      "category": "workflow"
+    },
+    {
+      "name": "supervisor",
+      "source": "./mods/supervisor",
+      "description": "Mod: the Supervisor checks in every few prompts — what closed, and where is the evidence? A reply that names none is noted.",
+      "category": "workflow"
+    },
+    {
+      "name": "general-strike",
+      "source": "./mods/general-strike",
+      "description": "Mod: three reds of the same check with edits between and no green — the workers strike; edits stop until you debug systematically.",
+      "category": "workflow"
     }
   ]
 }

@@ -45,11 +45,12 @@ pattern, the root cause and the regression test for a bugfix.>
   from an explicit `unverified`; the SessionStart injection and `/flywheel:recall`
   flag `unverified` entries so a reader weighs them accordingly. Keep it a
   pointer — never a credential or a raw output dump.
+- **Open work → backlog** (P74): read `skills/compound/references/followups.md`; CI fails a `followup=` with no row.
 - `files` should list the paths most relevant to *finding this entry again* — this
   is what `scripts/session-start.sh` matches against the current branch's changed
   files to decide relevance, so keep it to the handful that actually matter.
 
-Old free-prose entries already in the ledger are untouched — this format only applies going forward; the SessionStart hook and `/flywheel:recall` both still load them (as always-eligible, low-priority entries).
+Old free-prose entries stay untouched; this format applies going forward, and SessionStart and `/flywheel:recall` still load them (always eligible, low priority).
 
 Then stage the ledger (`git add .claude/flywheel/LEARNINGS.md`) so it is committed with the work. **Record the outcome** (P69): append `{"phase": "compound", "task": "compound", "state": "completed", "entries": <N>}` to `.claude/flywheel/runs/<spec-slug>/<date>.jsonl`, with a `"reason"` when N is 0. A shipped run without that line is blocked at Stop.
 

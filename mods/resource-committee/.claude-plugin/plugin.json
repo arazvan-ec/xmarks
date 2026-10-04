@@ -1,0 +1,6 @@
+{
+  "name": "resource-committee",
+  "version": "0.2.0",
+  "description": "The Resource Committee assigns every turn its model and effort: sonnet/medium by default, opus/high for judgment, sonnet/low for mechanical work — decided once per prompt so the cache survives.",
+  "author": { "name": "arazvan" }
+}

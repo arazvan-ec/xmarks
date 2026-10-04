@@ -180,6 +180,7 @@ if not plans:
 
 failures, totals = [], {"PASS": 0, "FAIL": 0, "PENDING": 0, "UNRUNNABLE": 0}
 graded_plans = 0
+memo = {}
 
 for plan in plans:
     # The cutoff is read BEFORE the linter, because it decides what an
@@ -222,17 +223,27 @@ for plan in plans:
         else:
             verdict, detail = "PASS", " + ".join(c for c, _ in cmds)
             for c, argv in cmds:
+                key = tuple(argv)
                 try:
-                    # The marker lets a cited `scripts/sweep.sh` (P60) skip
-                    # this gate rather than re-grade every plan inside one check.
-                    p = subprocess.run(argv, cwd=root, capture_output=True,
-                                       text=True, timeout=timeout,
-                                       env={**os.environ, "FW_TASK_CLOSURE_ACTIVE": "1"})
+                    # One run per distinct check per gate run (P75): the tree
+                    # does not change between tasks, and 127 tasks cite 48
+                    # commands. Every citing task still gets its own row.
+                    if key not in memo:
+                        # The marker lets a cited `scripts/sweep.sh` (P60) skip
+                        # this gate rather than re-grade every plan inside one check.
+                        memo[key] = subprocess.run(argv, cwd=root, capture_output=True,
+                                                   text=True, timeout=timeout,
+                                                   env={**os.environ, "FW_TASK_CLOSURE_ACTIVE": "1"})
+                    p = memo[key]
+                    if isinstance(p, BaseException):
+                        raise p
                     ok = p.returncode == 0
-                except subprocess.TimeoutExpired:
+                except subprocess.TimeoutExpired as e:
+                    memo[key] = e
                     ok, p = False, None
                     detail = f"{c} — timed out after {timeout}s"
                 except OSError as e:
+                    memo[key] = e
                     # Whether a tool is installed is a property of the machine,
                     # not of the task, so this is "could not verify", never a
                     # red task. Uncaught it is worse than either: argv raises
