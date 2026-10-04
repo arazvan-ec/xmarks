@@ -1272,3 +1272,22 @@ makes it cheap to measure later: fewer invalidations means a clean before/after
 on the same cache. Same principle as the Committee switching models only per
 prompt. Anything that reaches the model should change on an event, never on a
 tick.
+
+## decision: one rule, one enforcer — a new mod takes the rule nothing enforces, not the one a hook already blocks
+
+<!-- fw: type=decision; date=2026-10-04; files=mods/thought-police/hooks/register.ts,scripts/toolbar.sh; spec=p72-t5-thought-police; branch=ccr-ad2de139-xfsj6z; evidence=roadmap T5 = "toolbar parity + never echo files"; toolbar.sh stop (P56) already blocks a reply missing the toolbar line; the echo rule had no observer anywhere in hooks/ or scripts/; 4 mutations each caught by one allow-arm -->
+
+The roadmap gave T5 two jobs: replace `toolbar.sh stop` and catch replies that
+paste code back. The understanding gate cut the first. A second blocker on a
+rule the P56 hook already enforces gives two reasons for one fault, and the
+model has to satisfy both phrasings. The echo rule ("never echo file contents
+into chat") had no observer at all, so that is where a new mechanism adds
+something.
+
+The classifier the roadmap assumed became a deterministic overlap: lines of
+12+ characters written this turn, and 8+ of them repeated *inside a fence* in
+the final reply. It is cheaper (no model call per stop) and testable
+(`model.classify` can't be stubbed), and it grades exactly what the rule says.
+It blocks once and never twice in a row (`stop_hook_active`), so the worst case
+is one extra short turn. A block-mod's allow-arms are vacuous until a mutation
+proves them. Here the four arms each caught exactly one mutation.

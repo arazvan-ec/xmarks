@@ -49,6 +49,12 @@
       "source": "./mods/social-credit",
       "description": "Mod: every act is scored — edits over rewrites, tests first, no silent skips; below 80 the system prompt re-educates you.",
       "category": "workflow"
+    },
+    {
+      "name": "thought-police",
+      "source": "./mods/thought-police",
+      "description": "Mod: never echo a file into chat — a reply that pastes back code just written is stopped once and sent back to say what and where.",
+      "category": "workflow"
     }
   ]
 }

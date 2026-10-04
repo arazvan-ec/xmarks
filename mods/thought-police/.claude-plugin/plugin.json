@@ -1,0 +1,6 @@
+{
+  "name": "thought-police",
+  "version": "0.1.0",
+  "description": "Never echo a file into chat: a final reply that pastes back code just written is stopped once and sent back to say what and where.",
+  "author": { "name": "arazvan" }
+}
