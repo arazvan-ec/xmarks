@@ -1476,3 +1476,24 @@ The fix copies the one that already worked for `evidence=`: a metadata field
 convention moves the burden to the writer, and `compound` tells the writer.
 Before shipping, the gate was seen red on the real tree with the six tagged
 and green once their rows existed.
+
+## pattern: when a gate is slow, count distinct work before optimizing — 127 runs were 48 commands and two copies of the gate itself
+
+<!-- fw: type=pattern; date=2026-10-04; files=scripts/check-task-closure.sh,scripts/sweep.sh,scripts/test-check-task-closure.sh,scripts/test-sweep.sh; spec=p75-the-sweep-stops-re-running-itself; branch=ccr-ad2de139-xfsj6z; evidence=check-task-closure 556 s → 228 s standalone, verdicts identical row by row (diff of the two outputs); new arms red first: a green check cited twice ran 2×, the closure step saw FW_SWEEP_ACTIVE unset -->
+
+The pre-push sweep had grown to 10–30 minutes, and the first guess was "the
+mods' engine tests". Counting showed otherwise. `check-task-closure` graded 127
+tasks that cite only 48 distinct commands (`test-docs-consistency` 26 times,
+`check-invocation-budget` 23), and two of those tasks run the whole sweep from
+inside the sweep. Neither needed a faster test. One fix was a memo keyed by argv
+for a single gate run, safe because the tree does not change between tasks. The
+other was a marker the sweep hands only to its closure step, so a sweep cited
+from there skips itself. That mirrors the `FW_TASK_CLOSURE_ACTIVE` skip, which
+already stopped the other direction of the same recursion.
+
+The memo had to keep the gate's contract, which is one row and verdict per task.
+So it caches the result, red ones and timeouts included, never the row. The
+before/after outputs were diffed row by row, and the diff is empty. The marker
+goes to the closure step and nowhere else, because `test-sweep.sh` runs
+`sweep.sh` as a fixture inside the real sweep and would otherwise skip its own
+subject.
