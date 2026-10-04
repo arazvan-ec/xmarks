@@ -100,6 +100,9 @@ jobs:
       - name: Check the supply-chain pin (P13)
         run: bash scripts/check-supply-chain-pin.sh
 
+      - name: Check that a lesson's open follow-up has its backlog row (P74)
+        run: bash scripts/check-followups.sh
+
       - name: Check every gate is wired into CI (P52)
         run: bash scripts/check-ci-gate-parity.sh
 

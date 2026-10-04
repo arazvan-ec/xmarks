@@ -1177,7 +1177,7 @@ each caught by their arm.
 
 ## decision: route the model per prompt, never per request — a switch costs the cache
 
-<!-- fw: type=decision; date=2026-10-04; files=mods/resource-committee/hooks/register.ts,skills/route/references/models.md; spec=p72-t0b-resource-committee; branch=ccr-ad2de139-xfsj6z; evidence=claude-api skill (cache 2026-09-25): caches are model-scoped and a mid-conversation top-level effort change invalidates the messages cache; Haiku 4.5 has 200K context and no effort; "measure the most capable model at lower effort before a cascade"; route gate: p69 T3, p70 T2/T4/T5 "session model; not switched" -->
+<!-- fw: type=decision; date=2026-10-04; files=mods/resource-committee/hooks/register.ts,skills/route/references/models.md; spec=p72-t0b-resource-committee; branch=ccr-ad2de139-xfsj6z; evidence=claude-api skill (cache 2026-09-25): caches are model-scoped and a mid-conversation top-level effort change invalidates the messages cache; Haiku 4.5 has 200K context and no effort; "measure the most capable model at lower effort before a cascade"; route gate: p69 T3, p70 T2/T4/T5 "session model; not switched"; followup=Committee phase 2: hold plan-task routes once big-brother-token has numbers; backlog=P78 -->
 
 `turn.step` can rewrite `model` and `effort` on every request, and that is
 exactly why it has to be used sparingly. Each switch makes the next request
@@ -1232,7 +1232,7 @@ how often that happens needs real sessions. The ledger has no number for it yet.
 
 ## pattern: a mod observes a script by its printed contract, not by re-running its logic — and a streaming stub returns `{ value }` too
 
-<!-- fw: type=pattern; date=2026-10-04; files=mods/ventanilla-unica/hooks/register.tsx,mods/ventanilla-unica/hooks/ventanilla.test.ts,scripts/sweep.sh; spec=p72-t3-ventanilla-unica; branch=ccr-ad2de139-xfsj6z; evidence=6/6 arms red then green; first green attempt failed with "test's process.spawn hook was skipped: returned neither { value } nor { deny }" until the generator returned { value: { code, signal } }; Pane mounted on terminal and desktop -->
+<!-- fw: type=pattern; date=2026-10-04; files=mods/ventanilla-unica/hooks/register.tsx,mods/ventanilla-unica/hooks/ventanilla.test.ts,scripts/sweep.sh; spec=p72-t3-ventanilla-unica; branch=ccr-ad2de139-xfsj6z; evidence=6/6 arms red then green; first green attempt failed with "test's process.spawn hook was skipped: returned neither { value } nor { deny }" until the generator returned { value: { code, signal } }; Pane mounted on terminal and desktop; followup=sweep.sh takes 10-30 min: check-task-closure re-runs whole sweeps nested (P59/P60 T4) and the slow route test; backlog=P75 -->
 
 T3's question was whether a mod can show the sweep gate by gate without
 re-implementing it. It can, because `sweep.sh` already prints one line per gate
@@ -1294,7 +1294,7 @@ proves them. Here the four arms each caught exactly one mutation.
 
 ## gotcha: the owner hands work over in prose, so a rule keyed on lists may rarely fire for the person it was written for
 
-<!-- fw: type=gotcha; date=2026-10-04; files=mods/newspeak/hooks/register.ts,mods/memory-hole/hooks/register.ts; spec=p72-t6-newspeak; branch=ccr-ad2de139-xfsj6z; evidence=the owner's 10 prompts in session ccr-ad2de139 carried 0 numbered lists and 0 bullet lists, yet held multi-item asks ("arregla esos 2 fallos", "todas hasta terminarlas") and criterion-free ones ("sigue con T1"); a threshold mutation passed until the single-item arm used a numbered line -->
+<!-- fw: type=gotcha; date=2026-10-04; files=mods/newspeak/hooks/register.ts,mods/memory-hole/hooks/register.ts; spec=p72-t6-newspeak; branch=ccr-ad2de139-xfsj6z; evidence=the owner's 10 prompts in session ccr-ad2de139 carried 0 numbered lists and 0 bullet lists, yet held multi-item asks ("arregla esos 2 fallos", "todas hasta terminarlas") and criterion-free ones ("sigue con T1"); a threshold mutation passed until the single-item arm used a numbered line; followup=count prose multi-item asks before any nudge; backlog=P77 -->
 
 T6's question was what share of owner prompts arrive with no success
 criterion. The first data point is this session: ten prompts, **no lists at
@@ -1313,7 +1313,7 @@ to the boundary it protects.
 
 ## gotcha: `$.store` is per plugin — one mod's data is invisible to the next unless a contract shares it
 
-<!-- fw: type=gotcha; date=2026-10-04; files=mods/ration-book/hooks/register.ts,mods/big-brother-token/hooks/register.ts; spec=p72-t7-ration-book; branch=ccr-ad2de139-xfsj6z; evidence=types 2.1.289: "$.store — This plugin's own key-value store … A JSON file of the plugin's own under the user's Claude Code configuration directory"; T1 wrote `sessions` for T7 to read, and T7 cannot -->
+<!-- fw: type=gotcha; date=2026-10-04; files=mods/ration-book/hooks/register.ts,mods/big-brother-token/hooks/register.ts; spec=p72-t7-ration-book; branch=ccr-ad2de139-xfsj6z; evidence=types 2.1.289: "$.store — This plugin's own key-value store … A JSON file of the plugin's own under the user's Claude Code configuration directory"; T1 wrote `sessions` for T7 to read, and T7 cannot; followup=shared measurements via a declared dependencies contract | a command-aware Bash ration; backlog=P79,P80 -->
 
 T1 stored each session's summary "for the Ration Book", and T7 then found it
 can't read it. `$.store` is one JSON file per plugin. Reaching into another
@@ -1333,7 +1333,7 @@ command-aware design, not a blunt deny.
 
 ## pattern: measure the debt before building its ledger — this repo's exceptions are standing permits, not one-off skips
 
-<!-- fw: type=pattern; date=2026-10-04; files=mods/black-market/hooks/register.ts,scripts/telemetry-baseline.txt,scripts/fixture-leak-allow.txt,scripts/invocation-budget.txt; spec=p72-t8-black-market; branch=ccr-ad2de139-xfsj6z; evidence=git log: 0 Release-Exception trailers, 0 SKIP_*= commits; standing: 31 telemetry-baseline exemptions, 6 fixture-leak allows, 4 named budget exceptions (41 permits); the fs.read stub missed until it matched by suffix — the engine resolves paths to absolute before hooks see them -->
+<!-- fw: type=pattern; date=2026-10-04; files=mods/black-market/hooks/register.ts,scripts/telemetry-baseline.txt,scripts/fixture-leak-allow.txt,scripts/invocation-budget.txt; spec=p72-t8-black-market; branch=ccr-ad2de139-xfsj6z; evidence=git log: 0 Release-Exception trailers, 0 SKIP_*= commits; standing: 31 telemetry-baseline exemptions, 6 fixture-leak allows, 4 named budget exceptions (41 permits); the fs.read stub missed until it matched by suffix — the engine resolves paths to absolute before hooks see them; followup=pay down the 31 telemetry-baseline exemptions, 3/4 of the 41 standing permits; backlog=P76 -->
 
 The roadmap pictured the Black Market as a live ledger of `SKIP_*` use. Counting
 first turned that around. In this repo's whole history nobody used a one-off
@@ -1457,3 +1457,22 @@ Not settled: copying a mod into a project's `.claude/skills/<name>/` did not loa
 but the test workspace was untrusted, so this proves nothing either way. And the
 interactive path (environment variable plus setup script in a new web session)
 follows from the headless result but hasn't been run end to end.
+
+## pattern: open work written into a lesson is invisible to scheduling — give it a field and a gate, the way `evidence=` got one
+
+<!-- fw: type=pattern; date=2026-10-04; files=scripts/check-followups.sh,skills/compound/SKILL.md,skills/compound/references/followups.md,docs/research/improvement-proposals.md; spec=p74-open-work-lands-in-the-backlog; branch=ccr-ad2de139-xfsj6z; evidence=six follow-ups in P72 lessons, 0 backlog rows until the owner asked; check-followups exit 1 naming all six on the tagged tree, exit 0 after P75–P80 -->
+
+Each P72 step answered its gate question and, honestly, left some work open:
+"a follow-up should count prose asks", "two things for later". All six went
+into the ledger as prose. None reached the backlog until the owner asked why,
+and the session itself had listed them as "fronts" in chat without filing any.
+The ledger is read for *context*, and the backlog is read for *scheduling*, so
+work left in the first never gets picked up from the second. Same shape as P70
+(lessons from other repos never reaching this backlog), here inside one repo.
+
+The fix copies the one that already worked for `evidence=`: a metadata field
+(`followup=…; backlog=P<n>`) and a gate that grades the field, not the prose
+(`check-followups.sh`). A gate can't find a follow-up hidden in prose, so the
+convention moves the burden to the writer, and `compound` tells the writer.
+Before shipping, the gate was seen red on the real tree with the six tagged
+and green once their rows existed.
