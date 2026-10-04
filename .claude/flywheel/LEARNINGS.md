@@ -1291,3 +1291,22 @@ the final reply. It is cheaper (no model call per stop) and testable
 It blocks once and never twice in a row (`stop_hook_active`), so the worst case
 is one extra short turn. A block-mod's allow-arms are vacuous until a mutation
 proves them. Here the four arms each caught exactly one mutation.
+
+## gotcha: the owner hands work over in prose, so a rule keyed on lists may rarely fire for the person it was written for
+
+<!-- fw: type=gotcha; date=2026-10-04; files=mods/newspeak/hooks/register.ts,mods/memory-hole/hooks/register.ts; spec=p72-t6-newspeak; branch=ccr-ad2de139-xfsj6z; evidence=the owner's 10 prompts in session ccr-ad2de139 carried 0 numbered lists and 0 bullet lists, yet held multi-item asks ("arregla esos 2 fallos", "todas hasta terminarlas") and criterion-free ones ("sigue con T1"); a threshold mutation passed until the single-item arm used a numbered line -->
+
+T6's question was what share of owner prompts arrive with no success
+criterion. The first data point is this session: ten prompts, **no lists at
+all**, several multi-item asks written as prose ("arregla esos 2 fallos",
+"con todas hasta terminarlas"), and most with no criterion. Newspeak and
+Memory Hole both trigger on list syntax. They are right for pasted task lists
+and silent for the way this owner actually delegates. That doesn't argue for
+dropping them. It argues for a follow-up that reads *prose* multi-item asks
+("these 2", "all of them", "y luego") with a counter first, before any nudge,
+so the false-positive rate is known before it costs a turn.
+
+The test lesson repeats from T2 and T5. The single-item arm used "fix the login"
+with no number, so it could never catch a threshold change. Written as "1. fix
+the login", the threshold mutation fails it. An allow-arm has to sit right next
+to the boundary it protects.

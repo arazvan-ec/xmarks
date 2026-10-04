@@ -55,6 +55,12 @@
       "source": "./mods/thought-police",
       "description": "Mod: never echo a file into chat — a reply that pastes back code just written is stopped once and sent back to say what and where.",
       "category": "workflow"
+    },
+    {
+      "name": "newspeak",
+      "source": "./mods/newspeak",
+      "description": "Mod: ungood items — a list item with no success criterion is named, and the model is told to ask for one before doing it.",
+      "category": "workflow"
     }
   ]
 }
