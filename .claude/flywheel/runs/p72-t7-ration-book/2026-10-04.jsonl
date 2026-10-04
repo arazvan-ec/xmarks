@@ -1,0 +1,2 @@
+{"ts": "2026-10-04T19:29:42Z", "task": "spec", "phase": "spec", "state": "completed", "route": "opus/high", "proved": "understanding gate recorded in the spec", "cost": {"bytes_in": 0, "tool_calls": 0, "elapsed_s": 0}, "cost_note": "not metered in this session"}
+{"ts": "2026-10-04T19:29:42Z", "task": "T1", "phase": "work", "state": "completed", "route": "opus/high", "proved": "7/7 red with no implementation, then 7/7 green; tsc clean; check-mods OK", "cost": {"bytes_in": 0, "tool_calls": 0, "elapsed_s": 0}, "cost_note": "not metered in this session"}

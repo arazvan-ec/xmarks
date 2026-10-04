@@ -153,6 +153,7 @@ Claude Code mods ship from this marketplace as **separate, opt-in plugins** unde
 | `social-credit` | A citizen score in the status line, kept across sessions: +1 per `Edit`, −5 for a `Write` over a file already read, ±3 for test-first on `scripts/`, +1 per commit, −10 per `SKIP_*=` or `--no-verify`. Below 80 a re-education section joins the system prompt. `/social-credit` lists acts; `amnesty` resets. | `/plugin install social-credit@xmarks` |
 | `thought-police` | At `Stop`, a reply whose fenced code repeats 8+ lines written this turn (`Write`/`Edit`) is blocked once with the reason: report what and where, the diff is in git. Never blocks twice in a row. | `/plugin install thought-police@xmarks` |
 | `newspeak` | For a prompt carrying a list, names the items with no success criterion (English or Spanish markers: `so that`, `must`, `passes`, `para que`, `en verde`, a number with a unit…) in a context note asking the model to get one first. Never blocks. `/newspeak` shows the running share. | `/plugin install newspeak@xmarks` |
+| `ration-book` | A per-session read ration: p75 of the last 10 sessions once 5 are recorded (floor 100 KB), else 400 KB. Coupons left in the status line, a toast at 80%, and at 100% `Read`/`Grep`/`Glob`/`WebFetch`/`WebSearch` are held (`Bash` and writes never). `/ration grant <KB>` adds coupons, announced. | `/plugin install ration-book@xmarks` |
 
 ## Deterministic completion gate (opt-in)
 

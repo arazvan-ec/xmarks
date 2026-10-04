@@ -61,6 +61,12 @@
       "source": "./mods/newspeak",
       "description": "Mod: ungood items — a list item with no success criterion is named, and the model is told to ask for one before doing it.",
       "category": "workflow"
+    },
+    {
+      "name": "ration-book",
+      "source": "./mods/ration-book",
+      "description": "Mod: every session gets a ration of read bytes, set from its own history; when the coupons run out, reads wait for an authorized grant.",
+      "category": "workflow"
     }
   ]
 }

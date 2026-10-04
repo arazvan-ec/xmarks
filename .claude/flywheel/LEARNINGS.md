@@ -1310,3 +1310,23 @@ The test lesson repeats from T2 and T5. The single-item arm used "fix the login"
 with no number, so it could never catch a threshold change. Written as "1. fix
 the login", the threshold mutation fails it. An allow-arm has to sit right next
 to the boundary it protects.
+
+## gotcha: `$.store` is per plugin — one mod's data is invisible to the next unless a contract shares it
+
+<!-- fw: type=gotcha; date=2026-10-04; files=mods/ration-book/hooks/register.ts,mods/big-brother-token/hooks/register.ts; spec=p72-t7-ration-book; branch=ccr-ad2de139-xfsj6z; evidence=types 2.1.289: "$.store — This plugin's own key-value store … A JSON file of the plugin's own under the user's Claude Code configuration directory"; T1 wrote `sessions` for T7 to read, and T7 cannot -->
+
+T1 stored each session's summary "for the Ration Book", and T7 then found it
+can't read it. `$.store` is one JSON file per plugin. Reaching into another
+plugin's file through `$.fs` would work and is wrong: it couples two opt-in
+plugins with no declared interface, and fails silently when one is not
+installed. The Ration Book keeps its own history and sets the ration from it
+(p75 of its last 10 sessions, floor 100 KB, 400 KB until 5 exist). That is
+still "set from data", and it corrects itself.
+
+T7's question, which budget is right, has a mechanism but no number. The first
+five sessions run on the default, so the calibrated ration only exists after
+real use. Two things for later: if mods should share measurements, the place
+is a declared `dependencies` contract (`$.state` types per plugin), not a
+second meter; and `Bash` is never held, although it carries most read volume
+(85% in P44). Holding it would stop tests and git. A Bash ration needs a
+command-aware design, not a blunt deny.

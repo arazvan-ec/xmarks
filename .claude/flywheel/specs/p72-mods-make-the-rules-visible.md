@@ -95,8 +95,8 @@ when it closes. Order and per-step questions as signed:
 | T4 | Social Credit | `sonnet/medium` | `… social-credit` | ✅ mod 0.1.0 — `p72-t4-social-credit` |
 | T5 | Thought Police | `opus/high` | `… thought-police` | ✅ mod 0.1.0 (toolbar half dropped at the gate) — `p72-t5-thought-police` |
 | T6 | Newspeak | `sonnet/medium` | `… newspeak` | ✅ mod 0.1.0 — `p72-t6-newspeak` |
-| T7 | Ration Book | `sonnet/medium` | `… ration-book` | next |
-| T8 | Black Market | `sonnet/medium` | `… black-market` | — |
+| T7 | Ration Book | `sonnet/medium` | `… ration-book` | ✅ mod 0.1.0 — `p72-t7-ration-book` |
+| T8 | Black Market | `sonnet/medium` | `… black-market` | next |
 | T9 | Citizen File | `sonnet/medium` | `… citizen-file` | — |
 | T10 | Telescreen | `sonnet/medium` | `… telescreen` | — |
 | T11 | The Supervisor | `opus/high` | `… supervisor` | — |
