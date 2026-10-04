@@ -1,0 +1,1 @@
+{"ts": "2026-10-04T12:00:00Z", "task": "plan", "phase": "plan", "state": "completed", "route": "opus/high", "proved": "12 mods each mapped to an existing rule/meter; plan-route validates; T0 riskiest", "cost": {"bytes_in": 0, "tool_calls": 0, "elapsed_s": 0}, "cost_note": "not metered: plan written in a brainstorm session"}

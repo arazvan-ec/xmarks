@@ -1047,3 +1047,50 @@ each one is there because the template is worthless without it:
 
 The risk is accumulation: each template is reasonable, and together they make
 the flow heavy. The invocation budget is what keeps that visible.
+
+## pattern: a mod earns its place by making an existing rule visible or enforced — the theme is the skin, never the reason
+
+<!-- fw: type=pattern; date=2026-10-04; files=.claude/flywheel/specs/p72-mods-make-the-rules-visible.md,.claude/flywheel/specs/p72-mods-make-the-rules-visible.plan.md; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=Claude Code 2.1.289 ships mods (plugin-authoring skill): its types file names 80 `$` calls incl. tool.call, prompt.submit, prompt.compose, session.usage, model.classify, agent.register, store.*, audio.play, clock.every; 12 dystopian mod ideas were brainstormed and every one that survived maps onto a rule or meter flywheel already has (read-meter.sh, toolbar.sh, check-task-closure.sh, invocation budget, sweep.sh, LEARNINGS.md) -->
+
+Claude Code now loads **mods**: a plugin folder whose `hooks/hooks.json` is
+`{ "modules": ["./register.tsx"] }`, a TS module `register(on, options)` hooking
+events with `($, e, next)`. It can draw a Pane, a band above the prompt, a status
+entry, a toast; block or rewrite a tool call (`tool.call` → `{ deny }`); rewrite a
+prompt (`prompt.submit`) or the system prompt (`prompt.compose`); keep state per
+session (`$.state`) or across sessions (`$.store`); classify with a model
+(`$.model.classify`); register a subagent (`$.agent.register`). It runs with no
+DOM and no Node — everything outside goes through `$`. Hot reload needs the
+person's yes, asked once per session; nothing else can grant it.
+
+The brainstorm (owner ask: "mods distópicos") produced 12 ideas. What separated a
+keeper from decoration was one question: **which flywheel rule does this make
+visible, or which instruction does it turn into a mechanism?** Big Brother Token
+is `read-meter.sh` shown live instead of at close; Memory Hole is CLAUDE.md's
+"a list is a file" turned into a `tool.call` deny; Ventanilla Única is
+`sweep.sh` drawn as stamps. An idea with no rule behind it is a joke that costs
+tokens forever. The dystopian voice is legitimate only as the *message* of a
+real signal — it makes a cost or a skipped rule felt — never as the payload.
+
+Two things the brainstorm left open, and a plan must close before building:
+where a mod lives in this repo and how the installer ships it to repos that use
+flywheel (today's surface is `skills/ agents/ hooks/ scripts/`), and whether a
+`hooks.json` can carry both the bash hooks and `modules` at once.
+
+## decision: every step of a multi-step plan opens with an understanding gate — is the next step still the right one for the purpose?
+
+<!-- fw: type=decision; date=2026-10-04; files=.claude/flywheel/specs/p72-mods-make-the-rules-visible.plan.md; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=owner, 2026-10-04: "cada avance tiene que tener su learning y entender que el progreso siempre pasa por un proceso de entendimiento y análisis para ver si el paso siguiente es el correcto para cumplir el propósito de un proceso" -->
+
+A plan written up front orders steps by what was known on day one. Each step
+then produces evidence that may say the next one is wrong, redundant, or should
+move. Owner convention for long plans (first applied to P72):
+
+1. **Understand** — before a step starts, re-read the purpose and the learning
+   the previous step left. State in one line what that learning changes.
+2. **Analyze (go / reorder / drop)** — decide whether this step still serves the
+   purpose, given that evidence. The verdict and its reason are written into the
+   plan before any code. Reordering or dropping is allowed; *silently* doing
+   either is not — dropping a step the owner asked for is the owner's call.
+3. **Build** — test-first, as `/flywheel:work` already requires.
+4. **Learn** — every closed step appends one ledger entry (`/flywheel:compound`),
+   even when the lesson is "the assumption held": that is the evidence the next
+   step's gate reads. A step with no entry is not closed.
