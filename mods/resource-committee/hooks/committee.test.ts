@@ -119,3 +119,34 @@ test('/committee pins a tier until auto', async ($, on) => {
   await step($)
   expect(sent[1].effort).toBe('low')
 })
+
+test('P78: each session leaves its tally of decisions in the store', async ($, on) => {
+  const store = new Map<string, unknown>()
+  on('store.get', (_$: any, e: any) => ({ value: store.get(e.key) }))
+  on('store.set', (_$: any, e: any) => { store.set(e.key, e.value); return { value: undefined } })
+  on('session.end', () => ({ sessionId: 's' }))
+  let label = 'judgment'
+  classifier(on, () => label)
+  on('prompt.submit', (_$: any, e: any) => ({ text: e.text }))
+  await submit($, { text: 'design it' })
+  label = 'mechanical'
+  await submit($, { text: 'rename it' })
+  await submit($, { text: 'rename that too' })
+  await submit($, { text: '/compact' })
+  await $.session.end({ reason: 'exit' } as any)
+  const s = store.get('sessions') as any[]
+  expect(s.length).toBe(1)
+  expect(s[0].tally).toEqual({ judgment: 1, mechanical: 2 })
+  expect(s[0].switches).toBe(2)
+})
+
+test('P78: /committee stats sums the stored sessions', async ($, on) => {
+  const store = new Map<string, unknown>([['sessions', [{ tally: { routine: 3 }, switches: 0 }, { tally: { judgment: 1, routine: 1 }, switches: 2 }]]])
+  on('store.get', (_$: any, e: any) => ({ value: store.get(e.key) }))
+  on('ui.status', () => ({ value: undefined }))
+  const r: any = await $.command.run({ command: 'committee', args: 'stats', origin: { kind: 'composer' }, presentation: { layout: 'main', columns: 80 } } as any)
+  expect(r.text).toContain('2 sessions')
+  expect(r.text).toContain('routine 4')
+  expect(r.text).toContain('judgment 1')
+  expect(r.text).toContain('2 switches')
+})

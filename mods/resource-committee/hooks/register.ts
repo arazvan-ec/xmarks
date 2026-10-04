@@ -25,6 +25,22 @@ const label = (r: Route) => `${r.model.replace(/^claude-|-\d.*$/g, '')}/${r.effo
 
 let route: Route = ROUTINE
 let pin: Route | undefined
+let tally: Record<string, number> = {}
+let switches = 0
+
+type Session = { at?: number; tally: Record<string, number>; switches: number }
+
+async function stats($: any): Promise<string> {
+  const all = ((await $.store.get('sessions').catch(() => undefined)) as Session[] | undefined) ?? []
+  const sum: Record<string, number> = {}
+  let sw = 0
+  for (const x of all) {
+    for (const [k, v] of Object.entries(x.tally)) sum[k] = (sum[k] ?? 0) + v
+    sw += x.switches
+  }
+  const rows = Object.entries(sum).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ')
+  return `${all.length} sessions: ${rows || 'no decisions yet'} · ${sw} switches`
+}
 
 function show($: any, changed: boolean) {
   const r = pin ?? route
@@ -35,15 +51,18 @@ function show($: any, changed: boolean) {
 export const register: Register = on => {
   route = ROUTINE
   pin = undefined
+  tally = {}
+  switches = 0
 
   on('session.start', ($, e, next) => {
-    $.command.register({ name: 'committee', description: 'Show the Committee’s model/effort decision, or pin: haiku | sonnet | opus | auto' })
+    $.command.register({ name: 'committee', description: 'Show the Committee’s model/effort decision; pin: haiku | sonnet | opus | auto; stats' })
     show($, false)
     return next(e)
   })
 
-  on('command.run', { command: 'committee' }, ($, e) => {
+  on('command.run', { command: 'committee' }, async ($, e) => {
     const arg = e.args.trim().toLowerCase()
+    if (arg === 'stats') return { text: await stats($) }
     if (arg === 'auto') pin = undefined
     else if (PINS[arg]) pin = PINS[arg]
     else if (arg) return { text: `Unknown tier '${arg}'. Use haiku | sonnet | opus | auto.` }
@@ -57,11 +76,19 @@ export const register: Register = on => {
       const r = await $.model.complete({ model: 'haiku', system: SYSTEM, prompt: e.text.slice(0, 4000), maxTokens: 5 }).catch(() => undefined)
       const word = r?.isAnswered ? r.text.trim().toLowerCase().replace(/[^a-z]/g, '') : ''
       const next_ = LABELS.includes(word) ? TIERS[word] : undefined
+      if (next_) tally[word] = (tally[word] ?? 0) + 1
       if (next_ && next_ !== route) {
         route = next_
+        switches += 1
         show($, true)
       }
     }
+    return next(e)
+  })
+
+  on('session.end', async ($, e, next) => {
+    const prev = ((await $.store.get('sessions').catch(() => undefined)) as Session[] | undefined) ?? []
+    await $.store.set('sessions', [...prev, { at: Date.now(), tally, switches }].slice(-50)).catch(() => undefined)
     return next(e)
   })
 

@@ -54,3 +54,29 @@ test('/newspeak shows the share', async ($, on) => {
   const r: any = await $.command.run({ command: 'newspeak', args: '', origin: { kind: 'composer' }, presentation: { layout: 'main', columns: 80 } } as any)
   expect(r.text).toContain('1 of 2')
 })
+
+test('P77: prose multi-item asks are counted by kind, with no note', async ($, on) => {
+  const w = world(on)
+  await submit($, 'arregla esos 2 fallos antes de seguir')
+  await submit($, 'dale de forma autónoma con todas hasta terminarlas')
+  await submit($, 'update the docs and then bump the version')
+  await submit($, 'fix the login')
+  expect(w.contexts).toEqual([[], [], [], []])
+  const p: any = w.store.get('prose')
+  expect(p.asks).toBe(3)
+  expect(p.kinds).toEqual({ count: 1, quantifier: 1, sequence: 1 })
+  expect(p.recent.length).toBe(3)
+})
+
+test('P77: a list is a list, not a prose ask', async ($, on) => {
+  const w = world(on)
+  await submit($, '1. do all of them\n2. and then the rest')
+  expect((w.store.get('prose') as any)?.asks ?? 0).toBe(0)
+})
+
+test('P77: /newspeak reports prose asks too', async ($, on) => {
+  world(on)
+  await submit($, 'haz los 3 cambios')
+  const r: any = await $.command.run({ command: 'newspeak', args: '', origin: { kind: 'composer' }, presentation: { layout: 'main', columns: 80 } } as any)
+  expect(r.text).toContain('1 prose multi-item ask')
+})

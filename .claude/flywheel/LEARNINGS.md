@@ -1497,3 +1497,35 @@ before/after outputs were diffed row by row, and the diff is empty. The marker
 goes to the closure step and nowhere else, because `test-sweep.sh` runs
 `sweep.sh` as a fixture inside the real sweep and would otherwise skip its own
 subject.
+
+## decision: a permit for a past you cannot repeat is not debt — count before calling a list "the place to pay first"
+
+<!-- fw: type=decision; date=2026-10-04; files=scripts/telemetry-baseline.txt,scripts/check-telemetry.sh,mods/black-market/hooks/register.ts; spec=p72-mods-make-the-rules-visible; branch=ccr-ad2de139-xfsj6z; evidence=31 baseline entries audited one by one: 28 "shipped before the duty had an owner (P42)", 3 with specific reasons still true; 0 slugs without a spec; the 2 slugs with run files keep their exemption because those files fail the contract's shape -->
+
+T8's lesson called the 31 telemetry exemptions "three quarters of all the debt
+and the place to pay first". Auditing them as P76 showed that was wrong. 28 are
+cycles that shipped before P42 made telemetry a duty. Their numbers can't be
+recovered, and writing them now would be fabrication, which P18 forbids. The
+other three name a specific reason that still holds. None is stale. So the
+list is history with reasons attached, not work waiting to be done.
+`/black-market audit` counts *permits*, and a count says nothing about whether
+any of them can be paid off. A follow-up only deserves a backlog row once
+someone has checked that the thing can actually be changed.
+
+No new gate was added for stale exemptions, for the same reason as P58's rule
+on templates: no stale entry has ever been seen, and a gate against a failure
+that never happened is one more thing to maintain.
+
+## pattern: for a `needs data` item, the step you can ship today is the meter, placed in the mod that will be turned on first
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/newspeak/hooks/register.ts,mods/resource-committee/hooks/register.ts,mods/big-brother-token/hooks/register.ts,docs/mods-in-the-cloud.md; spec=p77-p78-p80-measure-first; branch=ccr-ad2de139-xfsj6z; evidence=newspeak 9/9, resource-committee 11/11, big-brother-token 6/6 with new arms red first; backlog rows P77/P78/P80 moved to "step 1 shipped — needs data" -->
+
+The owner asked to finish everything autonomously. Three of the open items
+could only be decided with numbers from real sessions. Building their fixes
+(a prose nudge, plan-route holding, a Bash ration) would have meant shipping
+guesses with tests around them. What could ship was the instrument for each
+one, put in the three mods the activation guide turns on first: newspeak counts
+prose asks by kind, the Committee keeps its tally, and big-brother-token breaks
+Bash bytes down by command and records cost. A meter in a mod nobody loads
+measures nothing, so `docs/mods-in-the-cloud.md` lists exactly those three
+first and says which command reads each number back.

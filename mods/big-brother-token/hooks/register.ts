@@ -9,6 +9,18 @@ let bytesIn = 0
 let largest = { bytes: 0, what: '' }
 let rewrites: string[] = []
 let read = new Set<string>()
+let bash: Record<string, Tally> = {}
+
+// P80 step 1: which commands carry Bash's bytes. A tool's subcommand is part of
+// the head ("git log", "bash scripts/x.sh"); anything else is its first word.
+const TWO_WORD = new Set(['git', 'npm', 'pnpm', 'yarn', 'bash', 'sh', 'python', 'python3', 'node', 'go', 'cargo', 'make', 'docker', 'gh', 'claude'])
+
+function head(command: string): string {
+  const words = command.trim().split(/\s+/).filter(w => !/^[A-Z_]+=/.test(w))
+  const first = words[0] ?? ''
+  const second = words.slice(1).find(w => !w.startsWith('-'))
+  return TWO_WORD.has(first) && second ? `${first} ${second}` : first
+}
 
 const kb = (n: number) => `${(n / 1024).toFixed(1)} KB`
 
@@ -30,6 +42,10 @@ function dossier(): string {
   return [
     `The Ministry has recorded ${kb(bytesIn)} read this session.`,
     ...rows,
+    ...(Object.keys(bash).length
+      ? ['Bash by command:', ...Object.entries(bash).sort((a, b) => b[1].bytes - a[1].bytes).slice(0, 5)
+          .map(([h, v]) => `  ${h.padEnd(24)} ${kb(v.bytes).padStart(9)}  ${v.calls}×`)]
+      : []),
     largest.bytes ? `Largest single read: ${kb(largest.bytes)} — ${largest.what}` : 'No reads yet.',
     rewrites.length ? `Full rewrites of files already read: ${rewrites.join(', ')}` : 'No full rewrites.',
   ].join('\n')
@@ -41,6 +57,7 @@ export const register: Register = on => {
   largest = { bytes: 0, what: '' }
   rewrites = []
   read = new Set()
+  bash = {}
 
   on('session.start', ($, e, next) => {
     $.command.register({ name: 'ministry', description: 'The Ministry’s dossier: bytes read by tool, largest read, rewrites' })
@@ -64,6 +81,11 @@ export const register: Register = on => {
     t.bytes += n
     t.calls += 1
     bytesIn += n
+    if (e.tool === 'Bash' && typeof a.command === 'string') {
+      const b = (bash[head(a.command)] ??= { bytes: 0, calls: 0 })
+      b.bytes += n
+      b.calls += 1
+    }
     if (n > largest.bytes) largest = { bytes: n, what: `${e.tool} ${path}` }
     if (n > BIG) $.ui.toast(`The Ministry has recorded a ${kb(n)} read (${e.tool} ${path}). A targeted read would do.`)
     await show($)
@@ -72,7 +94,8 @@ export const register: Register = on => {
 
   on('session.end', async ($, e, next) => {
     const prev = ((await $.store.get('sessions').catch(() => undefined)) as unknown[] | undefined) ?? []
-    const summary = { at: Date.now(), bytesIn, byTool, largest, rewrites: rewrites.length }
+    const u = await $.session.usage({}).catch(() => undefined)
+    const summary = { at: Date.now(), bytesIn, byTool, bash, largest, rewrites: rewrites.length, costUsd: u?.cost?.usd }
     await $.store.set('sessions', [...prev, summary].slice(-KEEP)).catch(() => undefined)
     return next(e)
   })

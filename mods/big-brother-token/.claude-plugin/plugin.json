@@ -1,6 +1,6 @@
 {
   "name": "big-brother-token",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The Ministry watches every byte: live bytes read, session cost and context in the status line; a toast for oversized reads and full rewrites; /ministry for the dossier.",
   "author": { "name": "arazvan" }
 }
