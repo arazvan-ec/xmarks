@@ -1,0 +1,6 @@
+{
+  "name": "supervisor",
+  "version": "0.1.0",
+  "description": "The Supervisor checks in every few prompts: what closed, and where is the evidence? A reply that names none is noted.",
+  "author": { "name": "arazvan" }
+}

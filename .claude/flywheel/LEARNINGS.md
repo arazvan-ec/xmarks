@@ -1385,3 +1385,24 @@ Test-kit detail: a band that defers with `next(e)` needs something beneath it in
 a test. The stand-in for the engine's own drawing has to return a **tree**
 (`h(Box, {})`, with `h` declared). `null` is refused as "not a tree element" and
 the mount fails with "no implementation".
+
+## decision: supervise with a sentence on a turn that happens anyway, not with a subagent that re-reads the conversation
+
+<!-- fw: type=decision; date=2026-10-04; files=mods/supervisor/hooks/register.ts,agents/verifier.md,agents/evaluator.md; spec=p72-t11-supervisor; branch=ccr-ad2de139-xfsj6z; evidence=roadmap T11 = "$.agent.register; asks every N turns"; a subagent check re-reads the context at each firing, the note is ~60 tokens added to a turn already running; verifier/evaluator agents already exist for on-demand re-checks; 8/8 arms -->
+
+T11's question was what a supervising subagent costs per turn against what it
+catches. Settled before building. A subagent that audits every N turns has to
+read the conversation each time, which is the most expensive token class
+(CLAUDE.md: reads by volume) and is paid whether or not anything is wrong.
+The cheaper supervisor is one sentence riding a turn that is happening anyway:
+"name what closed and its evidence, or say nothing closed". It is followed by a
+deterministic check of the reply (`path:line`, a backticked command, a 7+ hex
+commit) and a toast when there is none. Re-running a claimed check is still
+available on demand through the `verifier` and `evaluator` agents flywheel
+already ships, so the Supervisor adds no second agent.
+
+What it catches still needs live use. `/supervisor` counts checks asked and
+replies that named evidence, and that ratio is the number the gate asked for. A
+regex for "evidence" can be fooled by any backticked word. It grades presence,
+not truth, the same as the closure table's own rule ("an item defensible only
+in prose is reported unverified").

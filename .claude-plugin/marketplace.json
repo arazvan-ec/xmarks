@@ -85,6 +85,12 @@
       "source": "./mods/telescreen",
       "description": "Mod: the screen that knows what you touched — the flywheel learning about the file you just opened, in a band above the prompt.",
       "category": "workflow"
+    },
+    {
+      "name": "supervisor",
+      "source": "./mods/supervisor",
+      "description": "Mod: the Supervisor checks in every few prompts — what closed, and where is the evidence? A reply that names none is noted.",
+      "category": "workflow"
     }
   ]
 }

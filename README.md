@@ -157,6 +157,7 @@ Claude Code mods ship from this marketplace as **separate, opt-in plugins** unde
 | `black-market` | Ledgers every `SKIP_*=<reason>`, `--no-verify` and `Release-Exception:` the session uses, with its reason; one without a reason (`1`, empty) raises a toast. `/black-market audit` totals the standing permits in `scripts/*allow*.txt`, `*baseline*.txt`, `invocation-budget.txt` and the git log's trailers. | `/plugin install black-market@xmarks` |
 | `citizen-file` | `/expediente [slug]` opens a pane on a cycle's run record (`.claude/flywheel/runs/<slug>/*.jsonl`, newest by default): each transition with its route, escalations marked, then transitions, bytes in and escalations totalled. `list` and `status` answer in text. | `/plugin install citizen-file@xmarks` |
 | `telescreen` | When a `Read`/`Edit`/`Write` touches a file a `LEARNINGS.md` entry cites (`files=`), a band above the prompt shows the newest such lesson, with Hide. No match, no band. `/telescreen` counts lessons loaded and slogans shown. | `/plugin install telescreen@xmarks` |
+| `supervisor` | Every N prompts (default 5, `/supervisor every <n>`) the turn is asked to name what closed with its evidence; a reply naming no `file:line`, backticked command or commit gets a toast. Never blocks, spawns nothing. `/supervisor` counts checks and evidenced replies. | `/plugin install supervisor@xmarks` |
 
 ## Deterministic completion gate (opt-in)
 
