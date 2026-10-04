@@ -1229,3 +1229,27 @@ pasted prose has them all the time. The open risk is a pasted error log with
 numbered frames, which would hold edits until `/memory-hole release`. One
 command with a toast is the escape, and it is logged, never silent. Measuring
 how often that happens needs real sessions. The ledger has no number for it yet.
+
+## pattern: a mod observes a script by its printed contract, not by re-running its logic — and a streaming stub returns `{ value }` too
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/ventanilla-unica/hooks/register.tsx,mods/ventanilla-unica/hooks/ventanilla.test.ts,scripts/sweep.sh; spec=p72-t3-ventanilla-unica; branch=ccr-ad2de139-xfsj6z; evidence=6/6 arms red then green; first green attempt failed with "test's process.spawn hook was skipped: returned neither { value } nor { deny }" until the generator returned { value: { code, signal } }; Pane mounted on terminal and desktop -->
+
+T3's question was whether a mod can show the sweep gate by gate without
+re-implementing it. It can, because `sweep.sh` already prints one line per gate
+(`PASS x`, `FAIL x`, `SKIPPED x`) and a closing `N/M passed`, and that is the
+interface. The mod streams `$.process.spawn` and stamps each line as it arrives.
+A sweep the model runs through Bash is parsed from the tool result instead. A
+gate added to the sweep tomorrow shows up with no change to the mod. The cost is
+coupling to a print format, which `test-sweep.sh` already pins.
+
+Engine detail for the next streaming mod: a test's `process.spawn` stub is an
+async generator that yields the chunks and **returns `{ value: { code, signal } }`**,
+the same wrapping as every other `$` call. Without it the spawn is skipped and the
+mod's catch shows "no implementation". The test runtime has `setTimeout`, but the
+recommended `lib` has no type for it. Declare it in the test and don't widen
+`lib`, which would let DOM or Node types into the module itself.
+
+One sweep run is now ~10 minutes, because every mod plan's `check:` runs the
+engine tests through `check-task-closure`. So sweeping the exact commit in a
+detached worktree in the background, and pushing when it is green, keeps
+"sweep before push" without stalling the next step.

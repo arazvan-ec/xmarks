@@ -37,6 +37,12 @@
       "source": "./mods/memory-hole",
       "description": "Mod: a list you were handed is a file, not a memory — a prompt with a list holds edits until it is written to a plan or scratchpad file.",
       "category": "workflow"
+    },
+    {
+      "name": "ventanilla-unica",
+      "source": "./mods/ventanilla-unica",
+      "description": "Mod: the single window — /ventanilla runs flywheel's sweep and stamps each gate as it clears; a missing stamp sends you back tomorrow.",
+      "category": "workflow"
     }
   ]
 }
