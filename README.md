@@ -147,6 +147,7 @@ Claude Code mods ship from this marketplace as **separate, opt-in plugins** unde
 | Mod | What it does | Install |
 | --- | --- | --- |
 | `resource-committee` | Assigns every turn its model and effort: `sonnet/medium` by default, `opus/high` for judgment, `sonnet/low` for mechanical work, classified once per prompt by Haiku so the cache survives. `/committee` shows the decision or pins `haiku`/`sonnet`/`opus`/`auto`. Subagents keep their own model. | `/plugin install resource-committee@xmarks` |
+| `big-brother-token` | Live bytes read, session cost and context % in the status line; a toast for any single read over 8 KB and for a `Write` that rewrites a file already read; `/ministry` gives the dossier by tool. Stores each session's summary for the Ration Book. | `/plugin install big-brother-token@xmarks` |
 
 ## Deterministic completion gate (opt-in)
 

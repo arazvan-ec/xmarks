@@ -25,6 +25,12 @@
       "source": "./mods/resource-committee",
       "description": "Mod: assigns each turn its model and effort (sonnet/medium default, opus/high for judgment, sonnet/low for mechanical), decided once per prompt so the cache survives.",
       "category": "workflow"
+    },
+    {
+      "name": "big-brother-token",
+      "source": "./mods/big-brother-token",
+      "description": "Mod: the Ministry watches every byte — live bytes read, cost and context in the status line; toasts for oversized reads and full rewrites; /ministry dossier.",
+      "category": "workflow"
     }
   ]
 }

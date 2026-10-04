@@ -1192,3 +1192,21 @@ model at lower effort first. So "mechanical" means `sonnet/low`, and Haiku
 appears only as the classifier and as an explicit pin. Whether this saves
 money is still open: T1 (Big Brother Token) is the instrument that can say, and
 plan-task routes (phase 2) wait on its numbers.
+
+## pattern: the live meter and the closing meter count different bytes on purpose — say which one a number came from
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/big-brother-token/hooks/register.ts,scripts/read-meter.sh; spec=p72-t1-big-brother-token; branch=ccr-ad2de139-xfsj6z; evidence=read-meter.sh counts every string leaf of `tool_response` and zero bytes for write tools; the mod counts `ToolCallResult.text`, the mapped text the model actually reads, Write confirmations included; 5/5 mod arms green; no live session compared yet -->
+
+T1's gate question was whether the live bytes agree with what `read-meter.sh`
+records at close. They are not the same quantity, and neither is wrong.
+`read-meter.sh` is a PostToolUse hook that sees the raw `tool_response`: a
+`Read` comes back as a nested file object, every string leaf counts, and write
+tools count zero. The mod sees the result after the tool's own mapper, which is
+what enters context. That makes it closer to the cost and can differ from the
+raw size in either direction. Neither replaces the other. A number quoted from
+one must say which, or two honest meters will look like one broken one.
+
+Still unmeasured: the size of the gap on a real session. That needs the mod
+loaded (hot reload or `--plugin-dir`), and this run had neither. The store key
+`sessions` is what T7 reads to set its budget, so the Ration Book will be the
+first consumer to find out whether these numbers are useful.
