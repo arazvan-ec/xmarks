@@ -13,3 +13,6 @@ Thumbs.db
 # suite in place; the fixtures are templates and must stay byte-identical.
 __pycache__/
 *.pyc
+
+# Laid by the Claude Code engine when it loads a mod (extends .claude-plugin/types/, which ignores itself)
+mods/*/tsconfig.json
