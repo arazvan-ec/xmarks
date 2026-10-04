@@ -1406,3 +1406,29 @@ replies that named evidence, and that ratio is the number the gate asked for. A
 regex for "evidence" can be fooled by any backticked word. It grades presence,
 not truth, the same as the closure table's own rule ("an item defensible only
 in prose is reported unverified").
+
+## pattern: a stuck loop is the same check red three times with edits between — re-runs and other checks are not attempts
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/general-strike/hooks/register.ts; spec=p72-t12-general-strike; branch=ccr-ad2de139-xfsj6z; evidence=10 arms; five mutations (threshold 2, count re-runs, no reset on pass, count any command, one shared counter) each turned at least one allow-arm red -->
+
+T12's question was what threshold separates a stuck loop from honest red→green
+TDD. Three conditions, each one an arm a mutation broke:
+
+1. **The same check.** Counters are kept per normalised command. Two different
+   tests failing in turn is a broad change, not a loop. With one shared
+   counter, "a different check is counted separately" goes red.
+2. **An edit between failures.** Re-running a red test without changing
+   anything is reading the failure, not a new attempt. Counting re-runs breaks
+   the re-run arm.
+3. **No green.** A pass resets the count. Three reds spread across a session
+   with passes between them is normal work.
+
+Two reds can still be an honest second try; the third is guessing. The strike
+holds only the editing tools. Read, Grep and Bash keep running, because the way
+out is diagnosis, and a strike that blocked diagnosis would lock the session.
+It ends three ways: the check passes, a `Skill` call opens `flywheel:debug`, or
+the owner runs `/strike end`, which is toasted and never silent.
+
+Across all 13 P72 steps, deny-mods needed this more than anything else: each
+allow-arm only means something once a mutation proves it can fail. T2, T5, T6
+and T12 each had arms that passed against an empty module.

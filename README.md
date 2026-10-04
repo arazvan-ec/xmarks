@@ -158,6 +158,7 @@ Claude Code mods ship from this marketplace as **separate, opt-in plugins** unde
 | `citizen-file` | `/expediente [slug]` opens a pane on a cycle's run record (`.claude/flywheel/runs/<slug>/*.jsonl`, newest by default): each transition with its route, escalations marked, then transitions, bytes in and escalations totalled. `list` and `status` answer in text. | `/plugin install citizen-file@xmarks` |
 | `telescreen` | When a `Read`/`Edit`/`Write` touches a file a `LEARNINGS.md` entry cites (`files=`), a band above the prompt shows the newest such lesson, with Hide. No match, no band. `/telescreen` counts lessons loaded and slogans shown. | `/plugin install telescreen@xmarks` |
 | `supervisor` | Every N prompts (default 5, `/supervisor every <n>`) the turn is asked to name what closed with its evidence; a reply naming no `file:line`, backticked command or commit gets a toast. Never blocks, spawns nothing. `/supervisor` counts checks and evidenced replies. | `/plugin install supervisor@xmarks` |
+| `general-strike` | Tracks check commands (`test`, `check`, `sweep`, `pytest`, `jest`, `go test`…): the 3rd consecutive failure of the same one, with an edit since the last, holds `Edit`/`Write`/`NotebookEdit` and tells the next prompt to run `/flywheel:debug`. Reads and Bash keep running. Ends on a pass, on opening `flywheel:debug`, or `/strike end`. | `/plugin install general-strike@xmarks` |
 
 ## Deterministic completion gate (opt-in)
 

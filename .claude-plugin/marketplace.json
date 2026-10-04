@@ -91,6 +91,12 @@
       "source": "./mods/supervisor",
       "description": "Mod: the Supervisor checks in every few prompts — what closed, and where is the evidence? A reply that names none is noted.",
       "category": "workflow"
+    },
+    {
+      "name": "general-strike",
+      "source": "./mods/general-strike",
+      "description": "Mod: three reds of the same check with edits between and no green — the workers strike; edits stop until you debug systematically.",
+      "category": "workflow"
     }
   ]
 }
