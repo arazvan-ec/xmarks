@@ -1210,3 +1210,22 @@ Still unmeasured: the size of the gap on a real session. That needs the mod
 loaded (hot reload or `--plugin-dir`), and this run had neither. The store key
 `sessions` is what T7 reads to set its budget, so the Ration Book will be the
 first consumer to find out whether these numbers are useful.
+
+## gotcha: a test that only asserts "it was allowed" passes against an empty mod — pair every allow with the deny it follows
+
+<!-- fw: type=gotcha; date=2026-10-04; files=mods/memory-hole/hooks/hole.test.ts,mods/memory-hole/hooks/register.ts; spec=p72-t2-memory-hole; branch=ccr-ad2de139-xfsj6z; evidence=first red run: 4 of 7 arms passed with `register = () => {}`; two were allow-after-close arms that never proved anything was held. With a denied edit first, 5 red; then a review found an Edit to an existing .plan.md was denied, and that got a new arm -->
+
+A deny-mod's tests come in two kinds: "this is held" and "this is let through".
+The second kind passes against a no-op mod, so it proves nothing on its own.
+The plan-closes-the-hole arm only means something once it first shows an edit
+being *denied* and then the same kind of edit allowed after the plan is written.
+Two arms that assert "not a list" (fenced, single item) are rightly green with
+no implementation. Their worth only shows once the mod exists and could
+over-trigger.
+
+On the T2 gate question, false positives: the trigger is 2+ numbered items or
+3+ bullets, with code fences stripped first. Two bullets don't count, because
+pasted prose has them all the time. The open risk is a pasted error log with
+numbered frames, which would hold edits until `/memory-hole release`. One
+command with a toast is the escape, and it is logged, never silent. Measuring
+how often that happens needs real sessions. The ledger has no number for it yet.

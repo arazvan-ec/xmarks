@@ -31,6 +31,12 @@
       "source": "./mods/big-brother-token",
       "description": "Mod: the Ministry watches every byte — live bytes read, cost and context in the status line; toasts for oversized reads and full rewrites; /ministry dossier.",
       "category": "workflow"
+    },
+    {
+      "name": "memory-hole",
+      "source": "./mods/memory-hole",
+      "description": "Mod: a list you were handed is a file, not a memory — a prompt with a list holds edits until it is written to a plan or scratchpad file.",
+      "category": "workflow"
     }
   ]
 }

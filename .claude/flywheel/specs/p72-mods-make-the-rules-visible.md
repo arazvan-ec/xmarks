@@ -90,8 +90,8 @@ when it closes. Order and per-step questions as signed:
 | T0 | foundation: `mods/<name>/` plugins + `check-mods.sh` | `opus/high` | `bash scripts/test-check-mods.sh` | ✅ v0.84.0 |
 | T0b | Resource Committee (model/effort per prompt), owner-inserted 2026-10-04 | `opus/high` | `bash scripts/check-mods.sh origin/main resource-committee` | ✅ v0.85.0 — `p72-t0b-resource-committee` |
 | T1 | Big Brother Token | `opus/high` | `bash scripts/check-mods.sh origin/main big-brother-token` | ✅ mod 0.1.0 — `p72-t1-big-brother-token` |
-| T2 | Memory Hole | `opus/high` | `… memory-hole` | next |
-| T3 | Ventanilla Única | `opus/high` | `… ventanilla-unica` | — |
+| T2 | Memory Hole | `opus/high` | `… memory-hole` | ✅ mod 0.1.0 — `p72-t2-memory-hole` |
+| T3 | Ventanilla Única | `opus/high` | `… ventanilla-unica` | next |
 | T4 | Social Credit | `sonnet/medium` | `… social-credit` | — |
 | T5 | Thought Police | `opus/high` | `… thought-police` | — |
 | T6 | Newspeak | `sonnet/medium` | `… newspeak` | — |
