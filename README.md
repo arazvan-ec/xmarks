@@ -156,6 +156,7 @@ Claude Code mods ship from this marketplace as **separate, opt-in plugins** unde
 | `ration-book` | A per-session read ration: p75 of the last 10 sessions once 5 are recorded (floor 100 KB), else 400 KB. Coupons left in the status line, a toast at 80%, and at 100% `Read`/`Grep`/`Glob`/`WebFetch`/`WebSearch` are held (`Bash` and writes never). `/ration grant <KB>` adds coupons, announced. | `/plugin install ration-book@xmarks` |
 | `black-market` | Ledgers every `SKIP_*=<reason>`, `--no-verify` and `Release-Exception:` the session uses, with its reason; one without a reason (`1`, empty) raises a toast. `/black-market audit` totals the standing permits in `scripts/*allow*.txt`, `*baseline*.txt`, `invocation-budget.txt` and the git log's trailers. | `/plugin install black-market@xmarks` |
 | `citizen-file` | `/expediente [slug]` opens a pane on a cycle's run record (`.claude/flywheel/runs/<slug>/*.jsonl`, newest by default): each transition with its route, escalations marked, then transitions, bytes in and escalations totalled. `list` and `status` answer in text. | `/plugin install citizen-file@xmarks` |
+| `telescreen` | When a `Read`/`Edit`/`Write` touches a file a `LEARNINGS.md` entry cites (`files=`), a band above the prompt shows the newest such lesson, with Hide. No match, no band. `/telescreen` counts lessons loaded and slogans shown. | `/plugin install telescreen@xmarks` |
 
 ## Deterministic completion gate (opt-in)
 

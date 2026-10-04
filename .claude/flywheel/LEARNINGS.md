@@ -1366,3 +1366,22 @@ Something this view makes cheap to see: every P72 cycle so far is one
 `opus/high` task, because plan-route forces the single riskiest task to the
 top tier. Once the Resource Committee runs in a real session, the pane is
 where a `route_escalated_from` row would show whether it held a plan's route.
+
+## pattern: a lesson shown by relevance can fire for every entry — the ledger's `files=` field already does the targeting
+
+<!-- fw: type=pattern; date=2026-10-04; files=mods/telescreen/hooks/register.tsx,.claude/flywheel/LEARNINGS.md; spec=p72-t10-telescreen; branch=ccr-ad2de139-xfsj6z; evidence=92 headed entries, 93 fw lines carrying files= (every entry targetable); most-cited: skills/run/SKILL.md (10), skills/work/SKILL.md (9), skills/run/evals/check.sh (7); a test's ui.render stand-in must return a tree (h(Box, {})) — null is "not a tree element" -->
+
+T10's question was whether a lesson shown at use-time prevents a repeat or just
+adds noise. The design answers the noise half. The band shows only when a touched
+file is cited by an entry's `files=`, and stays quiet otherwise; there is no
+rotation and no "lesson of the day". Measuring the ledger shows this costs no
+coverage: every one of the 92 entries carries `files=`, so every lesson can fire
+and none floods. The most-cited files (`skills/run/SKILL.md` 10, `skills/work/SKILL.md`
+9) are where the band will speak most, and those are the files where repeats have
+historically happened. Whether it prevents repeats needs live sessions; `/telescreen`
+counts slogans shown, which is the start of that measure.
+
+Test-kit detail: a band that defers with `next(e)` needs something beneath it in
+a test. The stand-in for the engine's own drawing has to return a **tree**
+(`h(Box, {})`, with `h` declared). `null` is refused as "not a tree element" and
+the mount fails with "no implementation".

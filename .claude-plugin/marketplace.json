@@ -79,6 +79,12 @@
       "source": "./mods/citizen-file",
       "description": "Mod: your file, opened — /expediente shows a flywheel cycle's run record live: every transition, route and escalation, with totals.",
       "category": "workflow"
+    },
+    {
+      "name": "telescreen",
+      "source": "./mods/telescreen",
+      "description": "Mod: the screen that knows what you touched — the flywheel learning about the file you just opened, in a band above the prompt.",
+      "category": "workflow"
     }
   ]
 }
