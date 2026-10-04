@@ -1148,3 +1148,47 @@ table, and each step opens its own `p72-tN-*` spec + plan when its
 understanding gate says go. One gate failure showed up as five: the gate itself,
 its test, and three task-closure rows citing it. Same shape as the P73 sweep
 echo.
+
+## gotcha: a mod's test kit answers `$` calls as `{ value }`, can't stub `model.classify`, and won't load a closure that takes `$`
+
+<!-- fw: type=gotcha; date=2026-10-04; files=mods/resource-committee/hooks/register.ts,mods/resource-committee/hooks/committee.test.ts; spec=p72-t0b-resource-committee; branch=ccr-ad2de139-xfsj6z; evidence=claude plugin test on CLI 2.1.289: "hooks module did not load: $ is passed to show, which is not a function declared at the top of this file"; "test's model.classify hook was skipped: returned something that is not a result object"; "test's model.complete hook was skipped: returned neither { value } nor { deny }"; 9/9 green only after all three -->
+
+Three things the 2.1.289 engine enforces, and the mod docs don't make obvious:
+
+1. **`$` only travels to top-level functions.** A helper that takes `$` has to be
+   a `function` declaration (or a `const` bound to one) at the top of the file,
+   never a closure inside `register`. So session state that helper reads lives
+   at module scope, reset at the top of `register` (a reload re-runs it).
+2. **A test answers a `$` call with `{ value: … }`**, not with the bare result
+   (`model.complete`, `ui.status`, `ui.toast`). Events like `prompt.submit`
+   answer with their own result shape (`{ text }`). If the shape is wrong, the
+   test's hook is *skipped* and the engine reports "no implementation" one line
+   further down, which reads like a missing hook.
+3. **`$.model.classify` cannot be stubbed in a test**: no shape is accepted.
+   Calling `$.model.complete` with a one-word system prompt and parsing the
+   label is testable and gives the same result. It also lets the mod catch a
+   rejected request (classify *rejects* on failure; it does not return undefined).
+
+A test whose stub already returns the expected value passes with no
+implementation at all. Four of the first eight arms did, because the fake step
+arrived as Opus. A neutral stub (`session-model`, effort `max`) turned them red,
+and two mutations (dropping the mid-turn guard, then the subagent guard) were
+each caught by their arm.
+
+## decision: route the model per prompt, never per request — a switch costs the cache
+
+<!-- fw: type=decision; date=2026-10-04; files=mods/resource-committee/hooks/register.ts,skills/route/references/models.md; spec=p72-t0b-resource-committee; branch=ccr-ad2de139-xfsj6z; evidence=claude-api skill (cache 2026-09-25): caches are model-scoped and a mid-conversation top-level effort change invalidates the messages cache; Haiku 4.5 has 200K context and no effort; "measure the most capable model at lower effort before a cascade"; route gate: p69 T3, p70 T2/T4/T5 "session model; not switched" -->
+
+`turn.step` can rewrite `model` and `effort` on every request, and that is
+exactly why it has to be used sparingly. Each switch makes the next request
+re-read the whole context at the new model's input price, uncached. So the
+Committee decides once, on an idle `prompt.submit`, and holds that route for
+the whole turn. A prompt delivered into a running turn does not re-decide.
+Subagent steps are left alone, because they already carry their own `model`.
+
+Haiku is not a main-thread tier. With 200K context and no effort control, a
+long session would overflow it, and the API's own advice is to try the stronger
+model at lower effort first. So "mechanical" means `sonnet/low`, and Haiku
+appears only as the classifier and as an explicit pin. Whether this saves
+money is still open: T1 (Big Brother Token) is the instrument that can say, and
+plan-task routes (phase 2) wait on its numbers.

@@ -19,6 +19,12 @@
         "code-review",
         "compound-engineering"
       ]
+    },
+    {
+      "name": "resource-committee",
+      "source": "./mods/resource-committee",
+      "description": "Mod: assigns each turn its model and effort (sonnet/medium default, opus/high for judgment, sonnet/low for mechanical), decided once per prompt so the cache survives.",
+      "category": "workflow"
     }
   ]
 }

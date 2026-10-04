@@ -1,6 +1,6 @@
 # Model prices and limits, for comparing two close routes
 
-Snapshot of 2026-06-24, Anthropic first-party API. Prices go stale: refresh them
+Snapshot of 2026-09-25, Anthropic first-party API. Prices go stale: refresh them
 from the Models API (`client.models.list()`) or the `claude-api` skill before
 you quote a number to anyone.
 
@@ -11,7 +11,7 @@ reports before comparing.
 | Alias (`model`) | Model | Input $/1M | Output $/1M | Context | Effort |
 | --- | --- | --- | --- | --- | --- |
 | `haiku` | Claude Haiku 4.5 | 1 | 5 | 200K | none |
-| `sonnet` | Claude Sonnet 5 | 2 | 10 | 1M | low–max |
+| `sonnet` | Claude Sonnet 5.5 | 2 | 10 | 1M | low–max (default `high`, recalibrated: start `medium` for agentic coding, `low` for chat) |
 | `opus` | Claude Opus 5.5 | 4 | 20 | 1M | low–max (default `medium`) |
 | `fable` | Claude Fable 5.1 | 10 | 50 | 1M | low–max, thinking always on |
 
@@ -27,5 +27,9 @@ What the numbers mean for a route:
 - **Fable is 2.5× Opus.** It is not a tier in `route-tiers.txt`. Use it only
   when the caller asks for it by name, or when tier 3 at `max` has already
   failed the same check.
+- **A switch costs the cache.** Caches are model-scoped, and a mid-conversation
+  effort change also invalidates the messages cache. Route at task or turn
+  boundaries, never per request; a cascade that switches often pays more in
+  cache misses than its cheaper tier saves.
 - **Lower effort on a newer model often matches higher effort on an older one.**
   Measure the higher tier at low effort before you build a cheaper cascade.

@@ -139,6 +139,15 @@ A lesson about the plugin, learned in a repo that only uses it, used to stay in 
 
 A review sent to another session (`create_session`) that posts nothing reads the same whether it found nothing, could not post, or is still running. `skills/review/references/delegated-review.md` is the child's prompt template: post a `🔎 Review started … fw-review-start` comment on the PR **first**, through the GitHub MCP tools (the container has no `gh`), then post the findings as one review with inline comments, or a "no findings" comment. The delegation guard's **REVIEW** family asks when a delegated review prompt lacks `fw-review-start`, naming the template.
 
+## Mods (P72, v0.84.0+)
+
+Claude Code mods ship from this marketplace as **separate, opt-in plugins** under
+`mods/<name>/`, each with its own version and tests (`scripts/check-mods.sh`).
+
+| Mod | What it does | Install |
+| --- | --- | --- |
+| `resource-committee` | Assigns every turn its model and effort: `sonnet/medium` by default, `opus/high` for judgment, `sonnet/low` for mechanical work, classified once per prompt by Haiku so the cache survives. `/committee` shows the decision or pins `haiku`/`sonnet`/`opus`/`auto`. Subagents keep their own model. | `/plugin install resource-committee@xmarks` |
+
 ## Deterministic completion gate (opt-in)
 
 Drop an executable `.claude/flywheel/gate.sh` in your project with your verification command (e.g. `npm test && npm run lint`). While it exists **and you've trusted it**, flywheel's `Stop` hook runs it whenever Claude tries to finish and **blocks** finishing if it fails — so nothing is declared "done" with checks red.

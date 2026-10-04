@@ -88,6 +88,7 @@ when it closes. Order and per-step questions as signed:
 | Step | Mod | Route | Check | Status |
 | --- | --- | --- | --- | --- |
 | T0 | foundation: `mods/<name>/` plugins + `check-mods.sh` | `opus/high` | `bash scripts/test-check-mods.sh` | ✅ v0.84.0 |
+| T0b | Resource Committee (model/effort per prompt), owner-inserted 2026-10-04 | `opus/high` | `bash scripts/check-mods.sh origin/main resource-committee` | ✅ v0.85.0 — `p72-t0b-resource-committee` |
 | T1 | Big Brother Token | `opus/high` | `bash scripts/check-mods.sh origin/main big-brother-token` | next |
 | T2 | Memory Hole | `opus/high` | `… memory-hole` | — |
 | T3 | Ventanilla Única | `opus/high` | `… ventanilla-unica` | — |
